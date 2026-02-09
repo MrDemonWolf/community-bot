@@ -1,0 +1,94 @@
+model TwitchChannel {
+  id                 String              @id @default(uuid())
+  twitchChannelId    String
+  username           String?
+  displayName        String?
+  profileImageUrl    String?
+  isLive             Boolean             @default(false)
+  lastStreamTitle    String?
+  lastGameName       String?
+  lastStartedAt      DateTime?
+  DiscordGuild       DiscordGuild?       @relation(fields: [guildId], references: [id])
+  guildId            String?
+  TwitchNotification TwitchNotification[]
+  joinedAt           DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@unique([twitchChannelId, guildId])
+}
+
+model TwitchNotification {
+  id              String        @id @default(uuid())
+  messageId       String
+  channelId       String
+  guildId         String
+  twitchChannelId String
+  isLive          Boolean       @default(true)
+  streamStartedAt DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  DiscordGuild    DiscordGuild? @relation(fields: [guildId], references: [guildId])
+  TwitchChannel   TwitchChannel? @relation(fields: [twitchChannelId], references: [id])
+}
+
+model TwitchCredential {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  accessToken         String
+  refreshToken        String
+  expiresIn           Int
+  obtainmentTimestamp BigInt
+  scope               String[]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+enum TwitchResponseType {
+  SAY
+  MENTION
+  REPLY
+}
+
+enum TwitchAccessLevel {
+  EVERYONE
+  SUBSCRIBER
+  REGULAR
+  VIP
+  MODERATOR
+  BROADCASTER
+}
+
+enum TwitchStreamStatus {
+  ONLINE
+  OFFLINE
+  BOTH
+}
+
+model TwitchChatCommand {
+  id             String             @id @default(uuid())
+  name           String             @unique
+  enabled        Boolean            @default(true)
+  response       String
+  responseType   TwitchResponseType @default(SAY)
+  globalCooldown Int                @default(0)
+  userCooldown   Int                @default(0)
+  accessLevel    TwitchAccessLevel  @default(EVERYONE)
+  limitToUser    String?
+  streamStatus   TwitchStreamStatus @default(BOTH)
+  hidden         Boolean            @default(false)
+  aliases        String[]           @default([])
+  keywords       String[]           @default([])
+  regex          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model TwitchRegular {
+  id             String   @id @default(uuid())
+  twitchUserId   String   @unique
+  twitchUsername String
+  addedBy        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
