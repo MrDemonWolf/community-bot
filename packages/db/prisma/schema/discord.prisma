@@ -1,0 +1,11 @@
+model DiscordGuild {
+  id                    String              @id @default(uuid())
+  guildId               String              @unique
+  notificationChannelId String?
+  notificationRoleId    String?
+  joinedAt              DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  TwitchChannel         TwitchChannel[]
+  TwitchNotification    TwitchNotification[]
+}
+

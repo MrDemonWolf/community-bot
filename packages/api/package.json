@@ -1,0 +1,27 @@
+{
+  "name": "@community-bot/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@community-bot/auth": "workspace:*",
+    "@community-bot/db": "workspace:*",
+    "@community-bot/env": "workspace:*",
+    "@trpc/client": "catalog:",
+    "@trpc/server": "catalog:",
+    "dotenv": "catalog:",
+    "next": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@community-bot/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

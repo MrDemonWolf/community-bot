@@ -1,0 +1,19 @@
+enum QueueStatus {
+  OPEN
+  CLOSED
+  PAUSED
+}
+
+model QueueEntry {
+  id            String   @id @default(uuid())
+  twitchUserId  String   @unique
+  twitchUsername String
+  position      Int
+  createdAt     DateTime @default(now())
+}
+
+model QueueState {
+  id     String      @id @default("singleton")
+  status QueueStatus @default(CLOSED)
+}
+

@@ -1,0 +1,3 @@
+{
+  "extends": "@community-bot/config/tsconfig.base.json"
+}
