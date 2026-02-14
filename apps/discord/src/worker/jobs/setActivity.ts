@@ -16,7 +16,7 @@ export default async (client: Client) => {
   try {
     const defaultActivity = env.DISCORD_DEFAULT_STATUS;
     const defaultActivityType = env.DISCORD_DEFAULT_ACTIVITY_TYPE;
-    const defaultActivityUrl = env.DEFAULT_ACTIVITY_URL;
+    const defaultActivityUrl = env.DISCORD_DEFAULT_ACTIVITY_URL;
 
     if (!client.user) {
       return logger.warn(
