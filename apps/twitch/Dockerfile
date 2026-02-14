@@ -28,7 +28,7 @@ COPY apps/twitch ./apps/twitch
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
 
 RUN pnpm --filter @community-bot/db db:generate
-RUN pnpm --filter @community-bot/twitch build
+RUN pnpm --filter twitch-bot build
 
 FROM node:24-alpine AS production
 
