@@ -6,20 +6,20 @@ import Logo from "./logo";
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-white/60 backdrop-blur-xl backdrop-saturate-150 dark:bg-white/5">
-      <div className="flex flex-row items-center justify-between px-4 py-2.5">
-        <div className="flex items-center gap-6">
+    <div className="sticky top-0 z-50 flex justify-center px-4 py-3">
+      <header className="flex w-full max-w-5xl items-center justify-between rounded-2xl border border-gray-200/60 bg-white/70 px-5 py-2 shadow-lg shadow-black/5 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-[#091533]/70 dark:shadow-black/20">
+        <div className="flex items-center gap-5">
           <Logo />
-          <nav className="flex gap-4 text-sm">
+          <nav className="flex gap-1 text-sm">
             <Link
               href="/"
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="rounded-lg px-3 py-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
             >
               Home
             </Link>
             <Link
               href="/dashboard"
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="rounded-lg px-3 py-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
             >
               Dashboard
             </Link>
@@ -29,7 +29,7 @@ export default function Header() {
           <ModeToggle />
           <UserMenu />
         </div>
-      </div>
-    </header>
+      </header>
+    </div>
   );
 }
