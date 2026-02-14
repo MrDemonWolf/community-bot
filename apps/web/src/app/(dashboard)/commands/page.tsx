@@ -18,26 +18,26 @@ export default function CommandsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
+      <h1 className="mb-6 text-2xl font-bold text-foreground">
         Commands
       </h1>
 
       {/* Tab bar */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-white/5">
+      <div className="mb-6 flex gap-1 rounded-lg bg-muted p-1">
         <button
           onClick={() => setActiveTab("custom")}
           className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "custom"
-              ? "bg-white text-gray-900 shadow-sm dark:bg-[#0d1f42] dark:text-white"
-              : "text-gray-500 hover:text-gray-700 dark:text-white/40 dark:hover:text-white/60"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Custom Commands
           <span
             className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-medium ${
               activeTab === "custom"
-                ? "bg-[#9146FF]/10 text-[#9146FF] dark:bg-[#9146FF]/20 dark:text-[#b380ff]"
-                : "bg-gray-200 text-gray-500 dark:bg-white/10 dark:text-white/40"
+                ? "bg-brand-twitch/10 text-brand-twitch"
+                : "bg-surface-overlay text-muted-foreground"
             }`}
           >
             {customCount}
@@ -47,16 +47,16 @@ export default function CommandsPage() {
           onClick={() => setActiveTab("default")}
           className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "default"
-              ? "bg-white text-gray-900 shadow-sm dark:bg-[#0d1f42] dark:text-white"
-              : "text-gray-500 hover:text-gray-700 dark:text-white/40 dark:hover:text-white/60"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Default Commands
           <span
             className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-medium ${
               activeTab === "default"
-                ? "bg-[#9146FF]/10 text-[#9146FF] dark:bg-[#9146FF]/20 dark:text-[#b380ff]"
-                : "bg-gray-200 text-gray-500 dark:bg-white/10 dark:text-white/40"
+                ? "bg-brand-twitch/10 text-brand-twitch"
+                : "bg-surface-overlay text-muted-foreground"
             }`}
           >
             {defaultCount}

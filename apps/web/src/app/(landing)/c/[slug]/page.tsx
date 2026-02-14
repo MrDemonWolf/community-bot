@@ -85,8 +85,8 @@ export default async function ChannelPage({
   return (
     <div className="-mt-[1px] flex flex-col">
       {/* Banner */}
-      <div className="relative h-48 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-[#0a1a3a] dark:via-[#091533] dark:to-[#0d1f42] sm:h-56">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE1VjBoLTJWMTVIMTlWMGgtMnYxNUgwdjJoMTd2MTdIMHYyaDE3djE3aDJ2LTE3aDE1djE3aDJWMzZoMTdWMzRIMzZWMTdoMTdWMTVIMzZ6bS0yIDJ2MTdIMTdWMTdoMTd6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30 dark:opacity-30" />
+      <div className="relative h-48 bg-gradient-to-br from-muted via-background to-muted sm:h-56">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE1VjBoLTJWMTVIMTlWMGgtMnYxNUgwdjJoMTd2MTdIMHYyaDE3djE3aDJ2LTE3aDE1djE3aDJWMzZoMTdWMzRIMzZWMTdoMTdWMTVIMzZ6bS0yIDJ2MTdIMTdWMTdoMTd6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
       </div>
 
       <div className="mx-auto w-full max-w-5xl px-6">
@@ -102,12 +102,12 @@ export default async function ChannelPage({
                     alt={user.name}
                     width={120}
                     height={120}
-                    className="rounded-xl border-4 border-white bg-gray-100 dark:border-[#091533] dark:bg-[#0d1f42]"
+                    className="rounded-xl border-4 border-background bg-card"
                     unoptimized
                   />
                 ) : (
-                  <div className="flex h-[120px] w-[120px] items-center justify-center rounded-xl border-4 border-white bg-gray-100 dark:border-[#091533] dark:bg-[#0d1f42]">
-                    <User className="h-12 w-12 text-gray-300 dark:text-white/30" />
+                  <div className="flex h-[120px] w-[120px] items-center justify-center rounded-xl border-4 border-background bg-card">
+                    <User className="h-12 w-12 text-muted-foreground" />
                   </div>
                 )}
                 {isLive && (
@@ -116,13 +116,13 @@ export default async function ChannelPage({
                   </span>
                 )}
               </div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">{user.name}</h1>
+              <h1 className="text-xl font-bold text-foreground">{user.name}</h1>
               {twitchUsername && (
                 <a
                   href={`https://twitch.tv/${twitchUsername}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-gray-400 transition-colors hover:text-[#9146FF] dark:text-white/40"
+                  className="text-sm text-muted-foreground transition-colors hover:text-brand-twitch"
                 >
                   twitch.tv/{twitchUsername}
                 </a>
@@ -162,23 +162,23 @@ export default async function ChannelPage({
             )}
 
             {/* Stream Status Card */}
-            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-white/10 dark:bg-[#0d1f42]">
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
               <div className="p-6">
                 <span
                   className={`mb-3 inline-block rounded-md px-2.5 py-1 text-xs font-bold uppercase ${
                     isLive
                       ? "bg-red-500/20 text-red-500 dark:text-red-400"
-                      : "border border-gray-200 text-gray-400 dark:border-white/10 dark:text-white/50"
+                      : "border border-border text-muted-foreground"
                   }`}
                 >
                   {isLive ? "Live" : "Offline"}
                 </span>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                  <span className="text-[#00ACED]">{user.name}</span> is{" "}
+                <h2 className="text-lg font-bold text-foreground">
+                  <span className="text-brand-cyan">{user.name}</span> is{" "}
                   {isLive ? "live!" : "offline."}
                 </h2>
                 {twitchChannel?.lastStreamTitle && (
-                  <p className="mt-2 text-gray-500 dark:text-white/50">
+                  <p className="mt-2 text-muted-foreground">
                     {isLive
                       ? twitchChannel.lastStreamTitle
                       : `Check out this ${twitchChannel.lastGameName || "stream"} from ${
@@ -193,7 +193,7 @@ export default async function ChannelPage({
                     href={`https://twitch.tv/${twitchUsername}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[#9146FF] transition-colors hover:text-[#7B2FF0]"
+                    className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-brand-twitch transition-colors hover:text-brand-twitch/80"
                   >
                     <span>&#9654;</span> Watch{" "}
                     {isLive ? "Stream" : "Latest Stream"}
@@ -205,12 +205,12 @@ export default async function ChannelPage({
 
             {/* Commands Preview */}
             {commands.length > 0 && (
-              <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-[#0d1f42]">
+              <div className="rounded-xl border border-border bg-card p-6">
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Chat Commands</h3>
+                  <h3 className="font-semibold text-foreground">Chat Commands</h3>
                   <Link
                     href={`/c/${slug}/commands` as Route}
-                    className="text-sm text-[#00ACED] transition-colors hover:text-[#00ACED]/70"
+                    className="text-sm text-brand-cyan transition-colors hover:text-brand-cyan/70"
                   >
                     View all
                   </Link>
@@ -219,13 +219,13 @@ export default async function ChannelPage({
                   {commands.slice(0, 12).map((cmd) => (
                     <span
                       key={cmd.name}
-                      className="rounded-md bg-gray-100 px-2.5 py-1 text-sm text-gray-600 dark:bg-white/5 dark:text-white/60"
+                      className="rounded-md bg-surface-raised px-2.5 py-1 text-sm text-muted-foreground"
                     >
                       !{cmd.name}
                     </span>
                   ))}
                   {commands.length > 12 && (
-                    <span className="rounded-md bg-gray-100 px-2.5 py-1 text-sm text-gray-400 dark:bg-white/5 dark:text-white/40">
+                    <span className="rounded-md bg-surface-raised px-2.5 py-1 text-sm text-muted-foreground/70">
                       +{commands.length - 12} more
                     </span>
                   )}
@@ -235,9 +235,9 @@ export default async function ChannelPage({
 
             {/* Queue */}
             {queueState && queueState.status !== "CLOSED" && (
-              <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-white/10 dark:bg-[#0d1f42]">
+              <div className="rounded-xl border border-border bg-card p-6">
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">Viewer Queue</h3>
+                  <h3 className="font-semibold text-foreground">Viewer Queue</h3>
                   <span
                     className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase ${
                       queueState.status === "OPEN"
@@ -253,19 +253,19 @@ export default async function ChannelPage({
                     {queueEntries.slice(0, 10).map((entry) => (
                       <li
                         key={entry.position}
-                        className="flex items-center gap-3 rounded-md bg-gray-100 px-3 py-2 text-sm dark:bg-white/5"
+                        className="flex items-center gap-3 rounded-md bg-surface-raised px-3 py-2 text-sm"
                       >
-                        <span className="font-mono text-xs text-gray-400 dark:text-white/30">
+                        <span className="font-mono text-xs text-muted-foreground/70">
                           #{entry.position}
                         </span>
-                        <span className="text-gray-600 dark:text-white/70">
+                        <span className="text-muted-foreground">
                           {entry.twitchUsername}
                         </span>
                       </li>
                     ))}
                   </ol>
                 ) : (
-                  <p className="text-sm text-gray-400 dark:text-white/40">
+                  <p className="text-sm text-muted-foreground">
                     No one in the queue yet.
                   </p>
                 )}
@@ -293,8 +293,8 @@ function SidebarLink({
 }) {
   const cls = `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
     active
-      ? "bg-gray-100 text-gray-900 dark:bg-white/10 dark:text-white"
-      : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/70"
+      ? "bg-surface-raised text-foreground"
+      : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
   }`;
 
   if (external) {

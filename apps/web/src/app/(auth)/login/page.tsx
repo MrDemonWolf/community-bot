@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   if (isPending) {
     return (
-      <div className="flex min-h-full items-center justify-center bg-gray-50 dark:bg-[#091533]">
+      <div className="flex min-h-full items-center justify-center">
         <Loader />
       </div>
     );
@@ -33,7 +33,7 @@ export default function LoginPage() {
   if (session) {
     router.push("/dashboard");
     return (
-      <div className="flex min-h-full items-center justify-center bg-gray-50 dark:bg-[#091533]">
+      <div className="flex min-h-full items-center justify-center">
         <Loader />
       </div>
     );
@@ -48,16 +48,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center bg-gray-50 px-4 py-12 dark:bg-[#091533]">
+    <div className="flex min-h-full flex-col items-center justify-center px-4 py-12">
       {/* Brand / Home link */}
       <div className="mb-8">
         <Logo className="text-3xl font-bold tracking-tight" />
       </div>
 
       {/* Login Card */}
-      <Card className="w-full max-w-sm border-gray-200 bg-white dark:border-white/10 dark:bg-[#0d1f42]">
+      <Card className="animate-fade-in-up glass w-full max-w-sm rounded-xl">
         <CardHeader className="pb-2 text-center">
-          <CardTitle className="text-sm font-semibold uppercase tracking-widest text-gray-500 dark:text-white/70">
+          <CardTitle className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
             Log in with...
           </CardTitle>
         </CardHeader>
@@ -66,14 +66,14 @@ export default function LoginPage() {
           <div className="flex flex-col gap-1">
             <Button
               size="lg"
-              className="w-full rounded-md bg-[#5865F2] py-5 text-sm font-bold text-white hover:bg-[#4752C4]"
+              className="w-full rounded-md bg-brand-discord py-5 text-sm font-bold text-white hover:bg-brand-discord/80"
               disabled={signingIn !== null}
               onClick={() => handleSignIn("discord")}
             >
               {signingIn === "discord" ? "Redirecting..." : "Discord"}
             </Button>
             {lastUsedMethod === "discord" && (
-              <p className="text-center text-xs text-[#00ACED]">
+              <p className="text-center text-xs text-brand-cyan">
                 Last signed in with Discord
               </p>
             )}
@@ -81,25 +81,25 @@ export default function LoginPage() {
 
           {/* Separator */}
           <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
-            <span className="text-xs font-medium uppercase text-gray-400 dark:text-white/40">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs font-medium uppercase text-muted-foreground">
               or
             </span>
-            <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
+            <div className="h-px flex-1 bg-border" />
           </div>
 
           {/* Twitch Button */}
           <div className="flex flex-col gap-1">
             <Button
               size="lg"
-              className="w-full rounded-md bg-[#9146FF] py-5 text-sm font-bold text-white hover:bg-[#7B2FF0]"
+              className="w-full rounded-md bg-brand-twitch py-5 text-sm font-bold text-white hover:bg-brand-twitch/80"
               disabled={signingIn !== null}
               onClick={() => handleSignIn("twitch")}
             >
               {signingIn === "twitch" ? "Redirecting..." : "Twitch"}
             </Button>
             {lastUsedMethod === "twitch" && (
-              <p className="text-center text-xs text-[#00ACED]">
+              <p className="text-center text-xs text-brand-cyan">
                 Last signed in with Twitch
               </p>
             )}
@@ -110,7 +110,7 @@ export default function LoginPage() {
       {/* Back to home */}
       <Link
         href="/"
-        className="mt-6 text-sm text-gray-400 hover:text-gray-600 dark:text-white/40 dark:hover:text-white/70"
+        className="mt-6 text-sm text-muted-foreground hover:text-foreground"
       >
         Back to home
       </Link>

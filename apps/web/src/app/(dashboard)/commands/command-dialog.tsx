@@ -184,7 +184,7 @@ export default function CommandDialog({
           <div className="space-y-1.5">
             <Label htmlFor="cmd-name">Name</Label>
             <div className="flex items-center gap-1">
-              <span className="text-sm text-gray-400">!</span>
+              <span className="text-sm text-muted-foreground">!</span>
               <Input
                 id="cmd-name"
                 value={name}
@@ -208,7 +208,7 @@ export default function CommandDialog({
               required
               maxLength={500}
               rows={3}
-              className="dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border bg-transparent px-2.5 py-1.5 text-xs transition-colors focus-visible:ring-1 placeholder:text-muted-foreground outline-none resize-none"
+              className="dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-xl border bg-transparent px-2.5 py-1.5 text-xs transition-colors focus-visible:ring-1 placeholder:text-muted-foreground outline-none resize-none"
             />
           </div>
 
@@ -224,7 +224,7 @@ export default function CommandDialog({
                     e.target.value as (typeof RESPONSE_TYPES)[number]
                   )
                 }
-                className="h-8 w-full rounded-none border border-gray-200 bg-white px-2.5 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white/70"
+                className="h-8 w-full rounded-xl border border-border bg-card px-2.5 text-xs text-foreground"
               >
                 {RESPONSE_TYPES.map((t) => (
                   <option key={t} value={t}>
@@ -243,7 +243,7 @@ export default function CommandDialog({
                     e.target.value as (typeof ACCESS_LEVELS)[number]
                   )
                 }
-                className="h-8 w-full rounded-none border border-gray-200 bg-white px-2.5 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white/70"
+                className="h-8 w-full rounded-xl border border-border bg-card px-2.5 text-xs text-foreground"
               >
                 {ACCESS_LEVELS.map((l) => (
                   <option key={l} value={l}>
@@ -291,7 +291,7 @@ export default function CommandDialog({
                   e.target.value as (typeof STREAM_STATUSES)[number]
                 )
               }
-              className="h-8 w-full rounded-none border border-gray-200 bg-white px-2.5 text-xs dark:border-white/10 dark:bg-white/5 dark:text-white/70"
+              className="h-8 w-full rounded-xl border border-border bg-card px-2.5 text-xs text-foreground"
             >
               {STREAM_STATUSES.map((s) => (
                 <option key={s} value={s}>
@@ -330,13 +330,13 @@ export default function CommandDialog({
                 {aliases.map((alias) => (
                   <span
                     key={alias}
-                    className="inline-flex items-center gap-1 rounded-md bg-[#9146FF]/10 px-2 py-0.5 text-xs text-[#9146FF] dark:bg-[#9146FF]/20 dark:text-[#b380ff]"
+                    className="inline-flex items-center gap-1 rounded-md bg-brand-twitch/10 px-2 py-0.5 text-xs text-brand-twitch"
                   >
                     !{alias}
                     <button
                       type="button"
                       onClick={() => handleRemoveAlias(alias)}
-                      className="text-[#9146FF]/60 hover:text-[#9146FF] dark:text-[#b380ff]/60 dark:hover:text-[#b380ff]"
+                      className="text-brand-twitch/60 hover:text-brand-twitch"
                     >
                       <X className="size-3" />
                     </button>

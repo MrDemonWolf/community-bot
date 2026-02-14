@@ -31,7 +31,7 @@ export default function UserMenu() {
       <Link href="/login">
         <Button
           variant="outline"
-          className="border-gray-200 bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:border-white/10 dark:text-white/70 dark:hover:bg-white/10 dark:hover:text-white"
+          className="border-border bg-transparent text-muted-foreground hover:bg-surface-raised hover:text-foreground"
         >
           Sign In
         </Button>
@@ -43,7 +43,7 @@ export default function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <button className="flex items-center gap-2 rounded-full border border-gray-200 bg-white/80 py-1 pl-3 pr-1 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15" />
+          <button className="flex items-center gap-2 rounded-full border border-border bg-surface-raised py-1 pl-3 pr-1 text-sm font-medium text-foreground transition-colors hover:bg-surface-overlay" />
         }
       >
         {session.user.name}
@@ -57,30 +57,30 @@ export default function UserMenu() {
             className="rounded-full"
           />
         ) : (
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#00ACED] text-xs font-bold text-white">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-cyan text-xs font-bold text-white">
             {session.user.name.charAt(0).toUpperCase()}
           </span>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 border-gray-200 bg-white dark:border-white/10 dark:bg-[#0d1f42]">
+      <DropdownMenuContent className="w-56 border-border bg-popover">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex flex-col gap-0.5 text-gray-900 dark:text-white">
+          <DropdownMenuLabel className="flex flex-col gap-0.5 text-foreground">
             <span className="font-semibold">{session.user.name}</span>
-            <span className="text-xs font-normal text-gray-400 dark:text-white/40">
+            <span className="text-xs font-normal text-muted-foreground">
               {session.user.email}
             </span>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator className="bg-gray-200 dark:bg-white/10" />
-          <DropdownMenuItem className="gap-2 text-gray-700 dark:text-white/70">
+          <DropdownMenuSeparator className="bg-border" />
+          <DropdownMenuItem className="gap-2 text-muted-foreground">
             <User className="h-4 w-4" />
             Profile
           </DropdownMenuItem>
-          <DropdownMenuItem className="gap-2 text-gray-700 dark:text-white/70">
+          <DropdownMenuItem className="gap-2 text-muted-foreground">
             <Settings className="h-4 w-4" />
             Settings
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator className="bg-gray-200 dark:bg-white/10" />
+        <DropdownMenuSeparator className="bg-border" />
         <DropdownMenuGroup>
           <DropdownMenuItem
             className="gap-2 text-red-500 dark:text-red-400"

@@ -30,7 +30,7 @@ export default function TwitchEmbed({
   return (
     <div
       ref={containerRef}
-      className="aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-black dark:border-white/10"
+      className="aspect-video w-full overflow-hidden rounded-lg border border-border bg-black"
     />
   );
 }
