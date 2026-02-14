@@ -1,0 +1,60 @@
+---
+title: Installation
+description: Set up the Community Bot monorepo for local development.
+---
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) v20 or later
+- [pnpm](https://pnpm.io/) v10 or later
+- [Docker](https://www.docker.com/) (for PostgreSQL and Redis)
+- A Discord application with a bot token
+- A Twitch application with client ID and secret
+
+## Clone and Install
+
+```bash
+git clone https://github.com/mrdemonwolf/community-bot.git
+cd community-bot
+pnpm install
+```
+
+## Start Infrastructure
+
+```bash
+docker compose up -d postgres redis
+```
+
+This starts PostgreSQL on port 5432 and Redis on port 6379.
+
+## Configure Environment
+
+Copy the example env files for each app:
+
+```bash
+cp apps/discord/.env.example apps/discord/.env
+cp apps/twitch/.env.example apps/twitch/.env
+```
+
+See [Environment Variables](/docs/getting-started/environment-variables) for all available options.
+
+## Initialize Database
+
+```bash
+pnpm db:generate   # Generate Prisma client
+pnpm db:push       # Push schema to database
+```
+
+## Start Development
+
+```bash
+pnpm dev           # Starts all apps in dev mode
+```
+
+Or start individual apps:
+
+```bash
+pnpm dev --filter discord-bot
+pnpm dev --filter twitch-bot
+pnpm dev --filter docs
+```

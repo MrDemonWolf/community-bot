@@ -1,0 +1,14 @@
+{
+  "root": true,
+  "pages": [
+    "index",
+    "---Getting Started---",
+    "getting-started/...",
+    "---Twitch Bot---",
+    "twitch-bot/...",
+    "---Discord Bot---",
+    "discord-bot/...",
+    "---Development---",
+    "development/..."
+  ]
+}

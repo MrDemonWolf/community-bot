@@ -1,6 +1,7 @@
 import consola from "consola";
 import cron from "node-cron";
 
+import { listenWithFallback } from "@community-bot/server";
 import { env } from "./utils/env.js";
 import { prisma } from "@community-bot/db";
 import api from "./api/index.js";
@@ -22,21 +23,10 @@ async function main() {
   await prisma.$connect();
 
   // Start API server
-  const server = api.listen(api.get("port"), () => {
-    consola.ready({
-      message: `[API] Listening on http://${api.get("host")}:${api.get("port")}`,
-      badge: true,
-      timestamp: new Date(),
-    });
-  });
-
-  server.on("error", (err: Error) => {
-    consola.error({
-      message: `[API] ${err}`,
-      badge: true,
-      timestamp: new Date(),
-    });
-    process.exit(1);
+  listenWithFallback(api, {
+    port: env.PORT,
+    host: env.HOST,
+    name: "Twitch Bot",
   });
 
   // Load command cache and regulars from DB

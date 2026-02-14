@@ -1,0 +1,50 @@
+---
+title: Response Variables
+description: Placeholders you can use in database command responses.
+---
+
+Use these placeholders in the `response` field of database commands. They are replaced at runtime when the command executes.
+
+## Basic Variables
+
+| Variable | Replaced With | Example |
+|----------|---------------|---------|
+| `{user}` | Username of the person who triggered the command | `Hey {user}!` becomes `Hey coolviewer!` |
+| `{channel}` | Channel name where the command was used | `Welcome to {channel}!` becomes `Welcome to mrdemonwolf!` |
+| `{args}` | Everything the user typed after the command name | `!cmd hello world` makes `{args}` = `hello world` |
+
+## Positional Arguments
+
+| Variable | Replaced With | Example |
+|----------|---------------|---------|
+| `${1}`, `${2}`, etc. | Positional argument (1-indexed) | `!cmd foo bar` makes `${1}` = `foo`, `${2}` = `bar` |
+| `${1\|fallback}` | Positional argument with a default | `${1\|@mrdemonwolf}` uses `@mrdemonwolf` if no arg given |
+
+## Advanced Variables
+
+| Variable | Replaced With | Example |
+|----------|---------------|---------|
+| `${random.pick '...' '...'}` | Random choice from a quoted list | `${random.pick 'hi' 'hello' 'hey'}` picks one at random |
+| `${random.chatter}` | A random active user in the channel | `Shoutout to ${random.chatter}!` |
+| `${time <timezone>}` | Current time in the given timezone | `${time America/Chicago}` becomes `3:45 PM` |
+
+## Examples
+
+**Simple greeting:**
+```
+Hey {user}, welcome to {channel}!
+```
+Output: `Hey coolviewer, welcome to mrdemonwolf!`
+
+**Shoutout command:**
+```
+Go check out ${1|{user}} at https://twitch.tv/${1|{user}}
+```
+- `!so streamer123` outputs: `Go check out streamer123 at https://twitch.tv/streamer123`
+- `!so` (no args) outputs: `Go check out coolviewer at https://twitch.tv/coolviewer`
+
+**Random response:**
+```
+${random.pick 'PogChamp' 'LUL' 'Kappa' 'HeyGuys'}
+```
+Output: One of the emotes at random.

@@ -1,0 +1,54 @@
+---
+title: Environment Variables
+description: All environment variables used across Community Bot services.
+---
+
+All environment variables are validated at startup using [Zod](https://zod.dev/) via `@t3-oss/env-core`. Invalid or missing required variables will cause the app to fail fast with a descriptive error.
+
+## Discord Bot
+
+| Variable | Type | Default | Required | Description |
+|----------|------|---------|----------|-------------|
+| `DATABASE_URL` | string | — | Yes | PostgreSQL connection URL |
+| `REDIS_URL` | string | — | Yes | Redis connection URL |
+| `DISCORD_APPLICATION_ID` | string | — | Yes | Discord application ID |
+| `DISCORD_APPLICATION_PUBLIC_KEY` | string | — | Yes | Discord application public key |
+| `DISCORD_APPLICATION_BOT_TOKEN` | string | — | Yes | Discord bot token |
+| `DISCORD_DEFAULT_STATUS` | string | `"over the Wolf Lair"` | No | Default bot status text |
+| `DISCORD_DEFAULT_ACTIVITY_TYPE` | enum | `"Custom"` | No | Activity type: Playing, Streaming, Listening, Custom |
+| `DEFAULT_ACTIVITY_URL` | string | — | No | URL for Streaming activity type |
+| `DISCORD_ACTIVITY_INTERVAL_MINUTES` | number | `15` | No | Minutes between activity rotations (1-1440) |
+| `OWNER_ID` | string | — | Yes | Bot owner's Discord user ID |
+| `MAIN_GUILD_ID` | string | — | Yes | Primary guild ID |
+| `MAIN_CHANNEL_ID` | string | — | Yes | Primary channel ID |
+| `TWITCH_CLIENT_ID` | string | — | Yes | Twitch client ID for stream checks |
+| `HOST` | string | `"localhost"` | No | API server host |
+| `PORT` | number | `3141` | No | API server port |
+| `CORS_ORIGIN` | string | `"*"` | No | CORS origin for API |
+| `VERSION` | string | `"1.0.0"` | No | App version |
+| `NODE_ENV` | enum | `"production"` | No | Environment: development, production, test |
+
+## Twitch Bot
+
+| Variable | Type | Default | Required | Description |
+|----------|------|---------|----------|-------------|
+| `DATABASE_URL` | string | — | Yes | PostgreSQL connection URL |
+| `TWITCH_APPLICATION_CLIENT_ID` | string | — | Yes | Twitch application client ID |
+| `TWITCH_APPLICATION_CLIENT_SECRET` | string | — | Yes | Twitch application client secret |
+| `INIT_TWITCH_ACCESS_TOKEN` | string | — | No | Initial access token (first-run only) |
+| `INIT_TWITCH_REFRESH_TOKEN` | string | — | No | Initial refresh token (first-run only) |
+| `TWITCH_CHANNEL` | string | — | Yes | Channel to join |
+| `HOST` | string | `"localhost"` | No | API server host |
+| `PORT` | number | `3737` | No | API server port |
+| `CORS_ORIGIN` | string | `"*"` | No | CORS origin for API |
+| `NODE_ENV` | enum | `"production"` | No | Environment: development, production, test |
+
+## Web Dashboard
+
+| Variable | Type | Default | Required | Description |
+|----------|------|---------|----------|-------------|
+| `DATABASE_URL` | string | — | Yes | PostgreSQL connection URL |
+| `BETTER_AUTH_SECRET` | string | — | Yes | Auth secret (min 32 chars) |
+| `BETTER_AUTH_URL` | string | — | Yes | Auth callback URL |
+| `CORS_ORIGIN` | string | — | Yes | Allowed CORS origin |
+| `NODE_ENV` | enum | `"development"` | No | Environment |

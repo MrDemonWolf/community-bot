@@ -1,0 +1,40 @@
+---
+title: Queue System
+description: Viewer queue for managing participation in the Twitch channel.
+---
+
+The queue system lets viewers sign up for activities (game lobbies, reviews, etc.) and lets moderators manage the queue from chat.
+
+## Commands
+
+### Moderator/Broadcaster Commands
+
+| Command | Description |
+|---------|-------------|
+| `!queue open` | Open the queue for new entries |
+| `!queue close` | Close the queue (no new joins) |
+| `!queue next` | Pull the next viewer from the queue |
+| `!queue clear` | Remove all entries from the queue |
+
+### Viewer Commands
+
+| Command | Description |
+|---------|-------------|
+| `!queue join` | Join the queue |
+| `!queue leave` | Leave the queue |
+| `!queue list` | Show current queue entries |
+| `!queue position` | Check your position in the queue |
+
+## How It Works
+
+The queue is backed by the `QueueEntry` and `QueueState` database tables. Queue state (open/closed) persists across bot restarts.
+
+When a viewer joins, they are added with a `WAITING` status. When `!queue next` is called, the first waiting entry is pulled and its status changes to `PICKED`. Viewers who leave or are cleared get a `REMOVED` status.
+
+## Queue Status Values
+
+| Status | Meaning |
+|--------|---------|
+| `WAITING` | In queue, waiting to be picked |
+| `PICKED` | Has been selected via `!queue next` |
+| `REMOVED` | Left the queue or was cleared |

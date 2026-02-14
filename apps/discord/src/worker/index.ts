@@ -27,7 +27,7 @@ const worker = new Worker(
     }
   },
   {
-    connection: redisClient as any,
+    connection: redisClient,
   }
 );
 

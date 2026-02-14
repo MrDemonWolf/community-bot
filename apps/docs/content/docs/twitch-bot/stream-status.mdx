@@ -1,0 +1,26 @@
+---
+title: Stream Status
+description: How commands are filtered based on stream online/offline state.
+---
+
+Database commands can be restricted to only work when the stream is live, offline, or both.
+
+## Stream Status Filter
+
+| Value | Command Active When |
+|-------|---------------------|
+| `BOTH` | Always (default) |
+| `ONLINE` | Stream is live |
+| `OFFLINE` | Stream is offline |
+
+Set the `streamStatus` field on any database command to control when it's available.
+
+## Keyword Filtering
+
+If the `keywords` field is set on a command, the command additionally requires the stream title to contain at least one of the specified keywords. This is useful for commands that should only be active during specific game streams.
+
+**Example:** A command with `keywords: ["Minecraft", "MC"]` and `streamStatus: "ONLINE"` will only trigger when the stream is live AND the title contains "Minecraft" or "MC".
+
+## How Status Is Tracked
+
+The bot polls the Twitch Helix API periodically to check whether the configured channel is live. This status is cached in memory and used by the command pipeline to filter commands.

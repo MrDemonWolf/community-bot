@@ -1,0 +1,37 @@
+---
+title: Twitch Bot
+description: Overview of the Community Bot Twitch chat bot.
+---
+
+The Twitch bot is built with [@twurple/chat](https://twurple.js.org/) v7 and provides a full-featured chat bot experience with database-driven commands, viewer queues, and stream status tracking.
+
+## Features
+
+- **Database-driven commands** with variables, cooldowns, access levels, and regex triggers
+- **Built-in commands** for common operations (ping, uptime, queue management)
+- **Viewer queue system** for managing viewer participation
+- **Stream status tracking** with online/offline command filtering
+- **Auto-reloading** commands and regulars every 60 seconds
+- **Device Code Flow** authentication for Twitch OAuth
+- **Express API** for external integrations
+
+## Architecture
+
+The bot runs as a single Node.js process with:
+
+1. **Twurple chat client** — Connects to Twitch IRC
+2. **Command pipeline** — Three-phase message processing (built-in, DB prefix, DB regex)
+3. **Express API** — HTTP server on port 3737 (configurable)
+4. **Cron scheduler** — Periodic reloading of commands and regulars from the database
+
+## Entry Point
+
+The bot starts from `apps/twitch/src/app.ts`, which:
+
+1. Connects to PostgreSQL via Prisma
+2. Starts the API server
+3. Loads command cache and regulars from the database
+4. Creates Twitch auth provider and validates tokens
+5. Starts stream status polling
+6. Schedules periodic command/regular reloads
+7. Creates the chat client, registers event handlers, and connects

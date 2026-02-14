@@ -1,4 +1,5 @@
 import express from "express";
+import consola from "consola";
 
 const router: ReturnType<typeof express.Router> = express.Router();
 
@@ -16,7 +17,7 @@ router.get("/", async (req, res) => {
       status: botStatus.status,
     });
   } catch (err) {
-    console.error(err);
+    consola.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

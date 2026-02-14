@@ -42,8 +42,8 @@ export const env = createEnv({
     MAIN_GUILD_ID: z.string().min(1, "Main guild ID is required"),
     MAIN_CHANNEL_ID: z.string().min(1, "Main channel ID is required"),
     TWITCH_CLIENT_ID: z.string().min(1, "Twitch client ID is required"),
-    HOST: z.string().optional(),
-    PORT: z.string().optional(),
+    HOST: z.string().default("localhost"),
+    PORT: z.coerce.number().int().min(1).max(65535).default(3141),
     CORS_ORIGIN: z.string().default("*"),
     VERSION: z.string().default("1.0.0"),
     NODE_ENV: z

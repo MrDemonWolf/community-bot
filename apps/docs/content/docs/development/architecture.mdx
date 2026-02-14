@@ -1,0 +1,70 @@
+---
+title: Architecture
+description: Monorepo structure and shared packages.
+---
+
+Community Bot uses [Turborepo](https://turbo.build/repo) for monorepo management with pnpm workspaces.
+
+## Workspace Layout
+
+```
+apps/
+  discord/     Discord bot (discord.js v14, BullMQ, Express)
+  twitch/      Twitch bot (@twurple/chat, Express)
+  web/         Next.js web dashboard
+  docs/        Fumadocs documentation site
+packages/
+  db/          Prisma schema + client (source of truth)
+  env/         Zod-validated environment variables
+  config/      Shared TypeScript configuration
+  server/      Shared Express API server
+  auth/        Authentication package (better-auth)
+  api/         Shared tRPC API utilities
+```
+
+## Shared Packages
+
+### `@community-bot/db`
+
+The single source of truth for all database models. Contains the Prisma schema split across domain files in `packages/db/prisma/schema/`:
+
+- `schema.prisma` — Generator and datasource config
+- `auth.prisma` — User, Session, Account, Verification
+- `discord.prisma` — DiscordGuild
+- `twitch.prisma` — TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular
+- `queue.prisma` — QueueEntry, QueueState
+
+### `@community-bot/env`
+
+Zod-validated environment variables using `@t3-oss/env-core`. Each app has its own env config:
+
+- `packages/env/src/discord.ts` — Discord bot env
+- `packages/env/src/twitch.ts` — Twitch bot env
+- `packages/env/src/server.ts` — Web dashboard server env
+- `packages/env/src/web.ts` — Web dashboard client env
+
+### `@community-bot/server`
+
+Shared Express API server configuration used by both bots. Provides:
+
+- `createApiServer(options)` — Creates a configured Express app with helmet, cors, morgan, and health check middleware
+- `listenWithFallback(app, options)` — Starts the server with automatic port fallback on EADDRINUSE
+
+### `@community-bot/config`
+
+Shared TypeScript configuration. All packages extend `tsconfig.base.json`.
+
+## TypeScript
+
+Both bots use ESM (`"type": "module"`) with bundler module resolution. All relative imports require `.js` extensions. Both tsconfigs extend `@community-bot/config/tsconfig.base.json`.
+
+## Turbo Tasks
+
+| Task | Description |
+|------|-------------|
+| `pnpm dev` | Start all apps in dev mode |
+| `pnpm build` | Build all packages and apps |
+| `pnpm db:generate` | Generate Prisma client |
+| `pnpm db:push` | Push schema to database |
+| `pnpm db:migrate` | Run database migrations |
+| `pnpm db:studio` | Open Prisma Studio |

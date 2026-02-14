@@ -1,0 +1,23 @@
+---
+title: Discord Bot
+description: Overview of the Community Bot Discord bot.
+---
+
+The Discord bot is built with [discord.js](https://discord.js.org/) v14 and provides Twitch live stream notifications and server management via slash commands.
+
+## Features
+
+- **Twitch stream notifications** — Monitors configured Twitch channels and posts embed notifications when they go live
+- **Slash commands** — Full slash command interface for managing Twitch channel subscriptions
+- **Background jobs** — BullMQ-powered job queue for periodic tasks (activity rotation, stream checking)
+- **Guild sync** — Automatically syncs guild data to the database on join/leave
+
+## Architecture
+
+The bot runs as a single Node.js process with:
+
+1. **Discord.js client** — Connects to Discord Gateway with guild intents
+2. **BullMQ worker** — Processes background jobs (activity updates every 15min, stream checks every 90s)
+3. **Express API** — HTTP server on port 3141 (configurable) with health check endpoint
+4. **Redis** — Used by BullMQ for job queue persistence
+5. **PostgreSQL** — Stores guild settings and Twitch notification configs via Prisma

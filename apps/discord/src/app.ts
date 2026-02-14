@@ -1,5 +1,6 @@
 import { Client, Events, GatewayIntentBits } from "discord.js";
 import { prisma } from "@community-bot/db";
+import { listenWithFallback } from "@community-bot/server";
 import env from "./utils/env.js";
 import logger from "./utils/logger.js";
 import api from "./api/index.js";
@@ -51,7 +52,7 @@ client.on(Events.GuildDelete, (guild) => {
  * Handle interactionCreate events.
  */
 client.on(Events.InteractionCreate, (interaction) => {
-  interactionCreateEvent(client, interaction);
+  interactionCreateEvent(interaction);
 });
 
 client.login(env.DISCORD_APPLICATION_BOT_TOKEN);
@@ -77,11 +78,10 @@ worker(queue);
  */
 prisma
   .$connect()
-  .then(async () => {
-    await prisma.$disconnect();
+  .then(() => {
     logger.database.connected("Prisma");
   })
-  .catch(async (err: Error) => {
+  .catch((err: Error) => {
     logger.database.error("Prisma", err);
     process.exit(1);
   });
@@ -101,14 +101,10 @@ redis
 /**
  * Start API server.
  */
-
-const server = api.listen(api.get("port"), () => {
-  logger.api.started(api.get("host"), api.get("port"));
-});
-
-server.on("error", (err: unknown) => {
-  logger.api.error(err);
-  process.exit(1);
+listenWithFallback(api, {
+  port: env.PORT,
+  host: env.HOST,
+  name: "Discord Bot",
 });
 
 export default client;
