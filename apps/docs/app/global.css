@@ -1,3 +1,49 @@
 @import "tailwindcss";
-@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/ocean.css";
 @import "fumadocs-ui/css/preset.css";
+
+/* MrDemonWolf brand — #00ACED blue + #091533 dark navy */
+
+/* Light */
+:root {
+  --color-fd-primary: hsl(198deg 100% 46%);
+  --color-fd-primary-foreground: hsl(0deg 0% 100%);
+  --color-fd-foreground: hsl(220deg 10% 10%);
+  --color-fd-muted-foreground: hsl(220deg 8% 46%);
+  --color-fd-border: hsl(220deg 10% 88%);
+  --color-fd-ring: hsl(198deg 100% 40%);
+  --color-fd-accent: hsl(198deg 30% 95%);
+  --color-fd-accent-foreground: hsl(198deg 60% 35%);
+}
+
+/* Dark */
+.dark {
+  --color-fd-background: hsl(224deg 70% 7%);
+  --color-fd-foreground: hsl(0deg 0% 98%);
+  --color-fd-muted: hsl(224deg 50% 10%);
+  --color-fd-card: hsl(224deg 50% 11%);
+  --color-fd-card-foreground: hsl(0deg 0% 98%);
+  --color-fd-secondary: hsl(224deg 45% 14%);
+  --color-fd-secondary-foreground: hsl(0deg 0% 98%);
+  --color-fd-muted-foreground: hsl(220deg 15% 65%);
+  --color-fd-primary: hsl(198deg 100% 50%);
+  --color-fd-primary-foreground: hsl(0deg 0% 100%);
+  --color-fd-ring: hsl(198deg 100% 45%);
+  --color-fd-overlay: hsl(224deg 70% 4% / 50%);
+  --color-fd-border: hsl(224deg 40% 18%);
+  --color-fd-accent: hsl(224deg 45% 14%);
+  --color-fd-accent-foreground: hsl(0deg 0% 98%);
+
+  --shiki-dark: #e1e4e8;
+  --shiki-dark-bg: hsl(224deg 70% 5%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+  }
+  body {
+    background-color: var(--color-fd-background, #091533);
+    color: var(--color-fd-muted-foreground, #e5e7eb);
+  }
+}
