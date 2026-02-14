@@ -1,11 +1,15 @@
 import { readFileSync } from "fs";
-import { resolve } from "path";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
 import { prisma } from "@community-bot/db";
 import type {
   TwitchResponseType,
   TwitchAccessLevel,
   TwitchStreamStatus,
 } from "@community-bot/db";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 interface CommandEntry {
   name: string;
