@@ -51,7 +51,7 @@ async function helixFetch<T>(
   const res = await fetch(`${HELIX_BASE}${path}`, {
     headers: {
       Authorization: `Bearer ${token}`,
-      "Client-Id": env.TWITCH_CLIENT_ID,
+      "Client-Id": env.TWITCH_APPLICATION_CLIENT_ID,
     },
   });
 

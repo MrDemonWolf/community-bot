@@ -31,7 +31,7 @@ export const env = createEnv({
     DISCORD_DEFAULT_ACTIVITY_TYPE: z
       .enum(["Playing", "Streaming", "Listening", "Custom"])
       .default("Custom"),
-    DEFAULT_ACTIVITY_URL: z.string().optional(),
+    DISCORD_DEFAULT_ACTIVITY_URL: z.string().optional(),
     DISCORD_ACTIVITY_INTERVAL_MINUTES: z.coerce
       .number()
       .int()
@@ -41,7 +41,7 @@ export const env = createEnv({
     OWNER_ID: z.string().min(1, "Owner ID is required"),
     MAIN_GUILD_ID: z.string().min(1, "Main guild ID is required"),
     MAIN_CHANNEL_ID: z.string().min(1, "Main channel ID is required"),
-    TWITCH_CLIENT_ID: z.string().min(1, "Twitch client ID is required"),
+    TWITCH_APPLICATION_CLIENT_ID: z.string().min(1, "Twitch client ID is required"),
     HOST: z.string().default("localhost"),
     PORT: z.coerce.number().int().min(1).max(65535).default(3141),
     CORS_ORIGIN: z.string().default("*"),
