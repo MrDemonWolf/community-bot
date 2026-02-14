@@ -2,6 +2,7 @@ import consola from "consola";
 import cron from "node-cron";
 
 import { listenWithFallback } from "@community-bot/server";
+import { EventBus } from "@community-bot/events";
 import { env } from "./utils/env.js";
 import { prisma } from "@community-bot/db";
 import api from "./api/index.js";
@@ -19,74 +20,113 @@ export let botStatus = {
 };
 
 async function main() {
-  // Connect to the database
   await prisma.$connect();
 
-  // Start API server
   listenWithFallback(api, {
     port: env.PORT,
     host: env.HOST,
     name: "Twitch Bot",
   });
 
-  // Load command cache and regulars from DB
+  const eventBus = new EventBus(env.REDIS_URL);
+
   await commandCache.load();
   await loadRegulars();
 
-  // Create Twitch auth provider (validates/refreshes stored tokens)
   const { authProvider, botUsername } = await createAuthProvider();
 
-  // Build channel list: bot's own channel + the streamer channel
-  const channels = [...new Set([botUsername, env.TWITCH_CHANNEL])];
+  // Load channels from database
+  const botChannels = await prisma.botChannel.findMany({
+    where: { enabled: true },
+  });
+  const channels = [
+    ...new Set([botUsername, ...botChannels.map((c) => c.twitchUsername)]),
+  ];
 
-  // Start stream status polling
   const getAccessToken = async () => {
     const cred = await prisma.twitchCredential.findFirst();
     return cred?.accessToken ?? "";
   };
+
   await streamStatusManager.start(
-    env.TWITCH_CHANNEL,
+    channels,
     env.TWITCH_APPLICATION_CLIENT_ID,
-    getAccessToken
+    getAccessToken,
+    eventBus
   );
 
-  // Schedule periodic reload of commands + regulars (every 60s)
-  cron.schedule("* * * * *", async () => {
+  // Fallback cron: reload commands + regulars every 5 minutes
+  cron.schedule("*/5 * * * *", async () => {
     try {
       await commandCache.reload();
       await loadRegulars();
     } catch (err) {
-      consola.warn({
-        message: `[Cron] Failed to reload commands/regulars: ${err}`,
-        badge: true,
-        timestamp: new Date(),
-      });
+      consola.warn(`[Cron] Failed to reload commands/regulars: ${err}`);
     }
   });
 
-  // Create chat client and register events
-  const chatClient = createChatClient(authProvider, botUsername);
+  const chatClient = createChatClient(authProvider, channels);
   registerConnectionEvents(chatClient, channels);
   registerMessageEvents(chatClient);
   registerJoinEvents(chatClient);
   registerPartEvents(chatClient);
 
+  // Subscribe to EventBus events
+  await eventBus.on("channel:join", async (payload) => {
+    consola.info(`[EventBus] Joining channel: ${payload.username}`);
+    chatClient.join(payload.username);
+    streamStatusManager.addChannel(
+      payload.username,
+      env.TWITCH_APPLICATION_CLIENT_ID,
+      getAccessToken,
+      eventBus
+    );
+  });
+
+  await eventBus.on("channel:leave", async (payload) => {
+    consola.info(`[EventBus] Leaving channel: ${payload.username}`);
+    chatClient.part(payload.username);
+    streamStatusManager.removeChannel(payload.username);
+  });
+
+  await eventBus.on("command:created", async () => {
+    consola.info("[EventBus] Command created, reloading cache");
+    await commandCache.reload();
+  });
+
+  await eventBus.on("command:updated", async () => {
+    consola.info("[EventBus] Command updated, reloading cache");
+    await commandCache.reload();
+  });
+
+  await eventBus.on("command:deleted", async () => {
+    consola.info("[EventBus] Command deleted, reloading cache");
+    await commandCache.reload();
+  });
+
+  await eventBus.on("regular:created", async () => {
+    consola.info("[EventBus] Regular added, reloading list");
+    await loadRegulars();
+  });
+
+  await eventBus.on("regular:deleted", async () => {
+    consola.info("[EventBus] Regular removed, reloading list");
+    await loadRegulars();
+  });
+
   // Connect to Twitch
   botStatus.status = "connecting";
   chatClient.connect();
 
-  consola.info({
-    message: `[Twitch Bot] Joining channels: ${channels.join(", ")}`,
-    badge: true,
-    timestamp: new Date(),
+  await eventBus.publish("bot:status", {
+    service: "twitch",
+    status: "connecting",
   });
+
+  consola.info(`[Twitch Bot] Joining channels: ${channels.join(", ")}`);
 }
 
 main().catch((err) => {
-  consola.error({
-    message: `[Twitch Bot] Fatal error: ${err}`,
-    badge: true,
-    timestamp: new Date(),
-  });
+  consola.error(`[Twitch Bot] Fatal error: ${err}`);
   process.exit(1);
 });

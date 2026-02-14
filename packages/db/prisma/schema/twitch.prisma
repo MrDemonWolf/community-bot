@@ -91,3 +91,14 @@ model TwitchRegular {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
+model BotChannel {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  twitchUsername   String
+  twitchUserId    String   @unique
+  enabled         Boolean  @default(true)
+  joinedAt        DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

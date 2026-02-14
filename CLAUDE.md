@@ -17,6 +17,7 @@ apps/
 packages/
   db/                     # Prisma schema + client (SOURCE OF TRUTH)
   env/                    # Shared Zod-validated env vars (@t3-oss/env-core)
+  events/                 # Redis Pub/Sub event bus for inter-service communication
   config/                 # Shared TypeScript config (tsconfig.base.json)
   server/                 # Shared Express API server (createApiServer, listenWithFallback)
   auth/                   # Authentication package (better-auth)
@@ -52,12 +53,37 @@ All model/enum definitions live in `packages/db/prisma/schema/` as split domain 
 | File | Contents |
 |------|----------|
 | `schema.prisma` | Generator + datasource config |
-| `auth.prisma` | User, Session, Account, Verification (web app) |
+| `auth.prisma` | User, Session, Account, Verification, BotChannel relation on User |
 | `discord.prisma` | DiscordGuild |
-| `twitch.prisma` | TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular, enums |
+| `twitch.prisma` | TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular, BotChannel, enums |
 | `queue.prisma` | QueueEntry, QueueState, QueueStatus |
 
 After schema changes, run `pnpm db:generate` from root.
+
+## Shared Event Bus (`@community-bot/events`)
+
+Type-safe Redis Pub/Sub event bus for real-time inter-service communication. All three services (Discord bot, Twitch bot, Web dashboard) use it to publish and subscribe to events.
+
+```typescript
+import { EventBus } from "@community-bot/events";
+
+const eventBus = new EventBus(redisUrl);
+await eventBus.publish("command:updated", { commandId: "abc" });
+await eventBus.on("channel:join", (payload) => { /* handle */ });
+```
+
+### Event Types
+
+| Event | Payload | Publisher | Subscribers |
+|-------|---------|-----------|-------------|
+| `channel:join` | `{ channelId, username }` | Web | Twitch |
+| `channel:leave` | `{ channelId, username }` | Web | Twitch |
+| `command:created/updated/deleted` | `{ commandId }` | Web | Twitch |
+| `regular:created/deleted` | `{ twitchUserId }` | Web | Twitch |
+| `stream:online` | `{ channelId, username, title, startedAt }` | Twitch | Discord |
+| `stream:offline` | `{ channelId, username }` | Twitch | Discord |
+| `queue:updated` | `{ channelId }` | Any | Any |
+| `bot:status` | `{ service, status }` | Discord/Twitch | Any |
 
 ## Shared Environment (`@community-bot/env`)
 
@@ -83,12 +109,16 @@ Per-app Dockerfiles are at `apps/discord/Dockerfile` and `apps/twitch/Dockerfile
 
 ## TypeScript
 
-Both bots use ESM (`"type": "module"`) with NodeNext module resolution. All relative imports require `.js` extensions. Both tsconfigs extend `@community-bot/config/tsconfig.base.json`.
+Both bots use ESM (`"type": "module"`) with NodeNext module resolution. All relative imports require `.js` extensions. Both tsconfigs extend `@community-bot/config/tsconfig.base.json`. The `packages/events` package uses `bundler` module resolution (no `.js` extensions) since it's consumed by Next.js Turbopack.
 
 ## Discord Bot (`apps/discord/`)
 
-discord.js v14, Express API, BullMQ job queue (Redis). Features include Twitch live stream notifications, slash commands, background job scheduling, guild database sync. Entry point: `src/app.ts`.
+discord.js v14, Express API, BullMQ job queue (Redis), EventBus. Features include Twitch live stream notifications, slash commands, background job scheduling, guild database sync. Entry point: `src/app.ts`.
 
 ## Twitch Bot (`apps/twitch/`)
 
-@twurple/chat + @twurple/auth v7, Express API. Features include database-driven chat commands with variables/cooldowns/access levels, viewer queue, stream status tracking, Device Code Flow auth. Entry point: `src/app.ts`.
+@twurple/chat + @twurple/auth v7, Express API, EventBus. Channels are loaded from the database (`BotChannel` table) at startup. Features include database-driven chat commands with variables/cooldowns/access levels, viewer queue, stream status tracking, Device Code Flow auth. The bot subscribes to EventBus events for real-time channel join/leave and command/regular reload. Entry point: `src/app.ts`.
+
+## Web Dashboard (`apps/web/`)
+
+Next.js with tRPC, better-auth, and EventBus. Users can enable/disable the Twitch bot for their channel via the `/dashboard/bot` page. When commands or regulars are modified, events are published so the Twitch bot reloads instantly.

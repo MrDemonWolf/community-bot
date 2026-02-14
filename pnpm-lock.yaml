@@ -66,6 +66,9 @@ importers:
       '@community-bot/env':
         specifier: workspace:*
         version: link:../../packages/env
+      '@community-bot/events':
+        specifier: workspace:*
+        version: link:../../packages/events
       '@community-bot/server':
         specifier: workspace:*
         version: link:../../packages/server
@@ -203,6 +206,9 @@ importers:
       '@community-bot/env':
         specifier: workspace:*
         version: link:../../packages/env
+      '@community-bot/events':
+        specifier: workspace:*
+        version: link:../../packages/events
       '@community-bot/server':
         specifier: workspace:*
         version: link:../../packages/server
@@ -282,6 +288,9 @@ importers:
       '@community-bot/env':
         specifier: workspace:*
         version: link:../../packages/env
+      '@community-bot/events':
+        specifier: workspace:*
+        version: link:../../packages/events
       '@prisma/client':
         specifier: 'catalog:'
         version: 7.4.0(prisma@7.4.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
@@ -382,6 +391,9 @@ importers:
       '@community-bot/env':
         specifier: workspace:*
         version: link:../env
+      '@community-bot/events':
+        specifier: workspace:*
+        version: link:../events
       '@trpc/client':
         specifier: 'catalog:'
         version: 11.10.0(@trpc/server@11.10.0(typescript@5.9.3))(typescript@5.9.3)
@@ -481,6 +493,22 @@ importers:
       '@types/node':
         specifier: ^22.13.14
         version: 22.19.11
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  packages/events:
+    dependencies:
+      ioredis:
+        specifier: ^5.8.2
+        version: 5.9.3
+    devDependencies:
+      '@community-bot/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: ^25.0.3
+        version: 25.2.3
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

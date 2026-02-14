@@ -17,7 +17,13 @@ export const env = createEnv({
     TWITCH_APPLICATION_CLIENT_SECRET: z
       .string()
       .min(1, "Twitch Client Secret is required"),
-    TWITCH_CHANNEL: z.string().min(1, "Twitch channel is required"),
+    REDIS_URL: z
+      .string()
+      .min(1, "Redis URL is required")
+      .refine(
+        (url) => url.startsWith("redis"),
+        "Invalid Redis URL"
+      ),
     HOST: z.string().default("localhost"),
     PORT: z.coerce.number().int().min(1).max(65535).default(3737),
     CORS_ORIGIN: z.string().default("*"),

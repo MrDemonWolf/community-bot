@@ -12,6 +12,13 @@ export const env = createEnv({
 		DISCORD_APPLICATION_CLIENT_SECRET: z.string().min(1),
 		TWITCH_APPLICATION_CLIENT_ID: z.string().min(1),
 		TWITCH_APPLICATION_CLIENT_SECRET: z.string().min(1),
+		REDIS_URL: z
+			.string()
+			.min(1)
+			.refine(
+				(url) => url.startsWith("redis"),
+				"Invalid Redis URL"
+			),
 		NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 	},
 	runtimeEnv: process.env,

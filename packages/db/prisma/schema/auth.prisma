@@ -1,14 +1,15 @@
 model User {
-  id               String    @id
+  id               String       @id
   name             String
   email            String
-  emailVerified    Boolean   @default(false)
+  emailVerified    Boolean      @default(false)
   image            String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
   lastLoginMethod  String?
   sessions         Session[]
   accounts         Account[]
+  botChannel       BotChannel?
 
   @@unique([email])
 }

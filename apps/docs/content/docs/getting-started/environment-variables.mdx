@@ -33,13 +33,15 @@ All environment variables are validated at startup using [Zod](https://zod.dev/)
 | Variable | Type | Default | Required | Description |
 |----------|------|---------|----------|-------------|
 | `DATABASE_URL` | string | — | Yes | PostgreSQL connection URL |
+| `REDIS_URL` | string | — | Yes | Redis connection URL (for EventBus pub/sub) |
 | `TWITCH_APPLICATION_CLIENT_ID` | string | — | Yes | Twitch application client ID |
 | `TWITCH_APPLICATION_CLIENT_SECRET` | string | — | Yes | Twitch application client secret |
-| `TWITCH_CHANNEL` | string | — | Yes | Channel to join |
 | `HOST` | string | `"localhost"` | No | API server host |
 | `PORT` | number | `3737` | No | API server port |
 | `CORS_ORIGIN` | string | `"*"` | No | CORS origin for API |
 | `NODE_ENV` | enum | `"production"` | No | Environment: development, production, test |
+
+Channels are loaded from the database (`BotChannel` table) instead of environment variables. Users enable the bot for their channel via the web dashboard.
 
 ## Web Dashboard
 
@@ -53,6 +55,7 @@ All environment variables are validated at startup using [Zod](https://zod.dev/)
 | `DISCORD_APPLICATION_CLIENT_SECRET` | string | — | Yes | Discord OAuth client secret |
 | `TWITCH_APPLICATION_CLIENT_ID` | string | — | Yes | Twitch application client ID (same app as Twitch bot) |
 | `TWITCH_APPLICATION_CLIENT_SECRET` | string | — | Yes | Twitch application client secret |
+| `REDIS_URL` | string | — | Yes | Redis connection URL (for EventBus pub/sub) |
 | `NEXT_PUBLIC_PRIVACY_POLICY_URL` | string | — | No | Privacy Policy page URL (shown in cookie banner and footer) |
 | `NEXT_PUBLIC_TERMS_OF_SERVICE_URL` | string | — | No | Terms of Service page URL (shown in cookie banner and footer) |
 | `NEXT_PUBLIC_SINGLE_CHANNEL_MODE` | enum | `"false"` | No | Enable single-channel mode for the landing page UI |

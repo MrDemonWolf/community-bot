@@ -24,6 +24,7 @@
     "dotenv": "catalog:",
     "zod": "catalog:",
     "@community-bot/env": "workspace:*",
+    "@community-bot/events": "workspace:*",
     "@community-bot/api": "workspace:*",
     "@community-bot/auth": "workspace:*",
     "@community-bot/db": "workspace:*",
