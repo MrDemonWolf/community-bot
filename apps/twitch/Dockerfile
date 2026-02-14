@@ -34,7 +34,7 @@ FROM node:24-alpine AS production
 
 WORKDIR /usr/src/app
 
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl curl
 RUN npm install -g tsx
 
 COPY --from=build /usr/src/app/apps/twitch/dist ./apps/twitch/dist
