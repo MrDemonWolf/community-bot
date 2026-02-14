@@ -1,0 +1,62 @@
+---
+title: Docker
+description: Run Community Bot services with Docker Compose.
+---
+
+The monorepo includes a `docker-compose.yml` at the root with shared infrastructure and per-app services.
+
+## Infrastructure Only
+
+For local development, you typically only need PostgreSQL and Redis:
+
+```bash
+docker compose up -d postgres redis
+```
+
+| Service    | Port  | Description          |
+|------------|-------|----------------------|
+| PostgreSQL | 5432  | Database             |
+| Redis      | 6379  | Cache and job queue  |
+
+## Full Stack
+
+To run everything in containers:
+
+```bash
+docker compose up -d
+```
+
+| Service  | Host Port | Container Port | Description    |
+|----------|-----------|----------------|----------------|
+| postgres | 5432      | 5432           | PostgreSQL     |
+| redis    | 6379      | 6379           | Redis          |
+| discord  | 8080      | 3141           | Discord bot API|
+| twitch   | 8081      | 3737           | Twitch bot API |
+
+## Building Images
+
+Each bot has its own Dockerfile built from the monorepo root context:
+
+```bash
+docker compose build discord
+docker compose build twitch
+```
+
+The Dockerfiles use multi-stage builds:
+1. **deps** — Install dependencies with `pnpm install --frozen-lockfile`
+2. **build** — Generate Prisma client and compile TypeScript
+3. **production** — Minimal runtime image with only compiled output
+
+## Environment Variables
+
+Each service reads from its own `.env` file:
+
+```yaml
+discord:
+  env_file:
+    - apps/discord/.env
+
+twitch:
+  env_file:
+    - apps/twitch/.env
+```

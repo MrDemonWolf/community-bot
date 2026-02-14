@@ -1,0 +1,50 @@
+---
+title: Built-in Commands
+description: Hardcoded chat commands available in the Twitch bot.
+---
+
+Built-in commands are checked first in the command pipeline (Phase 1) and always run regardless of database state.
+
+## Available Commands
+
+### `!ping`
+Returns "Pong!" to confirm the bot is responsive.
+
+### `!uptime`
+Shows how long the stream has been live, or indicates the stream is offline.
+
+### `!accountage`
+Shows how old the user's Twitch account is.
+
+### `!bot mute` / `!bot unmute`
+Mutes or unmutes the bot. When muted, only `!bot unmute` is processed. Requires moderator or broadcaster access.
+
+### `!filesay <filename>`
+Reads a text file and sends its contents to chat. Requires broadcaster access.
+
+### `!command add|edit|remove|list`
+Manages database commands from chat. See [Database Commands](/docs/twitch-bot/database-commands) for details.
+
+**Usage:**
+- `!command add <name> <response>` — Create a new command
+- `!command edit <name> <response>` — Update an existing command's response
+- `!command remove <name>` — Delete a command
+- `!command list` — List all database commands
+
+Requires moderator or broadcaster access.
+
+### `!reloadcommands`
+Immediately reloads commands and regulars from the database without waiting for the 60-second cron cycle. Requires moderator or broadcaster access.
+
+### Queue Commands
+
+- `!queue open` — Open the viewer queue (mod/broadcaster)
+- `!queue close` — Close the queue (mod/broadcaster)
+- `!queue join` — Join the queue (viewers)
+- `!queue leave` — Leave the queue (viewers)
+- `!queue next` — Pull the next viewer from the queue (mod/broadcaster)
+- `!queue list` — Show current queue entries
+- `!queue clear` — Clear the entire queue (mod/broadcaster)
+- `!queue position` — Check your position in the queue
+
+See [Queue System](/docs/twitch-bot/queue-system) for more details.

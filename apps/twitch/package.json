@@ -1,5 +1,5 @@
 {
-  "name": "@community-bot/twitch",
+  "name": "twitch-bot",
   "version": "1.0.0",
   "description": "A Twitch chat bot for MrDemonWolf community.",
   "main": "app.js",
@@ -18,21 +18,17 @@
   "dependencies": {
     "@community-bot/db": "workspace:*",
     "@community-bot/env": "workspace:*",
+    "@community-bot/server": "workspace:*",
     "@twurple/auth": "^7.2.0",
     "@twurple/chat": "^7.2.0",
     "consola": "^3.4.2",
-    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "helmet": "^8.1.0",
-    "morgan": "^1.10.0",
     "node-cron": "^4.1.0",
     "zod": "^3.25.61"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
-    "@types/morgan": "^1.9.10",
     "@types/node": "^24.0.0",
     "@types/node-cron": "^3.0.11",
     "eslint": "^9.28.0",

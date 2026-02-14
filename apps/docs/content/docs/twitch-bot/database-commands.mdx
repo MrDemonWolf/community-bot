@@ -1,0 +1,82 @@
+---
+title: Database Commands
+description: The full database-driven command system for the Twitch bot.
+---
+
+The bot supports a full database-driven command system. Commands stored in the `TwitchChatCommand` table are loaded into memory on startup and can be managed without restarting the bot.
+
+## Managing from Chat
+
+Mods and broadcasters can create and manage commands directly from chat using `!command`:
+
+- `!command add <name> <response>` — Create a new command
+- `!command edit <name> <response>` — Update response text
+- `!command remove <name>` — Delete a command
+- `!command list` — List all commands
+
+## Managing via Prisma Studio
+
+```bash
+pnpm db:studio
+```
+
+This opens a web UI where you can view and edit all command fields directly.
+
+## Command Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `name` | String | *required* | Trigger name without the `!` prefix (e.g., `hello`) |
+| `enabled` | Boolean | `true` | Whether the command is active |
+| `response` | String | *required* | Text to send. Supports [response variables](/docs/twitch-bot/response-variables) |
+| `responseType` | Enum | `SAY` | How to respond: `SAY`, `MENTION`, or `REPLY` |
+| `globalCooldown` | Int | `0` | Cooldown in seconds shared across all users |
+| `userCooldown` | Int | `0` | Cooldown in seconds per user |
+| `accessLevel` | Enum | `EVERYONE` | Minimum role required. See [Access Levels](/docs/twitch-bot/access-levels) |
+| `limitToUser` | String? | `null` | If set, only this username can trigger the command |
+| `streamStatus` | Enum | `BOTH` | When active: `ONLINE`, `OFFLINE`, or `BOTH`. See [Stream Status](/docs/twitch-bot/stream-status) |
+| `hidden` | Boolean | `false` | For future GUI filtering |
+| `aliases` | String[] | `[]` | Alternative trigger names (e.g., `["hi", "hey"]`) |
+| `keywords` | String[] | `[]` | Stream title keywords — command only active when title contains at least one |
+| `regex` | String? | `null` | If set, triggers on pattern match instead of `!prefix` |
+
+## Response Types
+
+| Type | Behavior | Example Output |
+|------|----------|----------------|
+| `SAY` | Sends a plain message | `Hello world!` |
+| `MENTION` | Prefixes with @username | `@user Hello world!` |
+| `REPLY` | Sends as a threaded reply | *(reply)* `Hello world!` |
+
+## Regex Commands
+
+If the `regex` field is set, the command ignores the `!prefix` system entirely. Instead, it tests the **full message text** against the regex pattern. This is useful for auto-responses.
+
+**Example:** A command with `regex` set to `gg` and response `GG {user}!` would trigger whenever someone types a message containing "gg".
+
+## Cooldowns
+
+- **Global cooldown** — After any user triggers the command, it's locked for everyone for N seconds
+- **User cooldown** — After a specific user triggers it, only that user is locked for N seconds
+- Moderators and broadcasters bypass all cooldowns
+
+## Command Execution Pipeline
+
+When a message arrives in chat, it goes through a 3-phase pipeline. The first match wins:
+
+1. **Phase 1: Built-in commands** — Checks against hardcoded commands. Always runs (except when muted).
+2. **Phase 2: Database prefix commands** — Looks up the `!` prefix in the command cache. Checks access level, cooldowns, stream status, keywords, and limitToUser.
+3. **Phase 3: Database regex commands** — Tests the full message against compiled regex patterns. Same checks as Phase 2.
+
+## Importing Legacy Commands
+
+Import commands from a JSON file:
+
+```bash
+pnpm db:import                        # Import from prisma/commands.json
+pnpm db:import path/to/commands.json  # Import from a custom file
+```
+
+## Reloading Without Restart
+
+Commands and regulars are automatically reloaded from the database every 60 seconds. To reload immediately, type `!reloadcommands` in chat (mod/broadcaster only).

@@ -1,0 +1,39 @@
+---
+title: Access Levels
+description: Role hierarchy for Twitch bot command permissions.
+---
+
+Access levels follow a hierarchy — higher levels include all permissions of lower levels.
+
+## Hierarchy
+
+| Level | Rank | Who | Cooldown Bypass |
+|-------|------|-----|-----------------|
+| `EVERYONE` | 0 | All users | No |
+| `SUBSCRIBER` | 1 | Subscribers and founders | No |
+| `REGULAR` | 2 | Users in the `TwitchRegular` table | No |
+| `VIP` | 3 | VIPs | No |
+| `MODERATOR` | 4 | Moderators | Yes |
+| `BROADCASTER` | 5 | The channel owner | Yes |
+
+A command with `accessLevel: "VIP"` can be used by VIPs, moderators, and the broadcaster, but not by regulars, subscribers, or everyone.
+
+## Managing Regulars
+
+The `TwitchRegular` table defines users who get the REGULAR access level (rank 2, between SUBSCRIBER and VIP). Manage them via Prisma Studio:
+
+```bash
+pnpm db:studio
+```
+
+Each regular needs:
+
+| Field | Description |
+|-------|-------------|
+| `twitchUserId` | The user's Twitch ID |
+| `twitchUsername` | Display name (for reference) |
+| `addedBy` | Who added them (for record keeping) |
+
+## Cooldown Bypass
+
+Moderators (rank 4) and broadcasters (rank 5) automatically bypass both global and user cooldowns on all commands.

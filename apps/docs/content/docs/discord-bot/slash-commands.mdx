@@ -1,0 +1,45 @@
+---
+title: Slash Commands
+description: Discord slash commands for managing Twitch notifications.
+---
+
+All commands are under the `/twitch` command group.
+
+## `/twitch add <channel>`
+
+Add a Twitch channel to monitor for live stream notifications.
+
+**Parameters:**
+- `channel` (required) — The Twitch channel username to monitor
+
+## `/twitch remove <channel>`
+
+Remove a Twitch channel from the notification list.
+
+**Parameters:**
+- `channel` (required) — The Twitch channel username to stop monitoring
+
+## `/twitch list`
+
+List all Twitch channels currently being monitored in this guild.
+
+## `/twitch test <channel>`
+
+Send a test notification for a Twitch channel to verify the setup is working correctly.
+
+**Parameters:**
+- `channel` (required) — The Twitch channel to send a test notification for
+
+## `/twitch notifications set-channel <channel>`
+
+Set the Discord channel where Twitch live notifications will be posted.
+
+**Parameters:**
+- `channel` (required) — The Discord text channel to receive notifications
+
+## `/twitch notifications set-role <role>`
+
+Set a role to ping when a Twitch stream goes live.
+
+**Parameters:**
+- `role` (required) — The Discord role to mention in notifications

@@ -2,7 +2,6 @@ import { ActivityType } from "discord.js";
 
 import type { Client } from "discord.js";
 
-// import { prisma } from "@community-bot/db";
 import env from "../../utils/env.js";
 import logger from "../../utils/logger.js";
 
@@ -25,45 +24,7 @@ export default async (client: Client) => {
         "Client user is not defined, cannot set activity"
       );
     }
-    // const randomActivity = async () => {
-    //   const activities = await prisma.discordActivity.findMany();
 
-    //   if (activities.length === 0) {
-    //     return null;
-    //   }
-
-    //   activities.push({
-    //     id: "default",
-    //     activity: defaultActivity,
-    //     type: defaultActivityType,
-    //     url: defaultActivityUrl ? defaultActivityUrl : null,
-    //     createdAt: new Date(),
-    //   });
-
-    //   const randomIndex = Math.floor(Math.random() * activities.length);
-
-    //   return activities[randomIndex];
-    // };
-
-    // const activity = await randomActivity();
-
-    // if (!activity) {
-    //   logger.warn(
-    //     "Discord - Activity",
-    //     "No custom discord activity found, using default activity"
-    //   );
-    //   const safeActivityType = getActivityType(defaultActivityType);
-    //   client.user.setActivity(defaultActivity, {
-    //     type: safeActivityType,
-    //     url: defaultActivityUrl,
-    //   });
-    //   logger.success("Discord - Activity", "Activity has been set", {
-    //     activity: defaultActivity,
-    //     type: safeActivityType,
-    //     url: defaultActivityUrl,
-    //   });
-    //   return true;
-    // }
     const safeActivityType = getActivityType(defaultActivityType);
 
     client.user.setActivity(defaultActivity, {
@@ -75,18 +36,6 @@ export default async (client: Client) => {
       type: safeActivityType,
       url: defaultActivityUrl,
     });
-    return true;
-
-    // const safeActivityType = getActivityType(activity.type);
-    // client.user.setActivity(activity.activity, {
-    //   type: safeActivityType,
-    //   url: activity.url ? activity.url : undefined,
-    // });
-
-    // logger.success("Discord - Activity", "Activity has been set", {
-    //   activity: activity.activity,
-    //   type: safeActivityType,
-    // });
     return true;
   } catch (err) {
     logger.error(

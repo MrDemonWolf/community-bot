@@ -1,0 +1,35 @@
+---
+title: Twitch Notifications
+description: How the Discord bot monitors Twitch streams and sends notifications.
+---
+
+The Discord bot polls the Twitch Helix API every 90 seconds to check the status of monitored channels.
+
+## How It Works
+
+1. **Polling** — A BullMQ job (`check-twitch-streams`) runs every 90 seconds
+2. **API Check** — For each guild's configured Twitch channels, the bot queries the Twitch Helix API for stream status
+3. **State Change Detection** — The bot tracks previous stream state and only sends notifications on offline-to-online transitions
+4. **Notification** — When a stream goes live, an embed is posted to the configured Discord channel with optional role ping
+
+## Configuration
+
+Each guild needs:
+
+1. **A notification channel** — Set with `/twitch notifications set-channel`
+2. **At least one monitored channel** — Added with `/twitch add`
+3. **Optionally a ping role** — Set with `/twitch notifications set-role`
+
+## Notification Embed
+
+The live notification includes:
+
+- Stream title
+- Game/category
+- Viewer count
+- Stream thumbnail
+- Link to the Twitch channel
+
+## Database Storage
+
+Notification settings are stored in the `TwitchNotification` table, linked to `DiscordGuild`. Each guild can monitor multiple Twitch channels.

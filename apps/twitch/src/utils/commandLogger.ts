@@ -9,7 +9,7 @@ export function info(command: string, username: string, id: string) {
 }
 export function success(command: string, username: string, id: string) {
   consola.success({
-    message: `[Twitch Event - Command] Successfully executed comand ${command} from ${username} (${id})`,
+    message: `[Twitch Event - Command] Successfully executed command ${command} from ${username} (${id})`,
     badge: true,
     timestamp: new Date(),
   });

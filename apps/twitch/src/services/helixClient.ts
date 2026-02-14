@@ -1,10 +1,15 @@
 import { prisma } from "@community-bot/db";
 import { env } from "../utils/env.js";
 
-export async function helixFetch(
+export interface HelixResponse<T = unknown> {
+  data: T[];
+  pagination?: { cursor?: string };
+}
+
+export async function helixFetch<T = unknown>(
   endpoint: string,
   params: Record<string, string>
-): Promise<any> {
+): Promise<HelixResponse<T>> {
   const cred = await prisma.twitchCredential.findFirst();
   const accessToken = cred?.accessToken ?? "";
 
@@ -24,5 +29,5 @@ export async function helixFetch(
     throw new Error(`Helix API error: ${res.status} ${res.statusText}`);
   }
 
-  return res.json();
+  return res.json() as Promise<HelixResponse<T>>;
 }

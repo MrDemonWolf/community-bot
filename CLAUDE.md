@@ -11,12 +11,14 @@ Community Bot monorepo for MrDemonWolf, Inc. Turborepo workspace containing the 
 ```
 apps/
   web/                    # Next.js web dashboard
+  docs/                   # Fumadocs documentation site
   discord/                # Discord bot (discord.js v14, BullMQ, Express API)
   twitch/                 # Twitch chat bot (@twurple/chat, Express API)
 packages/
   db/                     # Prisma schema + client (SOURCE OF TRUTH)
   env/                    # Shared Zod-validated env vars (@t3-oss/env-core)
   config/                 # Shared TypeScript config (tsconfig.base.json)
+  server/                 # Shared Express API server (createApiServer, listenWithFallback)
   auth/                   # Authentication package (better-auth)
   api/                    # Shared tRPC API utilities
 ```

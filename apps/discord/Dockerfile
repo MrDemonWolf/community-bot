@@ -10,6 +10,7 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/db/package.json packages/db/
 COPY packages/config/package.json packages/config/
+COPY packages/server/package.json packages/server/
 COPY apps/discord/package.json apps/discord/
 
 RUN pnpm install --frozen-lockfile
@@ -22,6 +23,7 @@ COPY --from=deps /usr/src/app/apps/discord/node_modules ./apps/discord/node_modu
 
 COPY packages/db ./packages/db
 COPY packages/config ./packages/config
+COPY packages/server ./packages/server
 COPY apps/discord ./apps/discord
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
 
@@ -38,11 +40,12 @@ COPY --from=build /usr/src/app/apps/discord/dist ./apps/discord/dist
 COPY --from=build /usr/src/app/apps/discord/node_modules ./apps/discord/node_modules
 COPY --from=build /usr/src/app/apps/discord/package.json ./apps/discord/
 COPY --from=build /usr/src/app/packages/db ./packages/db
+COPY --from=build /usr/src/app/packages/server ./packages/server
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/package.json ./
 
 ENV NODE_ENV=production
 
-EXPOSE 8080
+EXPOSE 3141
 
 CMD ["node", "apps/discord/dist/app.js"]

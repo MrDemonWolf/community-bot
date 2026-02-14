@@ -1,39 +1,18 @@
-import express from "express";
-import morgan from "morgan";
-import helmet from "helmet";
-import cors from "cors";
+import { createApiServer } from "@community-bot/server";
+import { env } from "../utils/env.js";
 
-/**
- * Import all routes
- */
 import statusRoute from "./routes/status.js";
 
-const app: ReturnType<typeof express> = express();
-
-/**
- * Express configuration (express.json, express.urlencoded, helmet, morgan, cors)
- */
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(helmet());
-app.use(morgan("tiny"));
-app.use(
-  cors({
-    origin: "*", // Be sure to switch to your production domain
-  })
-);
-
-/**
- * Set express variables
- * @param {string} host - Hostname
- * @param {number} port - Port
- */
-app.set("host", process.env.HOST || "localhost");
-app.set("port", process.env.PORT || 3000);
-
-/**
- * Initialize routes
- */
-app.use("/status", statusRoute);
+const app = createApiServer({
+  name: "Twitch Bot",
+  defaultPort: 3737,
+  port: env.PORT,
+  host: env.HOST,
+  nodeEnv: env.NODE_ENV,
+  corsOrigin: env.CORS_ORIGIN,
+  routes: (app) => {
+    app.use("/api/status", statusRoute);
+  },
+});
 
 export default app;

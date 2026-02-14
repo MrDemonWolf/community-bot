@@ -1,0 +1,39 @@
+---
+title: Community Bot
+description: Monorepo for the MrDemonWolf community Discord and Twitch bots, web dashboard, and shared packages.
+---
+
+Community Bot is the open-source monorepo powering the MrDemonWolf community. It contains:
+
+- **Discord Bot** — Slash command bot built with discord.js v14 for Twitch live stream notifications and server management.
+- **Twitch Bot** — Chat bot built with Twurple for database-driven commands, viewer queues, and stream status tracking.
+- **Web Dashboard** — Next.js app for managing bot settings (coming soon).
+- **Shared Packages** — Prisma database client, validated environment variables, shared TypeScript config, and a common Express server library.
+
+## Quick Start
+
+```bash
+git clone https://github.com/mrdemonwolf/community-bot.git
+cd community-bot
+pnpm install
+docker compose up -d postgres redis
+pnpm db:generate
+pnpm dev
+```
+
+## Workspace Structure
+
+```
+apps/
+  discord/     Discord bot
+  twitch/      Twitch chat bot
+  web/         Next.js web dashboard
+  docs/        This documentation site
+packages/
+  db/          Prisma schema + client (source of truth)
+  env/         Zod-validated environment variables
+  config/      Shared TypeScript configuration
+  server/      Shared Express API server
+  auth/        Authentication package
+  api/         Shared tRPC API utilities
+```

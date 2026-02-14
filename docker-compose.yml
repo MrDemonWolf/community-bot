@@ -32,7 +32,7 @@ services:
       context: .
       dockerfile: apps/discord/Dockerfile
     ports:
-      - "8080:8080"
+      - "8080:3141"
     env_file:
       - apps/discord/.env
     depends_on:
@@ -46,7 +46,7 @@ services:
       context: .
       dockerfile: apps/twitch/Dockerfile
     ports:
-      - "8081:3000"
+      - "8081:3737"
     env_file:
       - apps/twitch/.env
     depends_on:

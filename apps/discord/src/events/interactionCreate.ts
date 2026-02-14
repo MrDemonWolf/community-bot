@@ -1,7 +1,6 @@
 import { MessageFlags } from "discord.js";
 
 import type {
-  Client,
   Interaction,
   ChatInputCommandInteraction,
 } from "discord.js";
@@ -10,7 +9,6 @@ import commands from "../commands/index.js";
 import logger from "../utils/logger.js";
 
 export async function interactionCreateEvent(
-  _client: Client,
   interaction: Interaction
 ) {
   try {

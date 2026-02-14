@@ -21,7 +21,8 @@ export const env = createEnv({
     INIT_TWITCH_REFRESH_TOKEN: z.string().min(1).optional(),
     TWITCH_CHANNEL: z.string().min(1, "Twitch channel is required"),
     HOST: z.string().default("localhost"),
-    PORT: z.coerce.number().default(3000),
+    PORT: z.coerce.number().int().min(1).max(65535).default(3737),
+    CORS_ORIGIN: z.string().default("*"),
     NODE_ENV: z
       .enum(["development", "production", "test"])
       .default("production"),
