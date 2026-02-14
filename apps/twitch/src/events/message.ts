@@ -15,7 +15,7 @@ import { executeCommand } from "../services/commandExecutor.js";
 import { trackMessage } from "../services/chatterTracker.js";
 import { isMuted } from "../services/botState.js";
 import { TwitchAccessLevel, TwitchStreamStatus } from "@community-bot/db";
-import * as commandLogger from "../utils/commandLogger.js";
+import { logger } from "../utils/logger.js";
 
 const COMMAND_PREFIX = "!";
 
@@ -91,14 +91,14 @@ export function registerMessageEvents(chatClient: ChatClient): void {
 
       const builtIn = commands.get(commandName);
       if (builtIn) {
-        commandLogger.info(builtIn.name, user, msg.userInfo.userId);
+        logger.commands.executing(builtIn.name, user, msg.userInfo.userId);
         builtIn
           .execute(chatClient, channel, user, args, msg)
           .then(() => {
-            commandLogger.success(builtIn.name, user, msg.userInfo.userId);
+            logger.commands.success(builtIn.name, user, msg.userInfo.userId);
           })
           .catch(() => {
-            commandLogger.error(builtIn.name, user, msg.userInfo.userId);
+            logger.commands.error(builtIn.name, user, msg.userInfo.userId);
           });
         return;
       }
@@ -117,7 +117,7 @@ export function registerMessageEvents(chatClient: ChatClient): void {
           dbCmd.userCooldown
         );
 
-        commandLogger.info(dbCmd.name, user, msg.userInfo.userId);
+        logger.commands.executing(dbCmd.name, user, msg.userInfo.userId);
         executeCommand(
           chatClient,
           channel,
@@ -128,10 +128,10 @@ export function registerMessageEvents(chatClient: ChatClient): void {
           dbCmd.responseType
         )
           .then(() => {
-            commandLogger.success(dbCmd.name, user, msg.userInfo.userId);
+            logger.commands.success(dbCmd.name, user, msg.userInfo.userId);
           })
           .catch(() => {
-            commandLogger.error(dbCmd.name, user, msg.userInfo.userId);
+            logger.commands.error(dbCmd.name, user, msg.userInfo.userId);
           });
         return;
       }
@@ -155,7 +155,7 @@ export function registerMessageEvents(chatClient: ChatClient): void {
       );
 
       const args = text.split(/\s+/);
-      commandLogger.info(cmd.name, user, msg.userInfo.userId);
+      logger.commands.executing(cmd.name, user, msg.userInfo.userId);
       executeCommand(
         chatClient,
         channel,
@@ -166,10 +166,10 @@ export function registerMessageEvents(chatClient: ChatClient): void {
         cmd.responseType
       )
         .then(() => {
-          commandLogger.success(cmd.name, user, msg.userInfo.userId);
+          logger.commands.success(cmd.name, user, msg.userInfo.userId);
         })
         .catch(() => {
-          commandLogger.error(cmd.name, user, msg.userInfo.userId);
+          logger.commands.error(cmd.name, user, msg.userInfo.userId);
         });
       return; // First match wins
     }

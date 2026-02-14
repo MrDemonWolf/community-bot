@@ -1,7 +1,7 @@
 import cron from "node-cron";
-import consola from "consola";
 
 import type { EventBus } from "@community-bot/events";
+import { logger } from "../utils/logger.js";
 
 const HELIX_STREAMS_URL = "https://api.twitch.tv/helix/streams";
 
@@ -40,7 +40,7 @@ async function poll(
     });
 
     if (!res.ok) {
-      consola.warn(`[StreamStatus] Helix API returned ${res.status}`);
+      logger.warn("StreamStatus", `Helix API returned ${res.status}`);
       return;
     }
 
@@ -78,7 +78,7 @@ async function poll(
       status.streamStartedAt = null;
     }
   } catch (err) {
-    consola.warn(`[StreamStatus] Poll error for ${channelName}: ${err}`);
+    logger.warn("StreamStatus", `Poll error for ${channelName}`, err instanceof Error ? { error: err.message } : undefined);
   }
 }
 
@@ -144,7 +144,7 @@ export async function start(
   const statuses = channels.map(
     (ch) => `${ch}: ${isLive(ch) ? "LIVE" : "OFFLINE"}`
   );
-  consola.info(`[StreamStatus] Polling started for ${channels.length} channel(s) (${statuses.join(", ")})`);
+  logger.info("StreamStatus", `Polling started for ${channels.length} channel(s) (${statuses.join(", ")})`);
 }
 
 export function addChannel(

@@ -1,7 +1,7 @@
 import { ChatMessage } from "@twurple/chat";
-import consola from "consola";
 
 import { prisma } from "@community-bot/db";
+import { logger } from "../utils/logger.js";
 import { TwitchAccessLevel } from "@community-bot/db";
 import type { TwitchRegular } from "@community-bot/db";
 
@@ -20,11 +20,7 @@ export async function loadRegulars(): Promise<void> {
   const regulars = await prisma.twitchRegular.findMany();
   regularsSet = new Set(regulars.map((r: TwitchRegular) => r.twitchUserId));
 
-  consola.info({
-    message: `[AccessControl] Loaded ${regularsSet.size} regulars`,
-    badge: true,
-    timestamp: new Date(),
-  });
+  logger.info("AccessControl", `Loaded ${regularsSet.size} regulars`);
 }
 
 export function isRegular(twitchUserId: string): boolean {

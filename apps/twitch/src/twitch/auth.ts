@@ -1,7 +1,7 @@
 import { RefreshingAuthProvider } from "@twurple/auth";
-import consola from "consola";
 
 import { env } from "../utils/env.js";
+import { logger } from "../utils/logger.js";
 import { prisma } from "@community-bot/db";
 import { runDeviceCodeFlow } from "./deviceAuth.js";
 
@@ -88,11 +88,7 @@ export async function createAuthProvider(): Promise<AuthResult> {
       obtainmentTimestamp: tokenData.obtainmentTimestamp,
       scope: tokenData.scope,
     });
-    consola.info({
-      message: `[Twitch Auth] Token refreshed for user ${userId}`,
-      badge: true,
-      timestamp: new Date(),
-    });
+    logger.twitch.tokenRefreshed(userId);
   });
 
   // 1. Try stored credentials from DB
@@ -103,11 +99,7 @@ export async function createAuthProvider(): Promise<AuthResult> {
     let validated = await validateToken(stored.accessToken);
 
     if (validated) {
-      consola.info({
-        message: `[Twitch Auth] Loaded valid credentials for ${validated.login}`,
-        badge: true,
-        timestamp: new Date(),
-      });
+      logger.success("Twitch Auth", `Loaded valid credentials for ${validated.login}`);
       authProvider.addUser(stored.userId, {
         accessToken: stored.accessToken,
         refreshToken: stored.refreshToken,
@@ -119,11 +111,7 @@ export async function createAuthProvider(): Promise<AuthResult> {
     }
 
     // Access token expired — try refreshing
-    consola.warn({
-      message: "[Twitch Auth] Stored token expired, attempting refresh...",
-      badge: true,
-      timestamp: new Date(),
-    });
+    logger.warn("Twitch Auth", "Stored token expired, attempting refresh...");
     const refreshed = await refreshToken(stored.refreshToken);
 
     if (refreshed) {
@@ -147,20 +135,12 @@ export async function createAuthProvider(): Promise<AuthResult> {
         scope: refreshed.scope,
       }, ["chat"]);
 
-      consola.success({
-        message: `[Twitch Auth] Token refreshed successfully for ${login}`,
-        badge: true,
-        timestamp: new Date(),
-      });
+      logger.success("Twitch Auth", `Token refreshed successfully for ${login}`);
       return { authProvider, botUsername: login };
     }
 
     // Refresh failed — token is dead, delete it
-    consola.warn({
-      message: "[Twitch Auth] Refresh failed, removing stale credentials",
-      badge: true,
-      timestamp: new Date(),
-    });
+    logger.warn("Twitch Auth", "Refresh failed, removing stale credentials");
     await prisma.twitchCredential.delete({ where: { id: stored.id } });
   }
 
@@ -191,11 +171,7 @@ export async function createAuthProvider(): Promise<AuthResult> {
   const validated = await validateToken(tokenData.accessToken);
   const login = validated?.login ?? userId;
 
-  consola.success({
-    message: `[Twitch Auth] Authorized as ${login}`,
-    badge: true,
-    timestamp: new Date(),
-  });
+  logger.success("Twitch Auth", `Authorized as ${login}`);
 
   return { authProvider, botUsername: login };
 }

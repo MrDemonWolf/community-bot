@@ -1,6 +1,5 @@
-import consola from "consola";
-
 import { prisma } from "@community-bot/db";
+import { logger } from "../utils/logger.js";
 import type { TwitchChatCommand } from "@community-bot/db";
 
 export type CachedCommand = TwitchChatCommand & {
@@ -27,11 +26,7 @@ class CommandCache {
           cached.compiledRegex = new RegExp(cmd.regex, "i");
           newRegexCommands.push(cached);
         } catch {
-          consola.warn({
-            message: `[CommandCache] Invalid regex for command "${cmd.name}": ${cmd.regex}`,
-            badge: true,
-            timestamp: new Date(),
-          });
+          logger.warn("CommandCache", `Invalid regex for command "${cmd.name}": ${cmd.regex}`);
         }
         continue;
       }
@@ -47,11 +42,7 @@ class CommandCache {
     this.prefixMap = newPrefixMap;
     this.regexCommands = newRegexCommands;
 
-    consola.info({
-      message: `[CommandCache] Loaded ${commands.length} commands (${newPrefixMap.size} prefix entries, ${newRegexCommands.length} regex)`,
-      badge: true,
-      timestamp: new Date(),
-    });
+    logger.info("CommandCache", `Loaded ${commands.length} commands (${newPrefixMap.size} prefix entries, ${newRegexCommands.length} regex)`);
   }
 
   async reload(): Promise<void> {

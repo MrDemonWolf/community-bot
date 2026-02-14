@@ -1,9 +1,9 @@
-import consola from "consola";
 import cron from "node-cron";
 
 import { listenWithFallback } from "@community-bot/server";
 import { EventBus } from "@community-bot/events";
 import { env } from "./utils/env.js";
+import { logger } from "./utils/logger.js";
 import { prisma } from "@community-bot/db";
 import api from "./api/index.js";
 import { createAuthProvider, createChatClient } from "./twitch/index.js";
@@ -61,7 +61,7 @@ async function main() {
       await commandCache.reload();
       await loadRegulars();
     } catch (err) {
-      consola.warn(`[Cron] Failed to reload commands/regulars: ${err}`);
+      logger.warn("Cron", "Failed to reload commands/regulars", err instanceof Error ? { error: err.message } : undefined);
     }
   });
 
@@ -73,7 +73,7 @@ async function main() {
 
   // Subscribe to EventBus events
   await eventBus.on("channel:join", async (payload) => {
-    consola.info(`[EventBus] Joining channel: ${payload.username}`);
+    logger.info("EventBus", `Joining channel: ${payload.username}`);
     chatClient.join(payload.username);
     streamStatusManager.addChannel(
       payload.username,
@@ -84,33 +84,33 @@ async function main() {
   });
 
   await eventBus.on("channel:leave", async (payload) => {
-    consola.info(`[EventBus] Leaving channel: ${payload.username}`);
+    logger.info("EventBus", `Leaving channel: ${payload.username}`);
     chatClient.part(payload.username);
     streamStatusManager.removeChannel(payload.username);
   });
 
   await eventBus.on("command:created", async () => {
-    consola.info("[EventBus] Command created, reloading cache");
+    logger.info("EventBus", "Command created, reloading cache");
     await commandCache.reload();
   });
 
   await eventBus.on("command:updated", async () => {
-    consola.info("[EventBus] Command updated, reloading cache");
+    logger.info("EventBus", "Command updated, reloading cache");
     await commandCache.reload();
   });
 
   await eventBus.on("command:deleted", async () => {
-    consola.info("[EventBus] Command deleted, reloading cache");
+    logger.info("EventBus", "Command deleted, reloading cache");
     await commandCache.reload();
   });
 
   await eventBus.on("regular:created", async () => {
-    consola.info("[EventBus] Regular added, reloading list");
+    logger.info("EventBus", "Regular added, reloading list");
     await loadRegulars();
   });
 
   await eventBus.on("regular:deleted", async () => {
-    consola.info("[EventBus] Regular removed, reloading list");
+    logger.info("EventBus", "Regular removed, reloading list");
     await loadRegulars();
   });
 
@@ -123,10 +123,10 @@ async function main() {
     status: "connecting",
   });
 
-  consola.info(`[Twitch Bot] Joining channels: ${channels.join(", ")}`);
+  logger.info("Twitch Bot", `Joining channels: ${channels.join(", ")}`);
 }
 
 main().catch((err) => {
-  consola.error(`[Twitch Bot] Fatal error: ${err}`);
+  logger.error("Twitch Bot", "Fatal error", err);
   process.exit(1);
 });
