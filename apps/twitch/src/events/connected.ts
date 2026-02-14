@@ -17,17 +17,15 @@ export function registerConnectionEvents(chatClient: ChatClient, channels: strin
     // Sync joined channels to the database
     for (const channel of channels) {
       prisma.twitchChannel
-        .upsert({
-          where: {
-            twitchChannelId_guildId: {
-              twitchChannelId: channel,
-              guildId: "",
-            },
-          },
-          update: {},
-          create: { twitchChannelId: channel, guildId: "" },
+        .findFirst({
+          where: { twitchChannelId: channel, guildId: null },
         })
-        .then(() => {
+        .then(async (existing) => {
+          if (!existing) {
+            await prisma.twitchChannel.create({
+              data: { twitchChannelId: channel },
+            });
+          }
           consola.info({
             message: `[Twitch Event - Connected] Synced channel ${channel} to database`,
             badge: true,
