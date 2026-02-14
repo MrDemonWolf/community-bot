@@ -1,6 +1,7 @@
 import { Client, Events, GatewayIntentBits } from "discord.js";
 import { prisma } from "@community-bot/db";
 import { listenWithFallback } from "@community-bot/server";
+import { EventBus } from "@community-bot/events";
 import env from "./utils/env.js";
 import logger from "./utils/logger.js";
 import api from "./api/index.js";
@@ -105,6 +106,34 @@ listenWithFallback(api, {
   port: env.PORT,
   host: env.HOST,
   name: "Discord Bot",
+});
+
+/**
+ * Initialize EventBus for real-time inter-service communication.
+ */
+const eventBus = new EventBus(env.REDIS_URL);
+
+eventBus.on("stream:online", (payload) => {
+  logger.info(
+    "EventBus",
+    `Stream online: ${payload.username} - ${payload.title}`
+  );
+});
+
+eventBus.on("stream:offline", (payload) => {
+  logger.info("EventBus", `Stream offline: ${payload.username}`);
+});
+
+eventBus.on("bot:status", (payload) => {
+  logger.info(
+    "EventBus",
+    `Bot status: ${payload.service} is ${payload.status}`
+  );
+});
+
+eventBus.publish("bot:status", {
+  service: "discord",
+  status: "connecting",
 });
 
 export default client;

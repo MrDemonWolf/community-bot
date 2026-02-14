@@ -1,68 +1,79 @@
-# my-better-t-app
+# Community Bot
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Self, TRPC, and more.
+Community Bot monorepo for MrDemonWolf, Inc. Turborepo workspace containing the web dashboard, documentation site, Discord bot, Twitch bot, and shared packages.
 
 ## Features
 
-- **TypeScript** - For type safety and improved developer experience
-- **Next.js** - Full-stack React framework
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **shadcn/ui** - Reusable UI components
-- **tRPC** - End-to-end type-safe APIs
-- **Prisma** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
-- **Authentication** - Better-Auth
+- **Discord Bot** - discord.js v14 with slash commands, Twitch live notifications, BullMQ job queue
+- **Twitch Bot** - @twurple/chat with database-driven commands, viewer queue, stream status tracking
+- **Web Dashboard** - Next.js with tRPC, better-auth (Discord + Twitch OAuth), bot management
+- **Real-time Event Bus** - Redis Pub/Sub for instant inter-service communication
+- **Shared Database** - Prisma with PostgreSQL, split schema files per domain
+- **TypeScript** - End-to-end type safety across all packages
 - **Turborepo** - Optimized monorepo build system
 
 ## Getting Started
 
-First, install the dependencies:
+1. Install dependencies:
 
 ```bash
 pnpm install
 ```
-## Database Setup
 
-This project uses PostgreSQL with Prisma.
-
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/web/.env` file with your PostgreSQL connection details.
-
-3. Apply the schema to your database:
-```bash
-pnpm run db:push
-```
-
-
-Then, run the development server:
+2. Start infrastructure:
 
 ```bash
-pnpm run dev
+docker compose up -d postgres redis
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the fullstack application.
+3. Copy environment files and configure:
 
+```bash
+cp apps/web/.env.example apps/web/.env
+cp apps/discord/.env.example apps/discord/.env
+cp apps/twitch/.env.example apps/twitch/.env
+```
 
+4. Push the database schema:
 
+```bash
+pnpm db:push
+```
+
+5. Start all services in development mode:
+
+```bash
+pnpm dev
+```
+
+- Web dashboard: [http://localhost:3001](http://localhost:3001)
+- Docs: [http://localhost:3000](http://localhost:3000)
+- Discord bot API: [http://localhost:3141](http://localhost:3141)
+- Twitch bot API: [http://localhost:3737](http://localhost:3737)
 
 ## Project Structure
 
 ```
-my-better-t-app/
-├── apps/
-│   └── web/         # Fullstack application (Next.js)
-├── packages/
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
+apps/
+  web/                    # Next.js web dashboard
+  docs/                   # Fumadocs documentation site
+  discord/                # Discord bot (discord.js v14, BullMQ, Express API)
+  twitch/                 # Twitch chat bot (@twurple/chat, Express API)
+packages/
+  db/                     # Prisma schema + client (SOURCE OF TRUTH)
+  env/                    # Shared Zod-validated env vars (@t3-oss/env-core)
+  events/                 # Redis Pub/Sub event bus for inter-service communication
+  config/                 # Shared TypeScript config (tsconfig.base.json)
+  server/                 # Shared Express API server
+  auth/                   # Authentication package (better-auth)
+  api/                    # Shared tRPC API utilities
 ```
 
 ## Available Scripts
 
-- `pnpm run dev`: Start all applications in development mode
-- `pnpm run build`: Build all applications
-- `pnpm run check-types`: Check TypeScript types across all apps
-- `pnpm run db:push`: Push schema changes to database
-- `pnpm run db:generate`: Generate database client/types
-- `pnpm run db:migrate`: Run database migrations
-- `pnpm run db:studio`: Open database studio UI
+- `pnpm dev` - Start all applications in development mode
+- `pnpm build` - Build all applications
+- `pnpm db:generate` - Generate Prisma client from shared schema
+- `pnpm db:push` - Push schema changes to database
+- `pnpm db:migrate` - Run database migrations
+- `pnpm db:studio` - Open Prisma Studio
