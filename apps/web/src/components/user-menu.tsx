@@ -57,7 +57,7 @@ export default function UserMenu() {
             className="rounded-full"
           />
         ) : (
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-cyan text-xs font-bold text-white">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-main text-xs font-bold text-white">
             {session.user.name.charAt(0).toUpperCase()}
           </span>
         )}

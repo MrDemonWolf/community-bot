@@ -36,7 +36,7 @@ export default function Footer() {
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-6">
         <div className="flex w-full flex-col items-center justify-between gap-4 sm:flex-row">
           <span className="text-sm font-bold tracking-tight text-foreground">
-            <span className="text-brand-cyan">Community</span> Bot
+            <span className="text-brand-main">Community</span> Bot
           </span>
           <div className="flex items-center gap-4">
             {socialLinks.map((url) => {

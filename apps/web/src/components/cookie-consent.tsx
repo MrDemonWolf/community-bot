@@ -37,7 +37,7 @@ export default function CookieConsent() {
               href={privacyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-brand-cyan underline-offset-2 hover:underline"
+              className="font-medium text-brand-main underline-offset-2 hover:underline"
             >
               Privacy Policy
             </a>
@@ -48,7 +48,7 @@ export default function CookieConsent() {
               href={termsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-brand-cyan underline-offset-2 hover:underline"
+              className="font-medium text-brand-main underline-offset-2 hover:underline"
             >
               Terms of Service
             </a>
@@ -57,7 +57,7 @@ export default function CookieConsent() {
         </p>
         <Button
           variant="outline"
-          className="shrink-0 border-brand-cyan text-brand-cyan hover:bg-brand-cyan/10"
+          className="shrink-0 border-brand-main text-brand-main hover:bg-brand-main/10"
           onClick={handleAccept}
         >
           Accept

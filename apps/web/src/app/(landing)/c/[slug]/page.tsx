@@ -174,7 +174,7 @@ export default async function ChannelPage({
                   {isLive ? "Live" : "Offline"}
                 </span>
                 <h2 className="text-lg font-bold text-foreground">
-                  <span className="text-brand-cyan">{user.name}</span> is{" "}
+                  <span className="text-brand-main">{user.name}</span> is{" "}
                   {isLive ? "live!" : "offline."}
                 </h2>
                 {twitchChannel?.lastStreamTitle && (
@@ -210,7 +210,7 @@ export default async function ChannelPage({
                   <h3 className="font-semibold text-foreground">Chat Commands</h3>
                   <Link
                     href={`/c/${slug}/commands` as Route}
-                    className="text-sm text-brand-cyan transition-colors hover:text-brand-cyan/70"
+                    className="text-sm text-brand-main transition-colors hover:text-brand-main/70"
                   >
                     View all
                   </Link>

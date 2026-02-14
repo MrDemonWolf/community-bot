@@ -65,7 +65,7 @@ export default function Home() {
         <div className="mx-auto max-w-5xl">
           <h2 className="mb-4 text-center text-2xl font-bold text-foreground sm:text-3xl">
             Everything you need to{" "}
-            <span className="text-brand-cyan">run your community</span>.
+            <span className="text-brand-main">run your community</span>.
           </h2>
           <p className="mx-auto mb-12 max-w-xl text-center text-muted-foreground">
             {singleChannelMode
@@ -79,7 +79,7 @@ export default function Home() {
                 className="animate-fade-in-up rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
                 style={{ animationDelay: `${(i + 1) * 100}ms` }}
               >
-                <h3 className="mb-2 font-semibold text-brand-cyan">
+                <h3 className="mb-2 font-semibold text-brand-main">
                   {feature.title}
                 </h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">
@@ -98,13 +98,13 @@ export default function Home() {
             {singleChannelMode ? (
               <>
                 Join{" "}
-                <span className="text-brand-cyan">{channelName}</span>
+                <span className="text-brand-main">{channelName}</span>
                 {"'s community!"}
               </>
             ) : (
               <>
                 Start using{" "}
-                <span className="text-brand-cyan">Community Bot</span> today!
+                <span className="text-brand-main">Community Bot</span> today!
               </>
             )}
           </h2>
@@ -127,7 +127,7 @@ export default function Home() {
             <Link href="/login">
               <Button
                 size="lg"
-                className="bg-brand-cyan px-6 text-white hover:bg-brand-cyan/80 hover:shadow-[0_0_20px_oklch(0.72_0.15_220_/_30%)]"
+                className="bg-brand-main px-6 text-white hover:bg-brand-main/80 hover:shadow-[0_0_20px_oklch(0.72_0.15_220_/_30%)]"
               >
                 Log in
               </Button>

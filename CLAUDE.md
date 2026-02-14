@@ -122,3 +122,41 @@ discord.js v14, Express API, BullMQ job queue (Redis), EventBus. Features includ
 ## Web Dashboard (`apps/web/`)
 
 Next.js with tRPC, better-auth, and EventBus. Users can enable/disable the Twitch bot for their channel via the `/dashboard/bot` page. When commands or regulars are modified, events are published so the Twitch bot reloads instantly.
+
+## Web Dashboard Design System (`apps/web/`)
+
+### Brand Colors
+
+| Token | Hex Origin | Role | Tailwind Class |
+|-------|-----------|------|----------------|
+| `--brand-main` | `#00ACED` | **Primary CTA** — buttons, links, highlights | `bg-brand-main`, `text-brand-main` |
+| `--brand-accent` | `#091533` | **Accent** — deep navy (dark), medium navy (light) | `bg-brand-accent`, `text-brand-accent` |
+| `--brand-twitch` | `#9146FF` | Twitch-specific UI | `bg-brand-twitch`, `text-brand-twitch` |
+| `--brand-discord` | `#5865F2` | Discord-specific UI | `bg-brand-discord`, `text-brand-discord` |
+
+### Color Rules
+
+- **Never hardcode hex colors** — always use semantic tokens (`bg-card`, `text-foreground`, `border-border`)
+- Brand colors are oklch values in `apps/web/src/index.css`, registered in `@theme inline` for Tailwind
+- Use opacity modifiers for states: `hover:bg-brand-main/80`, `bg-brand-accent/10`
+- Glass effects: `.glass` (panels) and `.glass-subtle` (bars/headers)
+- Surface elevation: `bg-surface-raised`, `bg-surface-overlay`
+
+### Typography
+
+- **Headings**: Outfit (geometric, modern) — `font-heading` / `--font-heading`
+- **Body**: Plus Jakarta Sans (humanist, readable) — `font-sans` / `--font-body`
+- Loaded via `next/font/google` in `apps/web/src/app/layout.tsx`
+
+### Layout Structure
+
+- `(landing)/` — floating glass header + footer + content
+- `(dashboard)/dashboard/` — minimal header + sidebar + content (auth-gated)
+- `(auth)/` — centered card on gradient background
+
+### Animations
+
+- `.animate-fade-in-up` — upward entrance (0.5s)
+- `.animate-fade-in` — opacity entrance (0.4s)
+- `.animate-slide-in-left` — left entrance (0.4s)
+- Stagger with inline `animation-delay` styles
