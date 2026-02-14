@@ -13,7 +13,7 @@ export default function Logo({ className }: { className?: string }) {
         href="/"
         className={`text-lg font-bold tracking-tight ${className ?? ""}`}
       >
-        <span className="text-brand-cyan">Community</span>{" "}
+        <span className="text-brand-main">Community</span>{" "}
         <span>Bot</span>
       </Link>
     );

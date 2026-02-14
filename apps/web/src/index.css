@@ -37,7 +37,8 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --brand-cyan: oklch(0.72 0.15 220);
+  --brand-main: oklch(0.72 0.15 220);
+  --brand-accent: oklch(0.30 0.05 260);
   --brand-twitch: oklch(0.55 0.25 290);
   --brand-discord: oklch(0.55 0.18 270);
   --glass-bg: oklch(1 0 0 / 60%);
@@ -81,7 +82,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.556 0.02 260);
-  --brand-cyan: oklch(0.72 0.15 220);
+  --brand-main: oklch(0.72 0.15 220);
+  --brand-accent: oklch(0.15 0.04 260);
   --brand-twitch: oklch(0.55 0.25 290);
   --brand-discord: oklch(0.55 0.18 270);
   --glass-bg: oklch(0.17 0.025 260 / 60%);
@@ -127,7 +129,8 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  --color-brand-cyan: var(--brand-cyan);
+  --color-brand-main: var(--brand-main);
+  --color-brand-accent: var(--brand-accent);
   --color-brand-twitch: var(--brand-twitch);
   --color-brand-discord: var(--brand-discord);
   --color-glass-bg: var(--glass-bg);

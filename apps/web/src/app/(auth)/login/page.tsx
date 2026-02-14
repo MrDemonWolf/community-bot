@@ -73,7 +73,7 @@ export default function LoginPage() {
               {signingIn === "discord" ? "Redirecting..." : "Discord"}
             </Button>
             {lastUsedMethod === "discord" && (
-              <p className="text-center text-xs text-brand-cyan">
+              <p className="text-center text-xs text-brand-main">
                 Last signed in with Discord
               </p>
             )}
@@ -99,7 +99,7 @@ export default function LoginPage() {
               {signingIn === "twitch" ? "Redirecting..." : "Twitch"}
             </Button>
             {lastUsedMethod === "twitch" && (
-              <p className="text-center text-xs text-brand-cyan">
+              <p className="text-center text-xs text-brand-main">
                 Last signed in with Twitch
               </p>
             )}
