@@ -35,6 +35,7 @@ FROM node:24-alpine AS production
 WORKDIR /usr/src/app
 
 RUN apk add --no-cache openssl
+RUN npm install -g tsx
 
 COPY --from=build /usr/src/app/apps/twitch/dist ./apps/twitch/dist
 COPY --from=build /usr/src/app/apps/twitch/node_modules ./apps/twitch/node_modules
@@ -45,8 +46,12 @@ COPY --from=build /usr/src/app/packages/server ./packages/server
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/package.json ./
 
+COPY apps/twitch/entrypoint.sh ./entrypoint.sh
+RUN chmod +x entrypoint.sh
+
 ENV NODE_ENV=production
 
 EXPOSE 3737
 
-CMD ["node", "apps/twitch/dist/app.js"]
+ENTRYPOINT ["./entrypoint.sh"]
+CMD ["tsx", "apps/twitch/dist/app.js"]
