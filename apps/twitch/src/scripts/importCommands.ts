@@ -1,0 +1,52 @@
+import { readFileSync } from "fs";
+import { resolve } from "path";
+import { prisma } from "@community-bot/db";
+import type {
+  TwitchResponseType,
+  TwitchAccessLevel,
+  TwitchStreamStatus,
+} from "@community-bot/db";
+
+interface CommandEntry {
+  name: string;
+  enabled: boolean;
+  response: string;
+  responseType: TwitchResponseType;
+  globalCooldown: number;
+  userCooldown: number;
+  accessLevel: TwitchAccessLevel;
+  streamStatus: TwitchStreamStatus;
+  hidden: boolean;
+  aliases: string[];
+  keywords: string[];
+}
+
+async function main() {
+  const filePath = process.argv[2] || resolve(__dirname, "../../prisma/commands.json");
+  const raw = readFileSync(filePath, "utf-8");
+  const commands: CommandEntry[] = JSON.parse(raw);
+
+  console.log(`Importing ${commands.length} commands from ${filePath}...`);
+
+  for (const cmd of commands) {
+    await prisma.twitchChatCommand.upsert({
+      where: { name: cmd.name },
+      update: cmd,
+      create: cmd,
+    });
+    console.log(
+      `  ${cmd.enabled ? "+" : "-"} ${cmd.name}${cmd.aliases.length ? ` (aliases: ${cmd.aliases.join(", ")})` : ""}`
+    );
+  }
+
+  console.log(`\nImported ${commands.length} commands.`);
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

@@ -15,18 +15,15 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio"
   },
-  "dependencies": {
-    "@community-bot/env": "workspace:*",
-    "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "catalog:",
-    "dotenv": "catalog:",
-    "pg": "^8.17.1",
-    "zod": "catalog:"
-  },
   "devDependencies": {
+    "typescript": "catalog:",
     "@community-bot/config": "workspace:*",
-    "@types/pg": "^8.16.0",
     "prisma": "^7.2.0",
-    "typescript": "catalog:"
+    "@types/pg": "^8.16.0"
+  },
+  "dependencies": {
+    "@prisma/client": "catalog:",
+    "@prisma/adapter-pg": "^7.2.0",
+    "pg": "^8.17.1"
   }
 }

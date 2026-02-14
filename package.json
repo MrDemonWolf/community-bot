@@ -1,11 +1,11 @@
 {
   "name": "community-bot",
   "private": true,
+  "type": "module",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
-  "type": "module",
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
@@ -17,16 +17,24 @@
     "db:generate": "turbo -F @community-bot/db db:generate",
     "db:migrate": "turbo -F @community-bot/db db:migrate"
   },
+  "packageManager": "pnpm@10.29.1",
   "dependencies": {
-    "@community-bot/env": "workspace:*",
     "dotenv": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@community-bot/env": "workspace:*"
   },
   "devDependencies": {
-    "@community-bot/config": "workspace:*",
+    "typescript": "catalog:",
     "@types/node": "^22.13.14",
-    "turbo": "^2.6.3",
-    "typescript": "catalog:"
+    "@community-bot/config": "workspace:*",
+    "turbo": "^2.6.3"
   },
-  "packageManager": "pnpm@10.28.2"
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "esbuild",
+      "sharp"
+    ]
+  }
 }

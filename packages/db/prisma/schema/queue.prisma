@@ -16,4 +16,3 @@ model QueueState {
   id     String      @id @default("singleton")
   status QueueStatus @default(CLOSED)
 }
-

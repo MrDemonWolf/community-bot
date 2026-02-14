@@ -25,29 +25,22 @@ export default function UserMenu() {
 
   if (!session) {
     return (
-      <Link href="/sign-in">
+      <Link href="/login">
         <Button variant="outline">Sign In</Button>
       </Link>
     );
   }
 
-  const user = session.user as Record<string, unknown>;
-  const displayName = (user.username as string) ?? session.user.name;
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="outline" />}>
-        {displayName}
+        {session.user.name}
       </DropdownMenuTrigger>
       <DropdownMenuContent className="bg-card">
         <DropdownMenuGroup>
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>{session.user.email}</DropdownMenuItem>
-          <Link href="/settings">
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-          </Link>
-          <DropdownMenuSeparator />
           <DropdownMenuItem
             variant="destructive"
             onClick={() => {

@@ -21,7 +21,6 @@ First, install the dependencies:
 ```bash
 pnpm install
 ```
-
 ## Database Setup
 
 This project uses PostgreSQL with Prisma.
@@ -30,10 +29,10 @@ This project uses PostgreSQL with Prisma.
 2. Update your `apps/web/.env` file with your PostgreSQL connection details.
 
 3. Apply the schema to your database:
-
 ```bash
 pnpm run db:push
 ```
+
 
 Then, run the development server:
 
@@ -43,44 +42,8 @@ pnpm run dev
 
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the fullstack application.
 
-## Prisma Schema — Source of Truth
 
-This monorepo owns the Prisma schema. All model/enum definitions live in `packages/db/prisma/schema/` as split domain files:
 
-| File | Contents |
-|------|----------|
-| `schema.prisma` | Generator + datasource config |
-| `auth.prisma` | User, Session, Account, Verification, TwoFactor (web app) |
-| `discord.prisma` | DiscordGuild |
-| `twitch.prisma` | TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular, enums |
-| `queue.prisma` | QueueEntry, QueueState, QueueStatus |
-
-**Do NOT edit `prisma/schema.prisma` in the consumer projects directly.** Edit the `.prisma` files here, then sync to each consumer:
-
-```bash
-# In ../community-bot-discord:
-pnpm prisma:sync && pnpm prisma:generate
-
-# In ../community-bot-twitch:
-pnpm prisma:sync && pnpm db:generate
-```
-
-Consumer projects have a `scripts/sync-prisma.sh` that pulls the `.prisma` files listed in their `SCHEMA_FILES` array, combines them with their local generator config, and writes a single `prisma/schema.prisma`.
-
-### Adding a New Domain File
-
-1. Create e.g. `packages/db/prisma/schema/moderation.prisma` with your models
-2. In each consumer project that needs it, add `"moderation.prisma"` to the `SCHEMA_FILES` array in `scripts/sync-prisma.sh`
-3. Run `pnpm prisma:sync` in those projects
-
-### Migrations
-
-Migrations are owned by `community-bot-discord` (it has the migration history). After schema changes:
-
-```bash
-# In ../community-bot-discord:
-pnpm prisma:sync && pnpm prisma:generate && pnpm prisma:migrate
-```
 
 ## Project Structure
 
@@ -91,7 +54,7 @@ my-better-t-app/
 ├── packages/
 │   ├── api/         # API layer / business logic
 │   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries (SOURCE OF TRUTH)
+│   └── db/          # Database schema & queries
 ```
 
 ## Available Scripts

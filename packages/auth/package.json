@@ -1,6 +1,5 @@
 {
   "name": "@community-bot/auth",
-  "type": "module",
   "exports": {
     ".": {
       "default": "./src/index.ts"
@@ -9,17 +8,17 @@
       "default": "./src/*.ts"
     }
   },
+  "type": "module",
   "scripts": {},
-  "dependencies": {
-    "@community-bot/db": "workspace:*",
-    "@community-bot/env": "workspace:*",
-    "better-auth": "catalog:",
-    "resend": "^4.0.0",
-    "dotenv": "catalog:",
-    "zod": "catalog:"
-  },
   "devDependencies": {
-    "@community-bot/config": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "@community-bot/config": "workspace:*"
+  },
+  "dependencies": {
+    "dotenv": "catalog:",
+    "zod": "catalog:",
+    "@community-bot/env": "workspace:*",
+    "@community-bot/db": "workspace:*",
+    "better-auth": "catalog:"
   }
 }

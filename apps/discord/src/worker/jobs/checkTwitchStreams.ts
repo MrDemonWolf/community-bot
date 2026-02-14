@@ -1,0 +1,210 @@
+import type { Client, TextChannel } from "discord.js";
+
+import { prisma } from "@community-bot/db";
+import { getStreams } from "../../twitch/api.js";
+import { buildLiveEmbed, buildOfflineEmbed } from "../../twitch/embeds.js";
+import logger from "../../utils/logger.js";
+
+export default async function checkTwitchStreams(client: Client): Promise<void> {
+  try {
+    // 1. Get all monitored channels with their guild config
+    const channels = await prisma.twitchChannel.findMany({
+      where: { guildId: { not: null } },
+      include: {
+        DiscordGuild: true,
+        TwitchNotification: {
+          where: { isLive: true },
+          take: 1,
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (channels.length === 0) return;
+
+    // 2. Deduplicate twitch channel IDs and batch-fetch streams
+    const uniqueIds = [...new Set(channels.map((ch: { twitchChannelId: string }) => ch.twitchChannelId))] as string[];
+    const streams = await getStreams(uniqueIds);
+    const streamMap = new Map(streams.map((s) => [s.user_id, s]));
+
+    // 3. Process each channel
+    for (const channel of channels) {
+      const guild = channel.DiscordGuild;
+      if (!guild?.notificationChannelId) continue;
+
+      const stream = streamMap.get(channel.twitchChannelId);
+      const wasLive = channel.isLive;
+      const isNowLive = !!stream;
+      const activeNotification = channel.TwitchNotification[0];
+
+      try {
+        if (!wasLive && isNowLive && stream) {
+          // --- Offline → Live ---
+          await prisma.twitchChannel.update({
+            where: { id: channel.id },
+            data: {
+              isLive: true,
+              lastStreamTitle: stream.title,
+              lastGameName: stream.game_name,
+              lastStartedAt: new Date(stream.started_at),
+            },
+          });
+
+          const discordChannel = (await client.channels.fetch(
+            guild.notificationChannelId
+          )) as TextChannel | null;
+          if (!discordChannel) continue;
+
+          const startedAt = new Date(stream.started_at);
+          const roleMention = guild.notificationRoleId
+            ? `<@&${guild.notificationRoleId}>`
+            : "";
+
+          const embed = buildLiveEmbed({
+            displayName: channel.displayName ?? channel.username ?? "",
+            username: channel.username ?? "",
+            profileImageUrl: channel.profileImageUrl ?? "",
+            stream,
+            startedAt,
+          });
+
+          const message = await discordChannel.send({
+            content: roleMention || undefined,
+            embeds: [embed],
+          });
+
+          await prisma.twitchNotification.create({
+            data: {
+              messageId: message.id,
+              channelId: guild.notificationChannelId,
+              guildId: guild.guildId,
+              twitchChannelId: channel.id,
+              isLive: true,
+              streamStartedAt: startedAt,
+            },
+          });
+
+          logger.info(
+            "Twitch Streams",
+            `${channel.displayName ?? channel.username} went live in guild ${guild.guildId}`
+          );
+        } else if (wasLive && isNowLive && stream && activeNotification) {
+          // --- Still Live (update embed) ---
+          await prisma.twitchChannel.update({
+            where: { id: channel.id },
+            data: {
+              lastStreamTitle: stream.title,
+              lastGameName: stream.game_name,
+            },
+          });
+
+          try {
+            const discordChannel = (await client.channels.fetch(
+              activeNotification.channelId
+            )) as TextChannel | null;
+            if (!discordChannel) continue;
+
+            const message = await discordChannel.messages.fetch(
+              activeNotification.messageId
+            );
+
+            const startedAt =
+              activeNotification.streamStartedAt ?? new Date(stream.started_at);
+
+            const embed = buildLiveEmbed({
+              displayName: channel.displayName ?? channel.username ?? "",
+              username: channel.username ?? "",
+              profileImageUrl: channel.profileImageUrl ?? "",
+              stream,
+              startedAt,
+            });
+
+            const roleMention = guild.notificationRoleId
+              ? `<@&${guild.notificationRoleId}>`
+              : "";
+
+            await message.edit({
+              content: roleMention || undefined,
+              embeds: [embed],
+            });
+          } catch {
+            // Message may have been deleted — ignore
+            logger.debug(
+              "Twitch Streams",
+              `Could not edit notification for ${channel.displayName ?? channel.username}`
+            );
+          }
+        } else if (wasLive && !isNowLive) {
+          // --- Live → Offline ---
+          const offlineAt = new Date();
+
+          await prisma.twitchChannel.update({
+            where: { id: channel.id },
+            data: { isLive: false },
+          });
+
+          if (activeNotification) {
+            await prisma.twitchNotification.update({
+              where: { id: activeNotification.id },
+              data: { isLive: false },
+            });
+
+            try {
+              const discordChannel = (await client.channels.fetch(
+                activeNotification.channelId
+              )) as TextChannel | null;
+              if (!discordChannel) continue;
+
+              const message = await discordChannel.messages.fetch(
+                activeNotification.messageId
+              );
+
+              const startedAt =
+                activeNotification.streamStartedAt ??
+                channel.lastStartedAt ??
+                offlineAt;
+
+              const embed = buildOfflineEmbed({
+                displayName: channel.displayName ?? channel.username ?? "",
+                username: channel.username ?? "",
+                profileImageUrl: channel.profileImageUrl ?? "",
+                title: channel.lastStreamTitle ?? "Stream",
+                gameName: channel.lastGameName ?? "Unknown",
+                startedAt,
+                offlineAt,
+              });
+
+              const roleMention = guild.notificationRoleId
+                ? `<@&${guild.notificationRoleId}>`
+                : "";
+
+              await message.edit({
+                content: roleMention || undefined,
+                embeds: [embed],
+              });
+            } catch {
+              logger.debug(
+                "Twitch Streams",
+                `Could not edit offline notification for ${channel.displayName ?? channel.username}`
+              );
+            }
+          }
+
+          logger.info(
+            "Twitch Streams",
+            `${channel.displayName ?? channel.username} went offline in guild ${guild.guildId}`
+          );
+        }
+        // Still Offline → no action
+      } catch (channelErr) {
+        logger.error(
+          "Twitch Streams",
+          `Error processing channel ${channel.twitchChannelId}`,
+          channelErr
+        );
+      }
+    }
+  } catch (err) {
+    logger.error("Twitch Streams", "Error in checkTwitchStreams job", err);
+  }
+}
