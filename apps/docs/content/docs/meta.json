@@ -10,6 +10,7 @@
     "twitch-bot/index",
     "twitch-bot/built-in-commands",
     "twitch-bot/database-commands",
+    "twitch-bot/importing-commands",
     "twitch-bot/response-variables",
     "twitch-bot/access-levels",
     "twitch-bot/queue-system",

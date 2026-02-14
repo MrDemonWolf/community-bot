@@ -1,0 +1,75 @@
+---
+title: Importing Commands
+description: Import pre-built commands from the included commands.json into the database.
+---
+
+The Twitch bot ships with **50+ pre-built commands** in `apps/twitch/prisma/commands.json`. These include community links, social media shoutouts, stream info commands, and more.
+
+## Quick Import
+
+Make sure your database is running and the schema is pushed, then:
+
+```bash
+cd apps/twitch
+pnpm db:import
+```
+
+This reads `prisma/commands.json` and upserts every command into the `TwitchChatCommand` table. Existing commands with the same name are updated; new ones are created.
+
+## Import from a Custom File
+
+You can also import from any JSON file:
+
+```bash
+pnpm db:import /path/to/your/commands.json
+```
+
+## JSON Format
+
+The file should contain an array of command objects:
+
+```json
+[
+  {
+    "name": "github",
+    "enabled": true,
+    "response": "Check out the code at https://github.com/mrdemonwolf",
+    "responseType": "SAY",
+    "globalCooldown": 5,
+    "userCooldown": 15,
+    "accessLevel": "EVERYONE",
+    "streamStatus": "BOTH",
+    "hidden": false,
+    "aliases": ["gh", "repo"],
+    "keywords": []
+  }
+]
+```
+
+### Field Reference
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Command trigger without `!` prefix |
+| `enabled` | boolean | Yes | Whether the command is active |
+| `response` | string | Yes | Response text (supports [variables](/docs/twitch-bot/response-variables)) |
+| `responseType` | `"SAY"` \| `"MENTION"` \| `"REPLY"` | Yes | How to send the response |
+| `globalCooldown` | number | Yes | Seconds before anyone can use it again |
+| `userCooldown` | number | Yes | Seconds before the same user can use it again |
+| `accessLevel` | string | Yes | Minimum [access level](/docs/twitch-bot/access-levels) |
+| `streamStatus` | `"BOTH"` \| `"ONLINE"` \| `"OFFLINE"` | Yes | When the command is active |
+| `hidden` | boolean | Yes | Hidden from future command list UI |
+| `aliases` | string[] | Yes | Alternative trigger names |
+| `keywords` | string[] | Yes | Stream title keywords for filtering |
+
+## Included Commands
+
+The bundled `commands.json` includes commands for:
+
+- **Social links** — GitHub, Twitter/X, Discord, YouTube, etc.
+- **Stream tools** — Font, theme, editor, extensions, browser
+- **Affiliate/sponsor links** — With disclosure notices
+- **Community commands** — Lurk, hug, hydrate, and more
+- **Info commands** — Schedule, about, rules
+
+After importing, all commands are immediately available in chat (or on the next 60-second reload cycle).
