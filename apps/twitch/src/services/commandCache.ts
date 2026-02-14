@@ -6,55 +6,116 @@ export type CachedCommand = TwitchChatCommand & {
   compiledRegex?: RegExp;
 };
 
+function stripHash(channel: string): string {
+  return channel.startsWith("#") ? channel.slice(1) : channel;
+}
+
 class CommandCache {
-  private prefixMap = new Map<string, CachedCommand>();
-  private regexCommands: CachedCommand[] = [];
+  // Per-channel command maps: channelUsername -> (name/alias -> command)
+  private channelPrefixMaps = new Map<string, Map<string, CachedCommand>>();
+  private channelRegexMaps = new Map<string, CachedCommand[]>();
+
+  // Global commands (botChannelId is null) — legacy/fallback
+  private globalPrefixMap = new Map<string, CachedCommand>();
+  private globalRegexCommands: CachedCommand[] = [];
 
   async load(): Promise<void> {
     const commands = await prisma.twitchChatCommand.findMany({
       where: { enabled: true },
+      include: { botChannel: true },
     });
 
-    const newPrefixMap = new Map<string, CachedCommand>();
-    const newRegexCommands: CachedCommand[] = [];
+    const newChannelPrefixMaps = new Map<string, Map<string, CachedCommand>>();
+    const newChannelRegexMaps = new Map<string, CachedCommand[]>();
+    const newGlobalPrefixMap = new Map<string, CachedCommand>();
+    const newGlobalRegexCommands: CachedCommand[] = [];
 
     for (const cmd of commands) {
       const cached: CachedCommand = { ...cmd };
+      const channelUsername = cmd.botChannel?.twitchUsername?.toLowerCase();
 
       if (cmd.regex) {
         try {
           cached.compiledRegex = new RegExp(cmd.regex, "i");
-          newRegexCommands.push(cached);
         } catch {
           logger.warn("CommandCache", `Invalid regex for command "${cmd.name}": ${cmd.regex}`);
+          continue;
+        }
+
+        if (channelUsername) {
+          if (!newChannelRegexMaps.has(channelUsername)) {
+            newChannelRegexMaps.set(channelUsername, []);
+          }
+          newChannelRegexMaps.get(channelUsername)!.push(cached);
+        } else {
+          newGlobalRegexCommands.push(cached);
         }
         continue;
       }
 
-      // Index by name and aliases for O(1) prefix lookup
-      newPrefixMap.set(cmd.name.toLowerCase(), cached);
-      for (const alias of cmd.aliases) {
-        newPrefixMap.set(alias.toLowerCase(), cached);
+      if (channelUsername) {
+        if (!newChannelPrefixMaps.has(channelUsername)) {
+          newChannelPrefixMaps.set(channelUsername, new Map());
+        }
+        const channelMap = newChannelPrefixMaps.get(channelUsername)!;
+        channelMap.set(cmd.name.toLowerCase(), cached);
+        for (const alias of cmd.aliases) {
+          channelMap.set(alias.toLowerCase(), cached);
+        }
+      } else {
+        newGlobalPrefixMap.set(cmd.name.toLowerCase(), cached);
+        for (const alias of cmd.aliases) {
+          newGlobalPrefixMap.set(alias.toLowerCase(), cached);
+        }
       }
     }
 
     // Atomic swap
-    this.prefixMap = newPrefixMap;
-    this.regexCommands = newRegexCommands;
+    this.channelPrefixMaps = newChannelPrefixMaps;
+    this.channelRegexMaps = newChannelRegexMaps;
+    this.globalPrefixMap = newGlobalPrefixMap;
+    this.globalRegexCommands = newGlobalRegexCommands;
 
-    logger.info("CommandCache", `Loaded ${commands.length} commands (${newPrefixMap.size} prefix entries, ${newRegexCommands.length} regex)`);
+    logger.info("CommandCache", `Loaded ${commands.length} commands across ${newChannelPrefixMaps.size} channels`);
   }
 
   async reload(): Promise<void> {
     await this.load();
   }
 
-  getByNameOrAlias(name: string): CachedCommand | undefined {
-    return this.prefixMap.get(name.toLowerCase());
+  getByNameOrAlias(name: string, channel?: string): CachedCommand | undefined {
+    const key = name.toLowerCase();
+
+    // Check channel-specific first
+    if (channel) {
+      const channelUsername = stripHash(channel).toLowerCase();
+      const channelMap = this.channelPrefixMaps.get(channelUsername);
+      if (channelMap) {
+        const found = channelMap.get(key);
+        if (found) return found;
+      }
+    }
+
+    // Fall back to global
+    return this.globalPrefixMap.get(key);
   }
 
-  getRegexCommands(): CachedCommand[] {
-    return this.regexCommands;
+  getRegexCommands(channel?: string): CachedCommand[] {
+    const result: CachedCommand[] = [];
+
+    // Channel-specific regex commands first
+    if (channel) {
+      const channelUsername = stripHash(channel).toLowerCase();
+      const channelRegex = this.channelRegexMaps.get(channelUsername);
+      if (channelRegex) {
+        result.push(...channelRegex);
+      }
+    }
+
+    // Then global
+    result.push(...this.globalRegexCommands);
+
+    return result;
   }
 }
 

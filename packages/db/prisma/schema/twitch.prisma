@@ -55,6 +55,7 @@ enum TwitchAccessLevel {
   REGULAR
   VIP
   MODERATOR
+  LEAD_MODERATOR
   BROADCASTER
 }
 
@@ -66,7 +67,7 @@ enum TwitchStreamStatus {
 
 model TwitchChatCommand {
   id             String             @id @default(uuid())
-  name           String             @unique
+  name           String
   enabled        Boolean            @default(true)
   response       String
   responseType   TwitchResponseType @default(SAY)
@@ -79,8 +80,13 @@ model TwitchChatCommand {
   aliases        String[]           @default([])
   keywords       String[]           @default([])
   regex          String?
+  expiresAt      DateTime?
+  botChannelId   String?
+  botChannel     BotChannel?        @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
+
+  @@unique([name, botChannelId])
 }
 
 model TwitchRegular {
@@ -93,12 +99,26 @@ model TwitchRegular {
 }
 
 model BotChannel {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  twitchUsername   String
-  twitchUserId    String   @unique
-  enabled         Boolean  @default(true)
-  joinedAt        DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String                   @id @default(uuid())
+  userId           String                   @unique
+  twitchUsername    String
+  twitchUserId     String                   @unique
+  enabled          Boolean                  @default(true)
+  muted            Boolean                  @default(false)
+  disabledCommands String[]                 @default([])
+  joinedAt         DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commandOverrides DefaultCommandOverride[]
+  customCommands   TwitchChatCommand[]
+}
+
+model DefaultCommandOverride {
+  id           String            @id @default(uuid())
+  botChannelId String
+  commandName  String
+  accessLevel  TwitchAccessLevel
+  botChannel   BotChannel        @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+
+  @@unique([botChannelId, commandName])
 }

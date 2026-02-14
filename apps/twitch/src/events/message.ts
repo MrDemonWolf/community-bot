@@ -14,6 +14,10 @@ import {
 import { executeCommand } from "../services/commandExecutor.js";
 import { trackMessage } from "../services/chatterTracker.js";
 import { isMuted } from "../services/botState.js";
+import {
+  isCommandDisabled,
+  getAccessLevelOverride,
+} from "../services/disabledCommandsCache.js";
 import { TwitchAccessLevel, TwitchStreamStatus } from "@community-bot/db";
 import { logger } from "../utils/logger.js";
 
@@ -57,6 +61,7 @@ function passesChecks(
   // 5. Cooldowns (mods and broadcasters bypass)
   if (
     userLevel !== TwitchAccessLevel.MODERATOR &&
+    userLevel !== TwitchAccessLevel.LEAD_MODERATOR &&
     userLevel !== TwitchAccessLevel.BROADCASTER
   ) {
     const { onCooldown } = isOnCooldown(
@@ -77,8 +82,8 @@ export function registerMessageEvents(chatClient: ChatClient): void {
   chatClient.onMessage((channel, user, text, msg) => {
     trackMessage(channel, user);
 
-    // When muted, only allow "!bot unmute" through
-    if (isMuted()) {
+    // When muted for this channel, only allow "!bot unmute" through
+    if (isMuted(channel)) {
       const trimmed = text.trim().toLowerCase();
       if (trimmed !== "!bot unmute") return;
     }
@@ -91,6 +96,20 @@ export function registerMessageEvents(chatClient: ChatClient): void {
 
       const builtIn = commands.get(commandName);
       if (builtIn) {
+        // Check if this built-in command is disabled for this channel
+        if (isCommandDisabled(channel, builtIn.name)) {
+          return;
+        }
+
+        // Check per-channel access level override
+        const accessOverride = getAccessLevelOverride(channel, builtIn.name);
+        if (accessOverride) {
+          const userLevel = getUserAccessLevel(msg);
+          if (!meetsAccessLevel(userLevel, accessOverride as TwitchAccessLevel)) {
+            return;
+          }
+        }
+
         logger.commands.executing(builtIn.name, user, msg.userInfo.userId);
         builtIn
           .execute(chatClient, channel, user, args, msg)
@@ -104,7 +123,7 @@ export function registerMessageEvents(chatClient: ChatClient): void {
       }
 
       // Phase 2: DB prefix commands
-      const dbCmd = commandCache.getByNameOrAlias(commandName);
+      const dbCmd = commandCache.getByNameOrAlias(commandName, channel);
       if (dbCmd) {
         const userLevel = getUserAccessLevel(msg);
         const check = passesChecks(dbCmd, userLevel, user, msg.userInfo.userId);
@@ -138,7 +157,7 @@ export function registerMessageEvents(chatClient: ChatClient): void {
     }
 
     // Phase 3: DB regex commands
-    const regexCommands = commandCache.getRegexCommands();
+    const regexCommands = commandCache.getRegexCommands(channel);
     for (const cmd of regexCommands) {
       if (!cmd.compiledRegex) continue;
       if (!cmd.compiledRegex.test(text)) continue;

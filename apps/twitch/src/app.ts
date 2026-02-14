@@ -13,6 +13,12 @@ import { registerJoinEvents } from "./events/join.js";
 import { registerPartEvents } from "./events/part.js";
 import { commandCache } from "./services/commandCache.js";
 import { loadRegulars } from "./services/accessControl.js";
+import { loadMutedState, setMuted } from "./services/botState.js";
+import {
+  loadDisabledCommands,
+  reloadForChannel,
+} from "./services/disabledCommandsCache.js";
+import { setEventBus } from "./services/eventBusAccessor.js";
 import * as streamStatusManager from "./services/streamStatusManager.js";
 
 export let botStatus = {
@@ -29,9 +35,12 @@ async function main() {
   });
 
   const eventBus = new EventBus(env.REDIS_URL);
+  setEventBus(eventBus);
 
   await commandCache.load();
   await loadRegulars();
+  await loadMutedState();
+  await loadDisabledCommands();
 
   const { authProvider, botUsername } = await createAuthProvider();
 
@@ -60,6 +69,7 @@ async function main() {
     try {
       await commandCache.reload();
       await loadRegulars();
+      await loadDisabledCommands();
     } catch (err) {
       logger.warn("Cron", "Failed to reload commands/regulars", err instanceof Error ? { error: err.message } : undefined);
     }
@@ -112,6 +122,24 @@ async function main() {
   await eventBus.on("regular:deleted", async () => {
     logger.info("EventBus", "Regular removed, reloading list");
     await loadRegulars();
+  });
+
+  // Mute/unmute via web dashboard
+  await eventBus.on("bot:mute", async (payload) => {
+    logger.info(
+      "EventBus",
+      `Bot ${payload.muted ? "muted" : "unmuted"} for channel: ${payload.username}`
+    );
+    setMuted(payload.username, payload.muted);
+  });
+
+  // Default commands toggled via web dashboard
+  await eventBus.on("commands:defaults-updated", async (payload) => {
+    logger.info(
+      "EventBus",
+      `Default commands updated for channel: ${payload.channelId}`
+    );
+    await reloadForChannel(payload.channelId);
   });
 
   // Connect to Twitch

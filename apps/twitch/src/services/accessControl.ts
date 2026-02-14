@@ -11,7 +11,8 @@ const ACCESS_HIERARCHY: Record<TwitchAccessLevel, number> = {
   REGULAR: 2,
   VIP: 3,
   MODERATOR: 4,
-  BROADCASTER: 5,
+  LEAD_MODERATOR: 5,
+  BROADCASTER: 6,
 };
 
 let regularsSet = new Set<string>();

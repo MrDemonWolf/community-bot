@@ -1,5 +1,7 @@
 import { prisma } from "@community-bot/db";
 import { protectedProcedure, router } from "../index";
+import { z } from "zod";
+import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 
 export const botChannelRouter = router({
   /** Get the current user's bot channel status and linked Twitch account */
@@ -11,13 +13,20 @@ export const botChannelRouter = router({
       where: { userId, providerId: "twitch" },
     });
 
+    // Check if user has a linked Discord account
+    const discordAccount = await prisma.account.findFirst({
+      where: { userId, providerId: "discord" },
+    });
+
     // Check if user has a bot channel entry
     const botChannel = await prisma.botChannel.findUnique({
       where: { userId },
+      include: { commandOverrides: true },
     });
 
     return {
       hasTwitchLinked: !!twitchAccount,
+      hasDiscordLinked: !!discordAccount,
       twitchUsername: twitchAccount
         ? (
             await prisma.user.findUnique({
@@ -34,6 +43,12 @@ export const botChannelRouter = router({
             twitchUsername: botChannel.twitchUsername,
             twitchUserId: botChannel.twitchUserId,
             enabled: botChannel.enabled,
+            muted: botChannel.muted,
+            disabledCommands: botChannel.disabledCommands,
+            commandOverrides: botChannel.commandOverrides.map((o) => ({
+              commandName: o.commandName,
+              accessLevel: o.accessLevel,
+            })),
             joinedAt: botChannel.joinedAt.toISOString(),
           }
         : null,
@@ -112,4 +127,142 @@ export const botChannelRouter = router({
 
     return { success: true };
   }),
+
+  /** Mute or unmute the bot in the user's channel */
+  mute: protectedProcedure
+    .input(z.object({ muted: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const botChannel = await prisma.botChannel.findUnique({
+        where: { userId },
+      });
+
+      if (!botChannel || !botChannel.enabled) {
+        throw new Error("Bot is not enabled for your channel.");
+      }
+
+      await prisma.botChannel.update({
+        where: { userId },
+        data: { muted: input.muted },
+      });
+
+      const { eventBus } = await import("../events");
+      await eventBus.publish("bot:mute", {
+        channelId: botChannel.twitchUserId,
+        username: botChannel.twitchUsername,
+        muted: input.muted,
+      });
+
+      return { success: true, muted: input.muted };
+    }),
+
+  /** Update which default commands are disabled for this channel */
+  updateCommandToggles: protectedProcedure
+    .input(z.object({ disabledCommands: z.array(z.string()) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const botChannel = await prisma.botChannel.findUnique({
+        where: { userId },
+      });
+
+      if (!botChannel || !botChannel.enabled) {
+        throw new Error("Bot is not enabled for your channel.");
+      }
+
+      // Validate that all command names are valid default commands
+      const validNames = DEFAULT_COMMANDS.map((c) => c.name);
+      const invalid = input.disabledCommands.filter(
+        (n) => !validNames.includes(n)
+      );
+      if (invalid.length > 0) {
+        throw new Error(`Invalid command names: ${invalid.join(", ")}`);
+      }
+
+      await prisma.botChannel.update({
+        where: { userId },
+        data: { disabledCommands: input.disabledCommands },
+      });
+
+      const { eventBus } = await import("../events");
+      await eventBus.publish("commands:defaults-updated", {
+        channelId: botChannel.twitchUserId,
+      });
+
+      return { success: true };
+    }),
+
+  /** Update the access level override for a default command */
+  updateCommandAccessLevel: protectedProcedure
+    .input(
+      z.object({
+        commandName: z.string(),
+        accessLevel: z.enum([
+          "EVERYONE",
+          "SUBSCRIBER",
+          "REGULAR",
+          "VIP",
+          "MODERATOR",
+          "LEAD_MODERATOR",
+          "BROADCASTER",
+        ]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const botChannel = await prisma.botChannel.findUnique({
+        where: { userId },
+      });
+
+      if (!botChannel || !botChannel.enabled) {
+        throw new Error("Bot is not enabled for your channel.");
+      }
+
+      // Validate command name
+      const validNames = DEFAULT_COMMANDS.map((c) => c.name);
+      if (!validNames.includes(input.commandName)) {
+        throw new Error(`Invalid command name: ${input.commandName}`);
+      }
+
+      // Find the default access level for this command
+      const defaultCmd = DEFAULT_COMMANDS.find(
+        (c) => c.name === input.commandName
+      )!;
+
+      // If setting back to default, delete the override
+      if (input.accessLevel === defaultCmd.accessLevel) {
+        await prisma.defaultCommandOverride.deleteMany({
+          where: {
+            botChannelId: botChannel.id,
+            commandName: input.commandName,
+          },
+        });
+      } else {
+        await prisma.defaultCommandOverride.upsert({
+          where: {
+            botChannelId_commandName: {
+              botChannelId: botChannel.id,
+              commandName: input.commandName,
+            },
+          },
+          create: {
+            botChannelId: botChannel.id,
+            commandName: input.commandName,
+            accessLevel: input.accessLevel,
+          },
+          update: {
+            accessLevel: input.accessLevel,
+          },
+        });
+      }
+
+      const { eventBus } = await import("../events");
+      await eventBus.publish("commands:defaults-updated", {
+        channelId: botChannel.twitchUserId,
+      });
+
+      return { success: true };
+    }),
 });
