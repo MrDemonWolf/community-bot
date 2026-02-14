@@ -2,31 +2,34 @@
 import Link from "next/link";
 import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
+import Logo from "./logo";
 
 export default function Header() {
-  const links = [
-    { to: "/", label: "Home" },
-      { to: "/dashboard", label: "Dashboard" },
-  ] as const;
-
   return (
-    <div>
-      <div className="flex flex-row items-center justify-between px-2 py-1">
-        <nav className="flex gap-4 text-lg">
-          {links.map(({ to, label }) => {
-            return (
-              <Link key={to} href={to}>
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-white/60 backdrop-blur-xl backdrop-saturate-150 dark:bg-white/5">
+      <div className="flex flex-row items-center justify-between px-4 py-2.5">
+        <div className="flex items-center gap-6">
+          <Logo />
+          <nav className="flex gap-4 text-sm">
+            <Link
+              href="/"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Home
+            </Link>
+            <Link
+              href="/dashboard"
+              className="text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Dashboard
+            </Link>
+          </nav>
+        </div>
         <div className="flex items-center gap-2">
           <ModeToggle />
           <UserMenu />
         </div>
       </div>
-      <hr />
-    </div>
+    </header>
   );
 }
