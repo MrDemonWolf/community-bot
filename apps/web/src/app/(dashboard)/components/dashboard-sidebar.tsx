@@ -42,10 +42,10 @@ export default function DashboardSidebar({
     exact ? pathname === href : pathname.startsWith(href);
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-gray-200 bg-gray-50/50 dark:border-white/10 dark:bg-[#091533] lg:block">
+    <aside className="hidden w-64 shrink-0 border-r border-border bg-card lg:block">
       <div className="flex h-full flex-col gap-6 p-5">
         {/* User info */}
-        <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm dark:bg-white/5">
+        <div className="flex items-center gap-3 rounded-xl bg-surface-raised p-3">
           {session.user.image ? (
             <Image
               src={session.user.image}
@@ -56,16 +56,16 @@ export default function DashboardSidebar({
               unoptimized
             />
           ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 dark:bg-white/10">
-              <User className="h-5 w-5 text-gray-400 dark:text-white/40" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-overlay">
+              <User className="h-5 w-5 text-muted-foreground" />
             </div>
           )}
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+            <p className="truncate text-sm font-semibold text-foreground">
               {session.user.name}
             </p>
             {botStatus?.botChannel?.twitchUsername && (
-              <p className="truncate text-xs text-gray-500 dark:text-white/40">
+              <p className="truncate text-xs text-muted-foreground">
                 {botStatus.botChannel.twitchUsername}
               </p>
             )}
@@ -74,7 +74,7 @@ export default function DashboardSidebar({
 
         {/* Twitch section */}
         <div>
-          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-white/30">
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
             Twitch
           </p>
           <nav className="flex flex-col gap-0.5">
@@ -84,10 +84,10 @@ export default function DashboardSidebar({
                 <Link
                   key={link.href}
                   href={link.href as Route}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
                     active
-                      ? "bg-[#9146FF]/10 font-medium text-[#9146FF] dark:bg-[#9146FF]/20 dark:text-[#b380ff]"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-white/60 dark:hover:bg-white/5 dark:hover:text-white"
+                      ? "bg-brand-twitch/10 font-medium text-brand-twitch"
+                      : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
                   }`}
                 >
                   <link.icon className="h-4 w-4" />
@@ -100,15 +100,15 @@ export default function DashboardSidebar({
 
         {/* Discord section */}
         <div>
-          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-white/30">
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
             Discord
           </p>
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 dark:text-white/60">
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground">
             <span
               className={`inline-block h-2.5 w-2.5 rounded-full ${
                 botStatus?.hasDiscordLinked
                   ? "bg-green-500"
-                  : "bg-gray-300 dark:bg-white/20"
+                  : "bg-muted"
               }`}
             />
             {botStatus?.hasDiscordLinked ? "Connected" : "Not Connected"}

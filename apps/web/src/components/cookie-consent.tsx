@@ -28,16 +28,16 @@ export default function CookieConsent() {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-white p-4 shadow-lg dark:bg-[#0d1f42]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card p-4 shadow-lg">
       <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
-        <p className="text-center text-sm text-gray-700 dark:text-gray-300 sm:text-left">
+        <p className="text-center text-sm text-muted-foreground sm:text-left">
           By using this site, you agree to our{" "}
           {privacyUrl && (
             <a
               href={privacyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-[#00ACED] underline-offset-2 hover:underline"
+              className="font-medium text-brand-cyan underline-offset-2 hover:underline"
             >
               Privacy Policy
             </a>
@@ -48,7 +48,7 @@ export default function CookieConsent() {
               href={termsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-[#00ACED] underline-offset-2 hover:underline"
+              className="font-medium text-brand-cyan underline-offset-2 hover:underline"
             >
               Terms of Service
             </a>
@@ -57,7 +57,7 @@ export default function CookieConsent() {
         </p>
         <Button
           variant="outline"
-          className="shrink-0 border-[#00ACED] text-[#00ACED] hover:bg-[#00ACED]/10"
+          className="shrink-0 border-brand-cyan text-brand-cyan hover:bg-brand-cyan/10"
           onClick={handleAccept}
         >
           Accept

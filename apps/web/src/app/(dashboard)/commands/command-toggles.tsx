@@ -97,7 +97,7 @@ export default function CommandToggles() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-lg font-semibold text-foreground">
           Default Commands
         </h2>
         <p className="text-sm text-muted-foreground">
@@ -105,25 +105,25 @@ export default function CommandToggles() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-white/10 dark:bg-[#0d1f42]">
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-white/5">
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
+            <tr className="border-b border-border">
+              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Command
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
+              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Description
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
+              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Access Level
               </th>
-              <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
+              <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Enabled
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+          <tbody className="divide-y divide-border">
             {DEFAULT_COMMANDS.map((cmd) => {
               const isDisabled = disabledCommands.has(cmd.name);
               const currentAccess = overrides.get(cmd.name) ?? cmd.accessLevel;
@@ -131,17 +131,17 @@ export default function CommandToggles() {
               return (
                 <tr
                   key={cmd.name}
-                  className={isDisabled ? "opacity-50" : ""}
+                  className={`transition-colors hover:bg-surface-raised ${isDisabled ? "opacity-50" : ""}`}
                 >
-                  <td className="px-4 py-3 font-mono text-sm text-[#9146FF]">
+                  <td className="px-4 py-3 font-mono text-sm text-brand-twitch">
                     !{cmd.name}
                     {cmd.aliases.length > 0 && (
-                      <span className="ml-2 text-xs text-gray-400 dark:text-white/30">
+                      <span className="ml-2 text-xs text-muted-foreground/70">
                         {cmd.aliases.map((a) => `!${a}`).join(", ")}
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-white/60">
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
                     {cmd.description}
                   </td>
                   <td className="px-4 py-3">
@@ -151,7 +151,7 @@ export default function CommandToggles() {
                         handleAccessChange(cmd.name, e.target.value)
                       }
                       disabled={isPending || isDisabled}
-                      className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-white/70"
+                      className="rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground"
                     >
                       {ACCESS_LEVELS.map((level) => (
                         <option key={level} value={level}>
@@ -169,13 +169,13 @@ export default function CommandToggles() {
                       aria-label={`Toggle ${cmd.name}`}
                     >
                       {isPending ? (
-                        <Loader2 className="size-4 animate-spin text-gray-400" />
+                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
                       ) : (
                         <div
                           className={`relative h-6 w-11 rounded-full transition-colors ${
                             !isDisabled
-                              ? "bg-[#9146FF]"
-                              : "bg-gray-300 dark:bg-white/20"
+                              ? "bg-brand-twitch"
+                              : "bg-muted"
                           }`}
                         >
                           <div

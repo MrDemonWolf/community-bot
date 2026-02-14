@@ -76,7 +76,7 @@ export default function Dashboard({
   // State 1: Not joined
   if (hasTwitch && !isEnabled) {
     return (
-      <div className="space-y-6">
+      <div className="animate-fade-in-up space-y-6">
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-start gap-4 pt-4">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
@@ -84,7 +84,7 @@ export default function Dashboard({
             </div>
             <div className="flex-1 space-y-3">
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <h3 className="font-semibold text-foreground">
                   Bot is not joined to your Twitch channel!
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -95,7 +95,7 @@ export default function Dashboard({
               <Button
                 onClick={() => enableMutation.mutate()}
                 disabled={isPending}
-                className="bg-[#9146FF] hover:bg-[#7c3aed] text-white"
+                className="bg-brand-twitch hover:bg-brand-twitch/80 text-white"
               >
                 {enableMutation.isPending ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -114,7 +114,7 @@ export default function Dashboard({
   // State 3: Muted
   if (hasTwitch && isEnabled && isMuted) {
     return (
-      <div className="space-y-6">
+      <div className="animate-fade-in-up space-y-6">
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center justify-between gap-4 pt-4">
             <div className="flex items-center gap-3">
@@ -122,7 +122,7 @@ export default function Dashboard({
                 <VolumeX className="size-5 text-amber-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <h3 className="font-semibold text-foreground">
                   Bot is MUTED in your channel
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -131,7 +131,7 @@ export default function Dashboard({
                     href={`https://twitch.tv/${botChannel.twitchUsername}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#9146FF] hover:underline"
+                    className="text-brand-twitch hover:underline"
                   >
                     {botChannel.twitchUsername}
                   </a>{" "}
@@ -174,7 +174,7 @@ export default function Dashboard({
   // State 2: Active
   if (hasTwitch && isEnabled) {
     return (
-      <div className="space-y-6">
+      <div className="animate-fade-in-up space-y-6">
         <Card className="border-green-500/30 bg-green-500/5">
           <CardContent className="flex items-center justify-between gap-4 pt-4">
             <div className="flex items-center gap-3">
@@ -182,7 +182,7 @@ export default function Dashboard({
                 <CheckCircle2 className="size-5 text-green-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <h3 className="font-semibold text-foreground">
                   Bot is active in your channel
                 </h3>
                 <p className="text-sm text-muted-foreground">
@@ -191,7 +191,7 @@ export default function Dashboard({
                     href={`https://twitch.tv/${botChannel.twitchUsername}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[#9146FF] hover:underline"
+                    className="text-brand-twitch hover:underline"
                   >
                     {botChannel.twitchUsername}
                   </a>

@@ -4,7 +4,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="h-svh">
+    <div className="h-svh bg-gradient-to-b from-muted to-background">
       {children}
     </div>
   );

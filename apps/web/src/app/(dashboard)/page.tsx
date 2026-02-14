@@ -9,7 +9,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
+      <h1 className="mb-6 text-2xl font-bold text-foreground">
         Dashboard
       </h1>
       <Dashboard session={session!} />

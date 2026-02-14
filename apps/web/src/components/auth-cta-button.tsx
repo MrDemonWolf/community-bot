@@ -11,7 +11,7 @@ export default function AuthCtaButton() {
     return (
       <Button
         size="lg"
-        className="bg-[#00ACED] px-6 text-white hover:bg-[#0090c4]"
+        className="bg-brand-cyan px-6 text-white hover:bg-brand-cyan/80"
         disabled
       >
         &hellip;
@@ -24,7 +24,7 @@ export default function AuthCtaButton() {
       <Link href="/dashboard">
         <Button
           size="lg"
-          className="bg-[#00ACED] px-6 text-white hover:bg-[#0090c4]"
+          className="bg-brand-cyan px-6 text-white hover:bg-brand-cyan/80"
         >
           Dashboard
         </Button>
@@ -36,7 +36,7 @@ export default function AuthCtaButton() {
     <Link href="/login">
       <Button
         size="lg"
-        className="bg-[#00ACED] px-6 text-white hover:bg-[#0090c4]"
+        className="bg-brand-cyan px-6 text-white hover:bg-brand-cyan/80"
       >
         Log in
       </Button>

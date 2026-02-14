@@ -78,7 +78,7 @@ export default function CustomCommandsTab() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="size-6 animate-spin text-gray-400" />
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -108,7 +108,7 @@ export default function CustomCommandsTab() {
       {/* Search + Create */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-gray-400 dark:text-white/30" />
+          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -124,8 +124,8 @@ export default function CustomCommandsTab() {
 
       {/* Commands Table */}
       {filteredCommands.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 py-12 dark:border-white/10">
-          <p className="text-sm text-gray-500 dark:text-white/40">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
+          <p className="text-sm text-muted-foreground">
             {search
               ? "No commands match your search."
               : "No custom commands yet."}
@@ -143,45 +143,45 @@ export default function CustomCommandsTab() {
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-white/10 dark:bg-[#0d1f42]">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-white/5">
-                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
+              <tr className="border-b border-border">
+                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Command
                 </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
+                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Response
                 </th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
+                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Access
                 </th>
-                <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
+                <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Enabled
                 </th>
-                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
+                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+            <tbody className="divide-y divide-border">
               {filteredCommands.map((cmd) => (
                 <tr
                   key={cmd.id}
-                  className={cmd.enabled ? "" : "opacity-50"}
+                  className={`transition-colors hover:bg-surface-raised ${cmd.enabled ? "" : "opacity-50"}`}
                 >
-                  <td className="px-4 py-3 font-mono text-sm text-[#9146FF]">
+                  <td className="px-4 py-3 font-mono text-sm text-brand-twitch">
                     !{cmd.name}
                     {cmd.aliases.length > 0 && (
-                      <span className="ml-2 text-xs text-gray-400 dark:text-white/30">
+                      <span className="ml-2 text-xs text-muted-foreground/70">
                         {cmd.aliases.map((a) => `!${a}`).join(", ")}
                       </span>
                     )}
                   </td>
-                  <td className="max-w-[200px] truncate px-4 py-3 text-sm text-gray-600 dark:text-white/60">
+                  <td className="max-w-[200px] truncate px-4 py-3 text-sm text-muted-foreground">
                     {cmd.response}
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-white/50">
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
                     {formatAccessLevel(cmd.accessLevel)}
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -192,13 +192,13 @@ export default function CustomCommandsTab() {
                       aria-label={`Toggle ${cmd.name}`}
                     >
                       {toggleMutation.isPending ? (
-                        <Loader2 className="size-4 animate-spin text-gray-400" />
+                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
                       ) : (
                         <div
                           className={`relative h-6 w-11 rounded-full transition-colors ${
                             cmd.enabled
-                              ? "bg-[#9146FF]"
-                              : "bg-gray-300 dark:bg-white/20"
+                              ? "bg-brand-twitch"
+                              : "bg-muted"
                           }`}
                         >
                           <div

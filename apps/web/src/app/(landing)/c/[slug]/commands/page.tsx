@@ -65,7 +65,7 @@ export default async function CommandsPage({
   return (
     <div className="-mt-[1px] flex flex-col">
       {/* Banner */}
-      <div className="relative h-32 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-[#0a1a3a] dark:via-[#091533] dark:to-[#0d1f42]" />
+      <div className="relative h-32 bg-gradient-to-br from-muted via-background to-muted" />
 
       <div className="mx-auto w-full max-w-5xl px-6">
         <div className="flex flex-col gap-8 sm:flex-row">
@@ -78,16 +78,16 @@ export default async function CommandsPage({
                   alt={user.name}
                   width={48}
                   height={48}
-                  className="rounded-lg border-2 border-white bg-gray-100 dark:border-[#091533] dark:bg-[#0d1f42]"
+                  className="rounded-lg border-2 border-background bg-card"
                   unoptimized
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-white bg-gray-100 dark:border-[#091533] dark:bg-[#0d1f42]">
-                  <User className="h-5 w-5 text-gray-300 dark:text-white/30" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-background bg-card">
+                  <User className="h-5 w-5 text-muted-foreground" />
                 </div>
               )}
               <div>
-                <h2 className="font-bold text-gray-900 dark:text-white">{user.name}</h2>
+                <h2 className="font-bold text-foreground">{user.name}</h2>
               </div>
             </div>
 
@@ -111,12 +111,12 @@ export default async function CommandsPage({
             <div className="flex items-center gap-3">
               <Link
                 href={`/c/${slug}` as Route}
-                className="text-gray-400 transition-colors hover:text-gray-600 dark:text-white/40 dark:hover:text-white/70"
+                className="text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Link>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Chat Commands</h1>
-              <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-white/10 dark:text-white/50">
+              <h1 className="text-xl font-bold text-foreground">Chat Commands</h1>
+              <span className="rounded-md bg-surface-raised px-2 py-0.5 text-xs text-muted-foreground">
                 {totalCount}
               </span>
             </div>
@@ -153,8 +153,8 @@ function SidebarLink({
       href={href as Route}
       className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
         active
-          ? "bg-gray-100 text-gray-900 dark:bg-white/10 dark:text-white"
-          : "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-white/50 dark:hover:bg-white/5 dark:hover:text-white/70"
+          ? "bg-surface-raised text-foreground"
+          : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
       }`}
     >
       {icon}
