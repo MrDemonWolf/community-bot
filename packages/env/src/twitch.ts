@@ -17,8 +17,6 @@ export const env = createEnv({
     TWITCH_APPLICATION_CLIENT_SECRET: z
       .string()
       .min(1, "Twitch Client Secret is required"),
-    INIT_TWITCH_ACCESS_TOKEN: z.string().min(1).optional(),
-    INIT_TWITCH_REFRESH_TOKEN: z.string().min(1).optional(),
     TWITCH_CHANNEL: z.string().min(1, "Twitch channel is required"),
     HOST: z.string().default("localhost"),
     PORT: z.coerce.number().int().min(1).max(65535).default(3737),

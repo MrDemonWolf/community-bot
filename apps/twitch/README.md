@@ -45,8 +45,7 @@ For the full database command system docs (fields, variables, access levels, reg
 The bot manages Twitch OAuth tokens automatically:
 
 1. **Stored credentials** — Validates on startup, auto-refreshes if expired
-2. **Environment variables** — Falls back to `INIT_TWITCH_ACCESS_TOKEN` / `INIT_TWITCH_REFRESH_TOKEN` if set
-3. **Device Code Flow** — As a last resort, starts interactive authorization (prints a link to your terminal)
+2. **Device Code Flow** — If no stored credentials, starts interactive authorization (prints a link to your terminal)
 
 Tokens are persisted in the `TwitchCredential` table and refreshed automatically. The device code flow only triggers again if both tokens are completely dead.
 
@@ -54,11 +53,11 @@ Tokens are persisted in the `TwitchCredential` table and refreshed automatically
 
 ### API
 
-The bot runs an Express API server (default: `http://localhost:3000`).
+The bot runs an Express API server (default: `http://localhost:3737`).
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/status` | GET | Returns bot status: `offline`, `connecting`, or `online` |
+| `/api/health` | GET | Returns bot health status: `offline`, `connecting`, or `online` |
 
 ## Development
 
@@ -114,9 +113,7 @@ TWITCH_CHANNEL=mrdemonwolf
 
 # Optional
 # HOST=localhost
-# PORT=3000
-# INIT_TWITCH_ACCESS_TOKEN=...
-# INIT_TWITCH_REFRESH_TOKEN=...
+# PORT=3737
 ```
 
 #### 5. Push schema and start

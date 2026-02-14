@@ -6,10 +6,10 @@ const router: ReturnType<typeof express.Router> = express.Router();
 import { botStatus } from "../../app.js";
 
 /**
- *  @route GET /status
- *  @desc Get status of Twitch Bot
+ *  @route GET /health
+ *  @desc Get health of Twitch Bot
  *  @access Public
- *  @returns {object} - Status of Twitch Bot
+ *  @returns {object} - Health status of Twitch Bot
  */
 router.get("/", async (req, res) => {
   try {
