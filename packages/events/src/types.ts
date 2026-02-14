@@ -24,6 +24,12 @@ export interface EventMap {
   // Queue events
   "queue:updated": { channelId: string };
 
+  // Bot mute/unmute
+  "bot:mute": { channelId: string; username: string; muted: boolean };
+
+  // Default commands toggled
+  "commands:defaults-updated": { channelId: string };
+
   // Bot status
   "bot:status": {
     service: "discord" | "twitch";

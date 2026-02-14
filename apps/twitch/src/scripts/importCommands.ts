@@ -32,11 +32,15 @@ async function main() {
 
   console.log(`Importing ${commands.length} commands from ${filePath}...`);
 
+  // Get the first bot channel to scope commands to
+  const botChannel = await prisma.botChannel.findFirst();
+  const botChannelId = botChannel?.id ?? null;
+
   for (const cmd of commands) {
     await prisma.twitchChatCommand.upsert({
-      where: { name: cmd.name },
+      where: { name_botChannelId: { name: cmd.name, botChannelId: botChannelId ?? "" } },
       update: cmd,
-      create: cmd,
+      create: { ...cmd, botChannelId },
     });
     console.log(
       `  ${cmd.enabled ? "+" : "-"} ${cmd.name}${cmd.aliases.length ? ` (aliases: ${cmd.aliases.join(", ")})` : ""}`

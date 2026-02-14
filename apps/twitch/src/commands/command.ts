@@ -18,6 +18,18 @@ function stripBang(name: string): string {
   return name.startsWith("!") ? name.slice(1) : name;
 }
 
+function stripHash(channel: string): string {
+  return channel.startsWith("#") ? channel.slice(1) : channel;
+}
+
+async function getBotChannelId(channel: string): Promise<string | null> {
+  const username = stripHash(channel).toLowerCase();
+  const botChannel = await prisma.botChannel.findFirst({
+    where: { twitchUsername: username },
+  });
+  return botChannel?.id ?? null;
+}
+
 const VALID_ACCESS_LEVELS: Record<string, TwitchAccessLevel> = {
   everyone: TwitchAccessLevel.EVERYONE,
   subscriber: TwitchAccessLevel.SUBSCRIBER,
@@ -44,7 +56,8 @@ const VALID_STREAM_STATUSES: Record<string, TwitchStreamStatus> = {
 async function handleAdd(
   say: (text: string) => Promise<void>,
   user: string,
-  args: string[]
+  args: string[],
+  botChannelId: string
 ): Promise<void> {
   if (args.length < 2) {
     await say(`@${user} Usage: !command add <name> <response>`);
@@ -61,7 +74,7 @@ async function handleAdd(
 
   try {
     await prisma.twitchChatCommand.create({
-      data: { name, response },
+      data: { name, response, botChannelId },
     });
     await commandCache.reload();
     await say(`@${user} Command !${name} has been added.`);
@@ -77,7 +90,8 @@ async function handleAdd(
 async function handleEdit(
   say: (text: string) => Promise<void>,
   user: string,
-  args: string[]
+  args: string[],
+  botChannelId: string
 ): Promise<void> {
   if (args.length < 2) {
     await say(`@${user} Usage: !command edit <name> <response>`);
@@ -89,7 +103,7 @@ async function handleEdit(
 
   try {
     await prisma.twitchChatCommand.update({
-      where: { name },
+      where: { name_botChannelId: { name, botChannelId } },
       data: { response },
     });
     await commandCache.reload();
@@ -106,7 +120,8 @@ async function handleEdit(
 async function handleRemove(
   say: (text: string) => Promise<void>,
   user: string,
-  args: string[]
+  args: string[],
+  botChannelId: string
 ): Promise<void> {
   if (args.length < 1) {
     await say(`@${user} Usage: !command remove <name>`);
@@ -116,7 +131,9 @@ async function handleRemove(
   const name = stripBang(args[0]).toLowerCase();
 
   try {
-    await prisma.twitchChatCommand.delete({ where: { name } });
+    await prisma.twitchChatCommand.delete({
+      where: { name_botChannelId: { name, botChannelId } },
+    });
     await commandCache.reload();
     await say(`@${user} Command !${name} has been removed.`);
   } catch (err) {
@@ -131,7 +148,8 @@ async function handleRemove(
 async function handleShow(
   say: (text: string) => Promise<void>,
   user: string,
-  args: string[]
+  args: string[],
+  botChannelId: string
 ): Promise<void> {
   if (args.length < 1) {
     await say(`@${user} Usage: !command show <name>`);
@@ -140,7 +158,9 @@ async function handleShow(
 
   const name = stripBang(args[0]).toLowerCase();
 
-  const cmd = await prisma.twitchChatCommand.findUnique({ where: { name } });
+  const cmd = await prisma.twitchChatCommand.findUnique({
+    where: { name_botChannelId: { name, botChannelId } },
+  });
   if (!cmd) {
     await say(`@${user} Command !${name} does not exist.`);
     return;
@@ -176,7 +196,8 @@ async function handleShow(
 async function handleOptions(
   say: (text: string) => Promise<void>,
   user: string,
-  args: string[]
+  args: string[],
+  botChannelId: string
 ): Promise<void> {
   if (args.length < 2) {
     await say(
@@ -189,7 +210,7 @@ async function handleOptions(
 
   // Check command exists
   const existing = await prisma.twitchChatCommand.findUnique({
-    where: { name },
+    where: { name_botChannelId: { name, botChannelId } },
   });
   if (!existing) {
     await say(`@${user} Command !${name} does not exist.`);
@@ -337,7 +358,7 @@ async function handleOptions(
   }
 
   await prisma.twitchChatCommand.update({
-    where: { name },
+    where: { name_botChannelId: { name, botChannelId } },
     data,
   });
   await commandCache.reload();
@@ -356,23 +377,29 @@ export const command: TwitchCommand = {
 
     const say = (text: string) => client.say(channel, text);
     const subcommand = args[0]?.toLowerCase();
+    const botChannelId = await getBotChannelId(channel);
+
+    if (!botChannelId) {
+      await say(`@${user} Bot channel not configured for this channel.`);
+      return;
+    }
 
     switch (subcommand) {
       case "add":
-        await handleAdd(say, user, args.slice(1));
+        await handleAdd(say, user, args.slice(1), botChannelId);
         break;
       case "edit":
-        await handleEdit(say, user, args.slice(1));
+        await handleEdit(say, user, args.slice(1), botChannelId);
         break;
       case "remove":
       case "delete":
-        await handleRemove(say, user, args.slice(1));
+        await handleRemove(say, user, args.slice(1), botChannelId);
         break;
       case "show":
-        await handleShow(say, user, args.slice(1));
+        await handleShow(say, user, args.slice(1), botChannelId);
         break;
       case "options":
-        await handleOptions(say, user, args.slice(1));
+        await handleOptions(say, user, args.slice(1), botChannelId);
         break;
       default:
         await say(

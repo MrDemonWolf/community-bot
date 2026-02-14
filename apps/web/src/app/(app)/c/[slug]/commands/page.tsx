@@ -8,6 +8,8 @@ import {
   Terminal,
   ArrowLeft,
 } from "lucide-react";
+import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
+import CommandsTabs from "./commands-tabs";
 
 async function getCommandsData(slug: string) {
   const user = await prisma.user.findFirst({
@@ -16,12 +18,34 @@ async function getCommandsData(slug: string) {
 
   if (!user) return null;
 
+  // Get bot channel to check disabled commands and access level overrides
+  const botChannel = await prisma.botChannel.findUnique({
+    where: { userId: user.id },
+    include: { commandOverrides: true },
+  });
+
   const commands = await prisma.twitchChatCommand.findMany({
-    where: { hidden: false, enabled: true },
+    where: { hidden: false, enabled: true, botChannelId: botChannel?.id ?? undefined },
     orderBy: { name: "asc" },
   });
 
-  return { user, commands };
+  const disabledCommands = new Set(botChannel?.disabledCommands ?? []);
+  const overrides = new Map(
+    (botChannel?.commandOverrides ?? []).map((o) => [o.commandName, o.accessLevel])
+  );
+
+  // Filter out disabled default commands, apply access level overrides
+  const enabledDefaults = DEFAULT_COMMANDS.filter(
+    (cmd) => !disabledCommands.has(cmd.name)
+  ).map((cmd) => {
+    const override = overrides.get(cmd.name);
+    if (override) {
+      return { ...cmd, accessLevel: override as typeof cmd.accessLevel };
+    }
+    return cmd;
+  });
+
+  return { user, commands, enabledDefaults };
 }
 
 export default async function CommandsPage({
@@ -34,7 +58,9 @@ export default async function CommandsPage({
 
   if (!data) return notFound();
 
-  const { user, commands } = data;
+  const { user, commands, enabledDefaults } = data;
+
+  const totalCount = commands.length + enabledDefaults.length;
 
   return (
     <div className="-mt-[1px] flex flex-col">
@@ -91,55 +117,19 @@ export default async function CommandsPage({
               </Link>
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">Chat Commands</h1>
               <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-white/10 dark:text-white/50">
-                {commands.length}
+                {totalCount}
               </span>
             </div>
 
-            {commands.length > 0 ? (
-              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-white/10 dark:bg-[#0d1f42]">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-white/5">
-                      <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
-                        Command
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
-                        Response
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-white/40">
-                        Access
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                    {commands.map((cmd) => (
-                      <tr key={cmd.name}>
-                        <td className="px-4 py-3 font-mono text-sm text-[#00ACED]">
-                          !{cmd.name}
-                          {cmd.aliases.length > 0 && (
-                            <span className="ml-2 text-xs text-gray-400 dark:text-white/30">
-                              {cmd.aliases.map((a) => `!${a}`).join(", ")}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-white/60">
-                          {cmd.response}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-400 dark:text-white/40">
-                          {cmd.accessLevel.charAt(0) +
-                            cmd.accessLevel.slice(1).toLowerCase()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="rounded-lg border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-[#0d1f42]">
-                <Terminal className="mx-auto mb-3 h-8 w-8 text-gray-300 dark:text-white/20" />
-                <p className="text-gray-400 dark:text-white/40">No commands available.</p>
-              </div>
-            )}
+            <CommandsTabs
+              customCommands={commands.map((cmd) => ({
+                name: cmd.name,
+                response: cmd.response,
+                accessLevel: cmd.accessLevel,
+                aliases: cmd.aliases,
+              }))}
+              defaultCommands={enabledDefaults}
+            />
           </div>
         </div>
       </div>
