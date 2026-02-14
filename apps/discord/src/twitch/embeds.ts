@@ -2,8 +2,10 @@ import { EmbedBuilder } from "discord.js";
 
 import { getStreamThumbnailUrl } from "./api.js";
 import type { TwitchStream } from "./api.js";
+import env from "../utils/env.js";
 
 const TWITCH_PURPLE = 0x9146ff;
+const isDev = env.NODE_ENV === "development";
 
 interface LiveEmbedOptions {
   displayName: string;
@@ -63,7 +65,9 @@ export function buildLiveEmbed(options: LiveEmbedOptions): EmbedBuilder {
     )
     .setImage(thumbnailUrl)
     .setFooter({
-      text: `Online for ${duration} | Last updated`,
+      text: isDev
+        ? `Development Environment | Online for ${duration} | Last updated`
+        : `Online for ${duration} | Last updated`,
     })
     .setTimestamp();
 }
@@ -92,7 +96,9 @@ export function buildOfflineEmbed(options: OfflineEmbedOptions): EmbedBuilder {
     .setColor(TWITCH_PURPLE)
     .addFields({ name: "Game", value: gameName || "Unknown", inline: true })
     .setFooter({
-      text: `Online for ${duration} | Offline at`,
+      text: isDev
+        ? `Development Environment | Online for ${duration} | Offline at`
+        : `Online for ${duration} | Offline at`,
     })
     .setTimestamp(offlineAt);
 }
