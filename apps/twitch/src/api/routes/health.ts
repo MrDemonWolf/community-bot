@@ -1,5 +1,6 @@
 import express from "express";
-import consola from "consola";
+
+import { logger } from "../../utils/logger.js";
 
 const router: ReturnType<typeof express.Router> = express.Router();
 
@@ -17,7 +18,7 @@ router.get("/", async (req, res) => {
       status: botStatus.status,
     });
   } catch (err) {
-    consola.error(err);
+    logger.error("API", "Health check failed", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
