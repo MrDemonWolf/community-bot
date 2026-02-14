@@ -1,9 +1,16 @@
-import { env } from "@community-bot/env/server";
+import { PrismaClient } from "../prisma/generated/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient } from "../prisma/generated/client";
+const databaseUrl = process.env.DATABASE_URL;
 
-const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL environment variable is required");
+}
+
+const adapter = new PrismaPg({ connectionString: databaseUrl });
+export const prisma = new PrismaClient({ adapter });
 
 export default prisma;
+export * from "../prisma/generated/client";
+export * from "../prisma/generated/enums";
+export * from "../prisma/generated/models";

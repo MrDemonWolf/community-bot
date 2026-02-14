@@ -4,13 +4,17 @@ node_modules
 .pnp.js
 
 # Build outputs
-dist
-build
+**/dist/
 *.tsbuildinfo
 
+# Prisma generated client
+**/src/generated/
+**/prisma/generated/
+
 # Environment variables
-.env
-.env*.local
+*.env
+.env.*
+!.env.example
 
 # IDEs and editors
 .vscode/*
@@ -42,9 +46,6 @@ lerna-debug.log*
 # Testing
 coverage
 .nyc_output
-
-# Next.js
-.next
 
 # Misc
 *.tgz

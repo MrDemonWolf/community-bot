@@ -11,21 +11,26 @@
 
 {
   "$schema": "https://r2.better-t-stack.dev/schema.json",
-  "version": "3.19.4",
-  "createdAt": "2026-02-06T14:55:27.847Z",
-  "reproducibleCommand": "pnpm create better-t-stack@latest my-better-t-app --frontend next --backend self --runtime none --database postgres --orm prisma --api trpc --auth better-auth --payments none --addons turborepo --examples none --db-setup none --web-deploy none --server-deploy none --no-git --package-manager pnpm --install",
+  "version": "3.21.0",
+  "createdAt": "2026-02-14T00:12:43.975Z",
+  "reproducibleCommand": "pnpm create better-t-stack@latest my-better-t-app --frontend next --backend self --runtime none --database postgres --orm prisma --api trpc --auth better-auth --payments none --addons fumadocs turborepo --examples none --db-setup supabase --web-deploy none --server-deploy none --no-git --package-manager pnpm --no-install",
   "database": "postgres",
   "orm": "prisma",
   "backend": "self",
   "runtime": "none",
-  "frontend": ["next"],
-  "addons": ["turborepo"],
+  "frontend": [
+    "next"
+  ],
+  "addons": [
+    "fumadocs",
+    "turborepo"
+  ],
   "examples": [],
   "auth": "better-auth",
   "payments": "none",
   "packageManager": "pnpm",
-  "dbSetup": "none",
+  "dbSetup": "supabase",
   "api": "trpc",
   "webDeploy": "none",
-  "serverDeploy": "none",
+  "serverDeploy": "none"
 }

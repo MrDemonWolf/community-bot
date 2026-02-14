@@ -1,6 +1,5 @@
 {
   "name": "@community-bot/api",
-  "type": "module",
   "exports": {
     ".": {
       "default": "./src/index.ts"
@@ -9,19 +8,20 @@
       "default": "./src/*.ts"
     }
   },
+  "type": "module",
   "scripts": {},
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@community-bot/config": "workspace:*"
+  },
   "dependencies": {
+    "dotenv": "catalog:",
+    "zod": "catalog:",
+    "@community-bot/env": "workspace:*",
     "@community-bot/auth": "workspace:*",
     "@community-bot/db": "workspace:*",
-    "@community-bot/env": "workspace:*",
-    "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
-    "dotenv": "catalog:",
-    "next": "catalog:",
-    "zod": "catalog:"
-  },
-  "devDependencies": {
-    "@community-bot/config": "workspace:*",
-    "typescript": "catalog:"
+    "@trpc/client": "catalog:",
+    "next": "catalog:"
   }
 }
