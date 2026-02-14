@@ -164,29 +164,7 @@ export async function createAuthProvider(): Promise<AuthResult> {
     await prisma.twitchCredential.delete({ where: { id: stored.id } });
   }
 
-  // 2. Bootstrap from env vars if provided
-  if (env.INIT_TWITCH_ACCESS_TOKEN && env.INIT_TWITCH_REFRESH_TOKEN) {
-    consola.info({
-      message: "[Twitch Auth] Bootstrapping from INIT_TWITCH env vars",
-      badge: true,
-      timestamp: new Date(),
-    });
-    const userId = await authProvider.addUserForToken(
-      {
-        accessToken: env.INIT_TWITCH_ACCESS_TOKEN,
-        refreshToken: env.INIT_TWITCH_REFRESH_TOKEN,
-        expiresIn: 0,
-        obtainmentTimestamp: Date.now(),
-        scope: [],
-      },
-      ["chat"],
-    );
-    const validated = await validateToken(env.INIT_TWITCH_ACCESS_TOKEN);
-    const login = validated?.login ?? userId;
-    return { authProvider, botUsername: login };
-  }
-
-  // 3. No valid credentials — run the interactive device code flow
+  // 2. No valid credentials — run the interactive device code flow
   const tokenData = await runDeviceCodeFlow();
   const now = Date.now();
 

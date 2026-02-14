@@ -4,8 +4,8 @@ import logger from "../../utils/logger.js";
 const router: express.Router = express.Router();
 
 /**
- * GET /status
- * Returns the status of the API
+ * GET /health
+ * Returns the health of the API
  */
 router.get("/", async (_req, res) => {
   try {
@@ -14,8 +14,6 @@ router.get("/", async (_req, res) => {
       uptime: process.uptime(),
       version: process.env["npm_package_version"] || "1.7.0",
       timestamp: new Date().toISOString(),
-      path: "/api/status",
-      method: "GET",
     });
   } catch (err) {
     logger.error("API", "Status endpoint error", err);
