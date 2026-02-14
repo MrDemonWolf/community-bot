@@ -28,7 +28,7 @@ COPY apps/discord ./apps/discord
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
 
 RUN pnpm --filter @community-bot/db db:generate
-RUN pnpm --filter @community-bot/discord build
+RUN pnpm --filter discord-bot build
 
 FROM node:24-alpine AS production
 
