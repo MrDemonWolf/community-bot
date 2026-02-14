@@ -1,4 +1,4 @@
-FROM node:23-alpine AS base
+FROM node:22-alpine AS base
 
 WORKDIR /usr/src/app
 
@@ -30,7 +30,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.json ./
 RUN pnpm --filter @community-bot/db db:generate
 RUN pnpm --filter @community-bot/discord build
 
-FROM node:23-alpine AS production
+FROM node:22-alpine AS production
 
 WORKDIR /usr/src/app
 
