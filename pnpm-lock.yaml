@@ -276,6 +276,9 @@ importers:
       '@community-bot/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@community-bot/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@community-bot/env':
         specifier: workspace:*
         version: link:../../packages/env

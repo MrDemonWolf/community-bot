@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   if (isPending) {
     return (
-      <div className="flex min-h-full items-center justify-center bg-[#091533]">
+      <div className="flex min-h-full items-center justify-center bg-gray-50 dark:bg-[#091533]">
         <Loader />
       </div>
     );
@@ -33,7 +33,7 @@ export default function LoginPage() {
   if (session) {
     router.push("/dashboard");
     return (
-      <div className="flex min-h-full items-center justify-center bg-[#091533]">
+      <div className="flex min-h-full items-center justify-center bg-gray-50 dark:bg-[#091533]">
         <Loader />
       </div>
     );
@@ -48,16 +48,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center bg-[#091533] px-4 py-12">
+    <div className="flex min-h-full flex-col items-center justify-center bg-gray-50 px-4 py-12 dark:bg-[#091533]">
       {/* Brand / Home link */}
       <div className="mb-8">
-        <Logo className="text-3xl font-bold tracking-tight text-white" />
+        <Logo className="text-3xl font-bold tracking-tight" />
       </div>
 
       {/* Login Card */}
-      <Card className="w-full max-w-sm border-white/10 bg-[#0d1f42]">
+      <Card className="w-full max-w-sm border-gray-200 bg-white dark:border-white/10 dark:bg-[#0d1f42]">
         <CardHeader className="pb-2 text-center">
-          <CardTitle className="text-sm font-semibold uppercase tracking-widest text-white/70">
+          <CardTitle className="text-sm font-semibold uppercase tracking-widest text-gray-500 dark:text-white/70">
             Log in with...
           </CardTitle>
         </CardHeader>
@@ -81,11 +81,11 @@ export default function LoginPage() {
 
           {/* Separator */}
           <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-white/10" />
-            <span className="text-xs font-medium uppercase text-white/40">
+            <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
+            <span className="text-xs font-medium uppercase text-gray-400 dark:text-white/40">
               or
             </span>
-            <div className="h-px flex-1 bg-white/10" />
+            <div className="h-px flex-1 bg-gray-200 dark:bg-white/10" />
           </div>
 
           {/* Twitch Button */}
@@ -110,7 +110,7 @@ export default function LoginPage() {
       {/* Back to home */}
       <Link
         href="/"
-        className="mt-6 text-sm text-white/40 hover:text-white/70"
+        className="mt-6 text-sm text-gray-400 hover:text-gray-600 dark:text-white/40 dark:hover:text-white/70"
       >
         Back to home
       </Link>

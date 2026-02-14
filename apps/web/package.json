@@ -26,6 +26,7 @@
     "@community-bot/env": "workspace:*",
     "@community-bot/api": "workspace:*",
     "@community-bot/auth": "workspace:*",
+    "@community-bot/db": "workspace:*",
     "@prisma/client": "catalog:",
     "@trpc/server": "catalog:",
     "@trpc/client": "catalog:",
