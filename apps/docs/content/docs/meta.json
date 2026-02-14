@@ -1,14 +1,25 @@
 {
-  "root": true,
+  "title": "Docs",
   "pages": [
     "index",
     "---Getting Started---",
-    "getting-started/...",
+    "getting-started/installation",
+    "getting-started/docker",
+    "getting-started/environment-variables",
     "---Twitch Bot---",
-    "twitch-bot/...",
+    "twitch-bot/index",
+    "twitch-bot/built-in-commands",
+    "twitch-bot/database-commands",
+    "twitch-bot/response-variables",
+    "twitch-bot/access-levels",
+    "twitch-bot/queue-system",
+    "twitch-bot/stream-status",
     "---Discord Bot---",
-    "discord-bot/...",
+    "discord-bot/index",
+    "discord-bot/slash-commands",
+    "discord-bot/twitch-notifications",
     "---Development---",
-    "development/..."
+    "development/architecture",
+    "development/database"
   ]
 }
