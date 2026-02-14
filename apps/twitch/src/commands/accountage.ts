@@ -38,7 +38,7 @@ export const accountage: TwitchCommand = {
     const login = target.replace(/^@/, "").toLowerCase();
 
     try {
-      const data = await helixFetch("users", { login });
+      const data = await helixFetch<{ display_name: string; created_at: string }>("users", { login });
       const users = data?.data;
 
       if (!users || users.length === 0) {

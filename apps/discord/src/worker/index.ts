@@ -1,4 +1,4 @@
-import type { Queue } from "bullmq";
+import type { Queue, ConnectionOptions } from "bullmq";
 
 import { Worker, Job } from "bullmq";
 
@@ -27,7 +27,8 @@ const worker = new Worker(
     }
   },
   {
-    connection: redisClient,
+    // Cast needed: ioredis version mismatch between direct dep and BullMQ's internal dep
+    connection: redisClient as unknown as ConnectionOptions,
   }
 );
 
