@@ -58,6 +58,7 @@ All model/enum definitions live in `packages/db/prisma/schema/` as split domain 
 | `twitch.prisma` | TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular, BotChannel, enums |
 | `queue.prisma` | QueueEntry, QueueState, QueueStatus |
 | `audit.prisma` | AuditLog |
+| `system.prisma` | SystemConfig (key-value runtime config) |
 
 After schema changes, run `pnpm db:generate` from root.
 
@@ -119,6 +120,23 @@ Actions use dot-separated strings: `domain.verb`. Current instrumented actions:
 
 The audit log feed is filtered by user role. ADMIN sees all entries. Other roles (MODERATOR, LEAD_MODERATOR) see entries from their level and below in the hierarchy: USER < MODERATOR < LEAD_MODERATOR < ADMIN.
 
+## First-User Setup Wizard
+
+On first startup, the web app generates a one-time setup token and logs a setup URL to the console. The first user to visit `/setup/{token}` and sign in becomes the broadcaster and is promoted to ADMIN. The token is single-use and deleted after setup completes.
+
+Runtime config is stored in the `SystemConfig` table (key-value pairs):
+- `broadcasterUserId` — the User ID of the broadcaster (set during setup)
+- `setupToken` — the one-time token (deleted after use)
+- `setupComplete` — `"true"` once setup is done
+
+Key files:
+- `apps/web/src/lib/setup.ts` — Server utilities: `ensureSetupToken()`, `getBroadcasterUserId()`, `isSetupComplete()`
+- `apps/web/src/instrumentation.ts` — Next.js instrumentation hook that generates the token on startup
+- `apps/web/src/app/(auth)/setup/[token]/` — Setup route and multi-step wizard
+- `packages/api/src/routers/setup.ts` — tRPC router with `status` (public) and `complete` (protected) procedures
+
+The dashboard layout (`apps/web/src/app/(dashboard)/layout.tsx`) guards against access before setup is complete. Public pages (`/public`, `/public/commands`, `/public/queue`) read the broadcaster from `SystemConfig` via `getBroadcasterUserId()`.
+
 ## Shared Environment (`@community-bot/env`)
 
 Each app has its own validated env config in the shared package using `@t3-oss/env-core`:
@@ -155,7 +173,7 @@ discord.js v14, Express API, BullMQ job queue (Redis), EventBus. Features includ
 
 ## Web Dashboard (`apps/web/`)
 
-Next.js with tRPC, better-auth, and EventBus. Features a two-column dashboard layout with an audit log feed, bot controls card, and quick stats. Users can manage the Twitch bot (enable/disable, commands, regulars) and Discord settings (link guild, notification channel/role, enable/disable notifications) from `/dashboard/discord`. All mutations are logged to the audit log with role-based visibility in the dashboard feed.
+Next.js with tRPC, better-auth, and EventBus. On first startup, a setup wizard flow (`/setup/{token}`) designates the broadcaster and promotes them to ADMIN (see "First-User Setup Wizard" section). Features a two-column dashboard layout with an audit log feed, bot controls card, and quick stats. Users can manage the Twitch bot (enable/disable, commands, regulars) and Discord settings (link guild, notification channel/role, enable/disable notifications) from `/dashboard/discord`. All mutations are logged to the audit log with role-based visibility in the dashboard feed.
 
 ## Web Dashboard Design System (`apps/web/`)
 
@@ -186,7 +204,7 @@ Next.js with tRPC, better-auth, and EventBus. Features a two-column dashboard la
 
 - `(landing)/` — floating glass header + footer + content
 - `(dashboard)/dashboard/` — minimal header + sidebar + content (auth-gated), includes `/dashboard/discord` for Discord settings
-- `(auth)/` — centered card on gradient background
+- `(auth)/` — centered card on gradient background (login + setup wizard)
 
 ### Animations
 

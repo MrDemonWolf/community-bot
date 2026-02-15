@@ -5,9 +5,29 @@ description: Overview of the Community Bot web dashboard.
 
 The web dashboard is built with [Next.js](https://nextjs.org/), [tRPC](https://trpc.io/), and [better-auth](https://www.better-auth.com/) for managing bot settings, commands, and monitoring activity.
 
+## First-Time Setup
+
+On first startup, the web app generates a one-time setup token and logs a URL to the console:
+
+```
+============================================================
+  SETUP REQUIRED
+  Visit: http://localhost:3001/setup/{token}
+============================================================
+```
+
+Visit the URL to complete a multi-step wizard:
+
+1. **Sign in** with Twitch (recommended) or Discord
+2. **Link Twitch** account (if signed in via Discord)
+3. **Enable the bot** for your Twitch channel
+4. **Complete setup** — you are promoted to ADMIN and designated as the broadcaster
+
+The setup token is single-use and deleted after completion. Subsequent startups skip this step.
+
 ## Authentication
 
-Users sign in via Discord or Twitch OAuth through better-auth. Authentication is required for all dashboard pages.
+Users sign in via Discord or Twitch OAuth through better-auth. Authentication is required for all dashboard pages. The dashboard is only accessible after the first-time setup has been completed.
 
 ## Dashboard Layout
 
