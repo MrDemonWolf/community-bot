@@ -20,13 +20,11 @@ export async function ensureSetupToken() {
     update: { value: token },
   });
 
+  const url = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3001"}/setup/${token}`;
   console.log("");
-  console.log("=".repeat(60));
-  console.log("  SETUP REQUIRED");
-  console.log(
-    `  Visit: ${process.env.BETTER_AUTH_URL ?? "http://localhost:3001"}/setup/${token}`
-  );
-  console.log("=".repeat(60));
+  console.log("SETUP REQUIRED - Open this URL to complete first-time setup:");
+  console.log("");
+  console.log(url);
   console.log("");
 }
 
