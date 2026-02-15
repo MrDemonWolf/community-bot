@@ -50,6 +50,25 @@ client.on(Events.GuildDelete, (guild) => {
 });
 
 /**
+ * Update guild name/icon in the database when a server is renamed or changes its icon.
+ */
+client.on(Events.GuildUpdate, async (_oldGuild, newGuild) => {
+  try {
+    await prisma.discordGuild.updateMany({
+      where: { guildId: newGuild.id },
+      data: { name: newGuild.name, icon: newGuild.icon },
+    });
+  } catch (err) {
+    logger.error(
+      "Discord - Event (Guild Update)",
+      "Error updating guild metadata",
+      err,
+      { guildId: newGuild.id }
+    );
+  }
+});
+
+/**
  * Handle interactionCreate events.
  */
 client.on(Events.InteractionCreate, (interaction) => {
@@ -128,6 +147,13 @@ eventBus.on("bot:status", (payload) => {
   logger.info(
     "EventBus",
     `Bot status: ${payload.service} is ${payload.status}`
+  );
+});
+
+eventBus.on("discord:settings-updated", (payload) => {
+  logger.info(
+    "EventBus",
+    `Discord settings updated for guild: ${payload.guildId}`
   );
 });
 

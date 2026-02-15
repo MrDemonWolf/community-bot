@@ -30,6 +30,10 @@ The live notification includes:
 - Stream thumbnail
 - Link to the Twitch channel
 
+## Web Dashboard Integration
+
+Guilds can be enabled or disabled from the web dashboard's Discord settings page (`/dashboard/discord`). When a guild has notifications disabled (`enabled: false`), it is skipped during stream checks. Settings changes made in the dashboard propagate to the Discord bot in real time via the `discord:settings-updated` EventBus event.
+
 ## Database Storage
 
 Notification settings are stored in the `TwitchNotification` table, linked to `DiscordGuild`. Each guild can monitor multiple Twitch channels.

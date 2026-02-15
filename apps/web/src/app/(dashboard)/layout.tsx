@@ -19,11 +19,11 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-svh flex-col">
-      <DashboardHeader />
+      <DashboardHeader session={session} />
       <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar session={session} />
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-          <div className="mx-auto max-w-4xl">{children}</div>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto max-w-5xl">{children}</div>
         </main>
       </div>
     </div>

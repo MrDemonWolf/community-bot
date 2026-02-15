@@ -6,6 +6,8 @@ import { botChannelRouter } from "./botChannel";
 import { chatCommandRouter } from "./chatCommand";
 import { userRouter } from "./user";
 import { regularRouter } from "./regular";
+import { auditLogRouter } from "./auditLog";
+import { discordGuildRouter } from "./discordGuild";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -21,5 +23,7 @@ export const appRouter = router({
   chatCommand: chatCommandRouter,
   user: userRouter,
   regular: regularRouter,
+  auditLog: auditLogRouter,
+  discordGuild: discordGuildRouter,
 });
 export type AppRouter = typeof appRouter;

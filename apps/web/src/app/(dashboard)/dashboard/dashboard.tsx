@@ -78,7 +78,7 @@ export default function Dashboard({
     return (
       <div className="animate-fade-in-up space-y-6">
         <Card className="border-amber-500/30 bg-amber-500/5">
-          <CardContent className="flex items-start gap-4 pt-4">
+          <CardContent className="flex items-start gap-4">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
               <AlertCircle className="size-5 text-amber-500" />
             </div>
@@ -116,7 +116,7 @@ export default function Dashboard({
     return (
       <div className="animate-fade-in-up space-y-6">
         <Card className="border-amber-500/30 bg-amber-500/5">
-          <CardContent className="flex items-center justify-between gap-4 pt-4">
+          <CardContent className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
                 <VolumeX className="size-5 text-amber-500" />
@@ -176,7 +176,7 @@ export default function Dashboard({
     return (
       <div className="animate-fade-in-up space-y-6">
         <Card className="border-green-500/30 bg-green-500/5">
-          <CardContent className="flex items-center justify-between gap-4 pt-4">
+          <CardContent className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-green-500/10">
                 <CheckCircle2 className="size-5 text-green-500" />

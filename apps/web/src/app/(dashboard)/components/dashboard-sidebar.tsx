@@ -14,6 +14,7 @@ import {
   Settings,
   User,
   Home,
+  MessageSquare,
 } from "lucide-react";
 
 const twitchLinks = [
@@ -114,16 +115,25 @@ export function SidebarContent({
         <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
           Discord
         </p>
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading text-muted-foreground">
-          <span
-            className={`inline-block h-2.5 w-2.5 rounded-full ${
-              botStatus?.hasDiscordLinked
-                ? "bg-green-500"
-                : "bg-muted"
+        <nav className="flex flex-col gap-0.5">
+          <Link
+            href={"/dashboard/discord" as Route}
+            onClick={onNavigate}
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading transition-all duration-200 ${
+              pathname.startsWith("/dashboard/discord")
+                ? "bg-brand-main/10 font-medium text-brand-main"
+                : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
             }`}
-          />
-          {botStatus?.hasDiscordLinked ? "Connected" : "Not Connected"}
-        </div>
+          >
+            <MessageSquare className="h-4 w-4" />
+            Settings
+            <span
+              className={`ml-auto h-2 w-2 rounded-full ${
+                botStatus?.hasDiscordLinked ? "bg-green-500" : "bg-muted"
+              }`}
+            />
+          </Link>
+        </nav>
       </div>
 
       {/* Settings */}

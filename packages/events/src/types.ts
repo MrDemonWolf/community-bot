@@ -30,6 +30,9 @@ export interface EventMap {
   // Default commands toggled
   "commands:defaults-updated": { channelId: string };
 
+  // Discord settings
+  "discord:settings-updated": { guildId: string };
+
   // Bot status
   "bot:status": {
     service: "discord" | "twitch";

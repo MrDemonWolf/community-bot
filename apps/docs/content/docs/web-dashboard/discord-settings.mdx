@@ -1,0 +1,55 @@
+---
+title: Discord Settings
+description: Managing Discord server settings from the web dashboard.
+---
+
+The Discord settings page (`/dashboard/discord`) allows users to link their Discord server and configure Twitch stream notifications directly from the web dashboard.
+
+## Adding the Bot to Your Server
+
+Click the **"Add Bot to Server"** button on the settings page. This opens Discord's OAuth authorization flow in a new tab, where you can select the server to add the bot to. The bot requests permissions for sending messages, embedding links, and mentioning roles.
+
+## Linking a Discord Server
+
+After adding the bot, use the **server dropdown** on the settings page to select your server from the list of available (unlinked) servers. The dropdown auto-refreshes every 10 seconds, so newly added servers will appear shortly. Click **"Link Server"** to associate it with your dashboard account.
+
+## Configuration Options
+
+Once a guild is linked, you can configure:
+
+### Notification Channel
+
+Select the Discord channel where Twitch live notifications will be posted from the **channel dropdown**. The dropdown lists all text and announcement channels in your server. Select **(None)** to clear the channel. This is the same setting available via the `/twitch notifications set-channel` slash command.
+
+### Notification Role
+
+Select the Discord role to ping when a stream goes live from the **role dropdown**. The dropdown lists all non-bot roles in your server. Select **"No role mention"** to clear the role. This corresponds to the `/twitch notifications set-role` slash command.
+
+### Enable/Disable Notifications
+
+Toggle whether Twitch stream notifications are active for your guild. When disabled, the Discord bot skips your guild during stream checks — no notifications will be sent until re-enabled.
+
+## Environment Requirements
+
+The web dashboard requires a `DISCORD_BOT_TOKEN` environment variable to fetch channels and roles from Discord's REST API. This should be the same bot token used by the Discord bot service.
+
+## How Changes Propagate
+
+When you save settings on the Discord settings page:
+
+1. The web dashboard updates the `DiscordGuild` record in the database
+2. A `discord:settings-updated` event is published to the Redis EventBus with the guild ID
+3. The Discord bot receives the event and reloads the guild's settings from the database
+4. Changes take effect immediately without requiring a bot restart
+
+## Audit Logging
+
+All Discord settings changes are recorded in the audit log:
+
+| Action | When |
+|--------|------|
+| `discord.link` | Guild is linked via dropdown |
+| `discord.set-channel` | Notification channel is changed |
+| `discord.set-role` | Notification role is changed |
+| `discord.enable` | Notifications are enabled |
+| `discord.disable` | Notifications are disabled |

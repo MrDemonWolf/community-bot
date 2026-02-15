@@ -2,6 +2,7 @@ import { prisma } from "@community-bot/db";
 import { protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { logAudit } from "../utils/audit";
 
 const SE_ACCESS_LEVEL_MAP: Record<number, string> = {
   100: "EVERYONE",
@@ -200,6 +201,16 @@ export const userRouter = router({
           await eventBus.publish("command:created", { commandId });
         }
       }
+
+      await logAudit({
+        userId,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "import.streamelements",
+        resourceType: "BotChannel",
+        resourceId: botChannel.id,
+        metadata: { imported, skipped },
+      });
 
       return { imported, skipped };
     }),

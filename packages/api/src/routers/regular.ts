@@ -3,6 +3,7 @@ import { protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { getTwitchUserByLogin, getTwitchUserById } from "../utils/twitch";
+import { logAudit } from "../utils/audit";
 
 export const regularRouter = router({
   list: protectedProcedure.query(async () => {
@@ -51,12 +52,22 @@ export const regularRouter = router({
         twitchUserId: twitchUser.id,
       });
 
+      await logAudit({
+        userId: ctx.session.user.id,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "regular.add",
+        resourceType: "TwitchRegular",
+        resourceId: regular.id,
+        metadata: { twitchUsername: twitchUser.display_name },
+      });
+
       return regular;
     }),
 
   remove: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const regular = await prisma.twitchRegular.findUnique({
         where: { id: input.id },
       });
@@ -73,6 +84,16 @@ export const regularRouter = router({
       const { eventBus } = await import("../events");
       await eventBus.publish("regular:deleted", {
         twitchUserId: regular.twitchUserId,
+      });
+
+      await logAudit({
+        userId: ctx.session.user.id,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "regular.remove",
+        resourceType: "TwitchRegular",
+        resourceId: input.id,
+        metadata: { twitchUsername: regular.twitchUsername },
       });
 
       return { success: true };

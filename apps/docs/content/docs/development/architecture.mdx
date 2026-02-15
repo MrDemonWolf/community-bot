@@ -33,6 +33,7 @@ The single source of truth for all database models. Contains the Prisma schema s
 - `discord.prisma` — DiscordGuild
 - `twitch.prisma` — TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular
 - `queue.prisma` — QueueEntry, QueueState
+- `audit.prisma` — AuditLog
 
 ### `@community-bot/env`
 
@@ -49,6 +50,14 @@ Shared Express API server configuration used by both bots. Provides:
 
 - `createApiServer(options)` — Creates a configured Express app with helmet, cors, morgan, and health check middleware
 - `listenWithFallback(app, options)` — Starts the server with automatic port fallback on EADDRINUSE
+
+### `@community-bot/api`
+
+Shared tRPC API routers and utilities consumed by the web dashboard. Includes:
+
+- tRPC routers: `auditLog`, `discordGuild`, `botChannel`, `chatCommand`, `regular`, `user`
+- `logAudit()` utility (`packages/api/src/utils/audit.ts`) for recording all mutations to the audit log
+- `discordFetch()` helper (`packages/api/src/utils/discord.ts`) for calling Discord REST API v10 with the bot token (used to fetch guild channels and roles for the web dashboard)
 
 ### `@community-bot/config`
 

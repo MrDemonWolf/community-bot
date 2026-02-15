@@ -2,6 +2,7 @@ import { prisma } from "@community-bot/db";
 import { protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
+import { logAudit } from "../utils/audit";
 
 export const botChannelRouter = router({
   /** Get the current user's bot channel status and linked Twitch account */
@@ -99,6 +100,16 @@ export const botChannelRouter = router({
       username: botChannel.twitchUsername,
     });
 
+    await logAudit({
+      userId,
+      userName: ctx.session.user.name,
+      userImage: ctx.session.user.image,
+      action: "bot.enable",
+      resourceType: "BotChannel",
+      resourceId: botChannel.id,
+      metadata: { twitchUsername: botChannel.twitchUsername },
+    });
+
     return { success: true, botChannel };
   }),
 
@@ -123,6 +134,16 @@ export const botChannelRouter = router({
     await eventBus.publish("channel:leave", {
       channelId: botChannel.twitchUserId,
       username: botChannel.twitchUsername,
+    });
+
+    await logAudit({
+      userId,
+      userName: ctx.session.user.name,
+      userImage: ctx.session.user.image,
+      action: "bot.disable",
+      resourceType: "BotChannel",
+      resourceId: botChannel.id,
+      metadata: { twitchUsername: botChannel.twitchUsername },
     });
 
     return { success: true };
@@ -152,6 +173,16 @@ export const botChannelRouter = router({
         channelId: botChannel.twitchUserId,
         username: botChannel.twitchUsername,
         muted: input.muted,
+      });
+
+      await logAudit({
+        userId,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: input.muted ? "bot.mute" : "bot.unmute",
+        resourceType: "BotChannel",
+        resourceId: botChannel.id,
+        metadata: { muted: input.muted },
       });
 
       return { success: true, muted: input.muted };
@@ -188,6 +219,16 @@ export const botChannelRouter = router({
       const { eventBus } = await import("../events");
       await eventBus.publish("commands:defaults-updated", {
         channelId: botChannel.twitchUserId,
+      });
+
+      await logAudit({
+        userId,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "bot.command-toggles",
+        resourceType: "BotChannel",
+        resourceId: botChannel.id,
+        metadata: { disabledCommands: input.disabledCommands },
       });
 
       return { success: true };
@@ -261,6 +302,16 @@ export const botChannelRouter = router({
       const { eventBus } = await import("../events");
       await eventBus.publish("commands:defaults-updated", {
         channelId: botChannel.twitchUserId,
+      });
+
+      await logAudit({
+        userId,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "bot.command-access-level",
+        resourceType: "BotChannel",
+        resourceId: botChannel.id,
+        metadata: { commandName: input.commandName, accessLevel: input.accessLevel },
       });
 
       return { success: true };

@@ -85,29 +85,29 @@ export default async function ChannelPage({
   return (
     <div className="-mt-[1px] flex flex-col">
       {/* Banner */}
-      <div className="relative h-48 bg-gradient-to-br from-muted via-background to-muted sm:h-56">
+      <div className="relative h-28 bg-gradient-to-br from-muted via-background to-muted sm:h-48 md:h-56">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE1VjBoLTJWMTVIMTlWMGgtMnYxNUgwdjJoMTd2MTdIMHYyaDE3djE3aDJ2LTE3aDE1djE3aDJWMzZoMTdWMzRIMzZWMTdoMTdWMTVIMzZ6bS0yIDJ2MTdIMTdWMTdoMTd6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
       </div>
 
-      <div className="mx-auto w-full max-w-5xl px-6">
-        <div className="flex flex-col gap-8 sm:flex-row">
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+        <div className="flex flex-col gap-4 sm:gap-8 sm:flex-row">
           {/* Sidebar */}
           <div className="-mt-16 flex w-full flex-col gap-6 sm:w-64 sm:shrink-0">
             {/* Profile Card */}
-            <div className="flex flex-col items-center sm:items-start">
-              <div className="relative mb-4">
+            <div className="flex flex-row items-center gap-4 sm:flex-col sm:items-start sm:gap-0">
+              <div className="relative mb-0 sm:mb-4">
                 {user.image ? (
                   <Image
                     src={user.image}
                     alt={user.name}
                     width={120}
                     height={120}
-                    className="rounded-xl border-4 border-background bg-card"
+                    className="h-[80px] w-[80px] rounded-xl border-4 border-background bg-card sm:h-[120px] sm:w-[120px]"
                     unoptimized
                   />
                 ) : (
-                  <div className="flex h-[120px] w-[120px] items-center justify-center rounded-xl border-4 border-background bg-card">
-                    <User className="h-12 w-12 text-muted-foreground" />
+                  <div className="flex h-[80px] w-[80px] items-center justify-center rounded-xl border-4 border-background bg-card sm:h-[120px] sm:w-[120px]">
+                    <User className="h-8 w-8 text-muted-foreground sm:h-12 sm:w-12" />
                   </div>
                 )}
                 {isLive && (
@@ -130,7 +130,7 @@ export default async function ChannelPage({
             </div>
 
             {/* Nav Links */}
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-row gap-2 sm:flex-col sm:gap-1">
               <SidebarLink
                 href={`/c/${slug}`}
                 icon={<User className="h-4 w-4" />}
@@ -155,7 +155,7 @@ export default async function ChannelPage({
           </div>
 
           {/* Main Content */}
-          <div className="flex min-w-0 flex-1 flex-col gap-6 pb-16 pt-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-4 pb-16 pt-4 sm:gap-6 sm:pt-6">
             {/* Twitch Embed */}
             {twitchUsername && (
               <TwitchEmbed channel={twitchUsername} isLive={isLive} />

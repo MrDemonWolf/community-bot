@@ -1,7 +1,7 @@
 import type { Client } from "discord.js";
 
 import setActivity from "../worker/jobs/setActivity.js";
-import { pruneGuilds, ensureGuildExists } from "../utils/guildDatabase.js";
+import { pruneGuilds, ensureGuildExists, syncGuildMetadata } from "../utils/guildDatabase.js";
 import commands from "../commands/index.js";
 import logger from "../utils/logger.js";
 
@@ -24,6 +24,11 @@ export async function readyEvent(client: Client) {
      * Check if guilds exist in the database and add them if they don't.
      */
     await ensureGuildExists(client);
+
+    /**
+     * Sync guild name and icon for existing records.
+     */
+    await syncGuildMetadata(client);
 
     /**
      * Register slash commands.

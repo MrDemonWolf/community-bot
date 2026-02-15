@@ -36,7 +36,7 @@ export default function CommandsPage() {
           <span
             className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-medium ${
               activeTab === "custom"
-                ? "bg-brand-twitch/10 text-brand-twitch"
+                ? "bg-brand-main/10 text-brand-main"
                 : "bg-surface-overlay text-muted-foreground"
             }`}
           >
@@ -55,7 +55,7 @@ export default function CommandsPage() {
           <span
             className={`inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-medium ${
               activeTab === "default"
-                ? "bg-brand-twitch/10 text-brand-twitch"
+                ? "bg-brand-main/10 text-brand-main"
                 : "bg-surface-overlay text-muted-foreground"
             }`}
           >
