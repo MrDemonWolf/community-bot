@@ -31,6 +31,7 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
     for (const channel of channels) {
       const guild = channel.DiscordGuild;
       if (!guild?.notificationChannelId) continue;
+      if (guild.enabled === false) continue;
 
       const stream = streamMap.get(channel.twitchChannelId);
       const wasLive = channel.isLive;

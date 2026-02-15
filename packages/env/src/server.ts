@@ -10,6 +10,7 @@ export const env = createEnv({
 		CORS_ORIGIN: z.url(),
 		DISCORD_APPLICATION_ID: z.string().min(1),
 		DISCORD_APPLICATION_CLIENT_SECRET: z.string().min(1),
+		DISCORD_BOT_TOKEN: z.string().min(1),
 		TWITCH_APPLICATION_CLIENT_ID: z.string().min(1),
 		TWITCH_APPLICATION_CLIENT_SECRET: z.string().min(1),
 		REDIS_URL: z

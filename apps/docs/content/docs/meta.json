@@ -19,6 +19,10 @@
     "discord-bot/index",
     "discord-bot/slash-commands",
     "discord-bot/twitch-notifications",
+    "---Web Dashboard---",
+    "web-dashboard/index",
+    "web-dashboard/audit-log",
+    "web-dashboard/discord-settings",
     "---Development---",
     "development/architecture",
     "development/database"

@@ -10,6 +10,9 @@ Community Bot monorepo for MrDemonWolf, Inc. Turborepo workspace containing the 
 - **Real-time Event Bus** - Redis Pub/Sub for instant inter-service communication
 - **Shared Database** - Prisma with PostgreSQL, split schema files per domain
 - **TypeScript** - End-to-end type safety across all packages
+- **Audit Log** - Every mutation logged with user, action, and metadata; role-filtered visibility in the dashboard feed
+- **Discord Controls** - Link Discord server, configure notification channel/role, enable/disable notifications from the web dashboard
+- **Dashboard Redesign** - Two-column layout with audit log feed, bot controls, and quick stats
 - **Turborepo** - Optimized monorepo build system
 
 ## Getting Started

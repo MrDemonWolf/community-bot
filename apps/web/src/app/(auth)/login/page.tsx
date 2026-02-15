@@ -48,7 +48,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-4 py-12">
+    <div className="flex min-h-full flex-col items-center justify-center px-4 py-8 sm:py-12">
       {/* Brand / Home link */}
       <div className="mb-8">
         <Logo className="text-3xl font-bold tracking-tight" />
@@ -114,6 +114,40 @@ export default function LoginPage() {
       >
         Back to home
       </Link>
+
+      {/* Legal links */}
+      <div className="mt-4 flex flex-col items-center gap-2">
+        <div className="flex gap-3 text-xs text-muted-foreground">
+          {process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL && (
+            <a
+              href={process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground"
+            >
+              Privacy Policy
+            </a>
+          )}
+          {process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL &&
+            process.env.NEXT_PUBLIC_TERMS_OF_SERVICE_URL && (
+              <span aria-hidden="true">&middot;</span>
+            )}
+          {process.env.NEXT_PUBLIC_TERMS_OF_SERVICE_URL && (
+            <a
+              href={process.env.NEXT_PUBLIC_TERMS_OF_SERVICE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground"
+            >
+              Terms of Service
+            </a>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          &copy; {new Date().getFullYear()}{" "}
+          {process.env.NEXT_PUBLIC_COPYRIGHT_NAME || "Community Bot"}
+        </p>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,39 @@
+---
+title: Web Dashboard
+description: Overview of the Community Bot web dashboard.
+---
+
+The web dashboard is built with [Next.js](https://nextjs.org/), [tRPC](https://trpc.io/), and [better-auth](https://www.better-auth.com/) for managing bot settings, commands, and monitoring activity.
+
+## Authentication
+
+Users sign in via Discord or Twitch OAuth through better-auth. Authentication is required for all dashboard pages.
+
+## Dashboard Layout
+
+The main dashboard (`/dashboard`) uses a two-column layout:
+
+- **Left column** — Audit log feed showing recent mutations with user avatars, role badges, and relative timestamps
+- **Right column** — Bot controls card (enable/disable, connection status) and quick stats (command count, regular count, stream status)
+
+## Navigation
+
+The dashboard sidebar organizes settings into sections:
+
+### Twitch
+
+- **Commands** — Create, edit, delete, and toggle custom chat commands; configure default command toggles and access levels
+- **Regulars** — Manage trusted users who get elevated command access
+- **Queue** — Viewer queue management
+
+### Discord
+
+- **Discord Settings** — Link a Discord server, configure notification channel and role, enable/disable notifications
+
+### Account
+
+- **Settings** — User profile and account settings
+
+## Real-Time Updates
+
+The dashboard publishes events via the Redis EventBus whenever settings are changed. The Twitch and Discord bots subscribe to these events and reload their configuration instantly without requiring a restart.

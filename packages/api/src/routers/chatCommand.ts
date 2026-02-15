@@ -3,6 +3,7 @@ import { protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 import { TRPCError } from "@trpc/server";
+import { logAudit } from "../utils/audit";
 
 const DEFAULT_COMMAND_NAMES = new Set(DEFAULT_COMMANDS.map((c) => c.name));
 
@@ -104,6 +105,16 @@ export const chatCommandRouter = router({
       const { eventBus } = await import("../events");
       await eventBus.publish("command:created", { commandId: command.id });
 
+      await logAudit({
+        userId: ctx.session.user.id,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "command.create",
+        resourceType: "TwitchChatCommand",
+        resourceId: command.id,
+        metadata: { name },
+      });
+
       return command;
     }),
 
@@ -171,6 +182,16 @@ export const chatCommandRouter = router({
       const { eventBus } = await import("../events");
       await eventBus.publish("command:updated", { commandId: id });
 
+      await logAudit({
+        userId: ctx.session.user.id,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "command.update",
+        resourceType: "TwitchChatCommand",
+        resourceId: id,
+        metadata: { name: command_updated.name },
+      });
+
       return command_updated;
     }),
 
@@ -194,6 +215,16 @@ export const chatCommandRouter = router({
 
       const { eventBus } = await import("../events");
       await eventBus.publish("command:deleted", { commandId: input.id });
+
+      await logAudit({
+        userId: ctx.session.user.id,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "command.delete",
+        resourceType: "TwitchChatCommand",
+        resourceId: input.id,
+        metadata: { name: command.name },
+      });
 
       return { success: true };
     }),
@@ -221,6 +252,16 @@ export const chatCommandRouter = router({
 
       const { eventBus } = await import("../events");
       await eventBus.publish("command:updated", { commandId: input.id });
+
+      await logAudit({
+        userId: ctx.session.user.id,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "command.toggle",
+        resourceType: "TwitchChatCommand",
+        resourceId: input.id,
+        metadata: { name: command.name, enabled: updated.enabled },
+      });
 
       return updated;
     }),

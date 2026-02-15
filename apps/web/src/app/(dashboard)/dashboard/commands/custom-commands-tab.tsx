@@ -65,7 +65,7 @@ export default function CustomCommandsTab() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <Card className="border-amber-500/30 bg-amber-500/5">
-        <CardContent className="flex items-center gap-3 pt-4">
+        <CardContent className="flex items-center gap-3">
           <AlertCircle className="size-5 text-amber-500" />
           <p className="text-sm text-muted-foreground">
             Enable the bot for your channel first to manage custom commands.
@@ -170,7 +170,7 @@ export default function CustomCommandsTab() {
                   key={cmd.id}
                   className={`transition-colors hover:bg-surface-raised ${cmd.enabled ? "" : "opacity-50"}`}
                 >
-                  <td className="px-4 py-3 font-mono text-sm text-brand-twitch">
+                  <td className="px-4 py-3 font-mono text-sm text-brand-main">
                     !{cmd.name}
                     {cmd.aliases.length > 0 && (
                       <span className="ml-2 text-xs text-muted-foreground/70">
@@ -197,7 +197,7 @@ export default function CustomCommandsTab() {
                         <div
                           className={`relative h-6 w-11 rounded-full transition-colors ${
                             cmd.enabled
-                              ? "bg-brand-twitch"
+                              ? "bg-brand-main"
                               : "bg-muted"
                           }`}
                         >

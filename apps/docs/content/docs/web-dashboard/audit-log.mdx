@@ -1,0 +1,72 @@
+---
+title: Audit Log
+description: How the audit log system tracks all dashboard mutations.
+---
+
+Every mutation made through the web dashboard is recorded in the audit log. This provides a complete history of who changed what and when.
+
+## What Gets Logged
+
+All mutations across bot controls, commands, regulars, imports, and Discord settings are logged automatically via the `logAudit()` utility in `packages/api/src/utils/audit.ts`.
+
+## Action Reference
+
+Actions use dot-separated strings following the convention `domain.verb`:
+
+| Action | Description |
+|--------|-------------|
+| `bot.enable` | Twitch bot enabled for channel |
+| `bot.disable` | Twitch bot disabled for channel |
+| `bot.command-toggles` | Default command toggles updated |
+| `bot.command-access-level` | Default command access level changed |
+| `command.create` | Custom chat command created |
+| `command.update` | Custom chat command updated |
+| `command.delete` | Custom chat command deleted |
+| `command.toggle` | Custom chat command enabled/disabled |
+| `regular.add` | Regular (trusted user) added |
+| `regular.remove` | Regular removed |
+| `discord.link` | Discord guild linked |
+| `discord.set-channel` | Notification channel configured |
+| `discord.set-role` | Notification role configured |
+| `discord.enable` | Discord notifications enabled |
+| `discord.disable` | Discord notifications disabled |
+| `import.streamelements` | Commands imported from StreamElements |
+
+## Role-Based Visibility
+
+The audit log feed is filtered based on the viewing user's role. The role hierarchy is:
+
+1. **USER** — Sees only entries created by USERs
+2. **MODERATOR** — Sees USER and MODERATOR entries
+3. **LEAD_MODERATOR** — Sees USER, MODERATOR, and LEAD_MODERATOR entries
+4. **ADMIN** — Sees all entries
+
+## Feed UI
+
+The audit log feed on the dashboard displays:
+
+- User avatar and name
+- Role badge (color-coded by role level)
+- Action description
+- Relative timestamp (e.g., "2 minutes ago")
+- Paginated list with load-more support
+
+## Database Model
+
+The `AuditLog` model is defined in `packages/db/prisma/schema/audit.prisma`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `String` | UUID primary key |
+| `userId` | `String` | ID of the user who performed the action |
+| `userName` | `String` | Display name of the user |
+| `userImage` | `String?` | Avatar URL |
+| `userRole` | `UserRole` | Role at the time of the action |
+| `action` | `String` | Dot-separated action string |
+| `resourceType` | `String` | Type of resource affected |
+| `resourceId` | `String` | ID of the affected resource |
+| `metadata` | `Json?` | Additional context (e.g., old/new values) |
+| `ipAddress` | `String?` | Client IP address |
+| `createdAt` | `DateTime` | Timestamp |
+
+The table is indexed on `userId`, `resourceType`, and `createdAt` for efficient querying.

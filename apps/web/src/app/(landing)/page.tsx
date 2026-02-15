@@ -30,15 +30,15 @@ export default function Home() {
   return (
     <div className="-mt-[1px] flex flex-col">
       {/* Hero */}
-      <section className="bg-background px-6 pb-24 pt-16">
+      <section className="bg-background px-6 pb-16 pt-12 sm:pb-24 sm:pt-16">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-2xl">
-            <h1 className="animate-fade-in-up text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
+            <h1 className="animate-fade-in-up text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl">
               {singleChannelMode
                 ? `The bot powering ${channelName}'s community.`
                 : "The ultimate community bot for Twitch and Discord."}
             </h1>
-            <p className="animate-fade-in-up mt-4 text-lg leading-relaxed text-muted-foreground" style={{ animationDelay: "100ms" }}>
+            <p className="animate-fade-in-up mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg" style={{ animationDelay: "100ms" }}>
               {singleChannelMode
                 ? "Custom chat commands, stream notifications, viewer queue, and more — all managed from a single dashboard."
                 : "Powerful moderation and community tools that connect you with your audience. Chat commands, stream notifications, and viewer engagement — all in one place."}
@@ -61,7 +61,7 @@ export default function Home() {
       </section>
 
       {/* Features */}
-      <section className="bg-muted px-6 py-24">
+      <section className="bg-muted px-6 py-16 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <h2 className="mb-4 text-center text-2xl font-bold text-foreground sm:text-3xl">
             Everything you need to{" "}
@@ -92,7 +92,7 @@ export default function Home() {
       </section>
 
       {/* Bottom CTA */}
-      <section className="bg-background px-6 py-24">
+      <section className="bg-background px-6 py-16 sm:py-24">
         <div className="mx-auto max-w-xl text-center">
           <h2 className="mb-4 text-2xl font-bold text-foreground sm:text-3xl">
             {singleChannelMode ? (

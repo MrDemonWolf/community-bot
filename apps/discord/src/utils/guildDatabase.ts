@@ -113,6 +113,8 @@ export async function ensureGuildExists(client: Client) {
         await prisma.discordGuild.create({
           data: {
             guildId: guild.id,
+            name: guild.name,
+            icon: guild.icon,
           },
         });
 
@@ -169,4 +171,45 @@ export async function guildExists(guildId: string) {
     return false;
   }
   return true;
+}
+
+export async function syncGuildMetadata(client: Client) {
+  try {
+    const guildsInDb = await prisma.discordGuild.findMany({});
+
+    let updated = 0;
+    for (const dbGuild of guildsInDb) {
+      const cachedGuild = client.guilds.cache.get(dbGuild.guildId);
+      if (!cachedGuild) continue;
+
+      if (dbGuild.name !== cachedGuild.name || dbGuild.icon !== cachedGuild.icon) {
+        await prisma.discordGuild.update({
+          where: { guildId: dbGuild.guildId },
+          data: {
+            name: cachedGuild.name,
+            icon: cachedGuild.icon,
+          },
+        });
+        updated++;
+      }
+    }
+
+    if (updated > 0) {
+      logger.success(
+        "Discord - Guild Database",
+        `Synced metadata for ${updated} guild(s)`
+      );
+    } else {
+      logger.info(
+        "Discord - Guild Database",
+        "All guild metadata is up to date"
+      );
+    }
+  } catch (err) {
+    logger.error(
+      "Discord - Guild Database",
+      "Error syncing guild metadata",
+      err
+    );
+  }
 }

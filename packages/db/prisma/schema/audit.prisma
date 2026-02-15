@@ -1,0 +1,17 @@
+model AuditLog {
+  id           String   @id @default(uuid())
+  userId       String
+  userName     String
+  userImage    String?
+  userRole     UserRole
+  action       String
+  resourceType String
+  resourceId   String
+  metadata     Json?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([resourceType])
+  @@index([createdAt])
+}

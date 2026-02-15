@@ -57,6 +57,7 @@ All model/enum definitions live in `packages/db/prisma/schema/` as split domain 
 | `discord.prisma` | DiscordGuild |
 | `twitch.prisma` | TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular, BotChannel, enums |
 | `queue.prisma` | QueueEntry, QueueState, QueueStatus |
+| `audit.prisma` | AuditLog |
 
 After schema changes, run `pnpm db:generate` from root.
 
@@ -83,13 +84,45 @@ await eventBus.on("channel:join", (payload) => { /* handle */ });
 | `stream:online` | `{ channelId, username, title, startedAt }` | Twitch | Discord |
 | `stream:offline` | `{ channelId, username }` | Twitch | Discord |
 | `queue:updated` | `{ channelId }` | Any | Any |
+| `discord:settings-updated` | `{ guildId }` | Web | Discord |
 | `bot:status` | `{ service, status }` | Discord/Twitch | Any |
+
+## Audit Log System
+
+Every mutation in the web dashboard is logged via the `logAudit()` utility in `packages/api/src/utils/audit.ts`. Each log entry records the user, action, resource, and optional metadata.
+
+### Action Conventions
+
+Actions use dot-separated strings: `domain.verb`. Current instrumented actions:
+
+| Action | Description |
+|--------|-------------|
+| `bot.enable` | Twitch bot enabled for channel |
+| `bot.disable` | Twitch bot disabled for channel |
+| `bot.command-toggles` | Default command toggles updated |
+| `bot.command-access-level` | Default command access level changed |
+| `command.create` | Custom chat command created |
+| `command.update` | Custom chat command updated |
+| `command.delete` | Custom chat command deleted |
+| `command.toggle` | Custom chat command enabled/disabled |
+| `regular.add` | Regular (trusted user) added |
+| `regular.remove` | Regular removed |
+| `discord.link` | Discord guild linked |
+| `discord.set-channel` | Notification channel configured |
+| `discord.set-role` | Notification role configured |
+| `discord.enable` | Discord notifications enabled |
+| `discord.disable` | Discord notifications disabled |
+| `import.streamelements` | Commands imported from StreamElements |
+
+### Role-Based Visibility
+
+The audit log feed is filtered by user role. ADMIN sees all entries. Other roles (MODERATOR, LEAD_MODERATOR) see entries from their level and below in the hierarchy: USER < MODERATOR < LEAD_MODERATOR < ADMIN.
 
 ## Shared Environment (`@community-bot/env`)
 
 Each app has its own validated env config in the shared package using `@t3-oss/env-core`:
 
-- `packages/env/src/server.ts` — Web dashboard server env
+- `packages/env/src/server.ts` — Web dashboard server env (includes `DISCORD_BOT_TOKEN` for Discord REST API calls)
 - `packages/env/src/web.ts` — Web dashboard client env
 - `packages/env/src/discord.ts` — Discord bot env
 - `packages/env/src/twitch.ts` — Twitch bot env
@@ -113,7 +146,7 @@ Both bots use ESM (`"type": "module"`) with NodeNext module resolution. All rela
 
 ## Discord Bot (`apps/discord/`)
 
-discord.js v14, Express API, BullMQ job queue (Redis), EventBus. Features include Twitch live stream notifications, slash commands, background job scheduling, guild database sync. Entry point: `src/app.ts`.
+discord.js v14, Express API, BullMQ job queue (Redis), EventBus. Features include Twitch live stream notifications, slash commands, background job scheduling, guild database sync. The bot subscribes to `discord:settings-updated` EventBus events to reload guild settings when changed from the web dashboard. Guilds with `enabled: false` are skipped during notification checks. Entry point: `src/app.ts`.
 
 ## Twitch Bot (`apps/twitch/`)
 
@@ -121,7 +154,7 @@ discord.js v14, Express API, BullMQ job queue (Redis), EventBus. Features includ
 
 ## Web Dashboard (`apps/web/`)
 
-Next.js with tRPC, better-auth, and EventBus. Users can enable/disable the Twitch bot for their channel via the `/dashboard/bot` page. When commands or regulars are modified, events are published so the Twitch bot reloads instantly.
+Next.js with tRPC, better-auth, and EventBus. Features a two-column dashboard layout with an audit log feed, bot controls card, and quick stats. Users can manage the Twitch bot (enable/disable, commands, regulars) and Discord settings (link guild, notification channel/role, enable/disable notifications) from `/dashboard/discord`. All mutations are logged to the audit log with role-based visibility in the dashboard feed.
 
 ## Web Dashboard Design System (`apps/web/`)
 
@@ -151,7 +184,7 @@ Next.js with tRPC, better-auth, and EventBus. Users can enable/disable the Twitc
 ### Layout Structure
 
 - `(landing)/` — floating glass header + footer + content
-- `(dashboard)/dashboard/` — minimal header + sidebar + content (auth-gated)
+- `(dashboard)/dashboard/` — minimal header + sidebar + content (auth-gated), includes `/dashboard/discord` for Discord settings
 - `(auth)/` — centered card on gradient background
 
 ### Animations

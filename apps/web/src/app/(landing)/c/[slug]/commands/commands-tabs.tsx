@@ -127,7 +127,7 @@ export default function CommandsTabs({
                 <tbody className="divide-y divide-border">
                   {defaultCommands.map((cmd) => (
                     <tr key={cmd.name} className="transition-colors hover:bg-surface-raised">
-                      <td className="px-4 py-3 font-mono text-sm text-brand-twitch">
+                      <td className="px-4 py-3 font-mono text-sm text-brand-main">
                         !{cmd.name}
                         {cmd.aliases.length > 0 && (
                           <span className="ml-2 text-xs text-muted-foreground/70">

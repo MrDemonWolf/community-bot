@@ -330,13 +330,13 @@ export default function CommandDialog({
                 {aliases.map((alias) => (
                   <span
                     key={alias}
-                    className="inline-flex items-center gap-1 rounded-md bg-brand-twitch/10 px-2 py-0.5 text-xs text-brand-twitch"
+                    className="inline-flex items-center gap-1 rounded-md bg-brand-main/10 px-2 py-0.5 text-xs text-brand-main"
                   >
                     !{alias}
                     <button
                       type="button"
                       onClick={() => handleRemoveAlias(alias)}
-                      className="text-brand-twitch/60 hover:text-brand-twitch"
+                      className="text-brand-main/60 hover:text-brand-main"
                     >
                       <X className="size-3" />
                     </button>
