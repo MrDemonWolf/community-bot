@@ -52,7 +52,7 @@ pnpm dev
 
 6. Complete first-time setup:
 
-On first startup, the web app logs a one-time setup URL to the console. Visit the URL, sign in with Twitch or Discord, and complete the wizard to become the broadcaster and admin.
+On first startup, the web app logs a one-time setup URL to the console. Visit the URL and complete the wizard (Sign In → Authorize Bot → Link Twitch → Enable Bot → Done) to become the broadcaster and admin.
 
 - Web dashboard: [http://localhost:3001](http://localhost:3001)
 - Docs: [http://localhost:3000](http://localhost:3000)
