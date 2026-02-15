@@ -58,7 +58,9 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
 
           const startedAt = new Date(stream.started_at);
           const roleMention = guild.notificationRoleId
-            ? `<@&${guild.notificationRoleId}>`
+            ? guild.notificationRoleId === "everyone"
+              ? "@everyone"
+              : `<@&${guild.notificationRoleId}>`
             : "";
 
           const embed = buildLiveEmbed({
@@ -121,7 +123,9 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
             });
 
             const roleMention = guild.notificationRoleId
-              ? `<@&${guild.notificationRoleId}>`
+              ? guild.notificationRoleId === "everyone"
+                ? "@everyone"
+                : `<@&${guild.notificationRoleId}>`
               : "";
 
             await message.edit({
@@ -176,7 +180,9 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
               });
 
               const roleMention = guild.notificationRoleId
-                ? `<@&${guild.notificationRoleId}>`
+                ? guild.notificationRoleId === "everyone"
+                  ? "@everyone"
+                  : `<@&${guild.notificationRoleId}>`
                 : "";
 
               await message.edit({

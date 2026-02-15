@@ -308,4 +308,33 @@ export const discordGuildRouter = router({
 
     return { success: true };
   }),
+
+  testNotification: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const guild = await prisma.discordGuild.findFirst({
+      where: { userId },
+    });
+
+    if (!guild) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No Discord server linked.",
+      });
+    }
+
+    if (!guild.notificationChannelId) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Set a notification channel first.",
+      });
+    }
+
+    const { eventBus } = await import("../events");
+    await eventBus.publish("discord:test-notification", {
+      guildId: guild.guildId,
+    });
+
+    return { success: true };
+  }),
 });

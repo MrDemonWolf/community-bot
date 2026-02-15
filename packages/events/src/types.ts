@@ -33,6 +33,9 @@ export interface EventMap {
   // Discord settings
   "discord:settings-updated": { guildId: string };
 
+  // Discord test notification (triggered from web dashboard)
+  "discord:test-notification": { guildId: string };
+
   // Bot status
   "bot:status": {
     service: "discord" | "twitch";

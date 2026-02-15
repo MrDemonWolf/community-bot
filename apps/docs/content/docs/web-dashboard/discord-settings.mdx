@@ -29,6 +29,10 @@ Select the Discord role to ping when a stream goes live from the **role dropdown
 
 Toggle whether Twitch stream notifications are active for your guild. When disabled, the Discord bot skips your guild during stream checks — no notifications will be sent until re-enabled.
 
+### Test Notification
+
+Click **"Send Test Notification"** to preview how Twitch live notifications look in your configured channel. The bot sends a fake live embed, updates the viewer count after 5 seconds, then edits the message to an offline embed after 10 seconds. A notification channel must be set before testing.
+
 ## Environment Requirements
 
 The web dashboard requires a `DISCORD_BOT_TOKEN` environment variable to fetch channels and roles from Discord's REST API. This should be the same bot token used by the Discord bot service.

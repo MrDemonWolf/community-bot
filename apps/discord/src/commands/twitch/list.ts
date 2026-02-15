@@ -45,7 +45,7 @@ export async function handleList(
       `**Notification Channel:** ${guild.notificationChannelId ? `<#${guild.notificationChannelId}>` : "Not set"}`
     );
     configLines.push(
-      `**Notification Role:** ${guild.notificationRoleId ? `<@&${guild.notificationRoleId}>` : "Not set"}`
+      `**Notification Role:** ${guild.notificationRoleId ? (guild.notificationRoleId === "everyone" ? "@everyone" : `<@&${guild.notificationRoleId}>`) : "Not set"}`
     );
     embed.setDescription(configLines.join("\n"));
 

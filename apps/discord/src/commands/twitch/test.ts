@@ -101,7 +101,9 @@ export async function handleTest(
     };
 
     const roleMention = guild.notificationRoleId
-      ? `<@&${guild.notificationRoleId}>`
+      ? guild.notificationRoleId === "everyone"
+        ? "@everyone"
+        : `<@&${guild.notificationRoleId}>`
       : "";
 
     const liveEmbed = buildLiveEmbed({
