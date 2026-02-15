@@ -122,7 +122,7 @@ The audit log feed is filtered by user role. ADMIN sees all entries. Other roles
 
 ## First-User Setup Wizard
 
-On first startup, the web app generates a one-time setup token and logs a setup URL to the console. The first user to visit `/setup/{token}` and sign in becomes the broadcaster and is promoted to ADMIN. The token is single-use and deleted after setup completes.
+On first startup, the web app generates a one-time setup token and logs a setup URL to the console. The first user to visit `/setup/{token}` completes a multi-step wizard: **Sign In → Authorize Bot → Link Twitch → Enable Bot → Done**. The user becomes the broadcaster and is promoted to ADMIN. The token is single-use and deleted after setup completes.
 
 Runtime config is stored in the `SystemConfig` table (key-value pairs):
 - `broadcasterUserId` — the User ID of the broadcaster (set during setup)
@@ -204,11 +204,12 @@ Next.js with tRPC, better-auth, and EventBus. On first startup, a setup wizard f
 
 - `(landing)/` — floating glass header + footer + content
 - `(dashboard)/dashboard/` — minimal header + sidebar + content (auth-gated), includes `/dashboard/discord` for Discord settings
-- `(auth)/` — centered card on gradient background (login + setup wizard)
+- `(auth)/` — centered card on gradient background with ambient glow orbs (login + setup wizard)
 
 ### Animations
 
 - `.animate-fade-in-up` — upward entrance (0.5s)
 - `.animate-fade-in` — opacity entrance (0.4s)
 - `.animate-slide-in-left` — left entrance (0.4s)
+- `.animate-slide-fade` — step transition (scale + translate + fade, 0.4s)
 - Stagger with inline `animation-delay` styles
