@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
+import { Montserrat, Roboto } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
 import CookieConsent from "@/components/cookie-consent";
 
-const outfit = Outfit({
+const montserrat = Montserrat({
   variable: "--font-heading",
   subsets: ["latin"],
   weight: ["600", "700", "800"],
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const roboto = Roboto({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["300", "400", "500", "700"],
@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${outfit.variable} ${plusJakartaSans.variable} antialiased`}
+        className={`${montserrat.variable} ${roboto.variable} antialiased`}
       >
         <Providers>
           {children}
