@@ -183,7 +183,7 @@ function LinkGuildSection({
             ) : (
               <Select
                 value={selectedGuildId}
-                onValueChange={setSelectedGuildId}
+                onValueChange={(v) => setSelectedGuildId(v ?? "")}
               >
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Select a server..." />
