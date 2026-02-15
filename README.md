@@ -13,6 +13,7 @@ Community Bot monorepo for MrDemonWolf, Inc. Turborepo workspace containing the 
 - **Audit Log** - Every mutation logged with user, action, and metadata; role-filtered visibility in the dashboard feed
 - **Discord Controls** - Link Discord server, configure notification channel/role, enable/disable notifications, send test notifications from the web dashboard
 - **Dashboard Redesign** - Two-column layout with audit log feed, bot controls, and quick stats
+- **First-User Setup Wizard** - One-time `/setup/{token}` flow that designates the broadcaster and promotes them to admin
 - **Turborepo** - Optimized monorepo build system
 
 ## Getting Started
@@ -48,6 +49,10 @@ pnpm db:push
 ```bash
 pnpm dev
 ```
+
+6. Complete first-time setup:
+
+On first startup, the web app logs a one-time setup URL to the console. Visit the URL, sign in with Twitch or Discord, and complete the wizard to become the broadcaster and admin.
 
 - Web dashboard: [http://localhost:3001](http://localhost:3001)
 - Docs: [http://localhost:3000](http://localhost:3000)
