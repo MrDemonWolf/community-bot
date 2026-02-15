@@ -85,6 +85,7 @@ await eventBus.on("channel:join", (payload) => { /* handle */ });
 | `stream:offline` | `{ channelId, username }` | Twitch | Discord |
 | `queue:updated` | `{ channelId }` | Any | Any |
 | `discord:settings-updated` | `{ guildId }` | Web | Discord |
+| `discord:test-notification` | `{ guildId }` | Web | Discord |
 | `bot:status` | `{ service, status }` | Discord/Twitch | Any |
 
 ## Audit Log System

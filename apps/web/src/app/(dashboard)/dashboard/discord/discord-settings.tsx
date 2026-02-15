@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
@@ -26,10 +26,10 @@ import {
   XCircle,
   ExternalLink,
   AlertCircle,
+  Send,
 } from "lucide-react";
 
-// Bot permissions: Send Messages, Embed Links, Mention Everyone
-const BOT_PERMISSIONS = "19456";
+const BOT_PERMISSIONS = "2147633152";
 
 export default function DiscordSettings({
   discordAppId,
@@ -86,6 +86,7 @@ export default function DiscordSettings({
         queryKey={queryKey}
         queryClient={queryClient}
       />
+      <TestNotificationCard hasChannel={!!guild.notificationChannelId} />
     </div>
   );
 }
@@ -100,6 +101,7 @@ function LinkGuildSection({
   queryClient: ReturnType<typeof useQueryClient>;
 }) {
   const [selectedGuildId, setSelectedGuildId] = useState<string>("");
+  const autoLinked = useRef(false);
 
   const { data: availableGuilds, isLoading } = useQuery({
     ...trpc.discordGuild.listAvailableGuilds.queryOptions(),
@@ -110,7 +112,7 @@ function LinkGuildSection({
     trpc.discordGuild.linkGuild.mutationOptions({
       onSuccess: () => {
         toast.success("Discord server linked!");
-        queryClient.invalidateQueries({ queryKey });
+        void queryClient.invalidateQueries();
       },
       onError: (err) => {
         toast.error(err.message);
@@ -118,7 +120,33 @@ function LinkGuildSection({
     })
   );
 
+  // Auto-link when there's exactly one available guild
+  useEffect(() => {
+    if (
+      availableGuilds?.length === 1 &&
+      !linkMutation.isPending &&
+      !autoLinked.current
+    ) {
+      autoLinked.current = true;
+      linkMutation.mutate({ guildId: availableGuilds[0].guildId });
+    }
+  }, [availableGuilds, linkMutation]);
+
   const authorizeUrl = `https://discord.com/oauth2/authorize?client_id=${discordAppId}&scope=bot&permissions=${BOT_PERMISSIONS}`;
+
+  // Show loading state while auto-linking
+  if (linkMutation.isPending) {
+    return (
+      <Card>
+        <CardContent className="flex items-center gap-3 py-8">
+          <Loader2 className="size-5 animate-spin text-brand-discord" />
+          <span className="text-sm text-muted-foreground">
+            Linking Discord server...
+          </span>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -164,20 +192,7 @@ function LinkGuildSection({
                   {availableGuilds && availableGuilds.length > 0 ? (
                     availableGuilds.map((g) => (
                       <SelectItem key={g.guildId} value={g.guildId}>
-                        <span className="flex items-center gap-2">
-                          {g.icon ? (
-                            <img
-                              src={g.icon}
-                              alt=""
-                              className="size-5 rounded-full"
-                            />
-                          ) : (
-                            <span className="flex size-5 items-center justify-center rounded-full bg-brand-discord text-[10px] font-bold text-white">
-                              {(g.name ?? "?")[0]}
-                            </span>
-                          )}
-                          {g.name ?? g.guildId}
-                        </span>
+                        {g.name ?? g.guildId}
                       </SelectItem>
                     ))
                   ) : (
@@ -355,7 +370,9 @@ function NotificationChannelCard({
       <CardHeader>
         <CardTitle className="font-heading">Notification Channel</CardTitle>
         <CardDescription>
-          The Discord channel where stream notifications will be posted.
+          The Discord channel where Twitch live stream notifications will be
+          posted. When a stream goes live, the bot sends an embed with the
+          stream title, game, and viewer count.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -376,19 +393,19 @@ function NotificationChannelCard({
           </div>
         ) : (
           <div className="flex gap-3">
-            <Select value={channelId} onValueChange={setChannelId}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select a channel..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">(None)</SelectItem>
-                {channels?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    # {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={channelId}
+              onChange={(e) => setChannelId(e.target.value)}
+              className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex-1 rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
+            >
+              <option value="">Select a channel...</option>
+              <option value="_none">(None)</option>
+              {channels?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  # {c.name}
+                </option>
+              ))}
+            </select>
             <Button
               size="sm"
               disabled={mutation.isPending}
@@ -446,7 +463,9 @@ function NotificationRoleCard({
       <CardHeader>
         <CardTitle className="font-heading">Notification Role</CardTitle>
         <CardDescription>
-          The Discord role to mention when a stream goes live.
+          Choose which role to mention when a Twitch stream goes live. This
+          ping is included in the live notification message posted to your
+          notification channel.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -467,25 +486,26 @@ function NotificationRoleCard({
           </div>
         ) : (
           <div className="flex gap-3">
-            <Select value={roleId} onValueChange={setRoleId}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select a role..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_none">No role mention</SelectItem>
-                {roles?.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    @{r.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={roleId}
+              onChange={(e) => setRoleId(e.target.value)}
+              className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex-1 rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
+            >
+              <option value="">Select a role...</option>
+              <option value="_none">No mention</option>
+              <option value="everyone">@everyone</option>
+              {roles?.map((r) => (
+                <option key={r.id} value={r.id}>
+                  @{r.name}
+                </option>
+              ))}
+            </select>
             <Button
               size="sm"
               disabled={mutation.isPending}
               onClick={() =>
                 mutation.mutate({
-                  roleId: roleId && roleId !== "_none" ? roleId : null,
+                  roleId: roleId && roleId !== "_none" && roleId !== "" ? roleId : null,
                 })
               }
             >
@@ -495,6 +515,55 @@ function NotificationRoleCard({
               Save
             </Button>
           </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TestNotificationCard({ hasChannel }: { hasChannel: boolean }) {
+  const mutation = useMutation(
+    trpc.discordGuild.testNotification.mutationOptions({
+      onSuccess: () => {
+        toast.success(
+          "Test notification sent! Watch your Discord channel for the live → update → offline sequence."
+        );
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    })
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-heading">Test Notification</CardTitle>
+        <CardDescription>
+          Send a test Twitch live notification to your notification channel. The
+          bot will post a fake live embed, update the viewer count after 5
+          seconds, then mark the stream as offline after 10 seconds.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {!hasChannel ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <AlertCircle className="size-4" />
+            <span>Set a notification channel first to send a test.</span>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            disabled={mutation.isPending}
+            onClick={() => mutation.mutate()}
+          >
+            {mutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Send className="size-4" />
+            )}
+            Send Test Notification
+          </Button>
         )}
       </CardContent>
     </Card>

@@ -157,6 +157,111 @@ eventBus.on("discord:settings-updated", (payload) => {
   );
 });
 
+eventBus.on("discord:test-notification", async (payload) => {
+  try {
+    const { buildLiveEmbed, buildOfflineEmbed } = await import(
+      "./twitch/embeds.js"
+    );
+    const { TextChannel } = await import("discord.js");
+
+    const guild = await prisma.discordGuild.findUnique({
+      where: { guildId: payload.guildId },
+      include: { TwitchChannel: { take: 1 } },
+    });
+
+    if (!guild?.notificationChannelId) return;
+
+    const discordChannel = await client.channels.fetch(
+      guild.notificationChannelId
+    );
+    if (!discordChannel || !(discordChannel instanceof TextChannel)) return;
+
+    const channel = guild.TwitchChannel[0];
+    const username = channel?.username ?? "teststreamer";
+    const displayName = channel?.displayName ?? username;
+    const profileImageUrl = channel?.profileImageUrl ?? "";
+
+    const now = new Date();
+    const fakeStream = {
+      id: "test-stream",
+      user_id: channel?.twitchChannelId ?? "0",
+      user_login: username,
+      user_name: displayName,
+      game_name: "Just Chatting",
+      title: "Test Stream - This is a test notification!",
+      viewer_count: 1234,
+      started_at: now.toISOString(),
+      thumbnail_url:
+        "https://static-cdn.jtvnw.net/previews-ttv/live_user_{width}x{height}.jpg",
+      type: "live" as const,
+    };
+
+    const roleMention = guild.notificationRoleId
+      ? guild.notificationRoleId === "everyone"
+        ? "@everyone"
+        : `<@&${guild.notificationRoleId}>`
+      : "";
+
+    const liveEmbed = buildLiveEmbed({
+      displayName,
+      username,
+      profileImageUrl,
+      stream: fakeStream,
+      startedAt: now,
+    });
+
+    const message = await discordChannel.send({
+      content: roleMention || undefined,
+      embeds: [liveEmbed],
+    });
+
+    logger.info("EventBus", `Test notification sent for guild: ${payload.guildId}`);
+
+    // Update to viewer count change after 5s, then offline after 10s
+    setTimeout(async () => {
+      try {
+        fakeStream.viewer_count = 5678;
+        const updatedEmbed = buildLiveEmbed({
+          displayName,
+          username,
+          profileImageUrl,
+          stream: fakeStream,
+          startedAt: now,
+        });
+        await message.edit({
+          content: roleMention || undefined,
+          embeds: [updatedEmbed],
+        });
+      } catch (err) {
+        logger.error("EventBus", "Failed to update test notification", err);
+      }
+    }, 5000);
+
+    setTimeout(async () => {
+      try {
+        const offlineAt = new Date();
+        const offlineEmbed = buildOfflineEmbed({
+          displayName,
+          username,
+          profileImageUrl,
+          title: fakeStream.title,
+          gameName: fakeStream.game_name,
+          startedAt: now,
+          offlineAt,
+        });
+        await message.edit({
+          content: roleMention || undefined,
+          embeds: [offlineEmbed],
+        });
+      } catch (err) {
+        logger.error("EventBus", "Failed to edit test to offline", err);
+      }
+    }, 10000);
+  } catch (err) {
+    logger.error("EventBus", "Error handling test notification", err);
+  }
+});
+
 eventBus.publish("bot:status", {
   service: "discord",
   status: "connecting",
