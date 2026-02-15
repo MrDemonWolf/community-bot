@@ -8,6 +8,7 @@ import { userRouter } from "./user";
 import { regularRouter } from "./regular";
 import { auditLogRouter } from "./auditLog";
 import { discordGuildRouter } from "./discordGuild";
+import { setupRouter } from "./setup";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -25,5 +26,6 @@ export const appRouter = router({
   regular: regularRouter,
   auditLog: auditLogRouter,
   discordGuild: discordGuildRouter,
+  setup: setupRouter,
 });
 export type AppRouter = typeof appRouter;

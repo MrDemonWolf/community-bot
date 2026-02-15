@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@community-bot/auth";
+import { isSetupComplete } from "@/lib/setup";
 import DashboardHeader from "@/components/dashboard-header";
 import DashboardSidebar from "./components/dashboard-sidebar";
 
@@ -9,6 +10,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  if (!(await isSetupComplete())) {
+    redirect("/");
+  }
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
