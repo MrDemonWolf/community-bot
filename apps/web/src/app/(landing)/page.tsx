@@ -3,10 +3,8 @@ import type { Route } from "next";
 import { Button } from "@/components/ui/button";
 import AuthCtaButton from "@/components/auth-cta-button";
 
-const singleChannelMode =
-  process.env.NEXT_PUBLIC_SINGLE_CHANNEL_MODE === "true";
 const channelUrl = process.env.NEXT_PUBLIC_CHANNEL_URL;
-const channelName = process.env.NEXT_PUBLIC_CHANNEL_NAME ?? "My Channel";
+const channelName = process.env.NEXT_PUBLIC_CHANNEL_NAME;
 
 const features = [
   {
@@ -34,17 +32,15 @@ export default function Home() {
         <div className="mx-auto max-w-5xl">
           <div className="max-w-2xl">
             <h1 className="animate-fade-in-up text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl">
-              {singleChannelMode
+              {channelName
                 ? `The bot powering ${channelName}'s community.`
-                : "The ultimate community bot for Twitch and Discord."}
+                : "The all-in-one bot for your community."}
             </h1>
             <p className="animate-fade-in-up mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg" style={{ animationDelay: "100ms" }}>
-              {singleChannelMode
-                ? "Custom chat commands, stream notifications, viewer queue, and more — all managed from a single dashboard."
-                : "Powerful moderation and community tools that connect you with your audience. Chat commands, stream notifications, and viewer engagement — all in one place."}
+              Custom chat commands, stream notifications, viewer queue, and more — all managed from a single dashboard.
             </p>
             <div className="animate-fade-in-up mt-8 flex flex-wrap gap-3" style={{ animationDelay: "200ms" }}>
-              {singleChannelMode && channelUrl && (
+              {channelUrl && channelName && (
                 <Link href={channelUrl as Route}>
                   <Button
                     size="lg"
@@ -68,9 +64,9 @@ export default function Home() {
             <span className="text-brand-main">run your community</span>.
           </h2>
           <p className="mx-auto mb-12 max-w-xl text-center text-muted-foreground">
-            {singleChannelMode
+            {channelName
               ? `Here's what powers ${channelName}'s stream.`
-              : "Built for streamers and their communities, from chat moderation to live notifications."}
+              : "Here's what powers your stream."}
           </p>
           <div className="grid gap-6 sm:grid-cols-3">
             {features.map((feature, i) => (
@@ -95,26 +91,23 @@ export default function Home() {
       <section className="bg-background px-6 py-16 sm:py-24">
         <div className="mx-auto max-w-xl text-center">
           <h2 className="mb-4 text-2xl font-bold text-foreground sm:text-3xl">
-            {singleChannelMode ? (
+            {channelName ? (
               <>
                 Join{" "}
                 <span className="text-brand-main">{channelName}</span>
                 {"'s community!"}
               </>
             ) : (
-              <>
-                Start using{" "}
-                <span className="text-brand-main">Community Bot</span> today!
-              </>
+              "Ready to get started?"
             )}
           </h2>
           <p className="mb-8 text-muted-foreground">
-            {singleChannelMode
+            {channelName
               ? "Check out the stream and join the fun."
-              : "Set up your bot in minutes. Focus on your stream, we'll handle the rest."}
+              : "Set up your bot and start managing your community."}
           </p>
           <div className="flex justify-center gap-3">
-            {singleChannelMode && channelUrl && (
+            {channelUrl && channelName && (
               <Link href={channelUrl as Route}>
                 <Button
                   size="lg"
