@@ -13,25 +13,7 @@ import {
   User,
 } from "lucide-react";
 import Image from "next/image";
-
-const ROLE_DISPLAY: Record<string, { label: string; className: string }> = {
-  ADMIN: {
-    label: "Owner",
-    className: "bg-brand-main/15 text-brand-main",
-  },
-  LEAD_MODERATOR: {
-    label: "Lead Mod",
-    className: "bg-purple-500/15 text-purple-500",
-  },
-  MODERATOR: {
-    label: "Moderator",
-    className: "bg-green-500/15 text-green-500",
-  },
-  USER: {
-    label: "User",
-    className: "bg-muted text-muted-foreground",
-  },
-};
+import { getRoleDisplay } from "@/utils/roles";
 
 const PROVIDER_ICONS: Record<string, { label: string; className: string }> = {
   twitch: { label: "Twitch", className: "text-brand-twitch" },
@@ -91,7 +73,7 @@ function AccountTab() {
 
   if (!profile) return null;
 
-  const roleInfo = ROLE_DISPLAY[profile.role] ?? ROLE_DISPLAY.USER;
+  const roleInfo = getRoleDisplay(profile.role, profile.isChannelOwner);
 
   return (
     <div className="space-y-6">

@@ -60,6 +60,14 @@ export const auditLogRouter = router({
         prisma.auditLog.count({ where }),
       ]);
 
+      // Check which users are channel owners
+      const userIds = [...new Set(items.map((item) => item.userId))];
+      const channelOwners = await prisma.botChannel.findMany({
+        where: { userId: { in: userIds } },
+        select: { userId: true },
+      });
+      const ownerSet = new Set(channelOwners.map((c) => c.userId));
+
       return {
         items: items.map((item) => ({
           id: item.id,
@@ -67,6 +75,7 @@ export const auditLogRouter = router({
           userName: item.userName,
           userImage: item.userImage,
           userRole: item.userRole,
+          isChannelOwner: ownerSet.has(item.userId),
           action: item.action,
           resourceType: item.resourceType,
           resourceId: item.resourceId,

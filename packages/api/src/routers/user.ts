@@ -31,12 +31,18 @@ export const userRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "User not found." });
     }
 
+    const botChannel = await prisma.botChannel.findUnique({
+      where: { userId: user.id },
+      select: { id: true },
+    });
+
     return {
       id: user.id,
       name: user.name,
       email: user.email,
       image: user.image,
       role: user.role,
+      isChannelOwner: !!botChannel,
       createdAt: user.createdAt.toISOString(),
       connectedAccounts: user.accounts.map((a) => ({
         provider: a.providerId,

@@ -12,13 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
-
-const ROLE_DISPLAY: Record<string, { label: string; color: string }> = {
-  ADMIN: { label: "Admin", color: "bg-red-500/10 text-red-500" },
-  LEAD_MODERATOR: { label: "Lead Mod", color: "bg-purple-500/10 text-purple-500" },
-  MODERATOR: { label: "Mod", color: "bg-blue-500/10 text-blue-500" },
-  USER: { label: "User", color: "bg-muted text-muted-foreground" },
-};
+import { getRoleDisplay } from "@/utils/roles";
 
 function getActionDescription(
   action: string,
@@ -108,7 +102,7 @@ export default function AuditLogFeed() {
 
         <div className="space-y-3">
           {items.map((item) => {
-            const role = ROLE_DISPLAY[item.userRole] ?? ROLE_DISPLAY.USER;
+            const role = getRoleDisplay(item.userRole, item.isChannelOwner);
             return (
               <div key={item.id} className="flex items-start gap-3">
                 {item.userImage ? (
@@ -131,7 +125,7 @@ export default function AuditLogFeed() {
                       {item.userName}
                     </span>
                     <span
-                      className={`ml-1.5 inline-block rounded px-1 py-0.5 text-[10px] font-medium ${role.color}`}
+                      className={`ml-1.5 inline-block rounded px-1 py-0.5 text-[10px] font-medium ${role.className}`}
                     >
                       {role.label}
                     </span>
