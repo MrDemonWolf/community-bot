@@ -4,6 +4,8 @@ import {
 } from "../index";
 import { botChannelRouter } from "./botChannel";
 import { chatCommandRouter } from "./chatCommand";
+import { userRouter } from "./user";
+import { regularRouter } from "./regular";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -17,5 +19,7 @@ export const appRouter = router({
   }),
   botChannel: botChannelRouter,
   chatCommand: chatCommandRouter,
+  user: userRouter,
+  regular: regularRouter,
 });
 export type AppRouter = typeof appRouter;

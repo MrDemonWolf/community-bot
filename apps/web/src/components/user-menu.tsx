@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   DropdownMenu,
@@ -14,13 +15,37 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
+import { trpc } from "@/utils/trpc";
 
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 
+const ROLE_DISPLAY: Record<string, { label: string; className: string }> = {
+  ADMIN: {
+    label: "Owner",
+    className: "bg-brand-main/15 text-brand-main",
+  },
+  LEAD_MODERATOR: {
+    label: "Lead Mod",
+    className: "bg-purple-500/15 text-purple-500",
+  },
+  MODERATOR: {
+    label: "Moderator",
+    className: "bg-green-500/15 text-green-500",
+  },
+  USER: {
+    label: "User",
+    className: "bg-muted text-muted-foreground",
+  },
+};
+
 export default function UserMenu() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
+  const { data: profile } = useQuery({
+    ...trpc.user.getProfile.queryOptions(),
+    enabled: !!session,
+  });
 
   if (isPending) {
     return <Skeleton className="h-9 w-9 rounded-full" />;
@@ -39,14 +64,16 @@ export default function UserMenu() {
     );
   }
 
+  const roleInfo = ROLE_DISPLAY[profile?.role ?? "USER"] ?? ROLE_DISPLAY.USER;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <button className="flex items-center gap-2 rounded-full border border-border bg-surface-raised py-1 pl-3 pr-1 text-sm font-medium text-foreground transition-colors hover:bg-surface-overlay" />
+          <button className="flex items-center gap-2 rounded-full border border-border bg-surface-raised py-1 pl-1 pr-1 text-sm font-medium text-foreground transition-colors hover:bg-surface-overlay sm:pl-3" />
         }
       >
-        {session.user.name}
+        <span className="hidden sm:inline">{session.user.name}</span>
         {session.user.image ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
@@ -64,21 +91,21 @@ export default function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 border-border bg-popover">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex flex-col gap-0.5 text-foreground">
+          <DropdownMenuLabel className="flex items-center gap-2 text-foreground">
             <span className="font-semibold">{session.user.name}</span>
-            <span className="text-xs font-normal text-muted-foreground">
-              {session.user.email}
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${roleInfo.className}`}
+            >
+              {roleInfo.label}
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="bg-border" />
-          <DropdownMenuItem className="gap-2 text-muted-foreground">
-            <User className="h-4 w-4" />
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem className="gap-2 text-muted-foreground">
-            <Settings className="h-4 w-4" />
-            Settings
-          </DropdownMenuItem>
+          <Link href="/dashboard/settings">
+            <DropdownMenuItem className="gap-2 text-muted-foreground">
+              <Settings className="h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+          </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator className="bg-border" />
         <DropdownMenuGroup>

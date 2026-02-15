@@ -144,8 +144,8 @@ Next.js with tRPC, better-auth, and EventBus. Users can enable/disable the Twitc
 
 ### Typography
 
-- **Headings**: Outfit (geometric, modern) — `font-heading` / `--font-heading`
-- **Body**: Plus Jakarta Sans (humanist, readable) — `font-sans` / `--font-body`
+- **Headings**: Montserrat (geometric, modern) — `font-heading` / `--font-heading`
+- **Body**: Roboto (clean, readable) — `font-sans` / `--font-body`
 - Loaded via `next/font/google` in `apps/web/src/app/layout.tsx`
 
 ### Layout Structure
