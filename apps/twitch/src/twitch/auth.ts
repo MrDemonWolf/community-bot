@@ -3,7 +3,6 @@ import { RefreshingAuthProvider } from "@twurple/auth";
 import { env } from "../utils/env.js";
 import { logger } from "../utils/logger.js";
 import { prisma } from "@community-bot/db";
-import { runDeviceCodeFlow } from "./deviceAuth.js";
 
 const VALIDATE_URL = "https://id.twitch.tv/oauth2/validate";
 const TOKEN_URL = "https://id.twitch.tv/oauth2/token";
@@ -144,34 +143,7 @@ export async function createAuthProvider(): Promise<AuthResult> {
     await prisma.twitchCredential.delete({ where: { id: stored.id } });
   }
 
-  // 2. No valid credentials — run the interactive device code flow
-  const tokenData = await runDeviceCodeFlow();
-  const now = Date.now();
-
-  const userId = await authProvider.addUserForToken(
-    {
-      accessToken: tokenData.accessToken,
-      refreshToken: tokenData.refreshToken,
-      expiresIn: tokenData.expiresIn,
-      obtainmentTimestamp: now,
-      scope: tokenData.scope,
-    },
-    ["chat"],
-  );
-
-  // Persist immediately
-  await tokenToDb(userId, {
-    accessToken: tokenData.accessToken,
-    refreshToken: tokenData.refreshToken,
-    expiresIn: tokenData.expiresIn,
-    obtainmentTimestamp: now,
-    scope: tokenData.scope,
-  });
-
-  const validated = await validateToken(tokenData.accessToken);
-  const login = validated?.login ?? userId;
-
-  logger.success("Twitch Auth", `Authorized as ${login}`);
-
-  return { authProvider, botUsername: login };
+  // 2. No valid credentials — setup wizard must be completed first
+  logger.warn("Twitch Auth", "No credentials found. Complete the setup wizard in the web dashboard.");
+  throw new Error("No Twitch credentials. Run the setup wizard.");
 }
