@@ -1,0 +1,89 @@
+---
+title: Health Checks
+description: Comprehensive health check endpoints for monitoring bot dependencies.
+---
+
+Both the Discord and Twitch bots expose a `GET /api/health` endpoint that checks the status of each dependency and returns a structured response. These endpoints are designed for use with monitoring tools like Coolify, Pulsetic, or any uptime checker.
+
+## Response Format
+
+```json
+{
+  "status": "healthy",
+  "uptime": 12345.67,
+  "version": "1.7.0",
+  "timestamp": "2026-02-18T12:00:00.000Z",
+  "checks": {
+    "<service>": { "status": "up", "latency": 85 },
+    "database": { "status": "up", "latency": 12 },
+    "redis": { "status": "up", "latency": 3 }
+  }
+}
+```
+
+### Overall Status
+
+| Value | Meaning | HTTP Code |
+|-------|---------|-----------|
+| `healthy` | All checks are `up` | 200 |
+| `degraded` | At least one check is `degraded`, none `down` | 200 |
+| `unhealthy` | At least one check is `down` | 503 |
+
+### Check Statuses
+
+Each individual check reports one of:
+
+| Value | Meaning |
+|-------|---------|
+| `up` | Dependency is reachable and responding |
+| `degraded` | Dependency is partially available (e.g. bot is still connecting) |
+| `down` | Dependency is unreachable |
+
+## Discord Bot
+
+**Endpoint:** `GET http://localhost:3141/api/health`
+
+| Check | How it works |
+|-------|-------------|
+| `discord` | `client.isReady()` for status, `client.ws.ping` for WebSocket heartbeat latency |
+| `database` | `prisma.$queryRaw(SELECT 1)` with latency measurement |
+| `redis` | `redis.ping()` with latency measurement |
+
+## Twitch Bot
+
+**Endpoint:** `GET http://localhost:3737/api/health`
+
+| Check | How it works |
+|-------|-------------|
+| `twitch` | Maps `botStatus.status` — `"online"` = up, `"connecting"` = degraded, `"offline"` = down |
+| `database` | `prisma.$queryRaw(SELECT 1)` with latency measurement |
+| `redis` | `eventBus.ping()` with latency measurement |
+
+## Monitoring Configuration
+
+For uptime monitoring services, point your health check at the appropriate endpoint and configure:
+
+- **Expected HTTP status:** 200 for healthy
+- **Alert on:** HTTP 503 (unhealthy) or connection timeout
+- **Check interval:** 30–60 seconds recommended
+
+### Example with curl
+
+```bash
+# Check Discord bot health
+curl -s http://localhost:3141/api/health | jq .
+
+# Check Twitch bot health
+curl -s http://localhost:3737/api/health | jq .
+```
+
+## EventBus Ping
+
+The `@community-bot/events` package exposes a `ping()` method on the `EventBus` class for checking Redis connectivity:
+
+```typescript
+const eventBus = new EventBus(redisUrl);
+const isRedisUp = await eventBus.ping(); // true if Redis responds with PONG
+```
+
+This is used by the Twitch bot health check internally. The Discord bot uses its direct Redis client instead.

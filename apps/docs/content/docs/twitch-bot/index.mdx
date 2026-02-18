@@ -21,7 +21,7 @@ The bot runs as a single Node.js process with:
 
 1. **Twurple chat client** — Connects to Twitch IRC
 2. **Command pipeline** — Three-phase message processing (built-in, DB prefix, DB regex)
-3. **Express API** — HTTP server on port 3737 (configurable)
+3. **Express API** — HTTP server on port 3737 (configurable) with [comprehensive health check](/docs/development/health-checks) endpoint
 4. **Cron scheduler** — Periodic reloading of commands and regulars from the database
 
 ## Entry Point
