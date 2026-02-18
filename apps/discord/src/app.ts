@@ -96,8 +96,8 @@ worker(queue);
 /**
  * Verify Prisma connection on startup.
  */
-prisma
-  .$connect()
+prisma.user
+  .findFirst()
   .then(() => {
     logger.database.connected("Prisma");
   })
