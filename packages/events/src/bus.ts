@@ -47,6 +47,15 @@ export class EventBus {
     this.handlers.get(event)!.add(handler as (payload: unknown) => void);
   }
 
+  async ping(): Promise<boolean> {
+    try {
+      const result = await this.pub.ping();
+      return result === "PONG";
+    } catch {
+      return false;
+    }
+  }
+
   async disconnect(): Promise<void> {
     await this.sub.unsubscribe();
     this.sub.disconnect();
