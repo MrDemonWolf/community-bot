@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 // substituteVariables is not exported directly, so we re-implement the pure
 // regex logic to test variable substitution patterns in isolation.
+// The logic here mirrors the production implementation exactly.
 
 function substituteSimpleVars(
   template: string,
@@ -20,7 +21,7 @@ function substitutePositionalArgs(template: string, args: string[]): string {
     /\$\{(\d+)(?:\|'?([^}']*)'?)?\}/g,
     (_match, indexStr: string, fallback: string | undefined) => {
       const index = parseInt(indexStr, 10) - 1;
-      if (index >= 0 && index < args.length && args[index]) {
+      if (index >= 0 && index < args.length && args[index] !== undefined) {
         return args[index];
       }
       return fallback ?? "";
@@ -58,6 +59,10 @@ function substituteTime(template: string): string {
 }
 
 describe("commandExecutor variable substitution", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe("simple variables", () => {
     it("replaces {user}", () => {
       expect(substituteSimpleVars("Hello {user}!", "testuser", "chan", [])).toBe(
@@ -120,25 +125,26 @@ describe("commandExecutor variable substitution", () => {
     it("prefers actual arg over fallback", () => {
       expect(substitutePositionalArgs("${1|fallback}", ["actual"])).toBe("actual");
     });
+
+    it("returns empty string arg instead of fallback", () => {
+      expect(substitutePositionalArgs("${1|fallback}", [""])).toBe("");
+    });
   });
 
   describe("random.pick", () => {
     it("picks from available options", () => {
       vi.spyOn(Math, "random").mockReturnValue(0);
       expect(substituteRandomPick("${random.pick 'a' 'b' 'c'}")).toBe("a");
-      vi.restoreAllMocks();
     });
 
     it("picks last option when random is near 1", () => {
       vi.spyOn(Math, "random").mockReturnValue(0.99);
       expect(substituteRandomPick("${random.pick 'x' 'y' 'z'}")).toBe("z");
-      vi.restoreAllMocks();
     });
 
     it("handles single option", () => {
       vi.spyOn(Math, "random").mockReturnValue(0);
       expect(substituteRandomPick("${random.pick 'only'}")).toBe("only");
-      vi.restoreAllMocks();
     });
   });
 

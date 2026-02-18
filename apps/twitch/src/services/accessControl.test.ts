@@ -1,21 +1,5 @@
 import { describe, it, expect } from "vitest";
-
-// The access hierarchy and meetsAccessLevel are pure logic.
-// We replicate the hierarchy here to test without importing prisma/twurple deps.
-
-const ACCESS_HIERARCHY: Record<string, number> = {
-  EVERYONE: 0,
-  SUBSCRIBER: 1,
-  REGULAR: 2,
-  VIP: 3,
-  MODERATOR: 4,
-  LEAD_MODERATOR: 5,
-  BROADCASTER: 6,
-};
-
-function meetsAccessLevel(userLevel: string, requiredLevel: string): boolean {
-  return ACCESS_HIERARCHY[userLevel] >= ACCESS_HIERARCHY[requiredLevel];
-}
+import { ACCESS_HIERARCHY, meetsAccessLevel } from "./accessControl.constants.js";
 
 describe("accessControl", () => {
   describe("meetsAccessLevel", () => {

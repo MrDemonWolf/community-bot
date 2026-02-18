@@ -13,24 +13,28 @@ describe("cronParser", () => {
       expect(result.toLowerCase()).toContain("every minute");
     });
 
-    it("returns description for invalid expression instead of throwing", () => {
+    it("returns error description for invalid expression", () => {
       const result = cronToText("not a cron");
-      expect(typeof result).toBe("string");
+      expect(result).toContain("error occurred");
     });
   });
 
   describe("isValidCron", () => {
-    it("returns true for valid expressions", () => {
-      expect(isValidCron("* * * * *")).toBe(true);
-      expect(isValidCron("0 8 * * *")).toBe(true);
-      expect(isValidCron("*/5 * * * *")).toBe(true);
-      expect(isValidCron("0 0 1 * *")).toBe(true);
+    it.each([
+      ["* * * * *"],
+      ["0 8 * * *"],
+      ["*/5 * * * *"],
+      ["0 0 1 * *"],
+    ])("returns true for valid expression: %s", (expression) => {
+      expect(isValidCron(expression)).toBe(true);
     });
 
-    it("returns false for invalid expressions", () => {
-      expect(isValidCron("")).toBe(false);
-      expect(isValidCron("not a cron")).toBe(false);
-      expect(isValidCron("60 * * * *")).toBe(false);
+    it.each([
+      [""],
+      ["not a cron"],
+      ["60 * * * *"],
+    ])("returns false for invalid expression: %s", (expression) => {
+      expect(isValidCron(expression)).toBe(false);
     });
   });
 
@@ -44,6 +48,7 @@ describe("cronParser", () => {
 
     it("returns invalid details for bad cron", () => {
       const details = getCronDetails("bad");
+      expect(details.expression).toBe("bad");
       expect(details.isValid).toBe(false);
       expect(details.description).toBe("Invalid cron expression");
     });

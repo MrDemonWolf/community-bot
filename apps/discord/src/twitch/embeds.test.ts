@@ -1,17 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
-// formatDuration is not exported, so we re-implement it to test the logic.
+vi.mock("../utils/env.js", () => ({
+  default: { NODE_ENV: "test" },
+}));
 
-function formatDuration(ms: number): string {
-  const totalMinutes = Math.floor(ms / 60000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
+vi.mock("./api.js", () => ({
+  getStreamThumbnailUrl: (url: string) => url,
+}));
 
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
-}
+import { formatDuration } from "./embeds.js";
 
 describe("embeds", () => {
   describe("formatDuration", () => {

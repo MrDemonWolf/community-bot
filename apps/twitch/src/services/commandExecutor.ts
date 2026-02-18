@@ -22,7 +22,7 @@ async function substituteVariables(
     /\$\{(\d+)(?:\|'?([^}']*)'?)?\}/g,
     (_match, indexStr: string, fallback: string | undefined) => {
       const index = parseInt(indexStr, 10) - 1;
-      if (index >= 0 && index < args.length && args[index]) {
+      if (index >= 0 && index < args.length && args[index] !== undefined) {
         return args[index];
       }
       return fallback ?? "";

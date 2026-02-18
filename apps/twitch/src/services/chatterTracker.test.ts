@@ -1,6 +1,10 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 // chatterTracker uses module-level state, so we reset modules between tests.
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 async function freshModule() {
   vi.resetModules();
@@ -72,7 +76,6 @@ describe("chatterTracker", () => {
       vi.spyOn(Math, "random").mockReturnValue(0);
       const result = mod.getRandomChatter("chan");
       expect(result).toBe("alpha");
-      vi.restoreAllMocks();
     });
   });
 });

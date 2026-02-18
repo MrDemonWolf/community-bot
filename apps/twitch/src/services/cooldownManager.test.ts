@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { isOnCooldown, recordUsage } from "./cooldownManager.js";
+import { isOnCooldown, recordUsage, resetCooldowns } from "./cooldownManager.js";
 
 describe("cooldownManager", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    resetCooldowns();
   });
 
   afterEach(() => {
