@@ -4,16 +4,7 @@ import { prisma } from "@community-bot/db";
 import { logger } from "../utils/logger.js";
 import { TwitchAccessLevel } from "@community-bot/db";
 import type { TwitchRegular } from "@community-bot/db";
-
-const ACCESS_HIERARCHY: Record<TwitchAccessLevel, number> = {
-  EVERYONE: 0,
-  SUBSCRIBER: 1,
-  REGULAR: 2,
-  VIP: 3,
-  MODERATOR: 4,
-  LEAD_MODERATOR: 5,
-  BROADCASTER: 6,
-};
+import { ACCESS_HIERARCHY } from "./accessControl.constants.js";
 
 let regularsSet = new Set<string>();
 
@@ -40,9 +31,4 @@ export function getUserAccessLevel(msg: ChatMessage): TwitchAccessLevel {
   return TwitchAccessLevel.EVERYONE;
 }
 
-export function meetsAccessLevel(
-  userLevel: TwitchAccessLevel,
-  requiredLevel: TwitchAccessLevel
-): boolean {
-  return ACCESS_HIERARCHY[userLevel] >= ACCESS_HIERARCHY[requiredLevel];
-}
+export { meetsAccessLevel } from "./accessControl.constants.js";

@@ -1,6 +1,11 @@
 const globalCooldowns = new Map<string, number>();
 const userCooldowns = new Map<string, number>();
 
+export function resetCooldowns(): void {
+  globalCooldowns.clear();
+  userCooldowns.clear();
+}
+
 export function isOnCooldown(
   commandName: string,
   userId: string,

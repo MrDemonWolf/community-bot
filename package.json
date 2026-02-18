@@ -15,19 +15,21 @@
     "db:push": "turbo -F @community-bot/db db:push",
     "db:studio": "turbo -F @community-bot/db db:studio",
     "db:generate": "turbo -F @community-bot/db db:generate",
-    "db:migrate": "turbo -F @community-bot/db db:migrate"
+    "db:migrate": "turbo -F @community-bot/db db:migrate",
+    "test": "vitest run"
   },
   "packageManager": "pnpm@10.29.3+sha512.498e1fb4cca5aa06c1dcf2611e6fafc50972ffe7189998c409e90de74566444298ffe43e6cd2acdc775ba1aa7cc5e092a8b7054c811ba8c5770f84693d33d2dc",
   "dependencies": {
+    "@community-bot/env": "workspace:*",
     "dotenv": "catalog:",
-    "zod": "catalog:",
-    "@community-bot/env": "workspace:*"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "typescript": "catalog:",
-    "@types/node": "^22.13.14",
     "@community-bot/config": "workspace:*",
-    "turbo": "^2.6.3"
+    "@types/node": "^22.13.14",
+    "turbo": "^2.6.3",
+    "typescript": "catalog:",
+    "vitest": "^4.0.18"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
