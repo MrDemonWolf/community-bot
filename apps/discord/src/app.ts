@@ -96,15 +96,13 @@ worker(queue);
 /**
  * Verify Prisma connection on startup.
  */
-prisma.user
-  .findFirst()
-  .then(() => {
-    logger.database.connected("Prisma");
-  })
-  .catch((err: Error) => {
-    logger.database.error("Prisma", err);
-    process.exit(1);
-  });
+try {
+  await prisma.user.findFirst();
+  logger.database.connected("Prisma");
+} catch (err) {
+  logger.database.error("Prisma", err as Error);
+  process.exit(1);
+}
 
 /**
  * Load Redis connection and connect to Redis Server if failed to connect, throw error.

@@ -28,6 +28,7 @@ export let botStatus = {
 async function main() {
   // Verify database connection on startup
   await prisma.user.findFirst();
+  logger.database.connected("Prisma");
 
   listenWithFallback(api, {
     port: env.PORT,
