@@ -291,9 +291,6 @@ importers:
       '@community-bot/events':
         specifier: workspace:*
         version: link:../../packages/events
-      '@prisma/client':
-        specifier: 'catalog:'
-        version: 7.4.0(prisma@7.4.0(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
       '@tanstack/react-form':
         specifier: ^1.28.0
         version: 1.28.2(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
