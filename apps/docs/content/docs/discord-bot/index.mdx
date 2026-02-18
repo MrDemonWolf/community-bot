@@ -20,6 +20,6 @@ The bot runs as a single Node.js process with:
 
 1. **Discord.js client** — Connects to Discord Gateway with guild intents
 2. **BullMQ worker** — Processes background jobs (activity updates every 15min, stream checks every 90s)
-3. **Express API** — HTTP server on port 3141 (configurable) with health check endpoint
+3. **Express API** — HTTP server on port 3141 (configurable) with [comprehensive health check](/docs/development/health-checks) endpoint
 4. **Redis** — Used by BullMQ for job queue persistence
 5. **PostgreSQL** — Stores guild settings and Twitch notification configs via Prisma

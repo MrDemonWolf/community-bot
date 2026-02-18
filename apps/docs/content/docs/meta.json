@@ -25,6 +25,7 @@
     "web-dashboard/discord-settings",
     "---Development---",
     "development/architecture",
-    "development/database"
+    "development/database",
+    "development/health-checks"
   ]
 }
