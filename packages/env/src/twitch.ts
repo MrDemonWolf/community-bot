@@ -24,6 +24,10 @@ export const env = createEnv({
         (url) => url.startsWith("redis"),
         "Invalid Redis URL"
       ),
+    APPLE_WEATHERKIT_KEY_ID: z.string().optional(),
+    APPLE_WEATHERKIT_TEAM_ID: z.string().optional(),
+    APPLE_WEATHERKIT_SERVICE_ID: z.string().optional(),
+    APPLE_WEATHERKIT_PRIVATE_KEY: z.string().optional(),
     HOST: z.string().default("localhost"),
     PORT: z.coerce.number().int().min(1).max(65535).default(3737),
     CORS_ORIGIN: z.string().default("*"),

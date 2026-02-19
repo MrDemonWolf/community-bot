@@ -7,7 +7,7 @@ import { protectedProcedure, publicProcedure, router } from "../index";
 const DEVICE_CODE_URL = "https://id.twitch.tv/oauth2/device";
 const TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 const VALIDATE_URL = "https://id.twitch.tv/oauth2/validate";
-const BOT_SCOPES = "chat:read chat:edit";
+const BOT_SCOPES = "chat:read chat:edit moderator:read:followers channel:read:subscriptions";
 
 export const setupRouter = router({
   status: publicProcedure.query(async () => {

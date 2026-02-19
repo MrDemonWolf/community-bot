@@ -25,6 +25,11 @@ export function trackMessage(channel: string, user: string): void {
   trackJoin(channel, user);
 }
 
+export function getChattersCount(channel: string): number {
+  const key = normalize(channel);
+  return channels.get(key)?.size ?? 0;
+}
+
 export function getRandomChatter(channel: string): string | null {
   const key = normalize(channel);
   const chatters = channels.get(key);
