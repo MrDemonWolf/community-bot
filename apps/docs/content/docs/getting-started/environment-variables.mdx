@@ -40,8 +40,30 @@ All environment variables are validated at startup using [Zod](https://zod.dev/)
 | `PORT` | number | `3737` | No | API server port |
 | `CORS_ORIGIN` | string | `"*"` | No | CORS origin for API |
 | `NODE_ENV` | enum | `"production"` | No | Environment: development, production, test |
+| `APPLE_WEATHERKIT_KEY_ID` | string | — | No | Apple Developer key ID for WeatherKit |
+| `APPLE_WEATHERKIT_TEAM_ID` | string | — | No | Apple Developer Team ID |
+| `APPLE_WEATHERKIT_SERVICE_ID` | string | — | No | WeatherKit service identifier |
+| `APPLE_WEATHERKIT_PRIVATE_KEY` | string | — | No | ES256 private key (PEM) for WeatherKit JWT signing |
 
 Channels are loaded from the database (`BotChannel` table) instead of environment variables. Users enable the bot for their channel via the web dashboard.
+
+### Apple WeatherKit Setup (Optional)
+
+The `{weather}` response variable requires an [Apple Developer account](https://developer.apple.com/) with WeatherKit enabled. If the env vars are not set, `{weather}` returns "(weather not configured)".
+
+1. Sign in to the [Apple Developer portal](https://developer.apple.com/account)
+2. Go to **Certificates, Identifiers & Profiles** > **Keys**
+3. Create a new key with **WeatherKit** enabled
+4. Download the `.p8` private key file
+5. Create a **Services ID** with WeatherKit capability
+6. Set the environment variables:
+
+```bash
+APPLE_WEATHERKIT_KEY_ID=ABC123DEF4       # Key ID from the key you created
+APPLE_WEATHERKIT_TEAM_ID=TEAM123456      # Your Apple Team ID
+APPLE_WEATHERKIT_SERVICE_ID=com.example.weatherkit  # Your Services ID
+APPLE_WEATHERKIT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+```
 
 ## Web Dashboard
 
@@ -68,3 +90,16 @@ Channels are loaded from the database (`BotChannel` table) instead of environmen
 | `NODE_ENV` | enum | `"development"` | No | Environment |
 
 The broadcaster is configured via the [first-time setup wizard](/docs/web-dashboard) instead of an environment variable. On first startup, the web app logs a setup URL to the console.
+
+## Twitch OAuth Scopes
+
+The bot requests the following OAuth scopes during setup and device auth:
+
+| Scope | Purpose |
+|-------|---------|
+| `chat:read` | Read chat messages |
+| `chat:edit` | Send chat messages |
+| `moderator:read:followers` | Read follower data for `{followage}` variable |
+| `channel:read:subscriptions` | Read subscriber count for `{subcount}` variable |
+
+If you previously authorized the bot with only `chat:read chat:edit`, you will need to re-authorize to use the `{followage}` and `{subcount}` response variables.

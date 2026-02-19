@@ -13,6 +13,7 @@ import {
 } from "../services/streamStatusManager.js";
 import { executeCommand } from "../services/commandExecutor.js";
 import { trackMessage } from "../services/chatterTracker.js";
+import { getBroadcasterId } from "../services/broadcasterCache.js";
 import { isMuted } from "../services/botState.js";
 import {
   isCommandDisabled,
@@ -144,7 +145,9 @@ export function registerMessageEvents(chatClient: ChatClient): void {
           args,
           msg,
           dbCmd.response,
-          dbCmd.responseType
+          dbCmd.responseType,
+          dbCmd.id,
+          getBroadcasterId(channel)
         )
           .then(() => {
             logger.commands.success(dbCmd.name, user, msg.userInfo.userId);
@@ -182,7 +185,9 @@ export function registerMessageEvents(chatClient: ChatClient): void {
         args,
         msg,
         cmd.response,
-        cmd.responseType
+        cmd.responseType,
+        cmd.id,
+        getBroadcasterId(channel)
       )
         .then(() => {
           logger.commands.success(cmd.name, user, msg.userInfo.userId);
