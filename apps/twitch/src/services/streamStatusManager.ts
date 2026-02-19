@@ -8,6 +8,8 @@ const HELIX_STREAMS_URL = "https://api.twitch.tv/helix/streams";
 interface ChannelStatus {
   live: boolean;
   streamTitle: string;
+  gameName: string;
+  gamesPlayed: string[];
   streamStartedAt: Date | null;
   wentOfflineAt: Date | null;
 }
@@ -17,7 +19,7 @@ const channelStatuses = new Map<string, ChannelStatus>();
 function getOrCreate(channel: string): ChannelStatus {
   let status = channelStatuses.get(channel);
   if (!status) {
-    status = { live: false, streamTitle: "", streamStartedAt: null, wentOfflineAt: null };
+    status = { live: false, streamTitle: "", gameName: "", gamesPlayed: [], streamStartedAt: null, wentOfflineAt: null };
     channelStatuses.set(channel, status);
   }
   return status;
@@ -44,7 +46,7 @@ async function poll(
       return;
     }
 
-    const data = (await res.json()) as { data?: Array<{ title?: string; started_at: string }> };
+    const data = (await res.json()) as { data?: Array<{ title?: string; game_name?: string; started_at: string }> };
     const stream = data.data?.[0];
     const status = getOrCreate(channelName);
     const wasLive = status.live;
@@ -52,6 +54,17 @@ async function poll(
     if (stream) {
       status.live = true;
       status.streamTitle = stream.title ?? "";
+      const newGame = stream.game_name ?? "";
+
+      // Track game changes during stream session
+      if (!wasLive) {
+        // Stream just came online — reset games played
+        status.gamesPlayed = newGame ? [newGame] : [];
+      } else if (newGame && newGame !== status.gameName && !status.gamesPlayed.includes(newGame)) {
+        status.gamesPlayed.push(newGame);
+      }
+
+      status.gameName = newGame;
       status.streamStartedAt = new Date(stream.started_at);
       status.wentOfflineAt = null;
 
@@ -75,6 +88,7 @@ async function poll(
       }
       status.live = false;
       status.streamTitle = "";
+      status.gameName = "";
       status.streamStartedAt = null;
     }
   } catch (err) {
@@ -121,6 +135,26 @@ export function getWentOfflineAt(channel?: string): Date | null {
     return null;
   }
   return channelStatuses.get(channel)?.wentOfflineAt ?? null;
+}
+
+export function getGame(channel?: string): string {
+  if (!channel) {
+    for (const status of channelStatuses.values()) {
+      if (status.live) return status.gameName;
+    }
+    return "";
+  }
+  return channelStatuses.get(channel)?.gameName ?? "";
+}
+
+export function getGamesPlayed(channel?: string): string {
+  if (!channel) {
+    for (const status of channelStatuses.values()) {
+      if (status.live) return status.gamesPlayed.join(", ");
+    }
+    return "";
+  }
+  return channelStatuses.get(channel)?.gamesPlayed.join(", ") ?? "";
 }
 
 export async function start(

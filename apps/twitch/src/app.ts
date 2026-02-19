@@ -20,6 +20,7 @@ import {
 } from "./services/disabledCommandsCache.js";
 import { setEventBus } from "./services/eventBusAccessor.js";
 import * as streamStatusManager from "./services/streamStatusManager.js";
+import { loadBroadcasterIds } from "./services/broadcasterCache.js";
 
 export let botStatus = {
   status: "offline" as "offline" | "connecting" | "online",
@@ -43,6 +44,7 @@ async function main() {
   await loadRegulars();
   await loadMutedState();
   await loadDisabledCommands();
+  await loadBroadcasterIds();
 
   let authProvider: Awaited<ReturnType<typeof createAuthProvider>>["authProvider"] | null = null;
   let botUsername: string | null = null;

@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 
 const ACCESS_LEVELS = [
   "EVERYONE",
@@ -211,6 +211,76 @@ export default function CommandDialog({
               className="dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-xl border bg-transparent px-2.5 py-1.5 text-xs transition-colors focus-visible:ring-1 placeholder:text-muted-foreground outline-none resize-none"
             />
           </div>
+
+          {/* Variable Reference */}
+          <details className="group rounded-lg border border-border bg-card/50 text-xs">
+            <summary className="flex cursor-pointer items-center gap-1.5 px-3 py-2 text-muted-foreground hover:text-foreground select-none">
+              <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
+              Variable Reference
+            </summary>
+            <div className="space-y-3 px-3 pb-3 pt-1 text-muted-foreground">
+              <div>
+                <p className="mb-1 font-medium text-foreground">Basic</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                  <span><code>{"{user}"}</code> — caller username</span>
+                  <span><code>{"{touser}"}</code> — first arg or caller</span>
+                  <span><code>{"{channel}"}</code> — channel name</span>
+                  <span><code>{"{query}"}</code> — all args or caller</span>
+                  <span><code>{"{args}"}</code> — all arguments</span>
+                  <span><code>{"{querystring}"}</code> — URL-encoded args</span>
+                  <span><code>{"{displayname}"}</code> — display name</span>
+                  <span><code>{"{userid}"}</code> — Twitch user ID</span>
+                  <span><code>{"{userlevel}"}</code> — caller role</span>
+                  <span><code>{"{count}"}</code> — use count</span>
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 font-medium text-foreground">Stream</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                  <span><code>{"{uptime}"}</code> — stream uptime</span>
+                  <span><code>{"{downtime}"}</code> — time since offline</span>
+                  <span><code>{"{title}"}</code> — stream title</span>
+                  <span><code>{"{game}"}</code> — current game</span>
+                  <span><code>{"{gamesplayed}"}</code> — games this session</span>
+                  <span><code>{"{chatters}"}</code> — active chatter count</span>
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 font-medium text-foreground">User Info</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                  <span><code>{"{followage}"}</code> — follow duration</span>
+                  <span><code>{"{accountage}"}</code> — account age</span>
+                  <span><code>{"{subcount}"}</code> — subscriber count</span>
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 font-medium text-foreground">Emotes</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                  <span><code>{"{7tvemotes}"}</code> — 7TV emotes</span>
+                  <span><code>{"{bttvemotes}"}</code> — BTTV emotes</span>
+                  <span><code>{"{ffzemotes}"}</code> — FFZ emotes</span>
+                  <span><code>{"{twitchemotes}"}</code> — Twitch emotes</span>
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 font-medium text-foreground">Utility</p>
+                <div className="grid gap-y-0.5">
+                  <span><code>{"${N}"}</code> / <code>{"${N|fallback}"}</code> — positional arg</span>
+                  <span><code>{"${random.pick 'a' 'b'}"}</code> — random choice</span>
+                  <span><code>{"${random.chatter}"}</code> — random chatter</span>
+                  <span><code>{"${time America/Chicago}"}</code> — current time</span>
+                  <span><code>{"{random.1-100}"}</code> — random number</span>
+                  <span><code>{"{math 2+3*4}"}</code> — math expression</span>
+                  <span><code>{"{countdown 2026-12-25T00:00:00}"}</code> — time until</span>
+                  <span><code>{"{countup 2024-01-01}"}</code> — time since</span>
+                  <span><code>{"{repeat 'text' 3}"}</code> — repeat text</span>
+                  <span><code>{"{urlencode text}"}</code> — URL encode</span>
+                  <span><code>{"{customapi https://...}"}</code> — fetch URL</span>
+                  <span><code>{"{weather Austin, TX}"}</code> — current weather</span>
+                </div>
+              </div>
+            </div>
+          </details>
 
           {/* Response Type + Access Level */}
           <div className="grid grid-cols-2 gap-4">

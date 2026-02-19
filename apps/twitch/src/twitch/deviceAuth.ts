@@ -3,7 +3,7 @@ import { env } from "../utils/env.js";
 
 const DEVICE_CODE_URL = "https://id.twitch.tv/oauth2/device";
 const TOKEN_URL = "https://id.twitch.tv/oauth2/token";
-const SCOPES = "chat:read chat:edit";
+const SCOPES = "chat:read chat:edit moderator:read:followers channel:read:subscriptions";
 
 export interface DeviceFlowTokenData {
   accessToken: string;

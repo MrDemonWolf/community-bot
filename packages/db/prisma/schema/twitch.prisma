@@ -80,6 +80,7 @@ model TwitchChatCommand {
   aliases        String[]           @default([])
   keywords       String[]           @default([])
   regex          String?
+  useCount       Int                @default(0)
   expiresAt      DateTime?
   botChannelId   String?
   botChannel     BotChannel?        @relation(fields: [botChannelId], references: [id], onDelete: Cascade)

@@ -40,6 +40,9 @@ lerna-debug.log*
 # Turbo
 .turbo
 
+# Claude Code
+.claude
+
 # Better-T-Stack
 .alchemy
 

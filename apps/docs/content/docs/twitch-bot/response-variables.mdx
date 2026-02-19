@@ -1,32 +1,104 @@
 ---
 title: Response Variables
-description: Placeholders you can use in database command responses.
+description: Placeholders you can use in custom command responses.
 ---
 
-Use these placeholders in the `response` field of database commands. They are replaced at runtime when the command executes.
+Use these placeholders in the `response` field of custom commands. They are replaced at runtime when the command executes.
 
 ## Basic Variables
 
-| Variable | Replaced With | Example |
-|----------|---------------|---------|
-| `{user}` | Username of the person who triggered the command | `Hey {user}!` becomes `Hey coolviewer!` |
-| `{channel}` | Channel name where the command was used | `Welcome to {channel}!` becomes `Welcome to mrdemonwolf!` |
-| `{args}` | Everything the user typed after the command name | `!cmd hello world` makes `{args}` = `hello world` |
+| Variable | Description | Example Output |
+|----------|-------------|----------------|
+| `{user}` | Username of the caller | `coolviewer` |
+| `{displayname}` | Caller's display name (capitalized) | `CoolViewer` |
+| `{touser}` | First argument, or caller if none | `targetuser` or `coolviewer` |
+| `{channel}` | Channel name | `mrdemonwolf` |
+| `{args}` | All arguments joined with spaces | `hello world` |
+| `{query}` | All arguments, or caller if empty | `hello world` or `coolviewer` |
+| `{querystring}` | URL-encoded version of args | `hello%20world` |
+| `{userid}` | Caller's Twitch user ID | `12345678` |
+| `{userlevel}` | Caller's role | `moderator`, `subscriber`, `everyone` |
+| `{count}` | Auto-incrementing command use count | `42` |
+
+## Stream Variables
+
+| Variable | Description | Example Output |
+|----------|-------------|----------------|
+| `{uptime}` | How long the stream has been live | `3h 24m` |
+| `{downtime}` | Time since stream went offline | `1h 15m` |
+| `{title}` | Current stream title | `Playing ranked!` |
+| `{game}` | Current game/category | `Valorant` |
+| `{gamesplayed}` | Games played this stream session | `Just Chatting, Valorant, Minecraft` |
+| `{chatters}` | Number of active chatters | `127` |
+
+## User Info Variables
+
+| Variable | Description | Example Output |
+|----------|-------------|----------------|
+| `{followage}` | How long the caller has followed | `2 years, 3 months` |
+| `{accountage}` | Age of the caller's Twitch account | `5 years, 1 month` |
+| `{subcount}` | Channel subscriber count | `1523` |
+
+## Emote Variables
+
+| Variable | Description |
+|----------|-------------|
+| `{7tvemotes}` | List of active 7TV emotes in the channel |
+| `{bttvemotes}` | List of active BetterTTV emotes |
+| `{ffzemotes}` | List of active FrankerFaceZ emotes |
+| `{twitchemotes}` | List of Twitch subscriber emotes |
+
+Emote lists are space-separated and truncated to 400 characters.
 
 ## Positional Arguments
 
-| Variable | Replaced With | Example |
-|----------|---------------|---------|
-| `${1}`, `${2}`, etc. | Positional argument (1-indexed) | `!cmd foo bar` makes `${1}` = `foo`, `${2}` = `bar` |
-| `${1\|fallback}` | Positional argument with a default | `${1\|@mrdemonwolf}` uses `@mrdemonwolf` if no arg given |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `${1}`, `${2}`, etc. | Positional argument (1-indexed) | `!cmd foo bar` makes `${1}` = `foo` |
+| `${1\|fallback}` | Positional argument with a default | `${1\|@mrdemonwolf}` uses `@mrdemonwolf` if no arg |
 
 ## Advanced Variables
 
-| Variable | Replaced With | Example |
-|----------|---------------|---------|
-| `${random.pick '...' '...'}` | Random choice from a quoted list | `${random.pick 'hi' 'hello' 'hey'}` picks one at random |
-| `${random.chatter}` | A random active user in the channel | `Shoutout to ${random.chatter}!` |
-| `${time <timezone>}` | Current time in the given timezone | `${time America/Chicago}` becomes `3:45 PM` |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `${random.pick '...' '...'}` | Random choice from a quoted list | `${random.pick 'hi' 'hello' 'hey'}` |
+| `${random.chatter}` | A random active user in the channel | `${random.chatter}` |
+| `${time <timezone>}` | Current time in the given timezone | `${time America/Chicago}` → `3:45 PM` |
+
+## Parameterized Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `{random.N-M}` | Random integer in range | `{random.1-100}` → `42` |
+| `{math <expr>}` | Evaluate math expression | `{math 2+3*4}` → `14` |
+| `{countdown <datetime>}` | Time remaining until date | `{countdown 2026-12-25T00:00:00}` → `10 months, 7 days` |
+| `{countup <datetime>}` | Time elapsed since date | `{countup 2024-01-01}` → `2 years, 1 month` |
+| `{repeat '<text>' <N>}` | Repeat text N times (max 50) | `{repeat 'Kappa ' 3}` → `Kappa Kappa Kappa ` |
+| `{urlencode <text>}` | URL-encode text | `{urlencode hello world}` → `hello%20world` |
+| `{customapi <url>}` | Fetch URL and insert response | `{customapi https://api.example.com/joke}` |
+| `{weather <location>}` | Current weather at location | `{weather Austin, TX}` → `72°F, Partly Cloudy in Austin, TX` |
+
+### Math Expressions
+
+The `{math}` variable supports `+`, `-`, `*`, `/`, `%`, and parentheses. Only numbers and operators are allowed (no `eval`).
+
+```
+{math 100/3}    → 33.33
+{math (2+3)*4}  → 20
+{math 10%3}     → 1
+```
+
+### Custom API
+
+`{customapi}` fetches a URL and inserts the response as plain text. Only `https://` URLs are allowed. Responses are truncated to 400 characters. You can use other variables inside the URL:
+
+```
+{customapi https://api.example.com/user/{user}}
+```
+
+### Weather
+
+Requires Apple WeatherKit configuration. Returns "(weather not configured)" if env vars are not set. See [Environment Variables](/docs/getting-started/environment-variables) for setup instructions.
 
 ## Examples
 
@@ -38,13 +110,43 @@ Output: `Hey coolviewer, welcome to mrdemonwolf!`
 
 **Shoutout command:**
 ```
-Go check out ${1|{user}} at https://twitch.tv/${1|{user}}
+Go check out {touser} at https://twitch.tv/{touser}
 ```
-- `!so streamer123` outputs: `Go check out streamer123 at https://twitch.tv/streamer123`
-- `!so` (no args) outputs: `Go check out coolviewer at https://twitch.tv/coolviewer`
+- `!so streamer123` → `Go check out streamer123 at https://twitch.tv/streamer123`
+- `!so` (no args) → `Go check out coolviewer at https://twitch.tv/coolviewer`
+
+**Stream info:**
+```
+Playing {game} for {uptime} — {title}
+```
+Output: `Playing Valorant for 3h 24m — Ranked grind!`
+
+**Follow check:**
+```
+{user} has been following for {followage}!
+```
+Output: `coolviewer has been following for 2 years, 3 months!`
 
 **Random response:**
 ```
 ${random.pick 'PogChamp' 'LUL' 'Kappa' 'HeyGuys'}
 ```
 Output: One of the emotes at random.
+
+**Dice roll:**
+```
+{user} rolled a {random.1-6}!
+```
+Output: `coolviewer rolled a 4!`
+
+**Countdown:**
+```
+{countdown 2026-12-25T00:00:00} until Christmas!
+```
+Output: `10 months, 7 days until Christmas!`
+
+**Use counter:**
+```
+This command has been used {count} times!
+```
+Output: `This command has been used 42 times!`

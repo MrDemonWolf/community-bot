@@ -54,6 +54,36 @@ describe("chatterTracker", () => {
     });
   });
 
+  describe("getChattersCount", () => {
+    it("returns 0 for unknown channel", async () => {
+      const mod = await freshModule();
+      expect(mod.getChattersCount("unknown")).toBe(0);
+    });
+
+    it("returns correct count after tracking users", async () => {
+      const mod = await freshModule();
+      mod.trackJoin("chan", "user1");
+      mod.trackJoin("chan", "user2");
+      mod.trackJoin("chan", "user3");
+      expect(mod.getChattersCount("chan")).toBe(3);
+    });
+
+    it("does not double-count the same user", async () => {
+      const mod = await freshModule();
+      mod.trackJoin("chan", "user1");
+      mod.trackJoin("chan", "user1");
+      expect(mod.getChattersCount("chan")).toBe(1);
+    });
+
+    it("decrements after part", async () => {
+      const mod = await freshModule();
+      mod.trackJoin("chan", "user1");
+      mod.trackJoin("chan", "user2");
+      mod.trackPart("chan", "user1");
+      expect(mod.getChattersCount("chan")).toBe(1);
+    });
+  });
+
   describe("getRandomChatter", () => {
     it("returns null for empty channel", async () => {
       const mod = await freshModule();
