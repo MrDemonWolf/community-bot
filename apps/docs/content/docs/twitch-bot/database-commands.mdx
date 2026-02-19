@@ -39,6 +39,8 @@ This opens a web UI where you can view and edit all command fields directly.
 | `aliases` | String[] | `[]` | Alternative trigger names (e.g., `["hi", "hey"]`) |
 | `keywords` | String[] | `[]` | Stream title keywords — command only active when title contains at least one |
 | `regex` | String? | `null` | If set, triggers on pattern match instead of `!prefix` |
+| `useCount` | Int | `0` | Auto-incremented each time `{count}` variable is used in the response |
+| `expiresAt` | DateTime? | `null` | If set, command is only active until this date/time |
 
 ## Response Types
 
