@@ -14,36 +14,23 @@ Your stream, your bot, your rules.
 - **Twitch Chat Bot** - Database-driven custom commands with
   40+ dynamic response variables, viewer queue, cooldowns,
   access levels, regex triggers, and stream status awareness.
-- **Dynamic Response Variables** - Template variables like
-  `{user}`, `{uptime}`, `{game}`, `{followage}`, `{count}`,
-  `{math}`, `{customapi}`, `{weather}`, third-party emote
-  lists, and more for powerful custom commands.
-- **Discord Bot** - Slash commands, Twitch live stream
-  notifications with BullMQ job scheduling, and automatic
-  guild database sync.
+- **Discord Bot** - Slash commands and Twitch live stream
+  notifications with BullMQ job scheduling and automatic
+  guild sync.
 - **Web Dashboard** - Next.js app with tRPC, Discord and
-  Twitch OAuth, two-column layout with audit log feed, bot
-  controls, quick stats, and full command management.
+  Twitch OAuth, audit log feed, bot controls, and full
+  command management.
 - **Real-Time Event Bus** - Type-safe Redis Pub/Sub for
-  instant communication between all services (channel
-  join/leave, command reload, stream status, settings sync).
-- **Audit Logging** - Every dashboard mutation logged with
-  user, action, resource, and metadata. Role-filtered
-  visibility in the feed.
-- **Discord Integration** - Link a Discord server, configure
-  notification channel and role, enable/disable notifications,
-  and send test notifications from the dashboard.
+  instant communication between all services.
 - **First-User Setup Wizard** - One-time `/setup/{token}` flow
   that designates the broadcaster and promotes them to admin.
-- **Shared Database** - Prisma with PostgreSQL, split schema
-  files per domain, shared across all services.
 - **Documentation Site** - Fumadocs-powered docs with guides
   for every feature and full variable reference.
 
 ## Getting Started
 
-Full documentation is available at the docs site
-(`http://localhost:3000` in development).
+Full documentation is available at the
+[docs site](http://localhost:3000) when running locally.
 
 1. Install dependencies:
 
@@ -78,77 +65,61 @@ pnpm dev
 ```
 
 6. Complete first-time setup by visiting the one-time setup
-   URL logged to the console. The wizard walks through
-   Sign In, Authorize Bot, Link Twitch, Enable Bot, and Done.
+   URL logged to the console.
 
 ## Usage
 
 ### Service URLs (Development)
 
-| Service          | URL                          |
-|------------------|------------------------------|
-| Web Dashboard    | `http://localhost:3001`      |
-| Documentation    | `http://localhost:3000`      |
-| Discord Bot API  | `http://localhost:3141`      |
-| Twitch Bot API   | `http://localhost:3737`      |
+| Service         | URL                     |
+|-----------------|-------------------------|
+| Web Dashboard   | `http://localhost:3001`  |
+| Documentation   | `http://localhost:3000`  |
+| Discord Bot API | `http://localhost:3141`  |
+| Twitch Bot API  | `http://localhost:3737`  |
 
 ### Built-In Twitch Commands
 
-| Command          | Description                          |
-|------------------|--------------------------------------|
-| `!ping`          | Basic ping/pong response             |
-| `!uptime`        | Display stream uptime                |
-| `!accountage`    | Look up Twitch account age           |
-| `!bot`           | Bot status and info                  |
-| `!queue`         | Viewer queue management              |
-| `!command`       | Manage custom commands (mod+)        |
-| `!reloadcommands`| Reload commands from database (mod+) |
-| `!filesay`       | File-based text output               |
-| `!commands`      | Links to the public commands page    |
+| Command           | Description                              |
+|-------------------|------------------------------------------|
+| `!ping`           | Basic ping/pong response                 |
+| `!uptime`         | Display stream uptime                    |
+| `!accountage`     | Look up Twitch account age               |
+| `!bot`            | Bot mute/unmute controls                 |
+| `!queue`          | Viewer queue management                  |
+| `!command`        | Manage custom commands (mod+)            |
+| `!reloadcommands` | Reload commands from database (mod+)     |
+| `!filesay`        | Fetch a URL and send lines to chat       |
+| `!commands`       | Links to the public commands page        |
 
-### Response Variables (Custom Commands)
-
-| Category      | Examples                                           |
-|---------------|----------------------------------------------------|
-| Basic         | `{user}`, `{touser}`, `{channel}`, `{args}`,      |
-|               | `{query}`, `{count}`, `{displayname}`, `{userid}` |
-| Stream        | `{uptime}`, `{title}`, `{game}`, `{gamesplayed}`, |
-|               | `{chatters}`, `{downtime}`                         |
-| User Info     | `{followage}`, `{accountage}`, `{userlevel}`,      |
-|               | `{subcount}`                                       |
-| Emotes        | `{7tvemotes}`, `{bttvemotes}`, `{ffzemotes}`,      |
-|               | `{twitchemotes}`                                   |
-| Parameterized | `{random.1-100}`, `{math 2+3}`,                    |
-|               | `{countdown 2026-12-25T00:00:00}`,                 |
-|               | `{customapi https://...}`, `{weather Austin, TX}`  |
-| Legacy        | `${random.pick 'a' 'b'}`, `${random.chatter}`,     |
-|               | `${time America/Chicago}`, `${1\|fallback}`        |
+See the [docs](http://localhost:3000/docs/twitch-bot/built-in-commands)
+for full command details and response variables.
 
 ## Tech Stack
 
-| Layer              | Technology                                    |
-|--------------------|-----------------------------------------------|
-| Language           | TypeScript (ESM)                              |
-| Build System       | Turborepo, pnpm workspaces                    |
-| Web Framework      | Next.js 16                                    |
-| API Layer          | tRPC                                          |
-| Authentication     | better-auth (Discord + Twitch OAuth)          |
-| Discord Library    | discord.js v14                                |
-| Twitch Library     | @twurple/chat v7, @twurple/auth v7            |
-| Database           | PostgreSQL via Prisma ORM                     |
-| Cache / Events     | Redis (ioredis), Redis Pub/Sub event bus      |
-| Job Queue          | BullMQ                                        |
-| UI Components      | shadcn/ui, Tailwind CSS v4                    |
-| Documentation      | Fumadocs                                      |
-| Env Validation     | @t3-oss/env-core + Zod                        |
-| HTTP Server (Bots) | Express 5                                     |
-| Containerization   | Docker Compose                                |
+| Layer              | Technology                           |
+|--------------------|--------------------------------------|
+| Language           | TypeScript (ESM)                     |
+| Build System       | Turborepo, pnpm workspaces          |
+| Web Framework      | Next.js 16                           |
+| API Layer          | tRPC                                 |
+| Authentication     | better-auth (Discord + Twitch OAuth) |
+| Discord Library    | discord.js v14                       |
+| Twitch Library     | @twurple/chat v7, @twurple/auth v7   |
+| Database           | PostgreSQL via Prisma ORM            |
+| Cache / Events     | Redis (ioredis), Redis Pub/Sub       |
+| Job Queue          | BullMQ                               |
+| UI Components      | shadcn/ui, Tailwind CSS v4           |
+| Documentation      | Fumadocs                             |
+| Env Validation     | @t3-oss/env-core + Zod              |
+| HTTP Server (Bots) | Express 5                            |
+| Containerization   | Docker Compose                       |
 
 ## Development
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - pnpm 10+
 - Docker and Docker Compose
 - A Twitch application (Client ID and Secret)

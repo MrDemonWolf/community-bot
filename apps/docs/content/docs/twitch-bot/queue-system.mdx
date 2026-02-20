@@ -31,6 +31,8 @@ The queue is backed by the `QueueEntry` and `QueueState` database tables. Queue 
 
 When a viewer joins, they are added with a `WAITING` status. When `!queue next` is called, the first waiting entry is pulled and its status changes to `PICKED`. Viewers who leave or are cleared get a `REMOVED` status.
 
+Viewers can also see the queue at the [public queue page](/docs/web-dashboard/public-pages).
+
 ## Queue Status Values
 
 | Status | Meaning |
