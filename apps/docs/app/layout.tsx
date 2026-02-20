@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     "https://mrdemonwolf.github.io/community-bot"
   ),
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "256x256" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function Layout({ children }: { children: ReactNode }) {
