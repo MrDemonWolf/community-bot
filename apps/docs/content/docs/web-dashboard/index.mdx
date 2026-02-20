@@ -5,6 +5,8 @@ description: Overview of the Community Bot web dashboard.
 
 The web dashboard is built with [Next.js](https://nextjs.org/), [tRPC](https://trpc.io/), and [better-auth](https://www.better-auth.com/) for managing bot settings, commands, and monitoring activity.
 
+Access at `http://localhost:3001/dashboard` in local development.
+
 ## First-Time Setup
 
 On first startup, a setup wizard configures the broadcaster and bot account. See [First-Time Setup Wizard](/docs/getting-started/setup-wizard) for the full walkthrough.
@@ -12,6 +14,10 @@ On first startup, a setup wizard configures the broadcaster and bot account. See
 ## Authentication
 
 Users sign in via Discord or Twitch OAuth through better-auth. Authentication is required for all dashboard pages. The dashboard is only accessible after the first-time setup has been completed.
+
+## Role-Based Access
+
+The dashboard uses role-based access. ADMIN (the broadcaster) has full access to all settings. MODERATOR and LEAD_MODERATOR roles have access based on their level in the role hierarchy. See [Access Levels](/docs/twitch-bot/access-levels) for details on the role hierarchy.
 
 ## Dashboard Layout
 

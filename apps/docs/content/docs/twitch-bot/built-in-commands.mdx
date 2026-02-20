@@ -5,6 +5,8 @@ description: Hardcoded chat commands available in the Twitch bot.
 
 Built-in commands are checked first in the command pipeline (Phase 1) and always run regardless of database state.
 
+Built-in commands can be enabled/disabled and their access levels changed per-channel from the web dashboard's Commands page.
+
 ## Available Commands
 
 ### `!ping`
@@ -19,8 +21,8 @@ Shows how old the user's Twitch account is.
 ### `!bot mute` / `!bot unmute`
 Mutes or unmutes the bot. When muted, only `!bot unmute` is processed. Requires moderator or broadcaster access.
 
-### `!filesay <filename>`
-Reads a text file and sends its contents to chat. Requires broadcaster access.
+### `!filesay <url>`
+Fetches a text file from a URL and sends each line to chat with a 1-second delay between lines. Only HTTPS and HTTP URLs are accepted. Requires broadcaster access.
 
 ### `!command add|edit|remove|list`
 Manages database commands from chat. See [Database Commands](/docs/twitch-bot/database-commands) for details.
@@ -34,10 +36,12 @@ Manages database commands from chat. See [Database Commands](/docs/twitch-bot/da
 Requires moderator or broadcaster access.
 
 ### `!reloadcommands`
-Immediately reloads commands and regulars from the database without waiting for the 60-second cron cycle. Requires moderator or broadcaster access.
+Immediately reloads commands and regulars from the database without waiting for the 5-minute cron cycle. Requires moderator or broadcaster access.
 
 ### `!commands`
 Sends a link to the public commands page. Requires the `WEB_URL` environment variable to be set on the Twitch bot. If not configured, the bot replies with a "not configured" message.
+
+See [Public Pages](/docs/web-dashboard/public-pages) for what viewers see. Set `WEB_URL` in [Environment Variables](/docs/getting-started/environment-variables).
 
 ### Queue Commands
 
