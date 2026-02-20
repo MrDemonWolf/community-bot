@@ -79,19 +79,19 @@ export default async function QueuePage() {
 
             <nav className="flex flex-col gap-1">
               <SidebarLink
-                href="/public"
+                href="/p"
                 icon={<User className="h-4 w-4" />}
                 label="Profile"
               />
               {hasCommands && (
                 <SidebarLink
-                  href="/public/commands"
+                  href="/p/commands"
                   icon={<Terminal className="h-4 w-4" />}
                   label="Commands"
                 />
               )}
               <SidebarLink
-                href="/public/queue"
+                href="/p/queue"
                 icon={<Trophy className="h-4 w-4" />}
                 label="Queue"
                 active
@@ -103,7 +103,7 @@ export default async function QueuePage() {
           <div className="flex min-w-0 flex-1 flex-col gap-6 pb-16 pt-6">
             <div className="flex items-center gap-3">
               <Link
-                href={"/public" as Route}
+                href={"/p" as Route}
                 className="text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4" />
