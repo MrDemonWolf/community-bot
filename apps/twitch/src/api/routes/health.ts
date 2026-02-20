@@ -73,9 +73,11 @@ router.get("/", async (_req, res) => {
     const twitch = checkTwitch();
 
     const checks = { twitch, database, redis };
+    const infraChecks = { database, redis };
     const status = overallStatus(checks);
+    const infraStatus = overallStatus(infraChecks);
 
-    res.status(status === "unhealthy" ? 503 : 200).json({
+    res.status(infraStatus === "unhealthy" ? 503 : 200).json({
       status,
       uptime: process.uptime(),
       version: process.env["npm_package_version"] || "1.7.0",
