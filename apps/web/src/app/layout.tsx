@@ -19,6 +19,13 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "Community Bot",
   description: "Community Bot Dashboard",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "256x256" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({
