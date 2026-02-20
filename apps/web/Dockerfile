@@ -22,6 +22,8 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 
 FROM base AS build
 
+ENV SKIP_ENV_VALIDATION=1
+
 COPY --from=deps /usr/src/app/ ./
 
 COPY packages/db ./packages/db
