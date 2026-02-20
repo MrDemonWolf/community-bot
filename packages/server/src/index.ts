@@ -26,7 +26,7 @@ export interface ListenOptions {
  * Skip logging for health check requests from Coolify (curl/*),
  * Pulsetic monitoring, and localhost IPs.
  */
-const skipHealthChecks = (req: Request) => {
+export const skipHealthChecks = (req: Request) => {
   const userAgent = req.get("User-Agent") || "";
   const clientIP = req.ip || req.socket.remoteAddress || "";
 
