@@ -14,3 +14,5 @@ All notable changes to this project will be documented in this file.
 
 - **Public routes renamed** — `/public`, `/public/commands`, and `/public/queue` shortened to `/p`, `/p/commands`, and `/p/queue` for more concise chat links.
 - **Health endpoint bot checks are now informational** — Bot service checks (Discord WebSocket, Twitch chat) no longer affect the HTTP status code. Only infrastructure failures (database, Redis) cause a 503 response. This prevents unnecessary container restarts when only the bot connection is temporarily down.
+
+[Unreleased]: https://github.com/MrDemonWolf/community-bot/compare/main...dev

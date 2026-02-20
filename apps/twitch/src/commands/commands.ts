@@ -1,7 +1,7 @@
 import { TwitchCommand } from "../types/command.js";
 import { env } from "../utils/env.js";
 
-export const commandsList: TwitchCommand = {
+export const commandsPage: TwitchCommand = {
   name: "commands",
   description: "Shows link to the public commands list",
   async execute(client, channel, user) {
