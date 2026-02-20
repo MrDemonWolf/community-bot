@@ -1,3 +1,12 @@
+/**
+ * Audit log utility.
+ *
+ * Every mutation in the web dashboard calls `logAudit()` to record who
+ * did what. The user's current role is looked up at write time so the
+ * dashboard can filter the feed by role hierarchy (USER < MODERATOR <
+ * LEAD_MODERATOR < ADMIN). Metadata captures action-specific details
+ * like old/new values or resource names.
+ */
 import { prisma } from "@community-bot/db";
 
 export interface AuditLogInput {
@@ -11,7 +20,10 @@ export interface AuditLogInput {
   ipAddress?: string | null;
 }
 
+/** Record a mutation to the audit log, looking up the user's current role. */
 export async function logAudit(input: AuditLogInput): Promise<void> {
+  // Fetch the user's role at write time so the dashboard can filter by
+  // role hierarchy without needing a join at read time.
   const user = await prisma.user.findUnique({
     where: { id: input.userId },
     select: { role: true },

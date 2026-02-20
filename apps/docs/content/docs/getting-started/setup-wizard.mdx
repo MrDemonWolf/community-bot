@@ -1,0 +1,80 @@
+---
+title: First-Time Setup Wizard
+description: Complete the setup wizard to configure the broadcaster and bot account.
+---
+
+On first startup, Community Bot runs a setup wizard to designate the broadcaster and authorize the bot's Twitch account. This only happens once.
+
+## How It Works
+
+When the web dashboard starts for the first time, it:
+
+1. Generates a one-time setup token
+2. Logs a setup URL to the console
+
+```
+SETUP REQUIRED - Open this URL to complete first-time setup:
+
+http://localhost:3001/setup/abc123...
+```
+
+The token is single-use. Once setup completes, the URL stops working and subsequent startups skip this step entirely.
+
+## Wizard Steps
+
+### Step 1: Sign In
+
+Sign in with your **Twitch** (recommended) or **Discord** account. This account becomes the broadcaster and site admin.
+
+### Step 2: Authorize the Bot
+
+The bot needs its own Twitch account to send chat messages. This step uses **Device Code Flow**:
+
+1. The wizard shows a **code** and a link to Twitch's device activation page
+2. Open the link in a new tab
+3. **Sign in with the bot's Twitch account** (not your broadcaster account)
+4. Enter the code shown in the wizard
+5. Authorize the requested permissions
+6. Return to the wizard — it detects authorization automatically
+
+The bot account's credentials are stored in the database and refreshed automatically.
+
+### Step 3: Link Twitch
+
+If you signed in with Discord in Step 1, you will be prompted to link your Twitch account. This connects your broadcaster identity. If you signed in with Twitch, this step is skipped.
+
+### Step 4: Enable the Bot
+
+Toggle the bot on for your Twitch channel. The bot will join your chat when the Twitch bot service starts.
+
+### Step 5: Done
+
+You are promoted to **ADMIN** and designated as the broadcaster. The setup token is deleted. You are redirected to the dashboard.
+
+## Troubleshooting
+
+### Setup URL not showing in the console
+
+The web dashboard logs the URL on startup. If you don't see it:
+
+- Make sure the database is running and accessible
+- Check that `DATABASE_URL` is correct in `apps/web/.env`
+- Look for error messages above the startup output — the DB connection may have failed
+
+### Setup URL expired or not working
+
+The token is generated fresh on each startup (if setup hasn't completed). Restart the web dashboard to generate a new URL:
+
+```bash
+# If running with pnpm dev
+# Stop with Ctrl+C, then:
+pnpm dev
+```
+
+### Authorized the wrong Twitch account
+
+If you accidentally authorized your broadcaster account instead of the bot account during Step 2, you will need to reset the stored credentials. Delete the `TwitchCredential` row from the database and restart the setup flow.
+
+### Device Code Flow timed out
+
+The activation code expires after a few minutes. If it times out, click the button to start a new authorization attempt.

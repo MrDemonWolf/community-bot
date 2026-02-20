@@ -1,0 +1,159 @@
+---
+title: Deploy to a VPS
+description: Generic guide for deploying Community Bot to any virtual private server.
+---
+
+This guide covers deploying Community Bot to any VPS provider (DigitalOcean, Hetzner, Linode, AWS EC2, etc.).
+
+## Prerequisites
+
+- A VPS with at least 2 GB RAM and a Linux distribution (Ubuntu 22.04+ recommended)
+- A domain pointed at your server's IP address
+- SSH access to the server
+- Twitch and Discord applications created ([Twitch](/docs/getting-started/create-twitch-app), [Discord](/docs/getting-started/create-discord-app))
+
+## 1. Install Docker
+
+```bash
+# Ubuntu/Debian
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+# Log out and back in for group changes to take effect
+```
+
+Verify the installation:
+
+```bash
+docker --version
+docker compose version
+```
+
+## 2. Clone the Repository
+
+```bash
+git clone https://github.com/mrdemonwolf/community-bot.git
+cd community-bot
+```
+
+## 3. Configure Environment
+
+```bash
+cp apps/web/.env.example apps/web/.env
+cp apps/discord/.env.example apps/discord/.env
+cp apps/twitch/.env.example apps/twitch/.env
+```
+
+Edit each `.env` file with your credentials. Key changes for production:
+
+- `BETTER_AUTH_URL` → `https://bot.yourdomain.com`
+- `CORS_ORIGIN` → `https://bot.yourdomain.com`
+- Use strong, unique passwords for database credentials
+- Generate `BETTER_AUTH_SECRET` with: `openssl rand -hex 32`
+
+See [Environment Variables](/docs/getting-started/environment-variables) for the full reference.
+
+## 4. Set Up a Reverse Proxy
+
+We recommend [Caddy](https://caddyserver.com/) for automatic HTTPS.
+
+### Install Caddy
+
+```bash
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install caddy
+```
+
+### Configure Caddy
+
+Create `/etc/caddy/Caddyfile`:
+
+```
+bot.yourdomain.com {
+    reverse_proxy localhost:3001
+}
+```
+
+```bash
+sudo systemctl reload caddy
+```
+
+Caddy automatically provisions and renews SSL certificates via Let's Encrypt.
+
+## 5. Build and Deploy
+
+```bash
+# Build all Docker images
+docker compose build
+
+# Start infrastructure
+docker compose up -d postgres redis
+
+# Start the web dashboard (add the web service to docker-compose.yml first)
+# See the Docker Compose deployment guide for the web service definition
+docker compose up -d web
+```
+
+## 6. Complete Setup
+
+```bash
+# Watch for the setup URL
+docker compose logs -f web
+```
+
+Open the setup URL in your browser and complete the [setup wizard](/docs/getting-started/setup-wizard).
+
+## 7. Start the Bots
+
+```bash
+docker compose up -d discord twitch
+```
+
+## 8. Verify
+
+- Visit `https://bot.yourdomain.com` — you should see the landing page
+- Check the dashboard for bot connection status
+- Test a Twitch chat command
+- Test a Discord slash command
+
+## Maintenance
+
+### Updates
+
+```bash
+cd community-bot
+git pull
+docker compose build
+docker compose up -d
+```
+
+### Logs
+
+```bash
+# All services
+docker compose logs -f
+
+# Specific service
+docker compose logs -f web
+docker compose logs -f discord
+docker compose logs -f twitch
+```
+
+### Database Backups
+
+```bash
+docker compose exec postgres pg_dump -U postgres community-bot > backup-$(date +%Y%m%d).sql
+```
+
+### Firewall
+
+Ensure only ports 80, 443, and 22 (SSH) are open. The Docker services are bound to `127.0.0.1` by default, so they are not directly accessible from the internet.
+
+```bash
+sudo ufw allow 22
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw enable
+```

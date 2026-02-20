@@ -5,6 +5,8 @@ description: Run Community Bot services with Docker Compose.
 
 The monorepo includes a `docker-compose.yml` at the root with shared infrastructure and per-app services.
 
+For production deployment, see [Deployment](/docs/deployment).
+
 ## Infrastructure Only
 
 For local development, you typically only need PostgreSQL and Redis:
@@ -26,12 +28,15 @@ To run everything in containers:
 docker compose up -d
 ```
 
-| Service  | Host Port | Container Port | Description    |
-|----------|-----------|----------------|----------------|
-| postgres | 5432      | 5432           | PostgreSQL     |
-| redis    | 6379      | 6379           | Redis          |
-| discord  | 8080      | 3141           | Discord bot API|
-| twitch   | 8081      | 3737           | Twitch bot API |
+| Service  | Host Port | Container Port | Description     |
+|----------|-----------|----------------|-----------------|
+| postgres | 5432      | 5432           | PostgreSQL      |
+| redis    | 6379      | 6379           | Redis           |
+| web      | 3001      | 3000           | Web dashboard   |
+| discord  | 8080      | 3141           | Discord bot API |
+| twitch   | 8081      | 3737           | Twitch bot API  |
+
+The web dashboard is not included in the default `docker-compose.yml`. See the [Docker Compose deployment guide](/docs/deployment/docker-compose) for the web service definition.
 
 ## Building Images
 
@@ -60,3 +65,37 @@ twitch:
   env_file:
     - apps/twitch/.env
 ```
+
+## Troubleshooting
+
+### Port conflicts
+
+If a port is already in use, either stop the conflicting process or change the host port mapping in `docker-compose.yml`:
+
+```yaml
+# Change 5432 to 5433 if another PostgreSQL is running
+ports:
+  - "127.0.0.1:5433:5432"
+```
+
+Remember to update `DATABASE_URL` in your `.env` files to match the new port.
+
+### Volume permissions
+
+If PostgreSQL won't start due to permission errors on the data volume:
+
+```bash
+docker compose down -v   # Removes volumes — this deletes database data
+docker compose up -d postgres
+```
+
+### Container won't start
+
+Check the logs for the specific service:
+
+```bash
+docker compose logs discord
+docker compose logs twitch
+```
+
+Common causes: missing `.env` file, invalid environment variables, or database not ready yet (the `depends_on` health checks should handle this).

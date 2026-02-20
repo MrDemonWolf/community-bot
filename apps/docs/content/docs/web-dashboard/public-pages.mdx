@@ -1,0 +1,37 @@
+---
+title: Public Pages
+description: Publicly accessible pages that don't require authentication.
+---
+
+Community Bot provides several public pages that viewers and community members can access without logging in.
+
+## Available Pages
+
+| Path | Description |
+|------|-------------|
+| `/p` | Public landing page for the broadcaster's channel |
+| `/p/commands` | Lists all enabled Twitch chat commands with their triggers and descriptions |
+| `/p/queue` | Shows the current viewer queue status and entries |
+
+These pages read the broadcaster from the `SystemConfig` table (set during the [setup wizard](/docs/getting-started/setup-wizard)) and display data for their channel.
+
+## Linking to Public Pages
+
+You can link viewers to these pages from chat. If you set the `WEB_URL` environment variable in the Twitch bot, the built-in `!commands` command will automatically link to the commands page.
+
+```bash
+# In apps/twitch/.env
+WEB_URL="https://bot.yourdomain.com"
+```
+
+The `!commands` response will then include a link to `https://bot.yourdomain.com/p/commands`.
+
+## URL Redirects
+
+Older URLs using `/public/*` are automatically redirected:
+
+| Old URL | Redirects To |
+|---------|-------------|
+| `/public` | `/p` |
+| `/public/commands` | `/p/commands` |
+| `/public/queue` | `/p/queue` |
