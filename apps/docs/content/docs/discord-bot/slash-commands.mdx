@@ -3,7 +3,9 @@ title: Slash Commands
 description: Discord slash commands for managing Twitch notifications.
 ---
 
-All commands are under the `/twitch` command group.
+All commands are under the `/twitch` command group. All `/twitch` commands require the **Manage Server** Discord permission.
+
+**Prerequisites:** A notification channel must be set with `/twitch notifications set-channel` before live notifications will work.
 
 ## `/twitch add <channel>`
 
@@ -25,7 +27,7 @@ List all Twitch channels currently being monitored in this guild.
 
 ## `/twitch test <channel>`
 
-Send a test notification for a Twitch channel to verify the setup is working correctly.
+Send a test notification for a Twitch channel to verify the setup is working correctly. Sends a simulated live notification embed to the configured channel with a fake viewer count. After 5 seconds, the viewer count updates. After 10 seconds, the embed is edited to show an offline state. Useful for verifying your notification channel and role configuration.
 
 **Parameters:**
 - `channel` (required) — The Twitch channel to send a test notification for
@@ -43,3 +45,8 @@ Set a role to ping when a Twitch stream goes live.
 
 **Parameters:**
 - `role` (required) — The Discord role to mention in notifications
+
+## Related
+
+- [Twitch Notifications](/docs/discord-bot/twitch-notifications) — How the notification system works
+- [Discord Settings](/docs/web-dashboard/discord-settings) — Manage notification settings from the web dashboard

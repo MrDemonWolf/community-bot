@@ -23,4 +23,6 @@ If the `keywords` field is set on a command, the command additionally requires t
 
 ## How Status Is Tracked
 
-The bot polls the Twitch Helix API periodically to check whether the configured channel is live. This status is cached in memory and used by the command pipeline to filter commands.
+The Twitch bot checks stream status every 60 seconds by polling the Twitch Helix API. This status is cached in memory and used by the command pipeline to filter commands.
+
+The Discord bot checks independently every 90 seconds via BullMQ for its live stream notifications.

@@ -14,6 +14,10 @@ Mods and broadcasters can create and manage commands directly from chat using `!
 - `!command remove <name>` — Delete a command
 - `!command list` — List all commands
 
+## Managing via Web Dashboard
+
+The web dashboard at `/dashboard/commands` provides a full UI for creating, editing, deleting, and toggling commands. Changes made in the dashboard take effect instantly via EventBus — no bot restart or reload needed.
+
 ## Managing via Prisma Studio
 
 ```bash
@@ -81,4 +85,4 @@ pnpm db:import path/to/commands.json  # Import from a custom file
 
 ## Reloading Without Restart
 
-Commands and regulars are automatically reloaded from the database every 60 seconds. To reload immediately, type `!reloadcommands` in chat (mod/broadcaster only).
+Commands and regulars are automatically reloaded from the database every 5 minutes. Changes from the web dashboard or `!command` chat commands take effect instantly via EventBus. The 5-minute cron is a fallback only. To reload immediately from chat, type `!reloadcommands` (mod/broadcaster only).

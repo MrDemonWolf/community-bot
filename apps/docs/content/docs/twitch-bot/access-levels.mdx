@@ -3,7 +3,7 @@ title: Access Levels
 description: Role hierarchy for Twitch bot command permissions.
 ---
 
-Access levels follow a hierarchy — higher levels include all permissions of lower levels.
+Access levels follow a hierarchy — higher levels include all permissions of lower levels. There are 7 levels in total.
 
 ## Hierarchy
 
@@ -14,17 +14,14 @@ Access levels follow a hierarchy — higher levels include all permissions of lo
 | `REGULAR` | 2 | Users in the `TwitchRegular` table | No |
 | `VIP` | 3 | VIPs | No |
 | `MODERATOR` | 4 | Moderators | Yes |
-| `BROADCASTER` | 5 | The channel owner | Yes |
+| `LEAD_MODERATOR` | 5 | Lead moderators (set in dashboard) | Yes |
+| `BROADCASTER` | 6 | The channel owner | Yes |
 
-A command with `accessLevel: "VIP"` can be used by VIPs, moderators, and the broadcaster, but not by regulars, subscribers, or everyone.
+A command with `accessLevel: "VIP"` can be used by VIPs, moderators, lead moderators, and the broadcaster, but not by regulars, subscribers, or everyone.
 
 ## Managing Regulars
 
-The `TwitchRegular` table defines users who get the REGULAR access level (rank 2, between SUBSCRIBER and VIP). Manage them via Prisma Studio:
-
-```bash
-pnpm db:studio
-```
+The `TwitchRegular` table defines users who get the REGULAR access level (rank 2, between SUBSCRIBER and VIP). Manage regulars from the [web dashboard](/docs/web-dashboard) at `/dashboard/regulars`, where you can add and remove trusted users.
 
 Each regular needs:
 
@@ -34,6 +31,12 @@ Each regular needs:
 | `twitchUsername` | Display name (for reference) |
 | `addedBy` | Who added them (for record keeping) |
 
+Alternatively, you can manage regulars directly via Prisma Studio:
+
+```bash
+pnpm db:studio
+```
+
 ## Cooldown Bypass
 
-Moderators (rank 4) and broadcasters (rank 5) automatically bypass both global and user cooldowns on all commands.
+Moderators (rank 4), lead moderators (rank 5), and broadcasters (rank 6) automatically bypass both global and user cooldowns on all commands.

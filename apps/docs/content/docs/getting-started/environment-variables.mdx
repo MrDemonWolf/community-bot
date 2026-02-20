@@ -30,6 +30,16 @@ All environment variables are validated at startup using [Zod](https://zod.dev/)
 | `VERSION` | string | `"1.0.0"` | No | App version |
 | `NODE_ENV` | enum | `"production"` | No | Environment: development, production, test |
 
+### Finding Your Discord Values
+
+- **`DISCORD_APPLICATION_ID`** — [Discord Developer Portal](https://discord.com/developers/applications) → your app → General Information → "Application ID"
+- **`DISCORD_APPLICATION_PUBLIC_KEY`** — Same page → "Public Key"
+- **`DISCORD_APPLICATION_BOT_TOKEN`** — Bot tab → click "Reset Token" (shown once)
+- **`OWNER_ID`** — Enable [Developer Mode](https://support.discord.com/hc/en-us/articles/206346498) → right-click your name → Copy User ID
+- **`MAIN_GUILD_ID`** — Right-click your server → Copy Server ID
+- **`MAIN_CHANNEL_ID`** — Right-click a text channel → Copy Channel ID
+- **`TWITCH_APPLICATION_CLIENT_ID`** — Same Twitch app as the Twitch bot. See [Create a Twitch Application](/docs/getting-started/create-twitch-app)
+
 ## Twitch Bot
 
 | Variable | Type | Default | Required | Description |
@@ -49,6 +59,11 @@ All environment variables are validated at startup using [Zod](https://zod.dev/)
 | `APPLE_WEATHERKIT_PRIVATE_KEY` | string | — | No | ES256 private key (PEM) for WeatherKit JWT signing |
 
 Channels are loaded from the database (`BotChannel` table) instead of environment variables. Users enable the bot for their channel via the web dashboard.
+
+### Finding Your Twitch Values
+
+- **`TWITCH_APPLICATION_CLIENT_ID`** / **`TWITCH_APPLICATION_CLIENT_SECRET`** — [Twitch Developer Console](https://dev.twitch.tv/console/apps) → your app. See [Create a Twitch Application](/docs/getting-started/create-twitch-app) for step-by-step instructions
+- **`WEB_URL`** — Optional. If set, `!commands` links viewers to `{WEB_URL}/p/commands`
 
 ### Apple WeatherKit Setup (Optional)
 
@@ -93,7 +108,15 @@ APPLE_WEATHERKIT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE
 | `NEXT_PUBLIC_SOCIAL_LINKS` | string | — | No | Comma-separated social URLs (icons auto-detected from hostname: twitter, github, twitch, youtube) |
 | `NODE_ENV` | enum | `"development"` | No | Environment |
 
-The broadcaster is configured via the [first-time setup wizard](/docs/web-dashboard) instead of an environment variable. On first startup, the web app logs a setup URL to the console.
+The broadcaster is configured automatically by the [setup wizard](/docs/getting-started/setup-wizard) — no env var needed. On first startup, the web app logs a setup URL to the console.
+
+### Finding Your Web Dashboard Values
+
+- **`BETTER_AUTH_SECRET`** — Generate with: `openssl rand -hex 32`. Must be at least 32 characters
+- **`BETTER_AUTH_URL`** — Your dashboard's public URL (e.g., `https://bot.yourdomain.com`). For local dev: `http://localhost:3001`
+- **`DISCORD_BOT_TOKEN`** — Same token as `DISCORD_APPLICATION_BOT_TOKEN` from the Discord bot. Used to fetch guild channels/roles via REST API
+- **`DISCORD_APPLICATION_ID`** / **`DISCORD_APPLICATION_CLIENT_SECRET`** — From the same Discord app. See [Create a Discord Application](/docs/getting-started/create-discord-app)
+- **`TWITCH_APPLICATION_CLIENT_ID`** / **`TWITCH_APPLICATION_CLIENT_SECRET`** — Same Twitch app. See [Create a Twitch Application](/docs/getting-started/create-twitch-app)
 
 ## Twitch OAuth Scopes
 
