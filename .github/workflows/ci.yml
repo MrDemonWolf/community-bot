@@ -12,8 +12,17 @@ jobs:
     name: Build, Test & Type Check
     runs-on: ubuntu-latest
     env:
+      SKIP_ENV_VALIDATION: "true"
       DATABASE_URL: postgresql://user:pass@localhost:5432/community_bot
-      SKIP_ENV_VALIDATION: true
+      BETTER_AUTH_SECRET: ci-dummy-secret-that-is-at-least-32-chars-long
+      BETTER_AUTH_URL: https://localhost:3001
+      CORS_ORIGIN: https://localhost:3001
+      DISCORD_APPLICATION_ID: "000000000000000000"
+      DISCORD_APPLICATION_CLIENT_SECRET: ci-dummy-discord-secret
+      DISCORD_BOT_TOKEN: ci-dummy-discord-bot-token
+      TWITCH_APPLICATION_CLIENT_ID: ci-dummy-twitch-client-id
+      TWITCH_APPLICATION_CLIENT_SECRET: ci-dummy-twitch-client-secret
+      REDIS_URL: redis://localhost:6379
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
