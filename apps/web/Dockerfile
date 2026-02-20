@@ -13,7 +13,9 @@ COPY packages/config/package.json packages/config/
 COPY packages/env/package.json packages/env/
 COPY packages/events/package.json packages/events/
 COPY packages/server/package.json packages/server/
-COPY apps/discord/package.json apps/discord/
+COPY packages/api/package.json packages/api/
+COPY packages/auth/package.json packages/auth/
+COPY apps/web/package.json apps/web/
 
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
@@ -27,35 +29,29 @@ COPY packages/config ./packages/config
 COPY packages/env ./packages/env
 COPY packages/events ./packages/events
 COPY packages/server ./packages/server
-COPY apps/discord ./apps/discord
+COPY packages/api ./packages/api
+COPY packages/auth ./packages/auth
+COPY apps/web ./apps/web
 COPY turbo.json tsconfig.json ./
 
 RUN pnpm --filter @community-bot/db db:generate
-RUN pnpm --filter discord-bot build
+RUN --mount=type=cache,target=/usr/src/app/apps/web/.next/cache \
+    pnpm --filter web build
 
 FROM node:24-alpine AS production
 
 WORKDIR /usr/src/app
 
-RUN apk add --no-cache openssl curl
-RUN npm install -g tsx
+RUN apk add --no-cache openssl
 
-COPY --from=build /usr/src/app/apps/discord/dist ./apps/discord/dist
-COPY --from=build /usr/src/app/apps/discord/node_modules ./apps/discord/node_modules
-COPY --from=build /usr/src/app/apps/discord/package.json ./apps/discord/
-COPY --from=build /usr/src/app/packages/db ./packages/db
-COPY --from=build /usr/src/app/packages/env ./packages/env
-COPY --from=build /usr/src/app/packages/events ./packages/events
-COPY --from=build /usr/src/app/packages/server ./packages/server
-COPY --from=build /usr/src/app/node_modules ./node_modules
-COPY --from=build /usr/src/app/package.json ./
-
-COPY apps/discord/entrypoint.sh ./entrypoint.sh
-RUN chmod +x entrypoint.sh
+COPY --from=build /usr/src/app/apps/web/.next/standalone ./
+COPY --from=build /usr/src/app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build /usr/src/app/apps/web/public ./apps/web/public
 
 ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
 
-EXPOSE 3141
+EXPOSE 3000
 
-ENTRYPOINT ["./entrypoint.sh"]
-CMD ["tsx", "apps/discord/dist/app.js"]
+CMD ["node", "apps/web/server.js"]

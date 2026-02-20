@@ -11,10 +11,12 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/db/package.json packages/db/
 COPY packages/config/package.json packages/config/
 COPY packages/env/package.json packages/env/
+COPY packages/events/package.json packages/events/
 COPY packages/server/package.json packages/server/
 COPY apps/twitch/package.json apps/twitch/
 
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
 FROM base AS build
 
@@ -23,6 +25,7 @@ COPY --from=deps /usr/src/app/ ./
 COPY packages/db ./packages/db
 COPY packages/config ./packages/config
 COPY packages/env ./packages/env
+COPY packages/events ./packages/events
 COPY packages/server ./packages/server
 COPY apps/twitch ./apps/twitch
 COPY turbo.json tsconfig.json ./
@@ -42,6 +45,7 @@ COPY --from=build /usr/src/app/apps/twitch/node_modules ./apps/twitch/node_modul
 COPY --from=build /usr/src/app/apps/twitch/package.json ./apps/twitch/
 COPY --from=build /usr/src/app/packages/db ./packages/db
 COPY --from=build /usr/src/app/packages/env ./packages/env
+COPY --from=build /usr/src/app/packages/events ./packages/events
 COPY --from=build /usr/src/app/packages/server ./packages/server
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/package.json ./
