@@ -7,6 +7,7 @@ import { accountage } from "./accountage.js";
 import { bot } from "./bot.js";
 import { queue } from "./queue.js";
 import { filesay } from "./filesay.js";
+import { commandsPage } from "./commands.js";
 
 export const commands = new Map<string, TwitchCommand>();
 
@@ -20,3 +21,4 @@ commands.set("created", accountage);
 commands.set(bot.name, bot);
 commands.set(queue.name, queue);
 commands.set(filesay.name, filesay);
+commands.set(commandsPage.name, commandsPage);

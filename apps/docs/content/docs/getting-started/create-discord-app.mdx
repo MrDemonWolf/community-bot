@@ -1,0 +1,74 @@
+---
+title: Create a Discord Application
+description: Set up a Discord application with a bot account for Community Bot.
+---
+
+Community Bot needs a Discord application for OAuth login, slash commands, and Twitch live notifications. Follow these steps to create one.
+
+## Step-by-Step
+
+### 1. Create the Application
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
+2. **Click** "New Application"
+3. Enter a name (e.g., "Community Bot") and **click** "Create"
+4. On the **General Information** tab, copy the **Application ID** — this is your `DISCORD_APPLICATION_ID`
+
+### 2. Configure OAuth2
+
+1. Go to the **OAuth2** tab
+2. Copy the **Client Secret** — this is your `DISCORD_APPLICATION_CLIENT_SECRET`
+3. Under **Redirects**, add your web dashboard callback URL:
+   - Local development: `http://localhost:3001/api/auth/callback/discord`
+   - Production: `https://bot.yourdomain.com/api/auth/callback/discord`
+
+### 3. Create the Bot
+
+1. Go to the **Bot** tab
+2. **Click** "Reset Token" to generate a bot token — copy it immediately
+   - This is your `DISCORD_APPLICATION_BOT_TOKEN` (Discord bot) and `DISCORD_BOT_TOKEN` (web dashboard)
+3. Under **Privileged Gateway Intents**, enable:
+   - **Message Content Intent** — required for reading message content
+
+### 4. Invite the Bot to Your Server
+
+1. Go to the **OAuth2** → **URL Generator** tab
+2. Under **Scopes**, select `bot` and `applications.commands`
+3. Under **Bot Permissions**, select:
+   - Send Messages
+   - Embed Links
+   - Mention Everyone (for role pings on stream notifications)
+4. Copy the generated URL and open it in your browser
+5. Select your server and **click** "Authorize"
+
+## Enable Developer Mode (for Server/Channel IDs)
+
+You need Discord user, server, and channel IDs for the Discord bot config.
+
+1. Open Discord → **User Settings** → **Advanced**
+2. Toggle **Developer Mode** to ON
+3. Now you can right-click any user, server, or channel → **Copy ID**
+
+| What to Copy | How | Env Variable |
+|-------------|-----|-------------|
+| Your user ID | Right-click your name → Copy ID | `OWNER_ID` |
+| Server ID | Right-click server name → Copy Server ID | `MAIN_GUILD_ID` |
+| Channel ID | Right-click a text channel → Copy Channel ID | `MAIN_CHANNEL_ID` |
+
+## Where to Use These Values
+
+| Value | Used In | Env Variable |
+|-------|---------|-------------|
+| Application ID | Web dashboard | `DISCORD_APPLICATION_ID` |
+| Application ID | Discord bot | `DISCORD_APPLICATION_ID` |
+| Client Secret | Web dashboard | `DISCORD_APPLICATION_CLIENT_SECRET` |
+| Public Key | Discord bot | `DISCORD_APPLICATION_PUBLIC_KEY` |
+| Bot Token | Discord bot | `DISCORD_APPLICATION_BOT_TOKEN` |
+| Bot Token | Web dashboard | `DISCORD_BOT_TOKEN` |
+
+The web dashboard and Discord bot use the **same** Discord application.
+
+## Next Steps
+
+- [Create a Twitch Application](/docs/getting-started/create-twitch-app) if you haven't already
+- Continue with [Installation](/docs/getting-started/installation)

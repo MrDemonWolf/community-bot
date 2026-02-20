@@ -135,21 +135,21 @@ export default async function PublicPage() {
             {/* Nav Links */}
             <nav className="flex flex-row gap-2 sm:flex-col sm:gap-1">
               <SidebarLink
-                href="/public"
+                href="/p"
                 icon={<User className="h-4 w-4" />}
                 label="Profile"
                 active
               />
               {commands.length > 0 && (
                 <SidebarLink
-                  href="/public/commands"
+                  href="/p/commands"
                   icon={<Terminal className="h-4 w-4" />}
                   label="Commands"
                 />
               )}
               {queueState?.status !== "CLOSED" && (
                 <SidebarLink
-                  href="/public/queue"
+                  href="/p/queue"
                   icon={<Trophy className="h-4 w-4" />}
                   label="Queue"
                 />
@@ -212,7 +212,7 @@ export default async function PublicPage() {
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="font-semibold text-foreground">Chat Commands</h3>
                   <Link
-                    href={"/public/commands" as Route}
+                    href={"/p/commands" as Route}
                     className="text-sm text-brand-main transition-colors hover:text-brand-main/70"
                   >
                     View all

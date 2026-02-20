@@ -1,6 +1,19 @@
+/**
+ * First-time setup utilities.
+ *
+ * On first startup the web dashboard generates a one-time setup token and
+ * logs a URL. The first user to visit that URL completes the setup wizard,
+ * becomes the broadcaster, and is promoted to ADMIN. Runtime config is
+ * stored in the SystemConfig table as key-value pairs.
+ */
 import { prisma } from "@community-bot/db";
 import { randomBytes } from "crypto";
 
+/**
+ * Generate and persist a setup token if first-time setup hasn't been
+ * completed yet. Logs the setup URL to the console. Called once on
+ * startup from the Next.js instrumentation hook.
+ */
 export async function ensureSetupToken() {
   const setupComplete = await prisma.systemConfig.findUnique({
     where: { key: "setupComplete" },
@@ -28,6 +41,7 @@ export async function ensureSetupToken() {
   console.log("");
 }
 
+/** Return the broadcaster's User ID, or null if setup hasn't completed. */
 export async function getBroadcasterUserId(): Promise<string | null> {
   const config = await prisma.systemConfig.findUnique({
     where: { key: "broadcasterUserId" },
@@ -35,6 +49,7 @@ export async function getBroadcasterUserId(): Promise<string | null> {
   return config?.value ?? null;
 }
 
+/** Check whether the first-time setup wizard has been completed. */
 export async function isSetupComplete(): Promise<boolean> {
   const config = await prisma.systemConfig.findUnique({
     where: { key: "setupComplete" },

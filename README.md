@@ -104,6 +104,7 @@ pnpm dev
 | `!command`       | Manage custom commands (mod+)        |
 | `!reloadcommands`| Reload commands from database (mod+) |
 | `!filesay`       | File-based text output               |
+| `!commands`      | Links to the public commands page    |
 
 ### Response Variables (Custom Commands)
 

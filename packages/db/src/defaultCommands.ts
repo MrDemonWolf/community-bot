@@ -63,4 +63,11 @@ export const DEFAULT_COMMANDS: DefaultCommandMeta[] = [
     aliases: [],
     accessLevel: "BROADCASTER",
   },
+  {
+    name: "commands",
+    description: "Shows link to the public commands list",
+    usage: "!commands",
+    aliases: [],
+    accessLevel: "EVERYONE",
+  },
 ];
