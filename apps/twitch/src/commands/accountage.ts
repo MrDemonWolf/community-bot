@@ -1,7 +1,7 @@
 import { TwitchCommand } from "../types/command.js";
 import { helixFetch } from "../services/helixClient.js";
 
-function formatDuration(from: Date, to: Date): string {
+export function formatDuration(from: Date, to: Date): string {
   let years = to.getFullYear() - from.getFullYear();
   let months = to.getMonth() - from.getMonth();
   let days = to.getDate() - from.getDate();

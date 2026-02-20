@@ -11,7 +11,7 @@ function setCache(key: string, data: string): void {
   cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL });
 }
 
-function truncate(text: string, max = 400): string {
+export function truncate(text: string, max = 400): string {
   return text.length > max ? text.slice(0, max) + "..." : text;
 }
 
