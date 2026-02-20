@@ -1,0 +1,90 @@
+---
+title: Deploy with Coolify
+description: Step-by-step guide to deploying Community Bot with Coolify.
+---
+
+[Coolify](https://coolify.io/) is a self-hosted PaaS that provides a web UI for managing Docker deployments. This guide walks through deploying all Community Bot services.
+
+## Prerequisites
+
+- A Coolify instance (v4+) with a connected server
+- A domain (or subdomains) pointed at your server
+- Twitch and Discord applications created ([Twitch](/docs/getting-started/create-twitch-app), [Discord](/docs/getting-started/create-discord-app))
+
+## 1. Create Infrastructure Resources
+
+### PostgreSQL
+
+1. In Coolify, go to your project → **New Resource** → **Database** → **PostgreSQL**
+2. Set the database name to `community-bot`
+3. Note the connection URL — you'll need it for all three services
+
+### Redis
+
+1. **New Resource** → **Database** → **Redis**
+2. Note the connection URL
+
+## 2. Deploy the Web Dashboard
+
+1. **New Resource** → **Application** → connect your Git repository
+2. Set the **Build Pack** to "Dockerfile"
+3. Configure build settings:
+   - **Dockerfile Path**: `apps/web/Dockerfile`
+   - **Build Context**: `.` (monorepo root)
+4. Add environment variables from your `apps/web/.env` — update `DATABASE_URL` and `REDIS_URL` to use the Coolify-provided connection strings
+5. Set `BETTER_AUTH_URL` and `CORS_ORIGIN` to your web dashboard domain (e.g., `https://bot.yourdomain.com`)
+6. Configure the domain in Coolify's domain settings
+7. **Deploy**
+
+### Health Check
+
+Configure a health check for the web dashboard:
+- **Path**: `/api/health`
+- **Port**: `3000`
+- **Interval**: `30s`
+
+## 3. Complete the Setup Wizard
+
+1. Check the deployment logs for the setup URL
+2. Visit the URL and complete the [setup wizard](/docs/getting-started/setup-wizard)
+3. The web dashboard is now ready
+
+## 4. Deploy the Discord Bot
+
+1. **New Resource** → **Application** → same Git repository
+2. Build settings:
+   - **Dockerfile Path**: `apps/discord/Dockerfile`
+   - **Build Context**: `.`
+3. Add environment variables from `apps/discord/.env`
+4. Update `DATABASE_URL` and `REDIS_URL` to match the Coolify resources
+5. Set the exposed port to `3141`
+6. **Deploy**
+
+### Health Check
+
+- **Path**: `/health`
+- **Port**: `3141`
+- **Interval**: `30s`
+
+## 5. Deploy the Twitch Bot
+
+1. **New Resource** → **Application** → same Git repository
+2. Build settings:
+   - **Dockerfile Path**: `apps/twitch/Dockerfile`
+   - **Build Context**: `.`
+3. Add environment variables from `apps/twitch/.env`
+4. Update `DATABASE_URL` and `REDIS_URL` to match the Coolify resources
+5. Set the exposed port to `3737`
+6. **Deploy**
+
+### Health Check
+
+- **Path**: `/health`
+- **Port**: `3737`
+- **Interval**: `30s`
+
+## Tips
+
+- **Shared env vars**: `DATABASE_URL`, `REDIS_URL`, and Twitch Client ID are used by all three services. Consider using Coolify's shared variables feature.
+- **Rebuild triggers**: Set up a webhook or GitHub integration to auto-deploy on push.
+- **Logs**: Check each service's logs in Coolify if something isn't working. The bots log EventBus connections, channel joins, and errors.

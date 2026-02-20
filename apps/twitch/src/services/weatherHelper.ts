@@ -116,7 +116,7 @@ export async function getWeather(location: string): Promise<string> {
     const condition = cw.conditionCode
       .replace(/([A-Z])/g, " $1")
       .trim();
-    const result = `${tempF}\u00B0F, ${condition} in ${geo.name}`;
+    const result = `${tempF}\u00B0F, ${condition} in ${geo.name} (Apple Weather)`;
 
     cache.set(cacheKey, { data: result, expiresAt: Date.now() + CACHE_TTL });
     return result;

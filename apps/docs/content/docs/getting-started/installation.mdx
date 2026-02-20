@@ -8,8 +8,8 @@ description: Set up the Community Bot monorepo for local development.
 - [Node.js](https://nodejs.org/) v20 or later
 - [pnpm](https://pnpm.io/) v10 or later
 - [Docker](https://www.docker.com/) (for PostgreSQL and Redis)
-- A Discord application with a bot token
-- A Twitch application with client ID and secret
+- A [Twitch application](/docs/getting-started/create-twitch-app) with client ID and secret
+- A [Discord application](/docs/getting-started/create-discord-app) with a bot token
 
 ## Clone and Install
 
@@ -32,11 +32,12 @@ This starts PostgreSQL on port 5432 and Redis on port 6379.
 Copy the example env files for each app:
 
 ```bash
+cp apps/web/.env.example apps/web/.env
 cp apps/discord/.env.example apps/discord/.env
 cp apps/twitch/.env.example apps/twitch/.env
 ```
 
-See [Environment Variables](/docs/getting-started/environment-variables) for all available options.
+Each `.env.example` file includes comments explaining every variable. See [Environment Variables](/docs/getting-started/environment-variables) for the full reference.
 
 ## Initialize Database
 
@@ -59,6 +60,8 @@ pnpm dev --filter twitch-bot
 pnpm dev --filter docs
 ```
 
-## First-Time Setup
+## What to Expect
 
-On first startup, the web app logs a one-time setup URL to the console. Visit the URL, sign in with Twitch or Discord, and complete the wizard to become the broadcaster and admin. See [Web Dashboard](/docs/web-dashboard) for details.
+On first startup, the web app logs a one-time setup URL to the console. Visit the URL to complete the [setup wizard](/docs/getting-started/setup-wizard) — this configures the broadcaster, authorizes the bot's Twitch account, and promotes you to admin.
+
+If something doesn't work, check the [Troubleshooting](/docs/getting-started/troubleshooting) page.

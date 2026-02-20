@@ -1,3 +1,10 @@
+/**
+ * Event type registry for the EventBus.
+ *
+ * Each key is an event name and its value is the payload shape. Adding a
+ * new event here automatically provides type safety in `publish()` and
+ * `on()` calls across all services.
+ */
 export interface EventMap {
   // Twitch channel management
   "channel:join": { channelId: string; username: string };

@@ -7,24 +7,7 @@ The web dashboard is built with [Next.js](https://nextjs.org/), [tRPC](https://t
 
 ## First-Time Setup
 
-On first startup, the web app generates a one-time setup token and logs a URL to the console:
-
-```
-============================================================
-  SETUP REQUIRED
-  Visit: http://localhost:3001/setup/{token}
-============================================================
-```
-
-Visit the URL to complete a multi-step wizard:
-
-1. **Sign in** with Twitch (recommended) or Discord
-2. **Authorize the bot** — log in with a separate Twitch account for the bot using Device Code Flow
-3. **Link Twitch** account (if signed in via Discord)
-4. **Enable the bot** for your Twitch channel
-5. **Complete setup** — you are promoted to ADMIN and designated as the broadcaster
-
-The setup token is single-use and deleted after completion. Subsequent startups skip this step.
+On first startup, a setup wizard configures the broadcaster and bot account. See [First-Time Setup Wizard](/docs/getting-started/setup-wizard) for the full walkthrough.
 
 ## Authentication
 
@@ -54,6 +37,10 @@ The dashboard sidebar organizes settings into sections:
 ### Account
 
 - **Settings** — User profile and account settings
+
+## Public Pages
+
+Several pages are accessible without authentication for viewers and community members. See [Public Pages](/docs/web-dashboard/public-pages) for details.
 
 ## Real-Time Updates
 

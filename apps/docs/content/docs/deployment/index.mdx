@@ -1,0 +1,52 @@
+---
+title: Deployment Overview
+description: What you need to deploy Community Bot to production.
+---
+
+Community Bot consists of three services that share a PostgreSQL database and Redis instance.
+
+## Services
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Web Dashboard  │     │  Discord Bot │     │  Twitch Bot  │
+│  (Next.js)      │     │  (Node.js)  │     │  (Node.js)   │
+└──────┬──────┘     └──────┬──────┘     └──────┬──────┘
+       │                   │                   │
+       └───────────┬───────┴───────────────────┘
+                   │
+          ┌────────┴────────┐
+          │                 │
+     ┌────┴────┐     ┌─────┴────┐
+     │ PostgreSQL│     │  Redis   │
+     └──────────┘     └──────────┘
+```
+
+| Service | Default Port | Description |
+|---------|-------------|-------------|
+| Web Dashboard | 3001 | Next.js app — dashboard, OAuth, setup wizard |
+| Discord Bot | 3141 | discord.js — slash commands, Twitch notifications |
+| Twitch Bot | 3737 | Twurple — chat commands, queue, stream tracking |
+| PostgreSQL | 5432 | Shared database for all services |
+| Redis | 6379 | EventBus pub/sub + BullMQ job queue |
+
+## Minimum Requirements
+
+- **RAM**: 2 GB (1 GB minimum, 2 GB recommended)
+- **CPU**: 1 vCPU
+- **Disk**: 10 GB (mostly for PostgreSQL data and Docker images)
+- **OS**: Any Linux distribution with Docker support, or macOS
+
+## Deployment Order
+
+1. **PostgreSQL and Redis** — start infrastructure first
+2. **Web Dashboard** — deploy and complete the [setup wizard](/docs/getting-started/setup-wizard)
+3. **Discord Bot and Twitch Bot** — deploy after setup is complete
+
+The web dashboard must be deployed first because the setup wizard configures the broadcaster and bot credentials that the other services depend on.
+
+## Choose a Deployment Method
+
+- [**Coolify**](/docs/deployment/coolify) — self-hosted PaaS with a web UI for managing deployments
+- [**Docker Compose**](/docs/deployment/docker-compose) — run all services on a single server with Docker
+- [**VPS**](/docs/deployment/vps) — generic guide for any virtual private server

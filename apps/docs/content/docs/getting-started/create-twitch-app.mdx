@@ -1,0 +1,41 @@
+---
+title: Create a Twitch Application
+description: Register a Twitch application to get the Client ID and Secret needed by Community Bot.
+---
+
+Community Bot needs a Twitch application for OAuth login, chat access, and API calls. Follow these steps to create one.
+
+## Important: Use a Separate Bot Account
+
+Create or use a **separate Twitch account** for the bot — not your broadcaster account. The bot will send chat messages as this account. During the [setup wizard](/docs/getting-started/setup-wizard), you will authorize the bot account using Device Code Flow.
+
+## Step-by-Step
+
+1. Go to the [Twitch Developer Console](https://dev.twitch.tv/console/apps)
+2. **Click** "Register Your Application"
+3. Fill in the form:
+   - **Name** — Choose a name (e.g., "MyCommunityBot")
+   - **OAuth Redirect URLs** — Add your web dashboard URL + `/api/auth/callback/twitch`
+     - For local development: `http://localhost:3001/api/auth/callback/twitch`
+     - For production: `https://bot.yourdomain.com/api/auth/callback/twitch`
+   - **Category** — Select "Chat Bot"
+4. **Click** "Create"
+5. On the app detail page, copy the **Client ID**
+6. **Click** "New Secret" to generate a **Client Secret** — copy it immediately (it won't be shown again)
+
+## Where to Use These Values
+
+| Value | Used In | Env Variable |
+|-------|---------|-------------|
+| Client ID | Web dashboard | `TWITCH_APPLICATION_CLIENT_ID` |
+| Client ID | Twitch bot | `TWITCH_APPLICATION_CLIENT_ID` |
+| Client ID | Discord bot | `TWITCH_APPLICATION_CLIENT_ID` |
+| Client Secret | Web dashboard | `TWITCH_APPLICATION_CLIENT_SECRET` |
+| Client Secret | Twitch bot | `TWITCH_APPLICATION_CLIENT_SECRET` |
+
+All three services use the **same** Twitch application.
+
+## Next Steps
+
+- [Create a Discord Application](/docs/getting-started/create-discord-app) if you haven't already
+- Continue with [Installation](/docs/getting-started/installation)

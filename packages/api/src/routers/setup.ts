@@ -1,15 +1,24 @@
+/**
+ * Setup wizard tRPC router.
+ *
+ * Handles the first-time setup flow: checking status, persisting wizard
+ * progress, authorizing the bot's Twitch account via Device Code Flow,
+ * and finalizing setup (promoting the user to ADMIN, setting broadcaster).
+ */
 import { prisma } from "@community-bot/db";
 import { env } from "@community-bot/env/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { protectedProcedure, publicProcedure, router } from "../index";
 
+// Twitch OAuth2 Device Code Flow endpoints
 const DEVICE_CODE_URL = "https://id.twitch.tv/oauth2/device";
 const TOKEN_URL = "https://id.twitch.tv/oauth2/token";
 const VALIDATE_URL = "https://id.twitch.tv/oauth2/validate";
 const BOT_SCOPES = "chat:read chat:edit moderator:read:followers channel:read:subscriptions";
 
 export const setupRouter = router({
+  /** Public — returns whether first-time setup has been completed. */
   status: publicProcedure.query(async () => {
     const setupComplete = await prisma.systemConfig.findUnique({
       where: { key: "setupComplete" },
@@ -35,6 +44,10 @@ export const setupRouter = router({
       return { success: true };
     }),
 
+  /**
+   * Finalize setup: validate the one-time token, set broadcaster,
+   * promote user to ADMIN, and clean up transient config keys.
+   */
   complete: protectedProcedure
     .input(z.object({ token: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -72,6 +85,11 @@ export const setupRouter = router({
       return { success: true };
     }),
 
+  /**
+   * Start Twitch Device Code Flow. Returns a user_code and verification_uri
+   * that the user opens in a browser, signs in with the BOT's Twitch account
+   * (not the broadcaster), and authorizes the requested scopes.
+   */
   startBotAuth: protectedProcedure.mutation(async () => {
     const res = await fetch(DEVICE_CODE_URL, {
       method: "POST",
@@ -106,6 +124,11 @@ export const setupRouter = router({
     };
   }),
 
+  /**
+   * Poll Twitch for Device Code Flow completion. The client calls this on
+   * an interval until the user completes authorization. On success, the
+   * bot's access/refresh tokens are stored in the TwitchCredential table.
+   */
   pollBotAuth: protectedProcedure
     .input(z.object({ deviceCode: z.string() }))
     .mutation(async ({ input }) => {

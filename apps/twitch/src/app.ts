@@ -1,3 +1,12 @@
+/**
+ * Twitch Bot — Entry point.
+ *
+ * Starts the Express health-check API, connects to Redis EventBus, loads
+ * caches (commands, regulars, disabled commands, broadcaster IDs), and
+ * connects to Twitch chat. If no Twitch credentials are found (setup
+ * wizard not completed), the bot runs in "limited mode" with the API
+ * server and EventBus active but no chat connection.
+ */
 import cron from "node-cron";
 
 import { listenWithFallback } from "@community-bot/server";
@@ -107,12 +116,15 @@ async function main() {
     }
   });
 
+  // If no credentials, run in limited mode (API + EventBus only, no chat).
+  // This happens when the setup wizard hasn't been completed yet.
   if (!authProvider || !botUsername) {
     logger.info("Twitch Bot", "Running in limited mode — API server and EventBus active, no chat connection.");
     return;
   }
 
-  // Load channels from database
+  // Load enabled channels from DB. Use a Set to deduplicate — the bot's
+  // own channel is always included so it can receive commands there too.
   const botChannels = await prisma.botChannel.findMany({
     where: { enabled: true },
   });
