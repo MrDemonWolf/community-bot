@@ -1,0 +1,166 @@
+---
+title: Event Bus
+description: Type-safe Redis Pub/Sub event bus for real-time inter-service communication.
+---
+
+The `@community-bot/events` package provides a type-safe Redis Pub/Sub event bus used by all three services (Web dashboard, Discord bot, Twitch bot) to communicate in real time.
+
+## Usage
+
+```typescript
+import { EventBus } from "@community-bot/events";
+
+const eventBus = new EventBus(redisUrl);
+
+// Publish an event
+await eventBus.publish("command:updated", { commandId: "abc" });
+
+// Subscribe to an event
+await eventBus.on("channel:join", (payload) => {
+  console.log(payload.channelId, payload.username);
+});
+```
+
+## Architecture
+
+The EventBus uses two separate Redis connections: one for publishing and one for subscribing. Redis requires this because a connection in "subscriber" mode can only receive messages, not send commands.
+
+```
+┌─────────────┐       ┌─────────────┐       ┌─────────────┐
+│     Web      │       │   Discord    │       │   Twitch     │
+│  Dashboard   │       │     Bot      │       │     Bot      │
+└──────┬───┬──┘       └──────┬───┬──┘       └──────┬───┬──┘
+       │   │                 │   │                 │   │
+    pub│   │sub           pub│   │sub           pub│   │sub
+       │   │                 │   │                 │   │
+       ▼   ▼                 ▼   ▼                 ▼   ▼
+    ┌──────────────────────────────────────────────────────┐
+    │                    Redis Pub/Sub                      │
+    │  channels: events:channel:join, events:command:*,    │
+    │            events:stream:*, events:discord:*, ...    │
+    └──────────────────────────────────────────────────────┘
+```
+
+Events are published to channels with a configurable prefix (default: `events`), so `command:updated` publishes to the Redis channel `events:command:updated`.
+
+### Event Flow Summary
+
+```
+Web Dashboard action          Event published         Bot reaction
+─────────────────────         ───────────────         ────────────
+Enable bot for channel    →   channel:join        →   Twitch joins chat
+Disable bot for channel   →   channel:leave       →   Twitch leaves chat
+Create/edit/delete cmd    →   command:*            →   Twitch reloads cache
+Toggle built-in commands  →   commands:defaults-*  →   Twitch reloads defaults
+Add/remove regular        →   regular:*            →   Twitch reloads regulars
+Change Discord settings   →   discord:settings-*   →   Discord reloads guild
+Send test notification    →   discord:test-*       →   Discord sends embed
+Mute/unmute bot           →   bot:mute             →   Twitch toggles mute
+```
+
+The constructor accepts an optional `prefix` option:
+
+```typescript
+const eventBus = new EventBus(redisUrl, { prefix: "myapp" });
+```
+
+## Event Reference
+
+All event types are defined in `packages/events/src/types.ts`. Adding a new event to the `EventMap` interface automatically provides type safety in `publish()` and `on()` calls across all services.
+
+### Channel Management
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `channel:join` | `{ channelId, username }` | Web | Twitch |
+| `channel:leave` | `{ channelId, username }` | Web | Twitch |
+
+Fired when a user enables or disables the Twitch bot for their channel via the web dashboard. The Twitch bot joins or leaves the chat channel in response.
+
+### Command Lifecycle
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `command:created` | `{ commandId }` | Web | Twitch |
+| `command:updated` | `{ commandId }` | Web | Twitch |
+| `command:deleted` | `{ commandId }` | Web | Twitch |
+| `commands:defaults-updated` | `{ channelId }` | Web | Twitch |
+
+Fired when custom chat commands are created, edited, or deleted from the web dashboard. The Twitch bot reloads its command cache in response. `commands:defaults-updated` fires when built-in command toggles or access levels are changed.
+
+### Regular (Trusted User) Changes
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `regular:created` | `{ twitchUserId }` | Web | Twitch |
+| `regular:deleted` | `{ twitchUserId }` | Web | Twitch |
+
+Fired when regulars are added or removed via the web dashboard. The Twitch bot reloads its regulars list.
+
+### Stream Status
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `stream:online` | `{ channelId, username, title, startedAt }` | Twitch | Discord |
+| `stream:offline` | `{ channelId, username }` | Twitch | Discord |
+
+Published by the Twitch bot when a monitored stream goes live or offline. The Discord bot can use these to supplement its own polling.
+
+### Queue
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `queue:updated` | `{ channelId }` | Any | Any |
+
+Fired when the queue state changes (open/close/pause, entries added/removed).
+
+### Bot Controls
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `bot:mute` | `{ channelId, username, muted }` | Web | Twitch |
+| `bot:status` | `{ service, status }` | Discord/Twitch | Any |
+
+`bot:mute` toggles the bot's mute state for a channel. `bot:status` reports service health with `service` being `"discord"` or `"twitch"` and `status` being `"online"`, `"offline"`, or `"connecting"`.
+
+### Discord Settings
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `discord:settings-updated` | `{ guildId }` | Web | Discord |
+| `discord:test-notification` | `{ guildId }` | Web | Discord |
+
+`discord:settings-updated` fires when notification settings are changed from the web dashboard (channel, role, enable/disable). The Discord bot reloads guild settings in response. `discord:test-notification` triggers a test notification embed in the configured channel.
+
+## API Reference
+
+### `new EventBus(redisUrl, opts?)`
+
+Creates a new EventBus instance with two Redis connections.
+
+- `redisUrl` — Redis connection string
+- `opts.prefix` — Channel prefix (default: `"events"`)
+
+### `eventBus.publish(event, payload)`
+
+Publish a typed event. The payload type is enforced at compile time based on the event name.
+
+### `eventBus.on(event, handler)`
+
+Subscribe to a typed event. Multiple handlers per event are supported. The handler receives the typed payload.
+
+### `eventBus.ping()`
+
+Health check. Returns `true` if Redis is reachable.
+
+### `eventBus.disconnect()`
+
+Unsubscribes from all channels and disconnects both Redis connections.
+
+## Adding a New Event
+
+1. Add the event name and payload type to `EventMap` in `packages/events/src/types.ts`
+2. Publish from the appropriate service using `eventBus.publish()`
+3. Subscribe in the consuming service using `eventBus.on()`
+
+Type safety is automatic — TypeScript will enforce the correct payload shape for both publishing and subscribing.
