@@ -70,9 +70,11 @@ router.get("/", async (_req, res) => {
     const discord = checkDiscord();
 
     const checks = { discord, database, redis: redisCheck };
+    const infraChecks = { database, redis: redisCheck };
     const status = overallStatus(checks);
+    const infraStatus = overallStatus(infraChecks);
 
-    res.status(status === "unhealthy" ? 503 : 200).json({
+    res.status(infraStatus === "unhealthy" ? 503 : 200).json({
       status,
       uptime: process.uptime(),
       version: process.env["npm_package_version"] || "1.7.0",
