@@ -36,6 +36,7 @@
     "---Development---",
     "development/architecture",
     "development/database",
-    "development/health-checks"
+    "development/health-checks",
+    "development/event-bus"
   ]
 }

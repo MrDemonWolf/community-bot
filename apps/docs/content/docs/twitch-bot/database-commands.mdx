@@ -11,8 +11,11 @@ Mods and broadcasters can create and manage commands directly from chat using `!
 
 - `!command add <name> <response>` — Create a new command
 - `!command edit <name> <response>` — Update response text
-- `!command remove <name>` — Delete a command
-- `!command list` — List all commands
+- `!command remove <name>` — Delete a command (also accepts `delete`)
+- `!command show <name>` — Show a command's current settings
+- `!command options <name> <flags...>` — Modify settings (cooldowns, access level, response type, aliases, etc.)
+
+See [Built-in Commands](/docs/twitch-bot/built-in-commands) for the full list of option flags.
 
 ## Managing via Web Dashboard
 

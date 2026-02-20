@@ -81,10 +81,12 @@ await eventBus.on("channel:join", (payload) => { /* handle */ });
 | `channel:join` | `{ channelId, username }` | Web | Twitch |
 | `channel:leave` | `{ channelId, username }` | Web | Twitch |
 | `command:created/updated/deleted` | `{ commandId }` | Web | Twitch |
+| `commands:defaults-updated` | `{ channelId }` | Web | Twitch |
 | `regular:created/deleted` | `{ twitchUserId }` | Web | Twitch |
 | `stream:online` | `{ channelId, username, title, startedAt }` | Twitch | Discord |
 | `stream:offline` | `{ channelId, username }` | Twitch | Discord |
 | `queue:updated` | `{ channelId }` | Any | Any |
+| `bot:mute` | `{ channelId, username, muted }` | Web | Twitch |
 | `discord:settings-updated` | `{ guildId }` | Web | Discord |
 | `discord:test-notification` | `{ guildId }` | Web | Discord |
 | `bot:status` | `{ service, status }` | Discord/Twitch | Any |

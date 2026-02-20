@@ -15,8 +15,10 @@ Returns "Pong!" to confirm the bot is responsive.
 ### `!uptime`
 Shows how long the stream has been live, or indicates the stream is offline.
 
-### `!accountage`
-Shows how old the user's Twitch account is.
+### `!accountage [username]`
+Shows how old a Twitch account is. You can check another user's account by passing their username as an argument.
+
+**Aliases:** `!accage`, `!created`
 
 ### `!bot mute` / `!bot unmute`
 Mutes or unmutes the bot. When muted, only `!bot unmute` is processed. Requires moderator or broadcaster access.
@@ -24,14 +26,26 @@ Mutes or unmutes the bot. When muted, only `!bot unmute` is processed. Requires 
 ### `!filesay <url>`
 Fetches a text file from a URL and sends each line to chat with a 1-second delay between lines. Only HTTPS and HTTP URLs are accepted. Requires broadcaster access.
 
-### `!command add|edit|remove|list`
+### `!command`
 Manages database commands from chat. See [Database Commands](/docs/twitch-bot/database-commands) for details.
 
-**Usage:**
+**Subcommands:**
 - `!command add <name> <response>` — Create a new command
 - `!command edit <name> <response>` — Update an existing command's response
-- `!command remove <name>` — Delete a command
-- `!command list` — List all database commands
+- `!command remove <name>` — Delete a command (also accepts `!command delete`)
+- `!command show <name>` — Show a command's settings (response type, access level, cooldowns, aliases, etc.)
+- `!command options <name> <flags...>` — Modify command settings with flags
+
+**Option flags for `!command options`:**
+- `-cd <seconds>` — Set global cooldown
+- `-usercd <seconds>` — Set per-user cooldown
+- `-level <level>` — Set access level (everyone, subscriber, regular, vip, moderator, broadcaster)
+- `-type <type>` — Set response type (say, mention, reply)
+- `-enable` / `-disable` — Enable or disable the command
+- `-hidden` / `-visible` — Toggle hidden status
+- `-stream <status>` — Set stream status filter (online, offline, both)
+- `-limituser <username>` — Restrict to a specific user (`clear` to remove)
+- `-alias add <name>` / `-alias remove <name>` — Add or remove an alias
 
 Requires moderator or broadcaster access.
 
@@ -45,13 +59,21 @@ See [Public Pages](/docs/web-dashboard/public-pages) for what viewers see. Set `
 
 ### Queue Commands
 
-- `!queue open` — Open the viewer queue (mod/broadcaster)
-- `!queue close` — Close the queue (mod/broadcaster)
-- `!queue join` — Join the queue (viewers)
-- `!queue leave` — Leave the queue (viewers)
-- `!queue next` — Pull the next viewer from the queue (mod/broadcaster)
-- `!queue list` — Show current queue entries
-- `!queue clear` — Clear the entire queue (mod/broadcaster)
+**Viewer commands:**
+- `!queue join` — Join the queue
+- `!queue leave` — Leave the queue
+- `!queue list` — Show current queue entries (up to 10)
 - `!queue position` — Check your position in the queue
+
+**Moderator/Broadcaster commands:**
+- `!queue open` — Open the queue for new entries
+- `!queue close` — Close the queue (no new joins)
+- `!queue pause` — Pause the queue
+- `!queue unpause` — Unpause the queue (reopens it)
+- `!queue pick` — Pick the next viewer from the queue
+- `!queue pick random` — Pick a random viewer from the queue
+- `!queue pick <username>` — Pick a specific viewer from the queue
+- `!queue remove <username>` — Remove a specific viewer from the queue
+- `!queue clear` — Clear the entire queue
 
 See [Queue System](/docs/twitch-bot/queue-system) for more details.
