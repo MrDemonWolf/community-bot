@@ -1,0 +1,129 @@
+---
+title: Troubleshooting
+description: Common problems and solutions when setting up or running Community Bot.
+---
+
+## Setup & Startup
+
+### **Setup URL not showing in the console**
+
+The web dashboard generates the URL on first startup. If it doesn't appear:
+
+- Ensure PostgreSQL is running: `docker compose up -d postgres`
+- Verify `DATABASE_URL` in `apps/web/.env` is correct
+- Run `pnpm db:generate && pnpm db:push` if you haven't initialized the database
+
+### **"Invalid setup token" error**
+
+The token is single-use and regenerated on each restart (if setup is incomplete). Restart the web app to get a fresh URL.
+
+### **Prisma client not generated**
+
+If you see `Cannot find module '.prisma/client'` or similar:
+
+```bash
+pnpm db:generate
+```
+
+This generates the Prisma client from the schema. You need to re-run this after pulling schema changes.
+
+## Database & Redis
+
+### **Database connection refused**
+
+```
+Error: connect ECONNREFUSED 127.0.0.1:5432
+```
+
+- Start PostgreSQL: `docker compose up -d postgres`
+- Check that the port isn't already in use: `lsof -i :5432`
+- Verify `DATABASE_URL` matches your PostgreSQL host, port, user, and password
+
+### **Redis connection refused**
+
+```
+Error: connect ECONNREFUSED 127.0.0.1:6379
+```
+
+- Start Redis: `docker compose up -d redis`
+- Check that the port isn't already in use: `lsof -i :6379`
+- The EventBus and BullMQ job queue both require Redis
+
+### **Port already in use**
+
+```
+Error: listen EADDRINUSE :::3001
+```
+
+Another process is using the port. Either stop that process or change the port in `.env`. The shared server library will automatically try the next port if the configured one is taken.
+
+## Bot Connectivity
+
+### **Twitch bot won't connect to chat**
+
+- Complete the [setup wizard](/docs/getting-started/setup-wizard) first — the bot needs authorized credentials
+- Check that `TwitchCredential` has a row in the database
+- The bot logs "Running in limited mode" if no credentials are found
+- Verify `TWITCH_APPLICATION_CLIENT_ID` and `TWITCH_APPLICATION_CLIENT_SECRET` are correct
+
+### **Discord bot not responding to commands**
+
+- Verify the bot token is correct (`DISCORD_APPLICATION_BOT_TOKEN`)
+- Ensure **Message Content Intent** is enabled in the Discord Developer Portal → Bot tab
+- Check that the bot has been invited with `bot` and `applications.commands` scopes
+- Run `/ping` — if there's no response, the bot may not be in your server
+
+### **Discord notifications not sending**
+
+- In the web dashboard, go to **Discord Settings** and verify:
+  - A Discord server is linked
+  - A notification channel is selected
+  - Notifications are enabled
+- The bot needs **Send Messages** and **Embed Links** permissions in the notification channel
+- Check the Discord bot logs for errors
+
+### **Commands not updating in real-time**
+
+The Twitch bot subscribes to EventBus events for instant updates. If changes aren't reflected:
+
+- Verify Redis is running (EventBus requires it)
+- Check the Twitch bot logs for EventBus connection errors
+- As a fallback, the bot reloads commands every 5 minutes via cron
+
+## OAuth & Authentication
+
+### **OAuth callback errors**
+
+"Invalid redirect URI" or similar errors during login:
+
+- Verify your OAuth redirect URLs are configured correctly:
+  - Twitch: `https://your-domain.com/api/auth/callback/twitch` in the [Twitch Developer Console](https://dev.twitch.tv/console/apps)
+  - Discord: `https://your-domain.com/api/auth/callback/discord` in the [Discord Developer Portal](https://discord.com/developers/applications)
+- The redirect URL must exactly match `BETTER_AUTH_URL` + `/api/auth/callback/{provider}`
+- For local development, use `http://localhost:3001` (not `127.0.0.1`)
+
+### **"Missing scopes" warning for response variables**
+
+If `{followage}` or `{subcount}` return errors, the bot was authorized without the required scopes. Re-authorize through the setup wizard or by deleting the `TwitchCredential` row and restarting.
+
+## Docker
+
+### **Build fails with "out of memory"**
+
+The TypeScript compilation can be memory-intensive. Increase Docker's memory limit to at least 2GB, or build individual services:
+
+```bash
+docker compose build discord
+docker compose build twitch
+```
+
+### **Volume permission errors**
+
+If PostgreSQL fails to start with permission errors on the volume:
+
+```bash
+docker compose down -v   # Warning: this deletes database data
+docker compose up -d postgres
+```
+
+For production, ensure the volume mount directory is owned by the correct user.

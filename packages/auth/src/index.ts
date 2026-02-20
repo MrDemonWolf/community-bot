@@ -1,3 +1,9 @@
+/**
+ * @community-bot/auth — Shared authentication configuration.
+ *
+ * Uses better-auth with Prisma adapter for session management and
+ * Discord/Twitch OAuth social login. Consumed by the web dashboard.
+ */
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { lastLoginMethod } from "better-auth/plugins";
@@ -21,13 +27,18 @@ export const auth = betterAuth({
 		},
 	},
 	account: {
+		// Allow users to link both Discord and Twitch to a single account.
+		// Both providers are "trusted" so linking happens automatically
+		// without requiring email verification.
 		accountLinking: {
 			enabled: true,
 			trustedProviders: ["discord", "twitch"],
 		},
 	},
 	plugins: [
+		// nextCookies() enables cookie-based sessions in Next.js server components.
 		nextCookies(),
+		// Track which provider the user last signed in with.
 		lastLoginMethod({ storeInDatabase: true }),
 	],
 });

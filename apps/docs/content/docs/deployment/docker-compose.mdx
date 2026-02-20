@@ -1,0 +1,139 @@
+---
+title: Deploy with Docker Compose
+description: Run Community Bot in production using Docker Compose on a single server.
+---
+
+The repository includes a `docker-compose.yml` for running all services. This guide covers production considerations.
+
+## Prerequisites
+
+- A server with Docker and Docker Compose installed
+- A domain pointed at your server
+- Twitch and Discord applications created ([Twitch](/docs/getting-started/create-twitch-app), [Discord](/docs/getting-started/create-discord-app))
+
+## 1. Clone and Configure
+
+```bash
+git clone https://github.com/mrdemonwolf/community-bot.git
+cd community-bot
+```
+
+Copy and fill in environment files:
+
+```bash
+cp apps/web/.env.example apps/web/.env
+cp apps/discord/.env.example apps/discord/.env
+cp apps/twitch/.env.example apps/twitch/.env
+```
+
+Update each `.env` file with your credentials. See [Environment Variables](/docs/getting-started/environment-variables) for details.
+
+**Important**: Update `BETTER_AUTH_URL` and `CORS_ORIGIN` in `apps/web/.env` to your production domain (e.g., `https://bot.yourdomain.com`).
+
+## 2. Build and Start
+
+```bash
+# Build all images
+docker compose build
+
+# Start infrastructure first
+docker compose up -d postgres redis
+
+# Wait for healthy status
+docker compose ps
+
+# Start the web dashboard
+docker compose up -d web
+
+# Check logs for the setup URL
+docker compose logs web
+```
+
+## 3. Complete Setup
+
+1. Find the setup URL in the web dashboard logs
+2. Complete the [setup wizard](/docs/getting-started/setup-wizard)
+
+## 4. Start the Bots
+
+```bash
+docker compose up -d discord twitch
+```
+
+## Production Considerations
+
+### Restart Policies
+
+The provided `docker-compose.yml` doesn't include restart policies. For production, add to each service:
+
+```yaml
+restart: unless-stopped
+```
+
+### Database Persistence
+
+PostgreSQL data is stored in a named Docker volume (`postgres-data`). This persists across container restarts. For backups:
+
+```bash
+# Create a backup
+docker compose exec postgres pg_dump -U postgres community-bot > backup.sql
+
+# Restore from backup
+docker compose exec -T postgres psql -U postgres community-bot < backup.sql
+```
+
+### Web Service
+
+The default `docker-compose.yml` does not include the web dashboard service. Add it:
+
+```yaml
+web:
+  build:
+    context: .
+    dockerfile: apps/web/Dockerfile
+  ports:
+    - "127.0.0.1:3001:3000"
+  env_file:
+    - apps/web/.env
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  restart: unless-stopped
+```
+
+### Reverse Proxy
+
+The services should not be exposed directly to the internet. Use a reverse proxy like [Caddy](https://caddyserver.com/) or nginx.
+
+**Caddy example** (automatic HTTPS):
+
+```
+bot.yourdomain.com {
+    reverse_proxy localhost:3001
+}
+```
+
+**nginx example**:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name bot.yourdomain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### Security
+
+The default port bindings in `docker-compose.yml` are bound to `127.0.0.1` to prevent direct external access. Only the reverse proxy should forward traffic to the services.
+
+If you need the bot API endpoints accessible externally, bind them to `0.0.0.0` instead, but use firewall rules to restrict access.

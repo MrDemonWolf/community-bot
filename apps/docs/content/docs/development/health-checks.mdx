@@ -23,11 +23,13 @@ Both the Discord and Twitch bots expose a `GET /api/health` endpoint that checks
 
 ### Overall Status
 
+Only **infrastructure** checks (database, Redis) affect the HTTP status code. Bot service checks (Discord WebSocket, Twitch chat connection) are **informational only** — a bot being disconnected will not cause the endpoint to return 503. This prevents container orchestrators from restarting the service when only the bot connection is down.
+
 | Value | Meaning | HTTP Code |
 |-------|---------|-----------|
-| `healthy` | All checks are `up` | 200 |
-| `degraded` | At least one check is `degraded`, none `down` | 200 |
-| `unhealthy` | At least one check is `down` | 503 |
+| `healthy` | All infrastructure checks are `up` | 200 |
+| `degraded` | At least one infrastructure check is `degraded`, none `down` | 200 |
+| `unhealthy` | At least one infrastructure check (database or Redis) is `down` | 503 |
 
 ### Check Statuses
 

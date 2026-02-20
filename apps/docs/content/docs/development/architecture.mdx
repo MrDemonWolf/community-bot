@@ -20,6 +20,7 @@ packages/
   server/      Shared Express API server
   auth/        Authentication package (better-auth)
   api/         Shared tRPC API utilities
+  events/      Redis Pub/Sub event bus
 ```
 
 ## Shared Packages
@@ -60,9 +61,30 @@ Shared tRPC API routers and utilities consumed by the web dashboard. Includes:
 - `logAudit()` utility (`packages/api/src/utils/audit.ts`) for recording all mutations to the audit log
 - `discordFetch()` helper (`packages/api/src/utils/discord.ts`) for calling Discord REST API v10 with the bot token (used to fetch guild channels and roles for the web dashboard)
 
+### `@community-bot/events`
+
+Type-safe Redis Pub/Sub event bus for real-time inter-service communication. Uses two Redis connections (one for publishing, one for subscribing) to avoid blocking. All three services use it to stay in sync:
+
+- **Web dashboard** publishes events when settings change (command CRUD, channel join/leave, Discord config)
+- **Twitch bot** subscribes to reload commands, regulars, and channel list in real-time; publishes stream online/offline events
+- **Discord bot** subscribes to stream events for live notifications and settings changes
+
+See `packages/events/src/types.ts` for the full event registry.
+
 ### `@community-bot/config`
 
 Shared TypeScript configuration. All packages extend `tsconfig.base.json`.
+
+## Inter-Service Communication
+
+The services communicate exclusively through the EventBus (Redis Pub/Sub) and the shared PostgreSQL database. There are no direct HTTP calls between services.
+
+When a user changes a setting in the web dashboard, the flow is:
+1. tRPC mutation updates the database
+2. Mutation publishes an event to the EventBus
+3. The relevant bot receives the event and reloads its in-memory cache
+
+As a fallback, the Twitch bot also reloads its caches every 5 minutes via cron, so changes are eventually consistent even if an event is missed.
 
 ## TypeScript
 

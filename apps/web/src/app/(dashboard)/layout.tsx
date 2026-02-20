@@ -5,6 +5,8 @@ import { isSetupComplete } from "@/lib/setup";
 import DashboardHeader from "@/components/dashboard-header";
 import DashboardSidebar from "./components/dashboard-sidebar";
 
+// Disable static rendering — the layout depends on session state and
+// setup status, which must be checked on every request.
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({
@@ -12,10 +14,13 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Guard: redirect to landing page if setup wizard hasn't been completed.
+  // This prevents access to the dashboard before the broadcaster is set.
   if (!(await isSetupComplete())) {
     redirect("/");
   }
 
+  // Guard: require an authenticated session for all dashboard routes.
   const session = await auth.api.getSession({
     headers: await headers(),
   });

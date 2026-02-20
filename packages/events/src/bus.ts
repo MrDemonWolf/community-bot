@@ -1,3 +1,10 @@
+/**
+ * EventBus — Redis Pub/Sub wrapper with typed events.
+ *
+ * Uses two separate Redis connections: one dedicated to publishing and one
+ * dedicated to subscribing. Redis requires this because a connection in
+ * "subscriber" mode can only receive messages, not send commands.
+ */
 import { Redis } from "ioredis";
 import type { EventMap, EventName } from "./types";
 
@@ -25,6 +32,7 @@ export class EventBus {
     });
   }
 
+  /** Publish a typed event to all subscribers across services. */
   async publish<E extends EventName>(
     event: E,
     payload: EventMap[E]
@@ -35,6 +43,7 @@ export class EventBus {
     );
   }
 
+  /** Subscribe to a typed event. Multiple handlers per event are supported. */
   async on<E extends EventName>(
     event: E,
     handler: (payload: EventMap[E]) => void
@@ -47,6 +56,7 @@ export class EventBus {
     this.handlers.get(event)!.add(handler as (payload: unknown) => void);
   }
 
+  /** Health check — returns true if Redis is reachable. */
   async ping(): Promise<boolean> {
     try {
       const result = await this.pub.ping();
