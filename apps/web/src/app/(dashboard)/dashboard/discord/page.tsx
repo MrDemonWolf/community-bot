@@ -3,6 +3,8 @@ import { auth } from "@community-bot/auth";
 import { env } from "@community-bot/env/server";
 import DiscordSettings from "./discord-settings";
 
+export const dynamic = "force-dynamic";
+
 export default async function DiscordPage() {
   const session = await auth.api.getSession({
     headers: await headers(),

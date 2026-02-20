@@ -6,6 +6,8 @@ import Link from "next/link";
 import type { Route } from "next";
 import { User, Trophy, Terminal, ArrowLeft } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 async function getQueueData() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;

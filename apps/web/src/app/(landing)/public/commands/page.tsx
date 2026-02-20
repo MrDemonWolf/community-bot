@@ -12,6 +12,8 @@ import {
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 import CommandsTabs from "./commands-tabs";
 
+export const dynamic = "force-dynamic";
+
 async function getCommandsData() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;
