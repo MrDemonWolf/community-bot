@@ -1,6 +1,6 @@
 import { TwitchCommand } from "../types/command.js";
 
-function isValidUrl(str: string): boolean {
+export function isValidUrl(str: string): boolean {
   try {
     const url = new URL(str);
     return url.protocol === "http:" || url.protocol === "https:";
@@ -9,7 +9,7 @@ function isValidUrl(str: string): boolean {
   }
 }
 
-function delay(ms: number): Promise<void> {
+export function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 

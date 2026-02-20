@@ -11,7 +11,8 @@
     "lint": "eslint . --ext .ts,.js --fix",
     "lint:check": "eslint . --ext .ts,.js",
     "format": "prettier-eslint --write $PWD/'**/*.{js,json}'",
-    "test": "cross-env NODE_ENV=test mocha tests --exit"
+    "test": "cross-env NODE_ENV=test mocha tests --exit",
+    "check-types": "tsc --noEmit"
   },
   "author": "MrDemonWolf, Inc",
   "license": "MIT",
