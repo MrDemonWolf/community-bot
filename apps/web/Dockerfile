@@ -48,7 +48,6 @@ RUN apk add --no-cache openssl
 
 COPY --from=build /usr/src/app/apps/web/.next/standalone ./
 COPY --from=build /usr/src/app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=build /usr/src/app/apps/web/public ./apps/web/public
 
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
