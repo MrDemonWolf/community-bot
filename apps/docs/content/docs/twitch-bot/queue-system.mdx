@@ -13,7 +13,12 @@ The queue system lets viewers sign up for activities (game lobbies, reviews, etc
 |---------|-------------|
 | `!queue open` | Open the queue for new entries |
 | `!queue close` | Close the queue (no new joins) |
-| `!queue next` | Pull the next viewer from the queue |
+| `!queue pause` | Pause the queue |
+| `!queue unpause` | Unpause the queue (reopens it) |
+| `!queue pick` | Pick the next viewer from the queue |
+| `!queue pick random` | Pick a random viewer from the queue |
+| `!queue pick <username>` | Pick a specific viewer by name |
+| `!queue remove <username>` | Remove a specific viewer from the queue |
 | `!queue clear` | Remove all entries from the queue |
 
 ### Viewer Commands
@@ -22,14 +27,14 @@ The queue system lets viewers sign up for activities (game lobbies, reviews, etc
 |---------|-------------|
 | `!queue join` | Join the queue |
 | `!queue leave` | Leave the queue |
-| `!queue list` | Show current queue entries |
+| `!queue list` | Show current queue entries (up to 10) |
 | `!queue position` | Check your position in the queue |
 
 ## How It Works
 
-The queue is backed by the `QueueEntry` and `QueueState` database tables. Queue state (open/closed) persists across bot restarts.
+The queue is backed by the `QueueEntry` and `QueueState` database tables. Queue state (open/closed/paused) persists across bot restarts.
 
-When a viewer joins, they are added with a `WAITING` status. When `!queue next` is called, the first waiting entry is pulled and its status changes to `PICKED`. Viewers who leave or are cleared get a `REMOVED` status.
+When a viewer joins, they are added with a `WAITING` status. When `!queue pick` is called, the next waiting entry is selected and its status changes to `PICKED`. Viewers who leave or are cleared get a `REMOVED` status.
 
 Viewers can also see the queue at the [public queue page](/docs/web-dashboard/public-pages).
 
@@ -38,5 +43,5 @@ Viewers can also see the queue at the [public queue page](/docs/web-dashboard/pu
 | Status | Meaning |
 |--------|---------|
 | `WAITING` | In queue, waiting to be picked |
-| `PICKED` | Has been selected via `!queue next` |
+| `PICKED` | Has been selected via `!queue pick` |
 | `REMOVED` | Left the queue or was cleared |

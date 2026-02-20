@@ -7,34 +7,36 @@ All commands are under the `/twitch` command group. All `/twitch` commands requi
 
 **Prerequisites:** A notification channel must be set with `/twitch notifications set-channel` before live notifications will work.
 
-## `/twitch add <channel>`
+## `/twitch add <username>`
 
-Add a Twitch channel to monitor for live stream notifications.
-
-**Parameters:**
-- `channel` (required) — The Twitch channel username to monitor
-
-## `/twitch remove <channel>`
-
-Remove a Twitch channel from the notification list.
+Add a Twitch channel to monitor for live stream notifications. Validates the username against the Twitch API and stores the channel in the database.
 
 **Parameters:**
-- `channel` (required) — The Twitch channel username to stop monitoring
+- `username` (required) — The Twitch channel username to monitor
+
+## `/twitch remove <username>`
+
+Remove a Twitch channel from the notification list. Also removes all associated notification records.
+
+**Parameters:**
+- `username` (required) — The Twitch channel username to stop monitoring
 
 ## `/twitch list`
 
-List all Twitch channels currently being monitored in this guild.
+List all Twitch channels currently being monitored in this guild. Shows an embed with the current notification channel, notification role, and all monitored channels with live/offline status indicators.
 
-## `/twitch test <channel>`
+## `/twitch test <username>`
 
-Send a test notification for a Twitch channel to verify the setup is working correctly. Sends a simulated live notification embed to the configured channel with a fake viewer count. After 5 seconds, the viewer count updates. After 10 seconds, the embed is edited to show an offline state. Useful for verifying your notification channel and role configuration.
+Send a test notification for a Twitch channel to verify the setup is working correctly. Sends a simulated live notification embed to the configured channel with a fake viewer count. After 10 seconds, the embed is edited to show an offline state. Useful for verifying your notification channel and role configuration.
+
+**Restricted to the bot owner only** (the `OWNER_ID` configured in environment variables).
 
 **Parameters:**
-- `channel` (required) — The Twitch channel to send a test notification for
+- `username` (required) — The Twitch channel to send a test notification for
 
 ## `/twitch notifications set-channel <channel>`
 
-Set the Discord channel where Twitch live notifications will be posted.
+Set the Discord channel where Twitch live notifications will be posted. Only text channels are accepted.
 
 **Parameters:**
 - `channel` (required) — The Discord text channel to receive notifications
