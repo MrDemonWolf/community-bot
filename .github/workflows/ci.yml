@@ -11,6 +11,8 @@ jobs:
   ci:
     name: Build, Test & Type Check
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://user:pass@localhost:5432/community_bot
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
