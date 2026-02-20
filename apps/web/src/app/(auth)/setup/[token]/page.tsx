@@ -1,6 +1,8 @@
 import { prisma } from "@community-bot/db";
 import SetupWizard from "./setup-wizard";
 
+export const dynamic = "force-dynamic";
+
 export default async function SetupPage({
   params,
 }: {

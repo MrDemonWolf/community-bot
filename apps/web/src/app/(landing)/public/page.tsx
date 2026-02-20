@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import TwitchEmbed from "./twitch-embed";
 
+export const dynamic = "force-dynamic";
+
 async function getBroadcasterData() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;

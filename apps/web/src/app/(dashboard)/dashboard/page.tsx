@@ -4,6 +4,8 @@ import AuditLogFeed from "./audit-log-feed";
 import BotControlsCard from "./bot-controls-card";
 import QuickStatsCard from "./quick-stats-card";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
