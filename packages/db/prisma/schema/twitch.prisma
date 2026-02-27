@@ -14,6 +14,20 @@ model TwitchChannel {
   joinedAt           DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
+  // Per-channel notification overrides (null = use guild default)
+  notificationChannelId String?
+  notificationRoleId    String?
+
+  // Behavior toggles
+  updateMessageLive  Boolean @default(true)
+  deleteWhenOffline  Boolean @default(false)
+  autoPublish        Boolean @default(false)
+
+  // Custom message support
+  useCustomMessage     Boolean @default(false)
+  customOnlineMessage  String?
+  customOfflineMessage String?
+
   @@unique([twitchChannelId, guildId])
 }
 

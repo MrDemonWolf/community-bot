@@ -309,6 +309,115 @@ export const discordGuildRouter = router({
     return { success: true };
   }),
 
+  listMonitoredChannels: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const guild = await prisma.discordGuild.findFirst({
+      where: { userId },
+    });
+
+    if (!guild) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No Discord server linked.",
+      });
+    }
+
+    const channels = await prisma.twitchChannel.findMany({
+      where: { guildId: guild.id },
+      orderBy: { joinedAt: "asc" },
+    });
+
+    return channels.map((ch) => ({
+      id: ch.id,
+      twitchChannelId: ch.twitchChannelId,
+      username: ch.username,
+      displayName: ch.displayName,
+      profileImageUrl: ch.profileImageUrl,
+      isLive: ch.isLive,
+      notificationChannelId: ch.notificationChannelId,
+      notificationRoleId: ch.notificationRoleId,
+      updateMessageLive: ch.updateMessageLive,
+      deleteWhenOffline: ch.deleteWhenOffline,
+      autoPublish: ch.autoPublish,
+      useCustomMessage: ch.useCustomMessage,
+      customOnlineMessage: ch.customOnlineMessage,
+      customOfflineMessage: ch.customOfflineMessage,
+    }));
+  }),
+
+  updateChannelSettings: protectedProcedure
+    .input(
+      z.object({
+        channelId: z.string().min(1),
+        notificationChannelId: z.string().nullable().optional(),
+        notificationRoleId: z.string().nullable().optional(),
+        updateMessageLive: z.boolean().optional(),
+        deleteWhenOffline: z.boolean().optional(),
+        autoPublish: z.boolean().optional(),
+        useCustomMessage: z.boolean().optional(),
+        customOnlineMessage: z.string().nullable().optional(),
+        customOfflineMessage: z.string().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const guild = await prisma.discordGuild.findFirst({
+        where: { userId },
+      });
+
+      if (!guild) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No Discord server linked.",
+        });
+      }
+
+      const channel = await prisma.twitchChannel.findFirst({
+        where: { id: input.channelId, guildId: guild.id },
+      });
+
+      if (!channel) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Monitored channel not found.",
+        });
+      }
+
+      const { channelId: _, ...updateData } = input;
+
+      // Remove undefined keys so we only update provided fields
+      const data: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(updateData)) {
+        if (value !== undefined) {
+          data[key] = value;
+        }
+      }
+
+      await prisma.twitchChannel.update({
+        where: { id: channel.id },
+        data,
+      });
+
+      const { eventBus } = await import("../events");
+      await eventBus.publish("discord:settings-updated", {
+        guildId: guild.guildId,
+      });
+
+      await logAudit({
+        userId,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "discord.channel-settings",
+        resourceType: "TwitchChannel",
+        resourceId: channel.id,
+        metadata: { channelName: channel.displayName ?? channel.username, ...data },
+      });
+
+      return { success: true };
+    }),
+
   testNotification: protectedProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 

@@ -27,7 +27,9 @@ import {
   ExternalLink,
   AlertCircle,
   Send,
+  Radio,
 } from "lucide-react";
+import { ChannelSettingsDialog } from "./channel-settings-dialog";
 
 const BOT_PERMISSIONS = "2147633152";
 
@@ -87,6 +89,7 @@ export default function DiscordSettings({
         queryClient={queryClient}
       />
       <TestNotificationCard hasChannel={!!guild.notificationChannelId} />
+      <MonitoredChannelsCard />
     </div>
   );
 }
@@ -514,6 +517,100 @@ function NotificationRoleCard({
               )}
               Save
             </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MonitoredChannelsCard() {
+  const {
+    data: channels,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery(trpc.discordGuild.listMonitoredChannels.queryOptions());
+
+  const monitoredChannelsQueryKey =
+    trpc.discordGuild.listMonitoredChannels.queryOptions().queryKey;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-heading">Monitored Channels</CardTitle>
+        <CardDescription>
+          Configure per-channel notification settings, custom embeds, and
+          behavior overrides for each monitored Twitch channel.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ) : isError ? (
+          <div className="flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="size-4" />
+            <span>Failed to load monitored channels.</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetch()}
+              className="text-xs"
+            >
+              Retry
+            </Button>
+          </div>
+        ) : !channels || channels.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No monitored Twitch channels yet.
+          </p>
+        ) : (
+          <div className="divide-y divide-border">
+            {channels.map((ch) => (
+              <div
+                key={ch.id}
+                className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+              >
+                <div className="flex items-center gap-3">
+                  {ch.profileImageUrl ? (
+                    <img
+                      src={ch.profileImageUrl}
+                      alt={ch.displayName ?? ch.username ?? ""}
+                      className="size-8 rounded-full"
+                    />
+                  ) : (
+                    <span className="flex size-8 items-center justify-center rounded-full bg-brand-twitch text-xs font-bold text-white">
+                      {(ch.displayName ?? ch.username ?? "?")[0]}
+                    </span>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {ch.displayName ?? ch.username}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Radio
+                        className={`size-3 ${ch.isLive ? "text-green-500" : "text-muted-foreground"}`}
+                      />
+                      {ch.isLive ? "Live" : "Offline"}
+                      {(ch.notificationChannelId ||
+                        ch.notificationRoleId ||
+                        ch.useCustomMessage) && (
+                        <span className="ml-1.5 text-brand-main">
+                          (overrides active)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <ChannelSettingsDialog
+                  channel={ch}
+                  monitoredChannelsQueryKey={monitoredChannelsQueryKey}
+                />
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

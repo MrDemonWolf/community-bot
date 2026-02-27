@@ -13,6 +13,7 @@ import { cronToText } from "../utils/cronParser.js";
  */
 import setActivity from "./jobs/setActivity.js";
 import checkTwitchStreams from "./jobs/checkTwitchStreams.js";
+import cleanupInactiveAccounts from "./jobs/cleanupInactiveAccounts.js";
 
 const worker = new Worker(
   "community-bot-jobs",
@@ -22,6 +23,8 @@ const worker = new Worker(
         return setActivity(client);
       case "check-twitch-streams":
         return checkTwitchStreams(client);
+      case "cleanup-inactive-accounts":
+        return cleanupInactiveAccounts();
       default:
         throw new Error(`No job found with name ${job.name}`);
     }
@@ -70,10 +73,23 @@ export default (queue: Queue) => {
     }
   );
 
+  queue.add(
+    "cleanup-inactive-accounts",
+    {},
+    {
+      repeat: {
+        pattern: "0 3 * * *", // Daily at 3 AM
+      },
+      removeOnComplete: true,
+      removeOnFail: false,
+    }
+  );
+
   logger.info("Worker", "Jobs have been added to the queue", {
     activityCron: cronToText(
       `*/${env.DISCORD_ACTIVITY_INTERVAL_MINUTES} * * * *`
     ),
     twitchPollInterval: "Every 90 seconds",
+    cleanupSchedule: "Daily at 3:00 AM",
   });
 };
