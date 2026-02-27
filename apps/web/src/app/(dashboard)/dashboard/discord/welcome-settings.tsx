@@ -24,7 +24,7 @@ import {
   Shield,
   Mail,
 } from "lucide-react";
-import { EmbedPreview } from "./embed-preview";
+import { EmbedBuilder } from "@/components/embed-builder/embed-builder";
 
 interface WelcomeSettings {
   welcomeEnabled: boolean;
@@ -52,6 +52,15 @@ const PREVIEW_VARIABLES: Record<string, string> = {
   server: "My Discord Server",
   memberCount: "1,234",
   tag: "exampleuser",
+};
+
+const VARIABLE_DESCRIPTIONS: Record<string, string> = {
+  user: "User mention (@user)",
+  username: "Username",
+  displayName: "Display name",
+  server: "Server name",
+  memberCount: "Member count",
+  tag: "User tag",
 };
 
 export function WelcomeSettingsCard() {
@@ -240,16 +249,12 @@ function WelcomeMessageSection({ settings }: { settings: WelcomeSettings }) {
           </div>
 
           {useEmbed ? (
-            <div className="space-y-2">
-              <textarea
-                value={embedJson}
-                onChange={(e) => setEmbedJson(e.target.value)}
-                placeholder='{"title":"Welcome {displayName}!","description":"Welcome to {server}!","color":3447003}'
-                rows={4}
-                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 font-mono text-xs outline-none focus-visible:ring-1"
-              />
-              <EmbedPreview json={embedJson} variables={PREVIEW_VARIABLES} />
-            </div>
+            <EmbedBuilder
+              value={embedJson}
+              onChange={setEmbedJson}
+              previewVariables={PREVIEW_VARIABLES}
+              variables={VARIABLE_DESCRIPTIONS}
+            />
           ) : (
             <textarea
               value={message}
@@ -260,7 +265,7 @@ function WelcomeMessageSection({ settings }: { settings: WelcomeSettings }) {
             />
           )}
 
-          <VariableHint />
+          {!useEmbed && <VariableHint />}
 
           <Button
             size="sm"
@@ -383,16 +388,12 @@ function LeaveMessageSection({ settings }: { settings: WelcomeSettings }) {
           </div>
 
           {useEmbed ? (
-            <div className="space-y-2">
-              <textarea
-                value={embedJson}
-                onChange={(e) => setEmbedJson(e.target.value)}
-                placeholder='{"title":"Goodbye {displayName}","description":"{username} has left {server}.","color":15158332}'
-                rows={4}
-                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 font-mono text-xs outline-none focus-visible:ring-1"
-              />
-              <EmbedPreview json={embedJson} variables={PREVIEW_VARIABLES} />
-            </div>
+            <EmbedBuilder
+              value={embedJson}
+              onChange={setEmbedJson}
+              previewVariables={PREVIEW_VARIABLES}
+              variables={VARIABLE_DESCRIPTIONS}
+            />
           ) : (
             <textarea
               value={message}
@@ -403,7 +404,7 @@ function LeaveMessageSection({ settings }: { settings: WelcomeSettings }) {
             />
           )}
 
-          <VariableHint />
+          {!useEmbed && <VariableHint />}
 
           <Button
             size="sm"
@@ -591,16 +592,12 @@ function DmWelcomeSection({ settings }: { settings: WelcomeSettings }) {
           </div>
 
           {useEmbed ? (
-            <div className="space-y-2">
-              <textarea
-                value={embedJson}
-                onChange={(e) => setEmbedJson(e.target.value)}
-                placeholder='{"title":"Welcome to {server}!","description":"Hey {displayName}, welcome!"}'
-                rows={4}
-                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 font-mono text-xs outline-none focus-visible:ring-1"
-              />
-              <EmbedPreview json={embedJson} variables={PREVIEW_VARIABLES} />
-            </div>
+            <EmbedBuilder
+              value={embedJson}
+              onChange={setEmbedJson}
+              previewVariables={PREVIEW_VARIABLES}
+              variables={VARIABLE_DESCRIPTIONS}
+            />
           ) : (
             <textarea
               value={message}
@@ -611,7 +608,7 @@ function DmWelcomeSection({ settings }: { settings: WelcomeSettings }) {
             />
           )}
 
-          <VariableHint />
+          {!useEmbed && <VariableHint />}
 
           <Button
             size="sm"

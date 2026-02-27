@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2, Settings } from "lucide-react";
-import { EmbedPreview } from "./embed-preview";
+import { EmbedBuilder } from "@/components/embed-builder/embed-builder";
 
 interface ChannelData {
   id: string;
@@ -41,6 +41,16 @@ const PREVIEW_VARIABLES: Record<string, string> = {
   url: "https://www.twitch.tv/streamername",
   thumbnail: "https://example.com/thumb.jpg",
   duration: "2h 30m",
+};
+
+const VARIABLE_DESCRIPTIONS: Record<string, string> = {
+  streamer: "Streamer name",
+  title: "Stream title",
+  game: "Current game/category",
+  viewers: "Viewer count",
+  url: "Stream URL",
+  thumbnail: "Stream thumbnail URL",
+  duration: "Stream duration",
 };
 
 export function ChannelSettingsDialog({
@@ -266,46 +276,28 @@ export function ChannelSettingsDialog({
               <div className="space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">
-                    Online Embed JSON
+                    Online Embed
                   </label>
-                  <textarea
+                  <EmbedBuilder
                     value={customOnlineMessage}
-                    onChange={(e) => setCustomOnlineMessage(e.target.value)}
-                    rows={6}
-                    className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 font-mono text-xs outline-none focus-visible:ring-1"
-                    placeholder='{"title": "{streamer} is live!", "description": "Playing {game}", "color": 9520895}'
+                    onChange={setCustomOnlineMessage}
+                    previewVariables={PREVIEW_VARIABLES}
+                    variables={VARIABLE_DESCRIPTIONS}
+                    compact
                   />
-                  <div className="mt-2">
-                    <p className="mb-1 text-xs font-medium text-muted-foreground">
-                      Preview
-                    </p>
-                    <EmbedPreview
-                      json={customOnlineMessage}
-                      variables={PREVIEW_VARIABLES}
-                    />
-                  </div>
                 </div>
 
                 <div>
                   <label className="mb-1 block text-sm font-medium text-foreground">
-                    Offline Embed JSON
+                    Offline Embed
                   </label>
-                  <textarea
+                  <EmbedBuilder
                     value={customOfflineMessage}
-                    onChange={(e) => setCustomOfflineMessage(e.target.value)}
-                    rows={6}
-                    className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 font-mono text-xs outline-none focus-visible:ring-1"
-                    placeholder='{"title": "{streamer} was live", "description": "Streamed for {duration}", "color": 9520895}'
+                    onChange={setCustomOfflineMessage}
+                    previewVariables={PREVIEW_VARIABLES}
+                    variables={VARIABLE_DESCRIPTIONS}
+                    compact
                   />
-                  <div className="mt-2">
-                    <p className="mb-1 text-xs font-medium text-muted-foreground">
-                      Preview
-                    </p>
-                    <EmbedPreview
-                      json={customOfflineMessage}
-                      variables={PREVIEW_VARIABLES}
-                    />
-                  </div>
                 </div>
               </div>
             )}

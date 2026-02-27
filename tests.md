@@ -129,8 +129,79 @@
 - [ ] Verify embed preview updates in real-time as JSON is typed
 - [ ] Verify template variables (`{user}`, `{username}`, `{displayName}`, `{server}`, `{memberCount}`, `{tag}`) all resolve correctly
 
-## D. Automated Tests
+## D. Visual Embed Builder UI (Phase 3)
 
-- [ ] Run `pnpm test` — all 255 tests pass
+### D1. Channel Settings Dialog (Twitch Notifications)
+
+- [ ] Open a monitored channel's settings dialog (Configure button)
+- [ ] Enable "Use custom embed message" toggle
+- [ ] **Online Embed Builder** appears with form sections and preview
+- [ ] **Offline Embed Builder** appears below it
+- [ ] Edit title/description — preview updates live
+- [ ] Pick a color from presets — left border in preview changes
+- [ ] Enter a hex color manually — preview reflects it
+- [ ] Open Author section — fill name/icon/url — preview shows author row
+- [ ] Add a field — name + value appear in preview
+- [ ] Toggle field "Inline" checkbox — field layout changes in preview
+- [ ] Add multiple fields, reorder with up/down — preview reflects order
+- [ ] Remove a field — disappears from preview
+- [ ] Open Images section — enter thumbnail URL — preview shows placeholder
+- [ ] Open Footer section — enter text — footer appears in preview
+- [ ] Toggle timestamp checkbox
+- [ ] Click a variable pill (e.g. `{streamer}`) — toast confirms copied to clipboard
+- [ ] Paste variable into title/description — preview substitutes with sample value
+- [ ] Open "JSON Import / Export" — JSON textarea shows current embed JSON
+- [ ] Copy button copies JSON to clipboard
+- [ ] Modify JSON in textarea → click "Apply JSON" — form updates to match
+- [ ] Enter invalid JSON → click "Apply JSON" — inline error shown
+- [ ] Clear all fields — JSON output becomes empty string
+- [ ] Save settings → reload dialog — form repopulates from saved JSON
+- [ ] Both Online and Offline builders work independently
+
+### D2. Welcome Settings — Welcome Message
+
+- [ ] Navigate to Dashboard > Discord > Welcome & Leave Messages
+- [ ] Enable Welcome Message → switch to "Embed" mode
+- [ ] Embed Builder appears with full two-column layout (desktop)
+- [ ] Variable pills show: `{user}`, `{username}`, `{displayName}`, `{server}`, `{memberCount}`, `{tag}`
+- [ ] All form sections work (Basic, Author, Fields, Images, Footer)
+- [ ] Preview updates live with sample variable substitutions
+- [ ] JSON Import/Export works
+- [ ] Save Welcome Settings → reload page → form repopulates correctly
+- [ ] Switch back to "Plain Text" mode — VariableHint shows, builder hides
+
+### D3. Welcome Settings — Leave Message
+
+- [ ] Enable Leave Message → switch to "Embed" mode
+- [ ] Embed Builder appears with same functionality as welcome
+- [ ] All form sections, preview, variables, JSON import/export work
+- [ ] Save → reload → form repopulates
+
+### D4. Welcome Settings — DM Welcome
+
+- [ ] Enable DM Welcome → switch to "Embed" mode
+- [ ] Embed Builder appears (no channel selector for DM)
+- [ ] All form sections, preview, variables, JSON import/export work
+- [ ] Save → reload → form repopulates
+
+### D5. Responsive / Layout
+
+- [ ] Desktop (≥768px): two-column layout — form left, sticky preview right
+- [ ] Mobile (<768px): single column — form on top, preview below
+- [ ] Channel settings dialog: always compact (single column) since inside dialog
+- [ ] Collapsible sections toggle open/close correctly
+- [ ] Fields section auto-opens when fields exist
+
+### D6. Edge Cases
+
+- [ ] Empty initial value — form starts blank, preview shows "Enter embed JSON to see preview"
+- [ ] Existing JSON from Phase 1/2 — form correctly parses and populates all fields
+- [ ] Max 25 fields — "Add Field" button disables at 25, counter shows `(25/25)`
+- [ ] Color input accepts only valid hex patterns
+- [ ] Fields with empty name/value are omitted from JSON output
+
+## E. Automated Tests
+
+- [ ] Run `pnpm test` — all tests pass
 - [ ] Run `pnpm check-types` — discord-bot, twitch-bot, docs pass (web has pre-existing unrelated type errors in `.next/dev/types/`)
 - [ ] Run `pnpm turbo build --filter="!web"` — all builds succeed
