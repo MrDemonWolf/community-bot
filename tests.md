@@ -200,8 +200,45 @@
 - [ ] Color input accepts only valid hex patterns
 - [ ] Fields with empty name/value are omitted from JSON output
 
-## E. Automated Tests
+## E. Public Pages Polish (Phase 4)
+
+### E1. Layout & Sidebar
+
+- [ ] Visit `/p` — banner + sidebar + content renders correctly
+- [ ] Visit `/p/commands` — sidebar shows with Commands link active
+- [ ] Visit `/p/queue` — sidebar shows with Queue link active
+- [ ] Navigate between `/p`, `/p/commands`, `/p/queue` — sidebar active state updates without full page reload
+- [ ] Sidebar nav only shows Commands link if commands exist
+- [ ] Sidebar nav only shows Queue link if queue is not CLOSED
+- [ ] Banner height and avatar size are consistent across all 3 pages
+
+### E2. Entrance Animations
+
+- [ ] `/p` — sidebar card fades in, each content card staggers in sequence
+- [ ] `/p/commands` — header and tabs fade in with stagger
+- [ ] `/p/queue` — header and queue entries fade in with stagger
+
+### E3. Responsive / Mobile
+
+- [ ] Resize to mobile (<640px) — sidebar becomes horizontal row with avatar + name inline
+- [ ] `/p/commands` on mobile — commands display as cards (not a table)
+- [ ] `/p/commands` on desktop (≥640px) — commands display as a table
+- [ ] Queue page looks correct on mobile
+
+### E4. SEO Metadata
+
+- [ ] `/p` — page has `<title>` like "{username}'s Community" and a meta description
+- [ ] `/p/commands` — page has `<title>` like "Commands — {username}" and a meta description
+- [ ] `/p/queue` — page has `<title>` like "Viewer Queue — {username}" and a meta description
+
+### E5. Landing Page
+
+- [ ] "View Profile" button visible in hero section when `NEXT_PUBLIC_CHANNEL_NAME` is set
+- [ ] "View Profile" button links to `/p`
+- [ ] Button does not render when `NEXT_PUBLIC_CHANNEL_NAME` is not set
+
+## F. Automated Tests
 
 - [ ] Run `pnpm test` — all tests pass
-- [ ] Run `pnpm check-types` — discord-bot, twitch-bot, docs pass (web has pre-existing unrelated type errors in `.next/dev/types/`)
+- [ ] Run `pnpm check-types` — all packages pass
 - [ ] Run `pnpm turbo build --filter="!web"` — all builds succeed
