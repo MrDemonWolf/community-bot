@@ -71,8 +71,66 @@
 - [ ] Verify users created within 365 days (even with no sessions) are NOT deleted
 - [ ] Check logs for deletion count message
 
-## C. Automated Tests
+## C. Discord Welcome Messages (Phase 2)
 
-- [ ] Run `pnpm test` — all 227 tests pass
+### Prerequisites
+
+- [ ] Enable **Server Members Intent** in Discord Developer Portal → Bot → Privileged Gateway Intents
+- [ ] Bot is running and connected to your Discord server
+- [ ] Web dashboard is running and Discord guild is linked
+
+### C1. Welcome Message
+
+- [ ] Enable welcome message in dashboard → Discord → Welcome & Leave Messages
+- [ ] Select a channel and enter a plain text message (e.g., `Welcome {displayName} to {server}! We now have {memberCount} members.`)
+- [ ] Save settings
+- [ ] Join the guild with an alt account — verify message appears in the selected channel with variables replaced
+- [ ] Switch to embed mode, paste custom embed JSON, verify preview renders
+- [ ] Save and rejoin — verify embed appears in channel
+
+### C2. Leave Message
+
+- [ ] Enable leave message in dashboard
+- [ ] Select a channel and enter a plain text message (e.g., `{displayName} has left {server}. ({memberCount} members)`)
+- [ ] Save settings
+- [ ] Leave the guild with the alt account — verify leave message appears
+- [ ] Test embed mode similarly
+
+### C3. Auto-Role
+
+- [ ] Enable auto-role in dashboard
+- [ ] Select a role from the dropdown
+- [ ] Save settings
+- [ ] Join the guild with an alt account — verify the role is assigned automatically
+- [ ] Verify error is logged (not crashed) if bot lacks Manage Roles permission or role is higher than bot's role
+
+### C4. DM Welcome
+
+- [ ] Enable DM welcome in dashboard
+- [ ] Enter a plain text DM message (e.g., `Welcome to {server}, {displayName}! Check out the rules channel.`)
+- [ ] Save settings
+- [ ] Join the guild with an alt account (with DMs enabled) — verify DM is received
+- [ ] Join with DMs disabled — verify bot logs error but doesn't crash
+- [ ] Test embed mode for DM
+
+### C5. Test Buttons
+
+- [ ] Click **Test Welcome** — verify welcome message appears in the configured channel (uses bot's own member as stand-in)
+- [ ] Click **Test Leave** — verify leave message appears in the configured channel
+- [ ] Click **Test DM** — verify DM is sent to the bot (check logs for success/failure)
+- [ ] Verify buttons are disabled when corresponding features are not enabled or channels not set
+
+### C6. Edge Cases
+
+- [ ] Verify all three actions (welcome, DM, auto-role) fire independently — failure in one does not block others
+- [ ] Verify partial guild member (leave event for uncached member) doesn't crash — uses "Unknown" for missing fields
+- [ ] Verify settings persist after page reload
+- [ ] Verify audit log entries appear for `discord.welcome-settings` and `discord.test-welcome` actions
+- [ ] Verify embed preview updates in real-time as JSON is typed
+- [ ] Verify template variables (`{user}`, `{username}`, `{displayName}`, `{server}`, `{memberCount}`, `{tag}`) all resolve correctly
+
+## D. Automated Tests
+
+- [ ] Run `pnpm test` — all 255 tests pass
 - [ ] Run `pnpm check-types` — discord-bot, twitch-bot, docs pass (web has pre-existing unrelated type errors in `.next/dev/types/`)
 - [ ] Run `pnpm turbo build --filter="!web"` — all builds succeed

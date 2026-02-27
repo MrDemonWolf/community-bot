@@ -14,9 +14,11 @@ import { readyEvent } from "./events/ready.js";
 import { guildCreateEvent } from "./events/guildCreate.js";
 import { guildDeleteEvent } from "./events/guildDelete.js";
 import { interactionCreateEvent } from "./events/interactionCreate.js";
+import { guildMemberAddEvent } from "./events/guildMemberAdd.js";
+import { guildMemberRemoveEvent } from "./events/guildMemberRemove.js";
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 
 /**
@@ -73,6 +75,20 @@ client.on(Events.GuildUpdate, async (_oldGuild, newGuild) => {
  */
 client.on(Events.InteractionCreate, (interaction) => {
   interactionCreateEvent(interaction);
+});
+
+/**
+ * Handle guildMemberAdd events (welcome messages, DM welcome, auto-role).
+ */
+client.on(Events.GuildMemberAdd, (member) => {
+  guildMemberAddEvent(member);
+});
+
+/**
+ * Handle guildMemberRemove events (leave messages).
+ */
+client.on(Events.GuildMemberRemove, (member) => {
+  guildMemberRemoveEvent(member);
 });
 
 client.login(env.DISCORD_APPLICATION_BOT_TOKEN);
@@ -257,6 +273,88 @@ eventBus.on("discord:test-notification", async (payload) => {
     }, 10000);
   } catch (err) {
     logger.error("EventBus", "Error handling test notification", err);
+  }
+});
+
+eventBus.on("discord:test-welcome", async (payload) => {
+  try {
+    const { replaceTemplateVariables, buildCustomEmbed } = await import(
+      "./utils/embeds.js"
+    );
+    const { TextChannel } = await import("discord.js");
+
+    const guild = await prisma.discordGuild.findUnique({
+      where: { guildId: payload.guildId },
+    });
+
+    if (!guild) return;
+
+    const botMember = client.guilds.cache
+      .get(payload.guildId)
+      ?.members.me;
+
+    const variables = {
+      user: botMember ? `<@${botMember.id}>` : "@ExampleUser",
+      username: botMember?.user.username ?? "exampleuser",
+      displayName: botMember?.displayName ?? "ExampleUser",
+      server: client.guilds.cache.get(payload.guildId)?.name ?? "My Server",
+      memberCount: (
+        client.guilds.cache.get(payload.guildId)?.memberCount ?? 1234
+      ).toLocaleString(),
+      tag: botMember?.user.tag ?? "exampleuser",
+    };
+
+    if (payload.type === "welcome" || payload.type === "leave") {
+      const isWelcome = payload.type === "welcome";
+      const enabled = isWelcome ? guild.welcomeEnabled : guild.leaveEnabled;
+      const channelId = isWelcome
+        ? guild.welcomeChannelId
+        : guild.leaveChannelId;
+      const useEmbed = isWelcome ? guild.welcomeUseEmbed : guild.leaveUseEmbed;
+      const embedJson = isWelcome
+        ? guild.welcomeEmbedJson
+        : guild.leaveEmbedJson;
+      const message = isWelcome ? guild.welcomeMessage : guild.leaveMessage;
+
+      if (!enabled || !channelId) return;
+
+      const channel = await client.channels.fetch(channelId);
+      if (!channel || !(channel instanceof TextChannel)) return;
+
+      if (useEmbed && embedJson) {
+        const embed = buildCustomEmbed(embedJson, variables);
+        if (embed) {
+          await channel.send({ embeds: [embed] });
+        }
+      } else if (message) {
+        await channel.send(replaceTemplateVariables(message, variables));
+      }
+
+      logger.info(
+        "EventBus",
+        `Test ${payload.type} message sent for guild: ${payload.guildId}`
+      );
+    } else if (payload.type === "dm") {
+      if (!guild.dmWelcomeEnabled || !botMember) return;
+
+      if (guild.dmWelcomeUseEmbed && guild.dmWelcomeEmbedJson) {
+        const embed = buildCustomEmbed(guild.dmWelcomeEmbedJson, variables);
+        if (embed) {
+          await botMember.send({ embeds: [embed] });
+        }
+      } else if (guild.dmWelcomeMessage) {
+        await botMember.send(
+          replaceTemplateVariables(guild.dmWelcomeMessage, variables)
+        );
+      }
+
+      logger.info(
+        "EventBus",
+        `Test DM welcome sent for guild: ${payload.guildId}`
+      );
+    }
+  } catch (err) {
+    logger.error("EventBus", "Error handling test welcome", err);
   }
 });
 

@@ -30,6 +30,7 @@ import {
   Radio,
 } from "lucide-react";
 import { ChannelSettingsDialog } from "./channel-settings-dialog";
+import { WelcomeSettingsCard } from "./welcome-settings";
 
 const BOT_PERMISSIONS = "2147633152";
 
@@ -90,6 +91,7 @@ export default function DiscordSettings({
       />
       <TestNotificationCard hasChannel={!!guild.notificationChannelId} />
       <MonitoredChannelsCard />
+      <WelcomeSettingsCard />
     </div>
   );
 }

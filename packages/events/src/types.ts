@@ -43,6 +43,9 @@ export interface EventMap {
   // Discord test notification (triggered from web dashboard)
   "discord:test-notification": { guildId: string };
 
+  // Discord test welcome/leave/DM message (triggered from web dashboard)
+  "discord:test-welcome": { guildId: string; type: "welcome" | "leave" | "dm" };
+
   // Bot status
   "bot:status": {
     service: "discord" | "twitch";
