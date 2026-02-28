@@ -48,12 +48,12 @@ All five resources (PostgreSQL, Redis, Web, Discord, Twitch) will live under thi
 ## Step 2: PostgreSQL Database
 
 1. Open your project → **New Resource** → **Database** → **PostgreSQL**
-2. Set the database name to `community-bot`
+2. Set the database name to `postgres`
 3. Coolify will generate credentials automatically
 4. After creation, go to the resource page and find the **Internal URL** — it looks like:
 
 ```
-postgresql://postgres:GENERATED_PASSWORD@PROJECT_UUID-postgres:5432/community-bot
+postgresql://postgres:GENERATED_PASSWORD@PROJECT_UUID-postgres:5432/postgres
 ```
 
 Copy this URL. All three services need it as `DATABASE_URL`.
@@ -103,7 +103,7 @@ Add the following variables to the web dashboard resource:
 
 | Variable | Example | Where to Get It |
 |----------|---------|-----------------|
-| `DATABASE_URL` | `postgresql://postgres:pass@host:5432/community-bot` | [Step 2](#step-2-postgresql-database) — use the Coolify internal URL |
+| `DATABASE_URL` | `postgresql://postgres:pass@host:5432/postgres` | [Step 2](#step-2-postgresql-database) — use the Coolify internal URL |
 | `REDIS_URL` | `redis://host:6379` | [Step 3](#step-3-redis) — use the Coolify internal URL |
 | `BETTER_AUTH_SECRET` | `a1b2c3d4e5f6...` (64 hex chars) | Generate with `openssl rand -hex 32` |
 | `BETTER_AUTH_URL` | `https://bot.yourdomain.com` | Your web dashboard's public URL |
@@ -189,7 +189,7 @@ The setup token is single-use — once completed, the URL is no longer valid.
 
 | Variable | Example | Where to Get It |
 |----------|---------|-----------------|
-| `DATABASE_URL` | `postgresql://postgres:pass@host:5432/community-bot` | [Step 2](#step-2-postgresql-database) |
+| `DATABASE_URL` | `postgresql://postgres:pass@host:5432/postgres` | [Step 2](#step-2-postgresql-database) |
 | `REDIS_URL` | `redis://host:6379` | [Step 3](#step-3-redis) |
 | `DISCORD_APPLICATION_ID` | `1234567890123456789` | [Discord Developer Portal](https://discord.com/developers/applications) → **General Information** → Application ID |
 | `DISCORD_APPLICATION_PUBLIC_KEY` | `abc123...` | [Discord Developer Portal](https://discord.com/developers/applications) → **General Information** → Public Key |
@@ -247,7 +247,7 @@ Click **Deploy**. The entrypoint script automatically runs `prisma migrate deplo
 
 | Variable | Example | Where to Get It |
 |----------|---------|-----------------|
-| `DATABASE_URL` | `postgresql://postgres:pass@host:5432/community-bot` | [Step 2](#step-2-postgresql-database) |
+| `DATABASE_URL` | `postgresql://postgres:pass@host:5432/postgres` | [Step 2](#step-2-postgresql-database) |
 | `REDIS_URL` | `redis://host:6379` | [Step 3](#step-3-redis) |
 | `TWITCH_APPLICATION_CLIENT_ID` | `abc123def456` | [Twitch Dev Console](https://dev.twitch.tv/console/apps) → Client ID |
 | `TWITCH_APPLICATION_CLIENT_SECRET` | `xyz789...` | [Twitch Dev Console](https://dev.twitch.tv/console/apps) → Client Secret |
