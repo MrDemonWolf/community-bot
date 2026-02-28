@@ -1,98 +1,12 @@
 ---
 title: Welcome & Leave Messages
-description: Configure Discord welcome messages, leave messages, auto-role, and DM welcomes from the web dashboard.
+description: Welcome and leave message features are unavailable for verified Discord bots.
 ---
 
-The web dashboard provides full control over Discord welcome and leave messages at `/dashboard/discord`. These features were added in Phase 2 and allow you to greet new members, say goodbye to departing ones, assign roles automatically, and send private welcome DMs.
+## Feature Unavailable
 
-## Welcome Messages
+Welcome messages, leave messages, auto-role, and DM welcome features are **not available** for verified Discord bots.
 
-Welcome messages are posted to a chosen Discord channel when a new member joins your server.
+These features require the **GuildMembers** privileged Gateway intent, which Discord does not grant to verified bots without explicit approval. Without this intent, the `GuildMemberAdd` and `GuildMemberRemove` events do not fire reliably on large servers, making these features non-functional.
 
-### Configuration
-
-| Setting | Description |
-|---------|-------------|
-| **Enable/Disable** | Toggle welcome messages on or off |
-| **Channel** | Select which Discord channel receives welcome messages |
-| **Plain Text Mode** | Write a simple text message with template variables |
-| **Embed Mode** | Use the visual embed builder to create a rich embed |
-
-### Template Variables
-
-Use these variables in your welcome message text. They are replaced with real values when the message is sent:
-
-| Variable | Replaced With |
-|----------|--------------|
-| `{user}` | The new member's mention (e.g., `@Username`) |
-| `{username}` | The member's display name |
-| `{server}` | The server name |
-| `{memberCount}` | Current member count |
-
-### Testing
-
-Click **"Send Test"** to preview how the welcome message looks in your configured channel. The test message uses your current settings and sends a real message to the channel.
-
-## Leave Messages
-
-Leave messages are posted when a member leaves (or is kicked/banned from) your server.
-
-### Configuration
-
-| Setting | Description |
-|---------|-------------|
-| **Enable/Disable** | Toggle leave messages on or off |
-| **Channel** | Select which Discord channel receives leave messages |
-| **Plain Text Mode** | Write a simple text message with template variables |
-| **Embed Mode** | Use the visual embed builder to create a rich embed |
-
-Leave messages support the same template variables as welcome messages (except `{user}` uses the username since the member has already left).
-
-## Auto-Role
-
-Automatically assign a Discord role to new members when they join your server.
-
-| Setting | Description |
-|---------|-------------|
-| **Enable/Disable** | Toggle auto-role on or off |
-| **Role** | Select the role to assign from the role dropdown |
-
-The bot must have a role higher than the selected auto-role in the server's role hierarchy for this to work.
-
-## DM Welcome
-
-Send a private direct message to new members when they join.
-
-| Setting | Description |
-|---------|-------------|
-| **Enable/Disable** | Toggle DM welcome on or off |
-| **Plain Text Mode** | Write a simple text DM with template variables |
-| **Embed Mode** | Use the visual embed builder to create a rich embed DM |
-
-DM welcomes support the same template variables as channel welcome messages. Note that some users have DMs disabled, so the message may not always be delivered.
-
-## Embed Builder
-
-When **Embed Mode** is enabled for any message type, the visual embed builder lets you configure:
-
-- Title
-- Description
-- Color
-- Thumbnail
-- Footer
-- Fields
-
-The embed JSON is stored in the database and rendered by the Discord bot when sending the message.
-
-## How Changes Propagate
-
-1. Settings are saved to the `DiscordGuild` record in the database
-2. A `discord:settings-updated` event is published to the EventBus
-3. The Discord bot reloads the guild's settings and applies changes immediately
-
-## Audit Logging
-
-| Action | When |
-|--------|------|
-| `discord.welcome-settings` | Any welcome, leave, auto-role, or DM welcome setting is changed |
-| `discord.test-welcome` | A test welcome, leave, or DM message is sent |
+The database fields for these settings remain in the schema but are unused. No migration is needed.

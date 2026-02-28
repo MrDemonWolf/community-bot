@@ -48,10 +48,6 @@ For more granular control, you can configure per-channel notification overrides 
 
 These overrides let you fine-tune notification behavior per Twitch channel while keeping sensible defaults for the rest.
 
-## Welcome & Leave Messages
-
-The Discord settings page also includes configuration for welcome messages, leave messages, auto-role assignment, and DM welcomes. See [Welcome & Leave Messages](/docs/web-dashboard/welcome-messages) for full details on these features.
-
 ## Environment Requirements
 
 The web dashboard requires a `DISCORD_BOT_TOKEN` environment variable to fetch channels and roles from Discord's REST API. This should be the same bot token used by the Discord bot service.
@@ -77,5 +73,3 @@ All Discord settings changes are recorded in the audit log:
 | `discord.channel-settings` | Per-channel notification overrides are updated |
 | `discord.enable` | Notifications are enabled |
 | `discord.disable` | Notifications are disabled |
-| `discord.welcome-settings` | Welcome, leave, auto-role, or DM settings are changed |
-| `discord.test-welcome` | A test welcome/leave/DM message is sent |

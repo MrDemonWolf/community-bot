@@ -30,7 +30,6 @@ import {
   Radio,
 } from "lucide-react";
 import { ChannelSettingsDialog } from "./channel-settings-dialog";
-import { WelcomeSettingsCard } from "./welcome-settings";
 import { canControlBot } from "@/utils/roles";
 
 const BOT_PERMISSIONS = "2147633152";
@@ -113,7 +112,6 @@ export default function DiscordSettings({
       />
       <TestNotificationCard hasChannel={!!guild.notificationChannelId} canEdit={canEdit} />
       <MonitoredChannelsCard canEdit={canEdit} />
-      <WelcomeSettingsCard canEdit={canEdit} />
     </div>
   );
 }

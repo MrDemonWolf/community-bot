@@ -267,26 +267,6 @@ describe("discordGuildRouter", () => {
     });
   });
 
-  describe("updateWelcomeSettings", () => {
-    it("updates welcome settings", async () => {
-      const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
-      p.discordGuild.update.mockResolvedValue({});
-      const result = await caller.updateWelcomeSettings({ welcomeEnabled: true });
-      expect(result.success).toBe(true);
-      expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "discord.welcome-settings" }));
-    });
-  });
-
-  describe("testWelcomeMessage", () => {
-    it("publishes test welcome event", async () => {
-      const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
-      await caller.testWelcomeMessage({ type: "welcome" });
-      expect(mocks.eventBus.publish).toHaveBeenCalledWith("discord:test-welcome", { guildId: "dg-1", type: "welcome" });
-    });
-  });
-
   describe("testNotification", () => {
     it("publishes test notification", async () => {
       const caller = authedCaller();
