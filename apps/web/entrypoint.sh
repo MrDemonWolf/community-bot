@@ -11,8 +11,5 @@ else
 fi
 cd /usr/src/app
 
-# Log the setup URL if first-time setup hasn't been completed
-node scripts/log-setup-url.mjs || true
-
-# Start the Next.js server
+# Start the Next.js server (setup URL is logged by the instrumentation hook)
 exec "$@"
