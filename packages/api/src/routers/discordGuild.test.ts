@@ -38,6 +38,7 @@ const p = mocks.prisma;
 const GUILD = {
   id: "g-1", guildId: "dg-1", userId: "user-1", name: "Test Server", icon: null,
   enabled: true, notificationChannelId: "ch-1", notificationRoleId: "role-1",
+  adminRoleId: null, modRoleId: null,
   joinedAt: new Date("2024-01-01"),
   welcomeEnabled: false, welcomeChannelId: null, welcomeMessage: null,
   welcomeUseEmbed: false, welcomeEmbedJson: null,
@@ -68,6 +69,14 @@ describe("discordGuildRouter", () => {
       const caller = createCaller(mockSession());
       p.discordGuild.findFirst.mockResolvedValue(null);
       expect(await caller.getStatus()).toBeNull();
+    });
+
+    it("returns adminRoleId and modRoleId in response", async () => {
+      const caller = createCaller(mockSession());
+      p.discordGuild.findFirst.mockResolvedValue({ ...GUILD, adminRoleId: "ar-1", modRoleId: "mr-1" });
+      const result = await caller.getStatus();
+      expect(result?.adminRoleId).toBe("ar-1");
+      expect(result?.modRoleId).toBe("mr-1");
     });
   });
 
@@ -169,6 +178,37 @@ describe("discordGuildRouter", () => {
       const result = await caller.setNotificationRole({ roleId: "new-role" });
       expect(result.success).toBe(true);
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "discord.set-role" }));
+    });
+  });
+
+  describe("setRoleMapping", () => {
+    it("sets admin and mod roles", async () => {
+      const caller = authedCaller();
+      p.discordGuild.findFirst.mockResolvedValue(GUILD);
+      p.discordGuild.update.mockResolvedValue({});
+      const result = await caller.setRoleMapping({ adminRoleId: "ar-1", modRoleId: "mr-1" });
+      expect(result.success).toBe(true);
+      expect(mocks.eventBus.publish).toHaveBeenCalledWith("discord:settings-updated", { guildId: "dg-1" });
+      expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "discord.set-role-mapping" }));
+    });
+
+    it("clears role mapping with null values", async () => {
+      const caller = authedCaller();
+      p.discordGuild.findFirst.mockResolvedValue({ ...GUILD, adminRoleId: "ar-1", modRoleId: "mr-1" });
+      p.discordGuild.update.mockResolvedValue({});
+      const result = await caller.setRoleMapping({ adminRoleId: null, modRoleId: null });
+      expect(result.success).toBe(true);
+    });
+
+    it("throws NOT_FOUND when no guild linked", async () => {
+      const caller = authedCaller();
+      p.discordGuild.findFirst.mockResolvedValue(null);
+      await expect(caller.setRoleMapping({ adminRoleId: null, modRoleId: null })).rejects.toThrow("No Discord server linked");
+    });
+
+    it("rejects MODERATOR role", async () => {
+      const caller = authedCaller("MODERATOR");
+      await expect(caller.setRoleMapping({ adminRoleId: null, modRoleId: null })).rejects.toThrow();
     });
   });
 

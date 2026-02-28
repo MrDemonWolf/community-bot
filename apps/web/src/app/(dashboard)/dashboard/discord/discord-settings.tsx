@@ -104,6 +104,13 @@ export default function DiscordSettings({
         queryClient={queryClient}
         canEdit={canEdit}
       />
+      <RoleMappingCard
+        currentAdminRoleId={guild.adminRoleId}
+        currentModRoleId={guild.modRoleId}
+        queryKey={queryKey}
+        queryClient={queryClient}
+        canEdit={canEdit}
+      />
       <TestNotificationCard hasChannel={!!guild.notificationChannelId} canEdit={canEdit} />
       <MonitoredChannelsCard canEdit={canEdit} />
       <WelcomeSettingsCard canEdit={canEdit} />
@@ -561,6 +568,141 @@ function NotificationRoleCard({
                   : "Not set"}
             </p>
           )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function RoleMappingCard({
+  currentAdminRoleId,
+  currentModRoleId,
+  queryKey,
+  queryClient,
+  canEdit,
+}: {
+  currentAdminRoleId: string | null;
+  currentModRoleId: string | null;
+  queryKey: readonly unknown[];
+  queryClient: ReturnType<typeof useQueryClient>;
+  canEdit: boolean;
+}) {
+  const [adminRoleId, setAdminRoleId] = useState(currentAdminRoleId ?? "");
+  const [modRoleId, setModRoleId] = useState(currentModRoleId ?? "");
+
+  const {
+    data: roles,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery(trpc.discordGuild.getGuildRoles.queryOptions());
+
+  const mutation = useMutation(
+    trpc.discordGuild.setRoleMapping.mutationOptions({
+      onSuccess: () => {
+        toast.success("Role mapping updated.");
+        queryClient.invalidateQueries({ queryKey });
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    })
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-heading">Role Mapping</CardTitle>
+        <CardDescription>
+          Configure which Discord roles map to admin and mod permissions for bot
+          commands. Admin role can manage Twitch notifications and bot settings.
+          Mod role can manage quotes. Falls back to Discord permissions if not
+          set.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Skeleton className="h-8 w-full" />
+        ) : isError ? (
+          <div className="flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="size-4" />
+            <span>Failed to load roles.</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetch()}
+              className="text-xs"
+            >
+              Retry
+            </Button>
+          </div>
+        ) : canEdit ? (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">
+                Admin Role
+              </label>
+              <select
+                value={adminRoleId}
+                onChange={(e) => setAdminRoleId(e.target.value)}
+                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
+              >
+                <option value="">None (use Discord permissions)</option>
+                {roles?.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    @{r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">
+                Mod Role
+              </label>
+              <select
+                value={modRoleId}
+                onChange={(e) => setModRoleId(e.target.value)}
+                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
+              >
+                <option value="">None (use Discord permissions)</option>
+                {roles?.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    @{r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button
+              size="sm"
+              disabled={mutation.isPending}
+              onClick={() =>
+                mutation.mutate({
+                  adminRoleId: adminRoleId || null,
+                  modRoleId: modRoleId || null,
+                })
+              }
+            >
+              {mutation.isPending && (
+                <Loader2 className="size-4 animate-spin" />
+              )}
+              Save
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>
+              Admin Role:{" "}
+              {roles?.find((r) => r.id === adminRoleId)
+                ? `@${roles.find((r) => r.id === adminRoleId)!.name}`
+                : "Not set"}
+            </p>
+            <p>
+              Mod Role:{" "}
+              {roles?.find((r) => r.id === modRoleId)
+                ? `@${roles.find((r) => r.id === modRoleId)!.name}`
+                : "Not set"}
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

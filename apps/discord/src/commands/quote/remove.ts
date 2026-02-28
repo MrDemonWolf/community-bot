@@ -1,9 +1,10 @@
-import { MessageFlags, PermissionFlagsBits } from "discord.js";
+import { MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
 import { prisma } from "@community-bot/db";
 import { resolveBotChannelId } from "./resolve.js";
 import logger from "../../utils/logger.js";
+import { hasPermission } from "../../utils/permissions.js";
 
 export async function handleQuoteRemove(
   interaction: ChatInputCommandInteraction
@@ -17,17 +18,9 @@ export async function handleQuoteRemove(
     return;
   }
 
-  const member = interaction.member;
-  const hasPerms =
-    member &&
-    "permissions" in member &&
-    typeof member.permissions === "object" &&
-    "has" in member.permissions &&
-    member.permissions.has(PermissionFlagsBits.ManageMessages);
-
-  if (!hasPerms) {
+  if (!(await hasPermission(interaction, "mod"))) {
     await interaction.reply({
-      content: "You need the Manage Messages permission to remove quotes.",
+      content: "You need the Mod role or Manage Messages permission to remove quotes.",
       flags: MessageFlags.Ephemeral,
     });
     return;

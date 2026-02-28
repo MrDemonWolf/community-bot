@@ -23,6 +23,10 @@ model DiscordGuild {
   leaveUseEmbed        Boolean @default(false)
   leaveEmbedJson       String?
 
+  // Configurable role mapping for Discord permission checks
+  adminRoleId          String?
+  modRoleId            String?
+
   // Auto-role on join
   autoRoleEnabled      Boolean @default(false)
   autoRoleId           String?

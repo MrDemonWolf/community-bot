@@ -31,6 +31,8 @@ export const discordGuildRouter = router({
           enabled: guild.enabled,
           notificationChannelId: guild.notificationChannelId,
           notificationRoleId: guild.notificationRoleId,
+          adminRoleId: guild.adminRoleId,
+          modRoleId: guild.modRoleId,
           joinedAt: guild.joinedAt.toISOString(),
         }
       : null;
@@ -151,6 +153,8 @@ export const discordGuildRouter = router({
         enabled: updated.enabled,
         notificationChannelId: updated.notificationChannelId,
         notificationRoleId: updated.notificationRoleId,
+        adminRoleId: updated.adminRoleId,
+        modRoleId: updated.modRoleId,
         joinedAt: updated.joinedAt.toISOString(),
       };
     }),
@@ -232,6 +236,58 @@ export const discordGuildRouter = router({
         resourceType: "DiscordGuild",
         resourceId: guild.id,
         metadata: { before, after: input.roleId },
+      });
+
+      return { success: true };
+    }),
+
+  setRoleMapping: leadModProcedure
+    .input(
+      z.object({
+        adminRoleId: z.string().nullable(),
+        modRoleId: z.string().nullable(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const guild = await prisma.discordGuild.findFirst({
+        where: { userId },
+      });
+
+      if (!guild) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No Discord server linked.",
+        });
+      }
+
+      const before = {
+        adminRoleId: guild.adminRoleId,
+        modRoleId: guild.modRoleId,
+      };
+
+      await prisma.discordGuild.update({
+        where: { id: guild.id },
+        data: {
+          adminRoleId: input.adminRoleId,
+          modRoleId: input.modRoleId,
+        },
+      });
+
+      const { eventBus } = await import("../events");
+      await eventBus.publish("discord:settings-updated", {
+        guildId: guild.guildId,
+      });
+
+      await logAudit({
+        userId,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "discord.set-role-mapping",
+        resourceType: "DiscordGuild",
+        resourceId: guild.id,
+        metadata: { before, after: input },
       });
 
       return { success: true };

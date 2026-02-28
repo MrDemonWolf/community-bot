@@ -54,7 +54,7 @@ export const DEFAULT_COMMANDS: DefaultCommandMeta[] = [
     description: "Reload commands and regulars from DB",
     usage: "!reloadcommands",
     aliases: [],
-    accessLevel: "MODERATOR",
+    accessLevel: "BROADCASTER",
   },
   {
     name: "filesay",
@@ -146,5 +146,19 @@ export const DEFAULT_COMMANDS: DefaultCommandMeta[] = [
     usage: "!sr <title> | list | current | skip | clear",
     aliases: ["songrequest", "song"],
     accessLevel: "EVERYONE",
+  },
+  {
+    name: "poll",
+    description: "Create and manage Twitch polls",
+    usage: "!poll create|end|results",
+    aliases: [],
+    accessLevel: "MODERATOR",
+  },
+  {
+    name: "giveaway",
+    description: "Manage keyword giveaways",
+    usage: "!giveaway start|draw|reroll|end|count",
+    aliases: ["ga"],
+    accessLevel: "MODERATOR",
   },
 ];

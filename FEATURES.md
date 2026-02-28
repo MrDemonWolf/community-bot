@@ -64,6 +64,16 @@ Everything the bot can do, at a glance.
 | `!counter <name> create` | Create a new counter | Mod+ |
 | `!counter <name> delete` | Delete a counter | Mod+ |
 
+## Twitch Bot — Command Management (Mod+)
+
+| Command | What it does | Who can use it |
+|---------|-------------|----------------|
+| `!command add <name> <response>` | Create a custom command | Mod+ |
+| `!command edit <name> <response>` | Edit a command's response | Mod+ |
+| `!command remove <name>` | Delete a command | Mod+ |
+| `!command show <name>` | Show a command's settings | Mod+ |
+| `!command options <name> <flags>` | Modify cooldown, access level, aliases, etc. | Mod+ |
+
 ## Twitch Bot — Moderation
 
 | Command | What it does | Who can use it |
@@ -72,7 +82,7 @@ Everything the bot can do, at a glance.
 | `!permit <user> [seconds]` | Temporarily bypass spam filters | Mod+ |
 | `!nuke <phrase> [seconds]` | Timeout users who said a phrase | Mod+ |
 | `!shoutout <user>` | Shout out another streamer | Mod+ |
-| `!reloadcommands` | Force-reload commands from DB | Mod+ |
+| `!reloadcommands` | Force-reload commands from DB | Broadcaster |
 
 ## Twitch Bot — Giveaways
 
@@ -98,11 +108,6 @@ Everything the bot can do, at a glance.
 | Command | What it does |
 |---------|-------------|
 | `!filesay <url>` | Read a text file and send each line to chat |
-| `!command add <name> <response>` | Create a custom command |
-| `!command edit <name> <response>` | Edit a command's response |
-| `!command remove <name>` | Delete a command |
-| `!command show <name>` | Show a command's settings |
-| `!command options <name> <flags>` | Modify cooldown, access level, aliases, etc. |
 
 ## Twitch Bot — Other Features
 
@@ -139,6 +144,7 @@ Everything the bot can do, at a glance.
 | Feature | Description |
 |---------|-------------|
 | Twitch live notifications | Rich embeds when monitored channels go live/offline |
+| Configurable role mapping | Map Discord roles to admin/mod permissions (falls back to Discord permissions) |
 | Welcome & leave messages | Configurable messages when members join/leave |
 | Auto-role | Assign a role to new members automatically |
 | DM welcome | Send a private welcome message to new members |

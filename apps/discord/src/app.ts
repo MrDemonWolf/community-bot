@@ -164,7 +164,9 @@ eventBus.on("bot:status", (payload) => {
   );
 });
 
-eventBus.on("discord:settings-updated", (payload) => {
+eventBus.on("discord:settings-updated", async (payload) => {
+  const { clearGuildRoleCache } = await import("./utils/permissions.js");
+  clearGuildRoleCache(payload.guildId);
   logger.info(
     "EventBus",
     `Discord settings updated for guild: ${payload.guildId}`
