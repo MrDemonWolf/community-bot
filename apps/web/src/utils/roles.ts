@@ -27,3 +27,15 @@ export function getRoleDisplay(
   if (role === "USER" && isChannelOwner) return ROLE_DISPLAY.BROADCASTER;
   return ROLE_DISPLAY[role] ?? ROLE_DISPLAY.USER;
 }
+
+export function canManageCommands(role: string): boolean {
+  return ["MODERATOR", "LEAD_MODERATOR", "BROADCASTER"].includes(role);
+}
+
+export function canControlBot(role: string): boolean {
+  return ["LEAD_MODERATOR", "BROADCASTER"].includes(role);
+}
+
+export function isBroadcaster(role: string): boolean {
+  return role === "BROADCASTER";
+}

@@ -18,10 +18,14 @@ import {
   VolumeX,
   Volume2,
 } from "lucide-react";
+import { canControlBot } from "@/utils/roles";
 
 export default function BotControlsCard() {
   const queryClient = useQueryClient();
   const queryKey = trpc.botChannel.getStatus.queryOptions().queryKey;
+
+  const { data: profile } = useQuery(trpc.user.getProfile.queryOptions());
+  const canControl = canControlBot(profile?.role ?? "USER");
 
   const { data: botStatus, isLoading } = useQuery(
     trpc.botChannel.getStatus.queryOptions()
@@ -91,21 +95,25 @@ export default function BotControlsCard() {
                 Bot is not joined
               </p>
               <p className="text-xs text-muted-foreground">
-                Join the bot to your Twitch channel to get started.
+                {canControl
+                  ? "Join the bot to your Twitch channel to get started."
+                  : "Bot controls are managed by lead moderators."}
               </p>
-              <Button
-                size="sm"
-                onClick={() => enableMutation.mutate()}
-                disabled={isPending}
-                className="bg-brand-twitch hover:bg-brand-twitch/80 text-white"
-              >
-                {enableMutation.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Tv className="size-4" />
-                )}
-                Join Channel
-              </Button>
+              {canControl && (
+                <Button
+                  size="sm"
+                  onClick={() => enableMutation.mutate()}
+                  disabled={isPending}
+                  className="bg-brand-twitch hover:bg-brand-twitch/80 text-white"
+                >
+                  {enableMutation.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Tv className="size-4" />
+                  )}
+                  Join Channel
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -131,29 +139,35 @@ export default function BotControlsCard() {
                   {botChannel.twitchUsername}
                 </a>
               </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => muteMutation.mutate({ muted: false })}
-                  disabled={isPending}
-                >
-                  {muteMutation.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Volume2 className="size-4" />
-                  )}
-                  Unmute
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => disableMutation.mutate()}
-                  disabled={isPending}
-                >
-                  Leave
-                </Button>
-              </div>
+              {canControl ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => muteMutation.mutate({ muted: false })}
+                    disabled={isPending}
+                  >
+                    {muteMutation.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Volume2 className="size-4" />
+                    )}
+                    Unmute
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => disableMutation.mutate()}
+                    disabled={isPending}
+                  >
+                    Leave
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Bot controls are managed by lead moderators.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -179,29 +193,35 @@ export default function BotControlsCard() {
                   {botChannel.twitchUsername}
                 </a>
               </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => muteMutation.mutate({ muted: true })}
-                  disabled={isPending}
-                >
-                  {muteMutation.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <VolumeX className="size-4" />
-                  )}
-                  Mute
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => disableMutation.mutate()}
-                  disabled={isPending}
-                >
-                  Leave
-                </Button>
-              </div>
+              {canControl ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => muteMutation.mutate({ muted: true })}
+                    disabled={isPending}
+                  >
+                    {muteMutation.isPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <VolumeX className="size-4" />
+                    )}
+                    Mute
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => disableMutation.mutate()}
+                    disabled={isPending}
+                  >
+                    Leave
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Bot controls are managed by lead moderators.
+                </p>
+              )}
             </div>
           </div>
         )}

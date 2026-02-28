@@ -63,7 +63,7 @@ const VARIABLE_DESCRIPTIONS: Record<string, string> = {
   tag: "User tag",
 };
 
-export function WelcomeSettingsCard() {
+export function WelcomeSettingsCard({ canEdit = true }: { canEdit?: boolean } = {}) {
   const {
     data: settings,
     isLoading,
@@ -120,15 +120,15 @@ export function WelcomeSettingsCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">
-        <WelcomeMessageSection settings={settings} />
+        <WelcomeMessageSection settings={settings} canEdit={canEdit} />
         <hr className="border-border" />
-        <LeaveMessageSection settings={settings} />
+        <LeaveMessageSection settings={settings} canEdit={canEdit} />
         <hr className="border-border" />
-        <AutoRoleSection settings={settings} />
+        <AutoRoleSection settings={settings} canEdit={canEdit} />
         <hr className="border-border" />
-        <DmWelcomeSection settings={settings} />
+        <DmWelcomeSection settings={settings} canEdit={canEdit} />
         <hr className="border-border" />
-        <TestButtons settings={settings} />
+        <TestButtons settings={settings} canEdit={canEdit} />
       </CardContent>
     </Card>
   );
@@ -151,7 +151,7 @@ function useWelcomeUpdate() {
   );
 }
 
-function WelcomeMessageSection({ settings }: { settings: WelcomeSettings }) {
+function WelcomeMessageSection({ settings, canEdit }: { settings: WelcomeSettings; canEdit: boolean }) {
   const [enabled, setEnabled] = useState(settings.welcomeEnabled);
   const [channelId, setChannelId] = useState(settings.welcomeChannelId ?? "");
   const [useEmbed, setUseEmbed] = useState(settings.welcomeUseEmbed);
@@ -191,20 +191,22 @@ function WelcomeMessageSection({ settings }: { settings: WelcomeSettings }) {
             {enabled ? "Enabled" : "Disabled"}
           </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={mutation.isPending}
-          onClick={() => {
-            setEnabled(!enabled);
-            mutation.mutate({ welcomeEnabled: !enabled });
-          }}
-        >
-          {enabled ? "Disable" : "Enable"}
-        </Button>
+        {canEdit && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={mutation.isPending}
+            onClick={() => {
+              setEnabled(!enabled);
+              mutation.mutate({ welcomeEnabled: !enabled });
+            }}
+          >
+            {enabled ? "Disable" : "Enable"}
+          </Button>
+        )}
       </div>
 
-      {enabled && (
+      {enabled && canEdit && (
         <div className="space-y-3">
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -290,7 +292,7 @@ function WelcomeMessageSection({ settings }: { settings: WelcomeSettings }) {
   );
 }
 
-function LeaveMessageSection({ settings }: { settings: WelcomeSettings }) {
+function LeaveMessageSection({ settings, canEdit }: { settings: WelcomeSettings; canEdit: boolean }) {
   const [enabled, setEnabled] = useState(settings.leaveEnabled);
   const [channelId, setChannelId] = useState(settings.leaveChannelId ?? "");
   const [useEmbed, setUseEmbed] = useState(settings.leaveUseEmbed);
@@ -330,20 +332,22 @@ function LeaveMessageSection({ settings }: { settings: WelcomeSettings }) {
             {enabled ? "Enabled" : "Disabled"}
           </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={mutation.isPending}
-          onClick={() => {
-            setEnabled(!enabled);
-            mutation.mutate({ leaveEnabled: !enabled });
-          }}
-        >
-          {enabled ? "Disable" : "Enable"}
-        </Button>
+        {canEdit && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={mutation.isPending}
+            onClick={() => {
+              setEnabled(!enabled);
+              mutation.mutate({ leaveEnabled: !enabled });
+            }}
+          >
+            {enabled ? "Disable" : "Enable"}
+          </Button>
+        )}
       </div>
 
-      {enabled && (
+      {enabled && canEdit && (
         <div className="space-y-3">
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -429,7 +433,7 @@ function LeaveMessageSection({ settings }: { settings: WelcomeSettings }) {
   );
 }
 
-function AutoRoleSection({ settings }: { settings: WelcomeSettings }) {
+function AutoRoleSection({ settings, canEdit }: { settings: WelcomeSettings; canEdit: boolean }) {
   const [enabled, setEnabled] = useState(settings.autoRoleEnabled);
   const [roleId, setRoleId] = useState(settings.autoRoleId ?? "");
 
@@ -463,20 +467,22 @@ function AutoRoleSection({ settings }: { settings: WelcomeSettings }) {
             {enabled ? "Enabled" : "Disabled"}
           </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={mutation.isPending}
-          onClick={() => {
-            setEnabled(!enabled);
-            mutation.mutate({ autoRoleEnabled: !enabled });
-          }}
-        >
-          {enabled ? "Disable" : "Enable"}
-        </Button>
+        {canEdit && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={mutation.isPending}
+            onClick={() => {
+              setEnabled(!enabled);
+              mutation.mutate({ autoRoleEnabled: !enabled });
+            }}
+          >
+            {enabled ? "Disable" : "Enable"}
+          </Button>
+        )}
       </div>
 
-      {enabled && (
+      {enabled && canEdit && (
         <div className="space-y-3">
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -518,7 +524,7 @@ function AutoRoleSection({ settings }: { settings: WelcomeSettings }) {
   );
 }
 
-function DmWelcomeSection({ settings }: { settings: WelcomeSettings }) {
+function DmWelcomeSection({ settings, canEdit }: { settings: WelcomeSettings; canEdit: boolean }) {
   const [enabled, setEnabled] = useState(settings.dmWelcomeEnabled);
   const [useEmbed, setUseEmbed] = useState(settings.dmWelcomeUseEmbed);
   const [message, setMessage] = useState(settings.dmWelcomeMessage ?? "");
@@ -551,20 +557,22 @@ function DmWelcomeSection({ settings }: { settings: WelcomeSettings }) {
             {enabled ? "Enabled" : "Disabled"}
           </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={mutation.isPending}
-          onClick={() => {
-            setEnabled(!enabled);
-            mutation.mutate({ dmWelcomeEnabled: !enabled });
-          }}
-        >
-          {enabled ? "Disable" : "Enable"}
-        </Button>
+        {canEdit && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={mutation.isPending}
+            onClick={() => {
+              setEnabled(!enabled);
+              mutation.mutate({ dmWelcomeEnabled: !enabled });
+            }}
+          >
+            {enabled ? "Disable" : "Enable"}
+          </Button>
+        )}
       </div>
 
-      {enabled && (
+      {enabled && canEdit && (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
             Sends a DM to new members when they join. Note: this will fail
@@ -632,7 +640,7 @@ function DmWelcomeSection({ settings }: { settings: WelcomeSettings }) {
   );
 }
 
-function TestButtons({ settings }: { settings: WelcomeSettings }) {
+function TestButtons({ settings, canEdit }: { settings: WelcomeSettings; canEdit: boolean }) {
   const welcomeMutation = useMutation(
     trpc.discordGuild.testWelcomeMessage.mutationOptions({
       onSuccess: () => {
@@ -645,6 +653,8 @@ function TestButtons({ settings }: { settings: WelcomeSettings }) {
   );
 
   const anyPending = welcomeMutation.isPending;
+
+  if (!canEdit) return null;
 
   return (
     <div className="space-y-3">

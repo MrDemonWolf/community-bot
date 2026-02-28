@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { ChannelSettingsDialog } from "./channel-settings-dialog";
 import { WelcomeSettingsCard } from "./welcome-settings";
+import { canControlBot } from "@/utils/roles";
 
 const BOT_PERMISSIONS = "2147633152";
 
@@ -41,6 +42,9 @@ export default function DiscordSettings({
 }) {
   const queryClient = useQueryClient();
   const queryKey = trpc.discordGuild.getStatus.queryOptions().queryKey;
+
+  const { data: profile } = useQuery(trpc.user.getProfile.queryOptions());
+  const canEdit = canControlBot(profile?.role ?? "USER");
 
   const { data: guild, isLoading } = useQuery(
     trpc.discordGuild.getStatus.queryOptions()
@@ -63,12 +67,20 @@ export default function DiscordSettings({
   }
 
   if (!guild) {
-    return (
+    return canEdit ? (
       <LinkGuildSection
         discordAppId={discordAppId}
         queryKey={queryKey}
         queryClient={queryClient}
       />
+    ) : (
+      <Card>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            No Discord server linked yet. A lead moderator can link one.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -78,20 +90,23 @@ export default function DiscordSettings({
         guild={guild}
         queryKey={queryKey}
         queryClient={queryClient}
+        canEdit={canEdit}
       />
       <NotificationChannelCard
         currentValue={guild.notificationChannelId}
         queryKey={queryKey}
         queryClient={queryClient}
+        canEdit={canEdit}
       />
       <NotificationRoleCard
         currentValue={guild.notificationRoleId}
         queryKey={queryKey}
         queryClient={queryClient}
+        canEdit={canEdit}
       />
-      <TestNotificationCard hasChannel={!!guild.notificationChannelId} />
-      <MonitoredChannelsCard />
-      <WelcomeSettingsCard />
+      <TestNotificationCard hasChannel={!!guild.notificationChannelId} canEdit={canEdit} />
+      <MonitoredChannelsCard canEdit={canEdit} />
+      <WelcomeSettingsCard canEdit={canEdit} />
     </div>
   );
 }
@@ -232,6 +247,7 @@ function GuildInfoCard({
   guild,
   queryKey,
   queryClient,
+  canEdit,
 }: {
   guild: {
     guildId: string;
@@ -241,6 +257,7 @@ function GuildInfoCard({
   };
   queryKey: readonly unknown[];
   queryClient: ReturnType<typeof useQueryClient>;
+  canEdit: boolean;
 }) {
   return (
     <Card>
@@ -272,6 +289,7 @@ function GuildInfoCard({
           enabled={guild.enabled}
           queryKey={queryKey}
           queryClient={queryClient}
+          canEdit={canEdit}
         />
       </CardContent>
     </Card>
@@ -282,10 +300,12 @@ function EnableToggle({
   enabled,
   queryKey,
   queryClient,
+  canEdit,
 }: {
   enabled: boolean;
   queryKey: readonly unknown[];
   queryClient: ReturnType<typeof useQueryClient>;
+  canEdit: boolean;
 }) {
   const enableMutation = useMutation(
     trpc.discordGuild.enable.mutationOptions({
@@ -325,17 +345,19 @@ function EnableToggle({
           Notifications {enabled ? "enabled" : "disabled"}
         </span>
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={isPending}
-        onClick={() =>
-          enabled ? disableMutation.mutate() : enableMutation.mutate()
-        }
-      >
-        {isPending && <Loader2 className="size-4 animate-spin" />}
-        {enabled ? "Disable" : "Enable"}
-      </Button>
+      {canEdit && (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isPending}
+          onClick={() =>
+            enabled ? disableMutation.mutate() : enableMutation.mutate()
+          }
+        >
+          {isPending && <Loader2 className="size-4 animate-spin" />}
+          {enabled ? "Disable" : "Enable"}
+        </Button>
+      )}
     </div>
   );
 }
@@ -344,10 +366,12 @@ function NotificationChannelCard({
   currentValue,
   queryKey,
   queryClient,
+  canEdit,
 }: {
   currentValue: string | null;
   queryKey: readonly unknown[];
   queryClient: ReturnType<typeof useQueryClient>;
+  canEdit: boolean;
 }) {
   const [channelId, setChannelId] = useState(currentValue ?? "");
 
@@ -396,38 +420,44 @@ function NotificationChannelCard({
               Retry
             </Button>
           </div>
-        ) : (
-          <div className="flex gap-3">
-            <select
-              value={channelId}
-              onChange={(e) => setChannelId(e.target.value)}
-              className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex-1 rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
-            >
-              <option value="">Select a channel...</option>
-              <option value="_none">(None)</option>
-              {channels?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  # {c.name}
-                </option>
-              ))}
-            </select>
-            <Button
-              size="sm"
-              disabled={mutation.isPending}
-              onClick={() =>
-                mutation.mutate({
-                  channelId:
-                    channelId && channelId !== "_none" ? channelId : null,
-                })
-              }
-            >
-              {mutation.isPending && (
-                <Loader2 className="size-4 animate-spin" />
-              )}
-              Save
-            </Button>
-          </div>
-        )}
+        ) : canEdit ? (
+            <div className="flex gap-3">
+              <select
+                value={channelId}
+                onChange={(e) => setChannelId(e.target.value)}
+                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex-1 rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
+              >
+                <option value="">Select a channel...</option>
+                <option value="_none">(None)</option>
+                {channels?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    # {c.name}
+                  </option>
+                ))}
+              </select>
+              <Button
+                size="sm"
+                disabled={mutation.isPending}
+                onClick={() =>
+                  mutation.mutate({
+                    channelId:
+                      channelId && channelId !== "_none" ? channelId : null,
+                  })
+                }
+              >
+                {mutation.isPending && (
+                  <Loader2 className="size-4 animate-spin" />
+                )}
+                Save
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {channels?.find((c) => c.id === channelId)
+                ? `# ${channels.find((c) => c.id === channelId)!.name}`
+                : "Not set"}
+            </p>
+          )}
       </CardContent>
     </Card>
   );
@@ -437,10 +467,12 @@ function NotificationRoleCard({
   currentValue,
   queryKey,
   queryClient,
+  canEdit,
 }: {
   currentValue: string | null;
   queryKey: readonly unknown[];
   queryClient: ReturnType<typeof useQueryClient>;
+  canEdit: boolean;
 }) {
   const [roleId, setRoleId] = useState(currentValue ?? "");
 
@@ -489,44 +521,52 @@ function NotificationRoleCard({
               Retry
             </Button>
           </div>
-        ) : (
-          <div className="flex gap-3">
-            <select
-              value={roleId}
-              onChange={(e) => setRoleId(e.target.value)}
-              className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex-1 rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
-            >
-              <option value="">Select a role...</option>
-              <option value="_none">No mention</option>
-              <option value="everyone">@everyone</option>
-              {roles?.map((r) => (
-                <option key={r.id} value={r.id}>
-                  @{r.name}
-                </option>
-              ))}
-            </select>
-            <Button
-              size="sm"
-              disabled={mutation.isPending}
-              onClick={() =>
-                mutation.mutate({
-                  roleId: roleId && roleId !== "_none" && roleId !== "" ? roleId : null,
-                })
-              }
-            >
-              {mutation.isPending && (
-                <Loader2 className="size-4 animate-spin" />
-              )}
-              Save
-            </Button>
-          </div>
-        )}
+        ) : canEdit ? (
+            <div className="flex gap-3">
+              <select
+                value={roleId}
+                onChange={(e) => setRoleId(e.target.value)}
+                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex-1 rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
+              >
+                <option value="">Select a role...</option>
+                <option value="_none">No mention</option>
+                <option value="everyone">@everyone</option>
+                {roles?.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    @{r.name}
+                  </option>
+                ))}
+              </select>
+              <Button
+                size="sm"
+                disabled={mutation.isPending}
+                onClick={() =>
+                  mutation.mutate({
+                    roleId: roleId && roleId !== "_none" && roleId !== "" ? roleId : null,
+                  })
+                }
+              >
+                {mutation.isPending && (
+                  <Loader2 className="size-4 animate-spin" />
+                )}
+                Save
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {roleId === "everyone"
+                ? "@everyone"
+                : roles?.find((r) => r.id === roleId)
+                  ? `@${roles.find((r) => r.id === roleId)!.name}`
+                  : "Not set"}
+            </p>
+          )}
       </CardContent>
     </Card>
   );
 }
 
-function MonitoredChannelsCard() {
+function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
   const {
     data: channels,
     isLoading,
@@ -607,10 +647,12 @@ function MonitoredChannelsCard() {
                     </div>
                   </div>
                 </div>
-                <ChannelSettingsDialog
-                  channel={ch}
-                  monitoredChannelsQueryKey={monitoredChannelsQueryKey}
-                />
+                {canEdit && (
+                  <ChannelSettingsDialog
+                    channel={ch}
+                    monitoredChannelsQueryKey={monitoredChannelsQueryKey}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -620,7 +662,7 @@ function MonitoredChannelsCard() {
   );
 }
 
-function TestNotificationCard({ hasChannel }: { hasChannel: boolean }) {
+function TestNotificationCard({ hasChannel, canEdit }: { hasChannel: boolean; canEdit: boolean }) {
   const mutation = useMutation(
     trpc.discordGuild.testNotification.mutationOptions({
       onSuccess: () => {
@@ -645,7 +687,11 @@ function TestNotificationCard({ hasChannel }: { hasChannel: boolean }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!hasChannel ? (
+        {!canEdit ? (
+          <p className="text-sm text-muted-foreground">
+            Only lead moderators can send test notifications.
+          </p>
+        ) : !hasChannel ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <AlertCircle className="size-4" />
             <span>Set a notification channel first to send a test.</span>

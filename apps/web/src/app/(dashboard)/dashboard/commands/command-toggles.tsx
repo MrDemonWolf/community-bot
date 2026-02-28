@@ -6,6 +6,7 @@ import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { canControlBot } from "@/utils/roles";
 
 const ACCESS_LEVELS = [
   "EVERYONE",
@@ -27,6 +28,9 @@ function formatAccessLevel(level: string): string {
 export default function CommandToggles() {
   const queryClient = useQueryClient();
   const queryKey = trpc.botChannel.getStatus.queryOptions().queryKey;
+
+  const { data: profile } = useQuery(trpc.user.getProfile.queryOptions());
+  const canControl = canControlBot(profile?.role ?? "USER");
 
   const { data: botStatus, isLoading } = useQuery(
     trpc.botChannel.getStatus.queryOptions()
@@ -145,49 +149,61 @@ export default function CommandToggles() {
                     {cmd.description}
                   </td>
                   <td className="px-4 py-3">
-                    <select
-                      value={currentAccess}
-                      onChange={(e) =>
-                        handleAccessChange(cmd.name, e.target.value)
-                      }
-                      disabled={isPending || isDisabled}
-                      className="rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground"
-                    >
-                      {ACCESS_LEVELS.map((level) => (
-                        <option key={level} value={level}>
-                          {formatAccessLevel(level)}
-                          {level === cmd.accessLevel ? " (default)" : ""}
-                        </option>
-                      ))}
-                    </select>
+                    {canControl ? (
+                      <select
+                        value={currentAccess}
+                        onChange={(e) =>
+                          handleAccessChange(cmd.name, e.target.value)
+                        }
+                        disabled={isPending || isDisabled}
+                        className="rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground"
+                      >
+                        {ACCESS_LEVELS.map((level) => (
+                          <option key={level} value={level}>
+                            {formatAccessLevel(level)}
+                            {level === cmd.accessLevel ? " (default)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        {formatAccessLevel(currentAccess)}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => handleToggle(cmd.name)}
-                      disabled={isPending}
-                      className="inline-flex items-center justify-center"
-                      aria-label={`Toggle ${cmd.name}`}
-                    >
-                      {isPending ? (
-                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                      ) : (
-                        <div
-                          className={`relative h-6 w-11 rounded-full transition-colors ${
-                            !isDisabled
-                              ? "bg-brand-main"
-                              : "bg-muted"
-                          }`}
-                        >
+                    {canControl ? (
+                      <button
+                        onClick={() => handleToggle(cmd.name)}
+                        disabled={isPending}
+                        className="inline-flex items-center justify-center"
+                        aria-label={`Toggle ${cmd.name}`}
+                      >
+                        {isPending ? (
+                          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                        ) : (
                           <div
-                            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                            className={`relative h-6 w-11 rounded-full transition-colors ${
                               !isDisabled
-                                ? "translate-x-5"
-                                : "translate-x-0.5"
+                                ? "bg-brand-main"
+                                : "bg-muted"
                             }`}
-                          />
-                        </div>
-                      )}
-                    </button>
+                          >
+                            <div
+                              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                                !isDisabled
+                                  ? "translate-x-5"
+                                  : "translate-x-0.5"
+                              }`}
+                            />
+                          </div>
+                        )}
+                      </button>
+                    ) : (
+                      <span className={`text-xs ${!isDisabled ? "text-green-500" : "text-muted-foreground"}`}>
+                        {!isDisabled ? "On" : "Off"}
+                      </span>
+                    )}
                   </td>
                 </tr>
               );

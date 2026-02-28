@@ -13,7 +13,7 @@ import {
   User,
 } from "lucide-react";
 import Image from "next/image";
-import { getRoleDisplay } from "@/utils/roles";
+import { getRoleDisplay, canManageCommands } from "@/utils/roles";
 
 const PROVIDER_ICONS: Record<string, { label: string; className: string }> = {
   twitch: { label: "Twitch", className: "text-brand-twitch" },
@@ -24,6 +24,8 @@ type Tab = "account" | "data";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("account");
+  const { data: profile } = useQuery(trpc.user.getProfile.queryOptions());
+  const canManage = canManageCommands(profile?.role ?? "USER");
 
   return (
     <div>
@@ -53,7 +55,7 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      {activeTab === "account" ? <AccountTab /> : <DataTab />}
+      {activeTab === "account" ? <AccountTab /> : <DataTab canImport={canManage} />}
     </div>
   );
 }
@@ -155,7 +157,7 @@ function AccountTab() {
   );
 }
 
-function DataTab() {
+function DataTab({ canImport }: { canImport: boolean }) {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -256,41 +258,43 @@ function DataTab() {
       </Card>
 
       {/* StreamElements Import */}
-      <Card>
-        <CardContent>
-          <h3 className="mb-2 text-sm font-semibold text-foreground">
-            Import from StreamElements
-          </h3>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Import commands from a StreamElements JSON export. Commands that
-            already exist will be skipped. Timers and spam filter import will be
-            available when those features are added.
-          </p>
-          <div className="flex items-center gap-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleFileChange}
-              className="hidden"
-              id="se-import"
-            />
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={importMutation.isPending}
-              size="sm"
-              variant="outline"
-            >
-              {importMutation.isPending ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Upload className="size-3.5" />
-              )}
-              Choose File
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {canImport && (
+        <Card>
+          <CardContent>
+            <h3 className="mb-2 text-sm font-semibold text-foreground">
+              Import from StreamElements
+            </h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Import commands from a StreamElements JSON export. Commands that
+              already exist will be skipped. Timers and spam filter import will be
+              available when those features are added.
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileChange}
+                className="hidden"
+                id="se-import"
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importMutation.isPending}
+                size="sm"
+                variant="outline"
+              >
+                {importMutation.isPending ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Upload className="size-3.5" />
+                )}
+                Choose File
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

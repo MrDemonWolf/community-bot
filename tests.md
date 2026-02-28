@@ -340,7 +340,67 @@
 - [ ] Role display badges show correctly (Owner, Lead Mod, Moderator, User)
 - [ ] Channel owner USER still shows "Owner" badge via `getRoleDisplay`
 
-## G. Automated Tests
+## G. Dashboard UI Role Guards (Phase 5b)
+
+### G1. Bot Controls Card (`/dashboard`)
+
+- [ ] **USER**: Join/Leave/Mute/Unmute buttons hidden, "managed by lead moderators" message shown
+- [ ] **MODERATOR**: Same as USER — buttons hidden, read-only message shown
+- [ ] **LEAD_MODERATOR**: All bot control buttons visible and functional
+- [ ] **BROADCASTER**: All bot control buttons visible and functional
+- [ ] Bot status text (active/muted/not joined) visible to all roles
+
+### G2. Custom Commands (`/dashboard/commands` — Custom tab)
+
+- [ ] **USER**: Command list visible, search works, Create/Edit/Delete/Toggle all hidden
+- [ ] **MODERATOR**: All controls visible — Create, Edit, Delete, Toggle per row
+- [ ] **LEAD_MODERATOR**: Same as MODERATOR
+- [ ] **BROADCASTER**: Same as MODERATOR
+- [ ] Empty state "Create your first command" button hidden for USER
+
+### G3. Default Commands (`/dashboard/commands` — Default tab)
+
+- [ ] **USER**: Command list visible, toggle switches replaced with static "On"/"Off" text, access level shows as plain text
+- [ ] **MODERATOR**: Same as USER — toggles and dropdowns hidden (these are botChannel mutations)
+- [ ] **LEAD_MODERATOR**: Interactive toggle switches and access level dropdowns visible
+- [ ] **BROADCASTER**: Same as LEAD_MODERATOR
+
+### G4. Regulars (`/dashboard/regulars`)
+
+- [ ] **USER**: Regulars list visible, search works, Refresh Names visible, Add/Remove hidden
+- [ ] **MODERATOR**: Add Regular button visible, Remove buttons visible per row
+- [ ] **LEAD_MODERATOR**: Same as MODERATOR
+- [ ] **BROADCASTER**: Same as MODERATOR
+- [ ] Empty state "Add your first regular" button hidden for USER
+
+### G5. Discord Settings (`/dashboard/discord`)
+
+- [ ] **USER**: Guild info visible, all mutation controls hidden (enable/disable, save buttons, test notification, configure buttons)
+- [ ] **USER** (unlinked): Shows "No Discord server linked yet. A lead moderator can link one."
+- [ ] **MODERATOR**: Same as USER
+- [ ] **LEAD_MODERATOR**: All controls visible — Link Server, Enable/Disable, Save Channel/Role, Send Test, Configure per channel, all Welcome settings
+- [ ] **BROADCASTER**: Same as LEAD_MODERATOR
+- [ ] Read-only notification channel shows "# channel-name" or "Not set"
+- [ ] Read-only notification role shows "@role-name", "@everyone", or "Not set"
+
+### G6. Welcome & Leave Settings (within Discord Settings)
+
+- [ ] **USER/MODERATOR**: Enable/Disable buttons hidden, form sections hidden when enabled, Test Messages section hidden
+- [ ] **LEAD_MODERATOR+**: All toggles, editors, save buttons, and test buttons visible and functional
+
+### G7. Settings Page (`/dashboard/settings` — Data tab)
+
+- [ ] **USER**: Export Data button visible, StreamElements Import section hidden
+- [ ] **MODERATOR**: Export Data + StreamElements Import both visible
+- [ ] **LEAD_MODERATOR**: Same as MODERATOR
+- [ ] **BROADCASTER**: Same as MODERATOR
+
+### G8. No Silent Failures
+
+- [ ] Verify that no hidden mutation buttons means no FORBIDDEN toast errors appear during normal navigation
+- [ ] Read-only views display all data correctly — no missing information
+
+## H. Automated Tests
 
 - [ ] Run `pnpm test` — all tests pass
 - [ ] Run `pnpm check-types` — all packages pass
