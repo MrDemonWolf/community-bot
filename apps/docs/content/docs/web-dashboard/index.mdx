@@ -17,7 +17,7 @@ Users sign in via Discord or Twitch OAuth through better-auth. Authentication is
 
 ## Role-Based Access
 
-The dashboard uses role-based access. ADMIN (the broadcaster) has full access to all settings. MODERATOR and LEAD_MODERATOR roles have access based on their level in the role hierarchy. See [Access Levels](/docs/twitch-bot/access-levels) for details on the role hierarchy.
+The dashboard uses role-based access. BROADCASTER (the channel owner) has full access to all settings. MODERATOR and LEAD_MODERATOR roles have access based on their level in the role hierarchy. See [Access Levels](/docs/twitch-bot/access-levels) for details on the role hierarchy.
 
 ## Dashboard Layout
 
@@ -34,11 +34,16 @@ The dashboard sidebar organizes settings into sections:
 
 - **Commands** — Create, edit, delete, and toggle custom chat commands; configure default command toggles and access levels
 - **Regulars** — Manage trusted users who get elevated command access
-- **Queue** — Viewer queue management
+- **Queue** — Viewer queue management from the dashboard (see [Queue Management](/docs/web-dashboard/queue-management))
 
 ### Discord
 
 - **Discord Settings** — Link a Discord server, configure notification channel and role, enable/disable notifications
+- **Welcome & Leave Messages** — Configure welcome messages, leave messages, auto-role, and DM welcomes (see [Welcome & Leave Messages](/docs/web-dashboard/welcome-messages))
+
+### Management
+
+- **Users** — User role management, ban/unban (BROADCASTER only). See [User Management](/docs/web-dashboard/user-management)
 
 ### Account
 

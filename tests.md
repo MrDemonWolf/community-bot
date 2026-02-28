@@ -454,7 +454,73 @@
 - [ ] Queue mutations from Twitch chat (`!queue join/leave/pick/remove/clear/open/close/pause`) publish `queue:updated` event
 - [ ] Verify no crash if EventBus is not initialized (graceful catch in bot startup)
 
-## I. Automated Tests
+## I. Documentation Updates (Phase 7)
+
+### I1. New Pages Exist and Render
+
+- [ ] `/docs/web-dashboard/welcome-messages` — page loads with correct content
+- [ ] `/docs/web-dashboard/user-management` — page loads with correct content
+- [ ] `/docs/web-dashboard/queue-management` — page loads with correct content
+
+### I2. Sidebar Navigation
+
+- [ ] All 3 new pages appear in the sidebar under "Web Dashboard" section
+- [ ] Order is: Overview, Public Pages, Audit Log, Discord Settings, Welcome & Leave Messages, User Management, Queue Management
+
+### I3. No ADMIN Role References
+
+- [ ] `grep -r "ADMIN" apps/docs/content/docs/` returns no results
+- [ ] Setup wizard page says "BROADCASTER" not "ADMIN"
+- [ ] Audit log page role hierarchy ends with BROADCASTER
+- [ ] Web dashboard overview says BROADCASTER not ADMIN
+
+### I4. Audit Log Action Table
+
+- [ ] Audit log page lists all 28 actions across 7 sections (Bot Controls, Commands, Regulars, Discord, User Management, Queue, Imports)
+- [ ] Includes Phase 2 actions: `discord.welcome-settings`, `discord.test-welcome`
+- [ ] Includes Phase 1 action: `discord.channel-settings`
+- [ ] Includes Phase 5 actions: `user.role-change`, `user.ban`, `user.unban`
+- [ ] Includes Phase 6 actions: `queue.open`, `queue.close`, `queue.pause`, `queue.pick`, `queue.remove-entry`, `queue.clear`
+- [ ] Includes bot.mute and bot.unmute actions
+
+### I5. Queue System Page Accuracy
+
+- [ ] Queue system page describes position-based model (not WAITING/PICKED/REMOVED statuses)
+- [ ] Queue state table shows OPEN/CLOSED/PAUSED
+- [ ] Entries are described as being deleted on pick/leave (not status changes)
+- [ ] Dashboard management section exists with cross-link to `/docs/web-dashboard/queue-management`
+- [ ] EventBus sync note is present
+
+### I6. Discord Settings Page Updates
+
+- [ ] Per-channel notification overrides section exists
+- [ ] Lists all override options: custom channel, role, embed, update-while-live, delete-when-offline, auto-publish
+- [ ] Welcome & Leave Messages section exists with cross-link
+- [ ] Audit logging table includes `discord.channel-settings`, `discord.welcome-settings`, `discord.test-welcome`
+
+### I7. Discord Bot Pages
+
+- [ ] Discord bot overview lists welcome messages, auto-role, and DM welcome features
+- [ ] Twitch notifications page has per-channel overrides section
+
+### I8. Event Bus Page
+
+- [ ] `discord:test-welcome` event listed in Discord Settings table with `{ guildId, type }` payload
+- [ ] Queue section lists publisher as "Twitch, Web" (not "Any")
+- [ ] Event Flow Summary ASCII table includes `queue:updated` and `discord:test-welcome` rows
+
+### I9. Cross-Links
+
+- [ ] Welcome messages page links work (from discord-settings, web-dashboard index)
+- [ ] Queue management page links work (from queue-system, web-dashboard index)
+- [ ] User management page link works (from web-dashboard index)
+
+### I10. Build Verification
+
+- [ ] `pnpm --filter docs build` succeeds with no errors
+- [ ] All 40 pages generate successfully (34 original + 3 new + base paths)
+
+## J. Automated Tests
 
 - [ ] Run `pnpm test` — all tests pass
 - [ ] Run `pnpm check-types` — all packages pass (verified for Phase 6)

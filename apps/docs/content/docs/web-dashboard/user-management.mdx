@@ -1,0 +1,49 @@
+---
+title: User Management
+description: Managing user roles and bans from the web dashboard.
+---
+
+The user management page (`/dashboard/users`) is a BROADCASTER-only page for managing all users who have signed in to the dashboard.
+
+## Access
+
+Only users with the **BROADCASTER** role can access the user management page. Other roles will not see it in the sidebar navigation.
+
+## Features
+
+### Role Management
+
+Change a user's role from the user list. Available roles in the hierarchy:
+
+| Role | Level | Description |
+|------|-------|-------------|
+| **USER** | 1 | Default role for all users |
+| **MODERATOR** | 2 | Can manage commands and regulars |
+| **LEAD_MODERATOR** | 3 | Extended moderation access |
+| **BROADCASTER** | 4 | Full access to all settings (owner) |
+
+Role changes take effect immediately. The user's dashboard access is updated on their next page load.
+
+### Ban / Unban
+
+Ban a user to revoke their dashboard access entirely. Banned users cannot sign in or access any dashboard pages. Unban a user to restore their access.
+
+### Search and Filter
+
+- **Search** — Filter users by name or email
+- **Role filter** — Show only users with a specific role
+- **Status filter** — Show active or banned users
+
+## Auto-Link Twitch from Discord
+
+When a user signs in via Discord, the system automatically checks if their Discord account is linked to a Twitch account and creates the association. This means users who sign in with Discord get their Twitch identity linked without extra steps.
+
+## Audit Logging
+
+All user management actions are recorded in the audit log:
+
+| Action | When |
+|--------|------|
+| `user.role-change` | A user's role is changed |
+| `user.ban` | A user is banned |
+| `user.unban` | A user is unbanned |

@@ -1,0 +1,70 @@
+---
+title: Queue Management
+description: Managing the viewer queue from the web dashboard.
+---
+
+The queue management page (`/dashboard/queue`) provides a visual interface for managing the viewer queue alongside the [chat commands](/docs/twitch-bot/queue-system).
+
+## Access
+
+Queue management is available to users with **MODERATOR** or higher roles. The page displays the current queue status, entries, and provides controls for managing the queue.
+
+### Role Guards
+
+- **MODERATOR** and above can view the queue and its entries
+- **MODERATOR** and above can pick, remove, and clear entries
+- **BROADCASTER** and **LEAD_MODERATOR** can open, close, and pause the queue
+
+## Status Controls
+
+The queue has three states:
+
+| Status | Description |
+|--------|-------------|
+| **OPEN** | Viewers can join the queue via `!queue join` in chat |
+| **CLOSED** | No new entries allowed; existing entries remain |
+| **PAUSED** | Queue is temporarily frozen; no joins or picks |
+
+Toggle between states using the status buttons at the top of the page.
+
+## Queue Entry Management
+
+### Pick
+
+Select the next viewer from the queue. Options:
+
+- **Pick next** — Selects the viewer with the lowest position number (first in line)
+- **Pick random** — Selects a random viewer from the queue
+
+When a viewer is picked, their entry is removed from the queue and a message is sent in Twitch chat.
+
+### Remove
+
+Remove a specific viewer from the queue by clicking the remove button next to their entry.
+
+### Clear
+
+Remove all entries from the queue at once. This action requires confirmation.
+
+## Real-Time Sync
+
+The dashboard and Twitch chat bot stay in sync via the EventBus:
+
+- When a viewer joins or leaves via chat, the dashboard updates automatically
+- When a moderator picks or removes from the dashboard, the Twitch bot is notified
+- Both publish `queue:updated` events with the channel ID
+
+This means you can manage the queue from chat and the dashboard simultaneously without conflicts.
+
+## Audit Logging
+
+All queue management actions from the dashboard are recorded in the audit log:
+
+| Action | When |
+|--------|------|
+| `queue.open` | Queue is opened |
+| `queue.close` | Queue is closed |
+| `queue.pause` | Queue is paused |
+| `queue.pick` | A viewer is picked (next or random) |
+| `queue.remove-entry` | A viewer is removed from the queue |
+| `queue.clear` | All entries are cleared |

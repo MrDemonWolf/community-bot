@@ -33,6 +33,25 @@ Toggle whether Twitch stream notifications are active for your guild. When disab
 
 Click **"Send Test Notification"** to preview how Twitch live notifications look in your configured channel. The bot sends a fake live embed, updates the viewer count after 5 seconds, then edits the message to an offline embed after 10 seconds. A notification channel must be set before testing.
 
+## Per-Channel Notification Overrides
+
+For more granular control, you can configure per-channel notification overrides for each monitored Twitch channel:
+
+| Setting | Description |
+|---------|-------------|
+| **Custom channel** | Override the default notification channel for this specific Twitch channel |
+| **Custom role** | Override the default ping role for this Twitch channel |
+| **Custom embed** | Use a custom embed template built with the visual embed builder |
+| **Update while live** | Edit the notification message with updated viewer counts while the stream is live |
+| **Delete when offline** | Automatically delete the notification message when the stream goes offline |
+| **Auto-publish** | Automatically publish (crosspost) the notification if posted in an announcement channel |
+
+These overrides let you fine-tune notification behavior per Twitch channel while keeping sensible defaults for the rest.
+
+## Welcome & Leave Messages
+
+The Discord settings page also includes configuration for welcome messages, leave messages, auto-role assignment, and DM welcomes. See [Welcome & Leave Messages](/docs/web-dashboard/welcome-messages) for full details on these features.
+
 ## Environment Requirements
 
 The web dashboard requires a `DISCORD_BOT_TOKEN` environment variable to fetch channels and roles from Discord's REST API. This should be the same bot token used by the Discord bot service.
@@ -55,5 +74,8 @@ All Discord settings changes are recorded in the audit log:
 | `discord.link` | Guild is linked via dropdown |
 | `discord.set-channel` | Notification channel is changed |
 | `discord.set-role` | Notification role is changed |
+| `discord.channel-settings` | Per-channel notification overrides are updated |
 | `discord.enable` | Notifications are enabled |
 | `discord.disable` | Notifications are disabled |
+| `discord.welcome-settings` | Welcome, leave, auto-role, or DM settings are changed |
+| `discord.test-welcome` | A test welcome/leave/DM message is sent |

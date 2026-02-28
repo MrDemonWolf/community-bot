@@ -7,29 +7,75 @@ Every mutation made through the web dashboard is recorded in the audit log. This
 
 ## What Gets Logged
 
-All mutations across bot controls, commands, regulars, imports, and Discord settings are logged automatically via the `logAudit()` utility in `packages/api/src/utils/audit.ts`.
+All mutations across bot controls, commands, regulars, imports, Discord settings, user management, and queue management are logged automatically via the `logAudit()` utility in `packages/api/src/utils/audit.ts`.
 
 ## Action Reference
 
 Actions use dot-separated strings following the convention `domain.verb`:
 
+### Bot Controls
+
 | Action | Description |
 |--------|-------------|
 | `bot.enable` | Twitch bot enabled for channel |
 | `bot.disable` | Twitch bot disabled for channel |
+| `bot.mute` | Bot muted for channel |
+| `bot.unmute` | Bot unmuted for channel |
 | `bot.command-toggles` | Default command toggles updated |
 | `bot.command-access-level` | Default command access level changed |
+
+### Commands
+
+| Action | Description |
+|--------|-------------|
 | `command.create` | Custom chat command created |
 | `command.update` | Custom chat command updated |
 | `command.delete` | Custom chat command deleted |
 | `command.toggle` | Custom chat command enabled/disabled |
+
+### Regulars
+
+| Action | Description |
+|--------|-------------|
 | `regular.add` | Regular (trusted user) added |
 | `regular.remove` | Regular removed |
+
+### Discord
+
+| Action | Description |
+|--------|-------------|
 | `discord.link` | Discord guild linked |
 | `discord.set-channel` | Notification channel configured |
 | `discord.set-role` | Notification role configured |
+| `discord.channel-settings` | Per-channel notification overrides updated |
 | `discord.enable` | Discord notifications enabled |
 | `discord.disable` | Discord notifications disabled |
+| `discord.welcome-settings` | Welcome, leave, auto-role, or DM welcome settings changed |
+| `discord.test-welcome` | Test welcome/leave/DM message sent |
+
+### User Management
+
+| Action | Description |
+|--------|-------------|
+| `user.role-change` | User role changed |
+| `user.ban` | User banned |
+| `user.unban` | User unbanned |
+
+### Queue
+
+| Action | Description |
+|--------|-------------|
+| `queue.open` | Queue opened |
+| `queue.close` | Queue closed |
+| `queue.pause` | Queue paused |
+| `queue.pick` | Viewer picked from queue |
+| `queue.remove-entry` | Viewer removed from queue |
+| `queue.clear` | All queue entries cleared |
+
+### Imports
+
+| Action | Description |
+|--------|-------------|
 | `import.streamelements` | Commands imported from StreamElements |
 
 ## Role-Based Visibility
@@ -39,7 +85,7 @@ The audit log feed is filtered based on the viewing user's role. The role hierar
 1. **USER** — Sees only entries created by USERs
 2. **MODERATOR** — Sees USER and MODERATOR entries
 3. **LEAD_MODERATOR** — Sees USER, MODERATOR, and LEAD_MODERATOR entries
-4. **ADMIN** — Sees all entries
+4. **BROADCASTER** — Sees all entries
 
 ## Feed UI
 
