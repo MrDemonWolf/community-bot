@@ -1,90 +1,417 @@
 ---
 title: Deploy with Coolify
-description: Step-by-step guide to deploying Community Bot with Coolify.
+description: Complete step-by-step guide to deploying Community Bot on Coolify with PostgreSQL, Redis, and all three services.
 ---
 
-[Coolify](https://coolify.io/) is a self-hosted PaaS that provides a web UI for managing Docker deployments. This guide walks through deploying all Community Bot services.
+[Coolify](https://coolify.io/) is a self-hosted PaaS that provides a web UI for managing Docker deployments. This guide walks through deploying the full Community Bot stack — PostgreSQL, Redis, the web dashboard, Discord bot, and Twitch bot — on a single Coolify instance.
+
+## Architecture Overview
+
+```
+┌─────────────────────────────────────────────────┐
+│                  Coolify Project                │
+│                                                 │
+│  ┌───────────┐  ┌───────────┐  ┌────────────┐  │
+│  │    Web     │  │  Discord  │  │   Twitch   │  │
+│  │ Dashboard  │  │    Bot    │  │    Bot     │  │
+│  │  :3000     │  │  :3141    │  │  :3737     │  │
+│  └─────┬──┬──┘  └─────┬──┬──┘  └────┬──┬────┘  │
+│        │  │           │  │          │  │        │
+│        │  └───────┐   │  │   ┌──────┘  │        │
+│        │          │   │  │   │         │        │
+│  ┌─────▼──────┐  ┌▼───▼──▼───▼┐                │
+│  │ PostgreSQL │  │   Redis    │                │
+│  │  :5432     │  │   :6379    │                │
+│  └────────────┘  └────────────┘                │
+└─────────────────────────────────────────────────┘
+```
+
+**Deployment order**: PostgreSQL → Redis → Web Dashboard → Setup Wizard → Discord Bot → Twitch Bot
 
 ## Prerequisites
 
-- A Coolify instance (v4+) with a connected server
-- A domain (or subdomains) pointed at your server
-- Twitch and Discord applications created ([Twitch](/docs/getting-started/create-twitch-app), [Discord](/docs/getting-started/create-discord-app))
+Before you begin, make sure you have:
 
-## 1. Create Infrastructure Resources
+- **Coolify v4+** installed on a server with at least 2 GB RAM
+- **A domain** (or subdomain) pointed at your server for the web dashboard
+- **A Twitch application** — [create one here](/docs/getting-started/create-twitch-app)
+- **A Discord application** — [create one here](/docs/getting-started/create-discord-app)
 
-### PostgreSQL
+## Step 1: Create a Coolify Project
 
-1. In Coolify, go to your project → **New Resource** → **Database** → **PostgreSQL**
+1. In the Coolify dashboard, click **Projects** → **New Project**
+2. Name it `community-bot`
+3. You can use the default environment or create one (e.g., `production`)
+
+All five resources (PostgreSQL, Redis, Web, Discord, Twitch) will live under this project.
+
+## Step 2: PostgreSQL Database
+
+1. Open your project → **New Resource** → **Database** → **PostgreSQL**
 2. Set the database name to `community-bot`
-3. Note the connection URL — you'll need it for all three services
+3. Coolify will generate credentials automatically
+4. After creation, go to the resource page and find the **Internal URL** — it looks like:
 
-### Redis
+```
+postgresql://postgres:GENERATED_PASSWORD@PROJECT_UUID-postgres:5432/community-bot
+```
+
+Copy this URL. All three services need it as `DATABASE_URL`.
+
+## Step 3: Redis
 
 1. **New Resource** → **Database** → **Redis**
-2. Note the connection URL
+2. After creation, find the **Internal URL** — it looks like:
 
-## 2. Deploy the Web Dashboard
+```
+redis://PROJECT_UUID-redis:6379
+```
+
+Copy this URL. All three services need it as `REDIS_URL`.
+
+## Step 4: Shared Environment Variables
+
+Coolify supports **shared variables** at the project or environment level. Use these for values shared across all three services to avoid duplication.
+
+Go to your project → **Environment** → **Shared Variables** and add:
+
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `DATABASE_URL` | Internal PostgreSQL URL from Step 2 | Must start with `postgresql://` |
+| `REDIS_URL` | Internal Redis URL from Step 3 | Must start with `redis://` |
+| `TWITCH_APPLICATION_CLIENT_ID` | Your Twitch app client ID | Used by all three services |
+| `TWITCH_APPLICATION_CLIENT_SECRET` | Your Twitch app client secret | Used by web + Twitch bot |
+
+When adding env vars to each service, reference shared variables with `{{ project.VARIABLE_NAME }}` or simply add the same values — Coolify's UI shows shared variables as available to all resources in the environment.
+
+## Step 5: Deploy the Web Dashboard
+
+### Create the Resource
 
 1. **New Resource** → **Application** → connect your Git repository
-2. Set the **Build Pack** to "Dockerfile"
-3. Configure build settings:
+2. Set the **Branch** to your deployment branch (e.g., `main`)
+3. Under **Build Settings**:
+   - **Build Pack**: Dockerfile
    - **Dockerfile Path**: `apps/web/Dockerfile`
-   - **Build Context**: `.` (monorepo root)
-4. Add environment variables from your `apps/web/.env` — update `DATABASE_URL` and `REDIS_URL` to use the Coolify-provided connection strings
-5. Set `BETTER_AUTH_URL` and `CORS_ORIGIN` to your web dashboard domain (e.g., `https://bot.yourdomain.com`)
-6. Configure the domain in Coolify's domain settings
-7. **Deploy**
+   - **Build Context**: `.` (monorepo root — required because the Dockerfile copies shared packages)
+
+### Environment Variables
+
+Add the following variables to the web dashboard resource:
+
+#### Required Variables
+
+| Variable | Example | Where to Get It |
+|----------|---------|-----------------|
+| `DATABASE_URL` | `postgresql://postgres:pass@host:5432/community-bot` | [Step 2](#step-2-postgresql-database) — use the Coolify internal URL |
+| `REDIS_URL` | `redis://host:6379` | [Step 3](#step-3-redis) — use the Coolify internal URL |
+| `BETTER_AUTH_SECRET` | `a1b2c3d4e5f6...` (64 hex chars) | Generate with `openssl rand -hex 32` |
+| `BETTER_AUTH_URL` | `https://bot.yourdomain.com` | Your web dashboard's public URL |
+| `CORS_ORIGIN` | `https://bot.yourdomain.com` | Same as `BETTER_AUTH_URL` |
+| `DISCORD_APPLICATION_ID` | `1234567890123456789` | [Discord Developer Portal](https://discord.com/developers/applications) → your app → **General Information** → Application ID |
+| `DISCORD_APPLICATION_CLIENT_SECRET` | `AbCdEf...` | [Discord Developer Portal](https://discord.com/developers/applications) → your app → **OAuth2** → Client Secret |
+| `DISCORD_BOT_TOKEN` | `MTIz...` | [Discord Developer Portal](https://discord.com/developers/applications) → your app → **Bot** → Reset Token |
+| `TWITCH_APPLICATION_CLIENT_ID` | `abc123def456` | [Twitch Dev Console](https://dev.twitch.tv/console/apps) → your app → Client ID |
+| `TWITCH_APPLICATION_CLIENT_SECRET` | `xyz789...` | [Twitch Dev Console](https://dev.twitch.tv/console/apps) → your app → Client Secret (generate a new one if needed) |
+
+#### Optional Branding Variables
+
+These customize the dashboard's public-facing pages and footer:
+
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_CHANNEL_NAME` | `MrDemonWolf` | Displayed channel name |
+| `NEXT_PUBLIC_CHANNEL_URL` | `https://twitch.tv/mrdemonwolf` | Link to your Twitch channel |
+| `NEXT_PUBLIC_LOGO_URL` | `https://example.com/logo.png` | Logo for light mode |
+| `NEXT_PUBLIC_LOGO_DARK_URL` | `https://example.com/logo-dark.png` | Logo for dark mode |
+| `NEXT_PUBLIC_COPYRIGHT_NAME` | `MrDemonWolf, Inc.` | Footer copyright text |
+| `NEXT_PUBLIC_COPYRIGHT_URL` | `https://mrdemonwolf.com` | Footer copyright link |
+| `NEXT_PUBLIC_PRIVACY_POLICY_URL` | `https://example.com/privacy` | Privacy policy link |
+| `NEXT_PUBLIC_TERMS_OF_SERVICE_URL` | `https://example.com/terms` | Terms of service link |
+| `NEXT_PUBLIC_SOCIAL_LINKS` | `[{"name":"Twitter","url":"..."}]` | JSON array of social links |
+
+### Domain & Port
+
+1. Go to the resource's **Settings** tab
+2. Under **Domains**, add your domain (e.g., `bot.yourdomain.com`)
+3. Coolify will handle HTTPS via Let's Encrypt automatically
+4. The container exposes port **3000** — Coolify maps this automatically when you configure the domain
 
 ### Health Check
 
-Configure a health check for the web dashboard:
-- **Path**: `/api/health`
-- **Port**: `3000`
-- **Interval**: `30s`
+Under **Health Check** settings:
 
-## 3. Complete the Setup Wizard
+| Setting | Value |
+|---------|-------|
+| **Path** | `/api/health` |
+| **Port** | `3000` |
+| **Interval** | `30` seconds |
 
-1. Check the deployment logs for the setup URL
-2. Visit the URL and complete the [setup wizard](/docs/getting-started/setup-wizard)
-3. The web dashboard is now ready
+### Network
 
-## 4. Deploy the Discord Bot
+Make sure the web dashboard is on the **same Docker network** as your PostgreSQL and Redis resources. Coolify typically handles this within the same project, but verify under **Settings** → **Network** that all resources share a network.
+
+### Deploy
+
+Click **Deploy**. The first build takes a few minutes as it builds the Next.js app.
+
+## Step 6: Complete the Setup Wizard
+
+After the web dashboard deploys successfully:
+
+1. Open the resource's **Logs** tab in Coolify
+2. Look for a line like:
+   ```
+   ┌─────────────────────────────────────────────────────┐
+   │                                                     │
+   │   Setup URL: https://bot.yourdomain.com/setup/...   │
+   │                                                     │
+   └─────────────────────────────────────────────────────┘
+   ```
+3. Visit the setup URL and complete the [setup wizard](/docs/getting-started/setup-wizard)
+4. This designates you as the broadcaster and promotes your account to ADMIN
+
+The setup token is single-use — once completed, the URL is no longer valid.
+
+## Step 7: Deploy the Discord Bot
+
+### Create the Resource
 
 1. **New Resource** → **Application** → same Git repository
-2. Build settings:
+2. Under **Build Settings**:
+   - **Build Pack**: Dockerfile
    - **Dockerfile Path**: `apps/discord/Dockerfile`
    - **Build Context**: `.`
-3. Add environment variables from `apps/discord/.env`
-4. Update `DATABASE_URL` and `REDIS_URL` to match the Coolify resources
-5. Set the exposed port to `3141`
-6. **Deploy**
+
+### Environment Variables
+
+#### Required Variables
+
+| Variable | Example | Where to Get It |
+|----------|---------|-----------------|
+| `DATABASE_URL` | `postgresql://postgres:pass@host:5432/community-bot` | [Step 2](#step-2-postgresql-database) |
+| `REDIS_URL` | `redis://host:6379` | [Step 3](#step-3-redis) |
+| `DISCORD_APPLICATION_ID` | `1234567890123456789` | [Discord Developer Portal](https://discord.com/developers/applications) → **General Information** → Application ID |
+| `DISCORD_APPLICATION_PUBLIC_KEY` | `abc123...` | [Discord Developer Portal](https://discord.com/developers/applications) → **General Information** → Public Key |
+| `DISCORD_APPLICATION_BOT_TOKEN` | `MTIz...` | [Discord Developer Portal](https://discord.com/developers/applications) → **Bot** → Token |
+| `TWITCH_APPLICATION_CLIENT_ID` | `abc123def456` | [Twitch Dev Console](https://dev.twitch.tv/console/apps) → Client ID |
+| `OWNER_ID` | `123456789012345678` | Discord → Settings → Advanced → enable **Developer Mode**, then right-click your profile → **Copy User ID** |
+| `MAIN_GUILD_ID` | `987654321098765432` | Right-click your Discord server name → **Copy Server ID** |
+| `MAIN_CHANNEL_ID` | `111222333444555666` | Right-click a channel → **Copy Channel ID** |
+
+#### Optional Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DISCORD_DEFAULT_STATUS` | `over the Wolf Lair` | Bot's status text |
+| `DISCORD_DEFAULT_ACTIVITY_TYPE` | `Custom` | One of `Playing`, `Streaming`, `Listening`, `Custom` |
+| `DISCORD_DEFAULT_ACTIVITY_URL` | — | URL for `Streaming` activity type |
+| `DISCORD_ACTIVITY_INTERVAL_MINUTES` | `15` | Minutes between activity rotations (1–1440) |
+| `VERSION` | `1.0.0` | Reported in health checks |
+
+### Port & Domain
+
+- Set the exposed port to **3141**
+- The Discord bot does **not** need a public domain — it communicates over Discord's WebSocket and uses internal networking for database/Redis access
+- If you do want external access to the health endpoint, you can add a domain, but it's not required
 
 ### Health Check
 
-- **Path**: `/health`
-- **Port**: `3141`
-- **Interval**: `30s`
+| Setting | Value |
+|---------|-------|
+| **Path** | `/health` |
+| **Port** | `3141` |
+| **Interval** | `30` seconds |
 
-## 5. Deploy the Twitch Bot
+### Network
+
+Ensure the Discord bot is on the same Docker network as PostgreSQL and Redis.
+
+### Deploy
+
+Click **Deploy**. The entrypoint script automatically runs `prisma migrate deploy` before starting the bot. Check the logs to confirm the bot connects to Discord and joins your guild.
+
+## Step 8: Deploy the Twitch Bot
+
+### Create the Resource
 
 1. **New Resource** → **Application** → same Git repository
-2. Build settings:
+2. Under **Build Settings**:
+   - **Build Pack**: Dockerfile
    - **Dockerfile Path**: `apps/twitch/Dockerfile`
    - **Build Context**: `.`
-3. Add environment variables from `apps/twitch/.env`
-4. Update `DATABASE_URL` and `REDIS_URL` to match the Coolify resources
-5. Set the exposed port to `3737`
-6. **Deploy**
+
+### Environment Variables
+
+#### Required Variables
+
+| Variable | Example | Where to Get It |
+|----------|---------|-----------------|
+| `DATABASE_URL` | `postgresql://postgres:pass@host:5432/community-bot` | [Step 2](#step-2-postgresql-database) |
+| `REDIS_URL` | `redis://host:6379` | [Step 3](#step-3-redis) |
+| `TWITCH_APPLICATION_CLIENT_ID` | `abc123def456` | [Twitch Dev Console](https://dev.twitch.tv/console/apps) → Client ID |
+| `TWITCH_APPLICATION_CLIENT_SECRET` | `xyz789...` | [Twitch Dev Console](https://dev.twitch.tv/console/apps) → Client Secret |
+
+#### Optional Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WEB_URL` | — | Web dashboard URL (e.g., `https://bot.yourdomain.com`) — enables links to public pages in chat |
+| `GEMINI_API_KEY` | — | [Google AI Studio](https://aistudio.google.com/apikey) API key for AI-enhanced shoutouts |
+| `AI_SHOUTOUT_ENABLED` | — | Set to `true` to enable AI shoutouts (requires `GEMINI_API_KEY`) |
+| `APPLE_WEATHERKIT_KEY_ID` | — | Apple WeatherKit key ID (for `!weather` command) |
+| `APPLE_WEATHERKIT_TEAM_ID` | — | Apple Developer Team ID |
+| `APPLE_WEATHERKIT_SERVICE_ID` | — | WeatherKit service identifier |
+| `APPLE_WEATHERKIT_PRIVATE_KEY` | — | WeatherKit private key (PEM format) |
+
+### Port & Domain
+
+- Set the exposed port to **3737**
+- Like the Discord bot, the Twitch bot does **not** need a public domain — it communicates over Twitch IRC and uses internal networking
 
 ### Health Check
 
-- **Path**: `/health`
-- **Port**: `3737`
-- **Interval**: `30s`
+| Setting | Value |
+|---------|-------|
+| **Path** | `/health` |
+| **Port** | `3737` |
+| **Interval** | `30` seconds |
 
-## Tips
+### Network
 
-- **Shared env vars**: `DATABASE_URL`, `REDIS_URL`, and Twitch Client ID are used by all three services. Consider using Coolify's shared variables feature.
-- **Rebuild triggers**: Set up a webhook or GitHub integration to auto-deploy on push.
-- **Logs**: Check each service's logs in Coolify if something isn't working. The bots log EventBus connections, channel joins, and errors.
+Ensure the Twitch bot is on the same Docker network as PostgreSQL and Redis.
+
+### Deploy
+
+Click **Deploy**. The entrypoint script runs database migrations automatically. Check the logs to confirm the bot connects to Twitch chat and joins your channel(s).
+
+## Step 9: Verify Everything Works
+
+After all services are running, confirm each piece:
+
+- [ ] **Web dashboard** loads at your domain
+- [ ] **Setup wizard** completed successfully (dashboard shows bot controls, not the setup page)
+- [ ] **Discord bot** appears online in your server
+- [ ] **Twitch bot** joins your channel and responds to `!commands`
+- [ ] **Slash commands** work in Discord (try `/quote random`)
+- [ ] **Health checks** are green for all three services in Coolify
+- [ ] **Audit log** shows entries when you make changes in the dashboard
+- [ ] **Event bus** works: toggle bot settings in the dashboard and confirm the bots react (e.g., enable/disable the bot, create a command)
+
+## Networking
+
+Coolify manages Docker networks within a project. All resources in the same project and environment typically share a network, which means:
+
+- Services reference each other by their Coolify-assigned container hostname (shown in the resource's internal URL)
+- PostgreSQL and Redis are accessible via their internal hostnames — **not** `localhost`
+- No ports need to be publicly exposed for inter-service communication
+- The web dashboard is the only service that needs a public domain
+
+If services can't connect to PostgreSQL or Redis, go to each resource's **Settings** → **Network** and verify they share the same Docker network.
+
+## Automatic Deployments
+
+To redeploy automatically when you push to your repository:
+
+1. In Coolify, go to each resource's **Settings**
+2. Under **Git**, enable **Auto Deploy** (webhook-based)
+3. Coolify will provide a webhook URL — add it to your GitHub repository under **Settings** → **Webhooks**
+4. Alternatively, use Coolify's built-in GitHub App integration for automatic webhook registration
+
+When a push is detected, Coolify rebuilds and redeploys the affected service.
+
+## Database Migrations
+
+### Automatic (Default)
+
+The Discord and Twitch bot Dockerfiles include an `entrypoint.sh` that runs `prisma migrate deploy` automatically on every startup. Migrations are **non-fatal** — if they fail (e.g., the database is temporarily unavailable), the app still starts.
+
+The web dashboard does **not** run migrations automatically. Since the bots start after the web dashboard and share the same database, their entrypoint handles migrations for all services.
+
+### Manual
+
+If you need to run migrations manually:
+
+1. Open any bot resource in Coolify
+2. Go to the **Terminal** tab
+3. Run:
+   ```bash
+   cd /usr/src/app/packages/db
+   npx prisma migrate deploy
+   ```
+
+## Backups
+
+Coolify has built-in database backup scheduling:
+
+1. Open your PostgreSQL resource
+2. Go to the **Backups** tab
+3. Configure a backup schedule (e.g., daily at 3:00 AM)
+4. Optionally configure S3-compatible storage for off-site backups
+
+## Updating
+
+To update Community Bot to the latest version:
+
+1. Pull the latest changes to your deployment branch
+2. In Coolify, click **Redeploy** on each service (or let auto-deploy handle it)
+3. The bots' entrypoint scripts run any new database migrations automatically
+4. Verify health checks pass after redeployment
+
+If there are breaking changes, check the release notes for any required environment variable updates or manual migration steps.
+
+## Troubleshooting
+
+### Connection Refused (Database or Redis)
+
+**Symptom**: Service logs show `ECONNREFUSED` or `connect ECONNREFUSED`.
+
+**Fix**: Verify that `DATABASE_URL` and `REDIS_URL` use the Coolify **internal** URLs (not `localhost`). Confirm all resources are on the same Docker network under each resource's **Settings** → **Network**.
+
+### Setup URL Not Appearing
+
+**Symptom**: The web dashboard deployed but no setup URL in the logs.
+
+**Fix**: The setup URL is only logged on the **first startup** before setup is completed. If you've already completed setup, the URL won't appear. If you need to re-run setup, check the `SystemConfig` table in the database for the `setupComplete` key.
+
+### Bot Not Connecting to Discord
+
+**Symptom**: Discord bot logs show authentication errors.
+
+**Fix**: Verify `DISCORD_APPLICATION_BOT_TOKEN` is correct. Tokens are invalidated when you reset them in the [Discord Developer Portal](https://discord.com/developers/applications). Generate a new token and update the environment variable.
+
+### Bot Not Connecting to Twitch
+
+**Symptom**: Twitch bot logs show connection errors.
+
+**Fix**: The Twitch bot uses Device Code Flow authentication. After deploying, check the logs for a device code prompt and complete the authorization. Ensure `TWITCH_APPLICATION_CLIENT_ID` and `TWITCH_APPLICATION_CLIENT_SECRET` match what's in the [Twitch Dev Console](https://dev.twitch.tv/console/apps).
+
+### Slash Commands Not Appearing in Discord
+
+**Symptom**: The Discord bot is online but slash commands don't show up.
+
+**Fix**: Slash commands are registered on bot startup. Check the bot logs for command registration messages. It can take up to an hour for global commands to propagate across Discord. Guild-specific commands appear immediately.
+
+### Health Check Failing
+
+**Symptom**: Coolify shows the service as unhealthy.
+
+**Fix**: The bot health checks (`/health`) return HTTP 503 when PostgreSQL or Redis is unreachable. Verify:
+1. The database and Redis resources are running
+2. The health check port matches the service port (`3000` for web, `3141` for Discord, `3737` for Twitch)
+3. The health check path is correct (`/api/health` for web, `/health` for bots)
+
+### `BETTER_AUTH_SECRET` Validation Error
+
+**Symptom**: Web dashboard fails to start with a Zod validation error mentioning `BETTER_AUTH_SECRET`.
+
+**Fix**: The secret must be at least 32 characters. Generate one with:
+```bash
+openssl rand -hex 32
+```
+
+### `BETTER_AUTH_URL` / `CORS_ORIGIN` Mismatch
+
+**Symptom**: Login redirects fail or CORS errors in the browser console.
+
+**Fix**: Both `BETTER_AUTH_URL` and `CORS_ORIGIN` must be set to your exact public URL including the protocol (e.g., `https://bot.yourdomain.com`). Do not include a trailing slash.

@@ -14,6 +14,20 @@ model TwitchChannel {
   joinedAt           DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
+  // Per-channel notification overrides (null = use guild default)
+  notificationChannelId String?
+  notificationRoleId    String?
+
+  // Behavior toggles
+  updateMessageLive  Boolean @default(true)
+  deleteWhenOffline  Boolean @default(false)
+  autoPublish        Boolean @default(false)
+
+  // Custom message support
+  useCustomMessage     Boolean @default(false)
+  customOnlineMessage  String?
+  customOfflineMessage String?
+
   @@unique([twitchChannelId, guildId])
 }
 
@@ -106,12 +120,131 @@ model BotChannel {
   twitchUserId     String                   @unique
   enabled          Boolean                  @default(true)
   muted            Boolean                  @default(false)
+  aiShoutoutEnabled Boolean                 @default(false)
   disabledCommands String[]                 @default([])
   joinedAt         DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
   user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   commandOverrides DefaultCommandOverride[]
   customCommands   TwitchChatCommand[]
+  quotes           Quote[]
+  counters         TwitchCounter[]
+  timers           TwitchTimer[]
+  spamFilter       SpamFilter?
+  songRequests        SongRequest[]
+  songRequestSettings SongRequestSettings?
+  giveaways           Giveaway[]
+}
+
+model Quote {
+  id           String     @id @default(uuid())
+  quoteNumber  Int
+  text         String
+  game         String?
+  addedBy      String
+  source       String     @default("twitch")
+  botChannelId String
+  botChannel   BotChannel @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([quoteNumber, botChannelId])
+}
+
+model TwitchCounter {
+  id           String     @id @default(uuid())
+  name         String
+  value        Int        @default(0)
+  botChannelId String
+  botChannel   BotChannel @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([name, botChannelId])
+}
+
+model TwitchTimer {
+  id              String     @id @default(uuid())
+  name            String
+  enabled         Boolean    @default(true)
+  message         String
+  intervalMinutes Int        @default(5)
+  chatLines       Int        @default(0)
+  botChannelId    String
+  botChannel      BotChannel @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@unique([name, botChannelId])
+}
+
+model SpamFilter {
+  id                  String            @id @default(uuid())
+  botChannelId        String            @unique
+  botChannel          BotChannel        @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+
+  // Caps filter
+  capsEnabled         Boolean           @default(false)
+  capsMinLength       Int               @default(15)
+  capsMaxPercent      Int               @default(70)
+
+  // Links filter
+  linksEnabled        Boolean           @default(false)
+  linksAllowSubs      Boolean           @default(true)
+
+  // Symbols filter
+  symbolsEnabled      Boolean           @default(false)
+  symbolsMaxPercent   Int               @default(50)
+
+  // Emotes filter
+  emotesEnabled       Boolean           @default(false)
+  emotesMaxCount      Int               @default(15)
+
+  // Repetition filter
+  repetitionEnabled   Boolean           @default(false)
+  repetitionMaxRepeat Int               @default(10)
+
+  // Banned words filter
+  bannedWordsEnabled  Boolean           @default(false)
+  bannedWords         String[]          @default([])
+
+  // Shared settings
+  exemptLevel         TwitchAccessLevel @default(SUBSCRIBER)
+  timeoutDuration     Int               @default(5)
+  warningMessage      String            @default("Please don't spam.")
+}
+
+model SpamPermit {
+  id           String   @id @default(uuid())
+  username     String
+  botChannelId String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([username, botChannelId])
+}
+
+model SongRequest {
+  id           String     @id @default(uuid())
+  position     Int
+  title        String
+  requestedBy  String
+  botChannelId String
+  botChannel   BotChannel @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@index([botChannelId, position])
+}
+
+model SongRequestSettings {
+  id              String            @id @default(uuid())
+  botChannelId    String            @unique
+  botChannel      BotChannel        @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+  enabled         Boolean           @default(false)
+  maxQueueSize    Int               @default(50)
+  maxPerUser      Int               @default(5)
+  minAccessLevel  TwitchAccessLevel @default(EVERYONE)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 }
 
 model DefaultCommandOverride {
@@ -122,4 +255,30 @@ model DefaultCommandOverride {
   botChannel   BotChannel        @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
 
   @@unique([botChannelId, commandName])
+}
+
+model Giveaway {
+  id           String          @id @default(uuid())
+  title        String
+  keyword      String
+  isActive     Boolean         @default(true)
+  winnerName   String?
+  botChannelId String
+  botChannel   BotChannel      @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+  entries      GiveawayEntry[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([botChannelId, isActive])
+}
+
+model GiveawayEntry {
+  id             String   @id @default(uuid())
+  giveawayId     String
+  giveaway       Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  twitchUsername  String
+  twitchUserId   String
+  createdAt      DateTime @default(now())
+
+  @@unique([giveawayId, twitchUserId])
 }

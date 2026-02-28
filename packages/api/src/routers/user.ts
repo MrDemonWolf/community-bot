@@ -1,5 +1,5 @@
 import { prisma } from "@community-bot/db";
-import { protectedProcedure, router } from "../index";
+import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
@@ -119,7 +119,7 @@ export const userRouter = router({
     };
   }),
 
-  importStreamElements: protectedProcedure
+  importStreamElements: moderatorProcedure
     .input(
       z.object({
         commands: z.array(

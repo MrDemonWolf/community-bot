@@ -2,7 +2,7 @@ enum UserRole {
   USER
   MODERATOR
   LEAD_MODERATOR
-  ADMIN
+  BROADCASTER
 }
 
 model User {
@@ -12,6 +12,9 @@ model User {
   emailVerified    Boolean      @default(false)
   image            String?
   role             UserRole     @default(USER)
+  banned           Boolean      @default(false)
+  bannedAt         DateTime?
+  banReason        String?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   lastLoginMethod  String?

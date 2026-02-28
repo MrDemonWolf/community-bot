@@ -43,6 +43,31 @@ export interface EventMap {
   // Discord test notification (triggered from web dashboard)
   "discord:test-notification": { guildId: string };
 
+  // Discord test welcome/leave/DM message (triggered from web dashboard)
+  "discord:test-welcome": { guildId: string; type: "welcome" | "leave" | "dm" };
+
+  // Quote lifecycle
+  "quote:created": { quoteId: string };
+  "quote:deleted": { quoteId: string };
+
+  // Counter changes
+  "counter:updated": { counterName: string; channelId: string };
+
+  // Timer changes
+  "timer:updated": { channelId: string };
+
+  // Spam filter changes
+  "spam-filter:updated": { channelId: string };
+
+  // Song request changes
+  "song-request:updated": { channelId: string };
+  "song-request:settings-updated": { channelId: string };
+
+  // Giveaway events
+  "giveaway:started": { giveawayId: string; channelId: string };
+  "giveaway:ended": { giveawayId: string; channelId: string };
+  "giveaway:winner": { giveawayId: string; channelId: string };
+
   // Bot status
   "bot:status": {
     service: "discord" | "twitch";

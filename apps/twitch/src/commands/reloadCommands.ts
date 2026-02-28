@@ -4,9 +4,9 @@ import { loadRegulars } from "../services/accessControl.js";
 
 export const reloadCommands: TwitchCommand = {
   name: "reloadcommands",
-  description: "Reloads commands and regulars from the database (mod/broadcaster only)",
+  description: "Reloads commands and regulars from the database (broadcaster only)",
   async execute(client, channel, user, _args, msg) {
-    if (!msg.userInfo.isMod && !msg.userInfo.isBroadcaster) {
+    if (!msg.userInfo.isBroadcaster) {
       return;
     }
 

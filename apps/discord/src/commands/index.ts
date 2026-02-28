@@ -4,6 +4,7 @@ import type {
 } from "discord.js";
 
 import { twitchCommand, handleTwitchCommand } from "./twitch/index.js";
+import { quoteCommand, handleQuoteCommand } from "./quote/index.js";
 
 export interface Command {
   data: SlashCommandBuilder;
@@ -15,6 +16,11 @@ const commands = new Map<string, Command>();
 commands.set(twitchCommand.name, {
   data: twitchCommand,
   execute: handleTwitchCommand,
+});
+
+commands.set(quoteCommand.name, {
+  data: quoteCommand,
+  execute: handleQuoteCommand,
 });
 
 export default commands;

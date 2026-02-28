@@ -72,6 +72,9 @@ export function buildLiveEmbed(options: LiveEmbedOptions): EmbedBuilder {
     .setTimestamp();
 }
 
+export { replaceTemplateVariables, buildCustomEmbed } from "../utils/embeds.js";
+export type { TemplateVariables } from "../utils/embeds.js";
+
 export function buildOfflineEmbed(options: OfflineEmbedOptions): EmbedBuilder {
   const {
     displayName,

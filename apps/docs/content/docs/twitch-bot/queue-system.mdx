@@ -34,14 +34,32 @@ The queue system lets viewers sign up for activities (game lobbies, reviews, etc
 
 The queue is backed by the `QueueEntry` and `QueueState` database tables. Queue state (open/closed/paused) persists across bot restarts.
 
-When a viewer joins, they are added with a `WAITING` status. When `!queue pick` is called, the next waiting entry is selected and its status changes to `PICKED`. Viewers who leave or are cleared get a `REMOVED` status.
+### Queue State
 
-Viewers can also see the queue at the [public queue page](/docs/web-dashboard/public-pages).
-
-## Queue Status Values
+The `QueueState` table uses a singleton record to track the current status:
 
 | Status | Meaning |
 |--------|---------|
-| `WAITING` | In queue, waiting to be picked |
-| `PICKED` | Has been selected via `!queue pick` |
-| `REMOVED` | Left the queue or was cleared |
+| `OPEN` | Viewers can join the queue |
+| `CLOSED` | No new entries allowed |
+| `PAUSED` | Queue is frozen — no joins or picks |
+
+### Queue Entries
+
+Each entry in the `QueueEntry` table represents a viewer in the queue:
+
+- **`twitchUserId`** — Unique identifier (one entry per user)
+- **`twitchUsername`** — Display name shown in the queue
+- **`position`** — Integer position in the queue (determines pick order)
+
+When `!queue pick` is called, the entry with the lowest position is selected and removed from the queue. When a viewer leaves (`!queue leave`) or is removed, their entry is deleted. `!queue clear` deletes all entries.
+
+Viewers can also see the queue at the [public queue page](/docs/web-dashboard/public-pages).
+
+## Dashboard Management
+
+The queue can also be managed from the web dashboard at `/dashboard/queue`. The dashboard provides the same controls as chat commands — open, close, pause, pick, remove, and clear — with a visual interface.
+
+The dashboard and chat bot stay in sync via the `queue:updated` EventBus event. When either side makes a change, the other is notified and updates automatically.
+
+See [Queue Management](/docs/web-dashboard/queue-management) for full details on the dashboard interface.

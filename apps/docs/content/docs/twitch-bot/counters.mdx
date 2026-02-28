@@ -1,0 +1,38 @@
+---
+title: Counters
+description: Named counters for tracking in-stream events like deaths, wins, and more.
+---
+
+Named counters let you track things like death counts, win streaks, or any other numeric value during a stream.
+
+## Commands
+
+All counter commands require moderator or broadcaster access.
+
+| Command | Description |
+|---------|-------------|
+| `!counter <name>` | Show the current value of a counter |
+| `!counter <name> +` | Increment by 1 |
+| `!counter <name> -` | Decrement by 1 |
+| `!counter <name> set <value>` | Set to a specific value |
+| `!counter <name> create` | Create a new counter (starts at 0) |
+| `!counter <name> delete` | Delete a counter |
+
+## Using Counters in Custom Commands
+
+You can display a counter's value in any custom command response using the `{counter <name>}` variable:
+
+```
+Death count: {counter deaths}
+```
+
+This fetches the counter value from the database at runtime. If the counter doesn't exist, the placeholder is left as-is.
+
+## Dashboard Management
+
+Counters can also be managed from the web dashboard at `/dashboard/counters`. The dashboard supports:
+
+- Viewing all counters with their current values
+- Creating new counters
+- Editing counter values
+- Deleting counters

@@ -8,11 +8,14 @@ The Discord bot is built with [discord.js](https://discord.js.org/) v14 and prov
 ## Features
 
 - **Twitch stream notifications** — Monitors configured Twitch channels and posts embed notifications when they go live
-- **Slash commands** — Full slash command interface for managing Twitch channel subscriptions
+- **Welcome & leave messages** — Posts configurable welcome and leave messages when members join or leave the server
+- **Auto-role** — Automatically assigns a configured role to new members on join
+- **DM welcome** — Sends a private welcome message to new members (plain text or embed)
+- **Slash commands** — Full slash command interface for managing Twitch channel subscriptions and cross-platform quotes
 - **Background jobs** — BullMQ-powered job queue for periodic tasks (activity rotation, stream checking)
 - **Guild sync** — Automatically syncs guild data to the database on join/leave
 - **Dashboard-controlled settings** — Notification channel, role, and enable/disable can be managed from the web dashboard
-- **EventBus integration** — Subscribes to `discord:settings-updated` events to reload guild settings in real time
+- **EventBus integration** — Subscribes to `discord:settings-updated` and `discord:test-welcome` events to reload guild settings in real time
 
 To set up your Discord application, see [Create a Discord Application](/docs/getting-started/create-discord-app).
 
