@@ -520,8 +520,195 @@
 - [ ] `pnpm --filter docs build` succeeds with no errors
 - [ ] All 40 pages generate successfully (34 original + 3 new + base paths)
 
-## J. Automated Tests
+## J. Automated Tests (Existing)
 
 - [ ] Run `pnpm test` — all tests pass
 - [ ] Run `pnpm check-types` — all packages pass (verified for Phase 6)
 - [ ] Run `pnpm turbo build --filter="!web"` — all builds succeed
+
+## K. Phase 8 — EventBus & tRPC API Unit Tests
+
+### K1. Test Infrastructure
+
+- [ ] `vitest.workspace.ts` includes `packages/events` and `packages/api`
+- [ ] `packages/events/vitest.config.ts` exists with `name: "events"`
+- [ ] `packages/api/vitest.config.ts` exists with `name: "api"`
+- [ ] `packages/api/src/test-helpers.ts` exports `mockSession`, `mockUser`, `createMockPrisma`
+
+### K2. EventBus Tests (`packages/events/src/bus.test.ts` — 11 tests)
+
+- [ ] Publishes JSON-serialized messages to prefixed channel
+- [ ] Uses custom prefix when provided
+- [ ] Subscribes to prefixed Redis channel
+- [ ] Only subscribes once for multiple handlers on same event
+- [ ] Dispatches messages to registered handlers
+- [ ] Dispatches to multiple handlers for same event
+- [ ] Ignores messages for events without handlers
+- [ ] Ignores malformed JSON messages
+- [ ] `ping()` returns true when Redis responds PONG
+- [ ] `ping()` returns false when Redis throws
+- [ ] `disconnect()` unsubscribes and disconnects both clients
+
+### K3. Audit Utility Tests (`packages/api/src/utils/audit.test.ts` — 5 tests)
+
+- [ ] Looks up user role and creates audit log entry
+- [ ] Defaults to USER role when user not found
+- [ ] Stores optional metadata and ipAddress
+- [ ] Stores userImage when provided
+- [ ] Omits undefined optional fields
+
+### K4. Bot Channel Router Tests (`packages/api/src/routers/botChannel.test.ts` — 17 tests)
+
+- [ ] `getStatus` returns linked account status
+- [ ] `getStatus` returns false when no accounts linked
+- [ ] `getStatus` throws UNAUTHORIZED without session
+- [ ] `enable` upserts botChannel and publishes `channel:join`
+- [ ] `enable` throws when no Twitch account linked
+- [ ] `enable` rejects USER and MODERATOR roles
+- [ ] `disable` disables bot and publishes `channel:leave`
+- [ ] `disable` throws when bot not enabled
+- [ ] `mute` mutes bot and publishes `bot:mute`
+- [ ] `mute` uses `bot.unmute` action for unmuting
+- [ ] `mute` throws when bot not enabled
+- [ ] `updateCommandToggles` updates and publishes event
+- [ ] `updateCommandToggles` throws for invalid command names
+- [ ] `updateCommandAccessLevel` creates override for non-default level
+- [ ] `updateCommandAccessLevel` deletes override when resetting to default
+- [ ] `updateCommandAccessLevel` throws for invalid command name
+
+### K5. Chat Command Router Tests (`packages/api/src/routers/chatCommand.test.ts` — 18 tests)
+
+- [ ] `list` returns commands for user's bot channel
+- [ ] `list` throws PRECONDITION_FAILED when bot not enabled
+- [ ] `list` throws UNAUTHORIZED without session
+- [ ] `create` creates command and publishes `command:created`
+- [ ] `create` lowercases command name
+- [ ] `create` rejects built-in command names (BAD_REQUEST)
+- [ ] `create` rejects duplicate names (CONFLICT)
+- [ ] `create` rejects invalid characters via Zod
+- [ ] `create` rejects USER role
+- [ ] `update` updates command and publishes `command:updated`
+- [ ] `update` throws NOT_FOUND for nonexistent command
+- [ ] `update` throws NOT_FOUND for command in different channel
+- [ ] `delete` deletes command and publishes `command:deleted`
+- [ ] `delete` throws NOT_FOUND for nonexistent command
+- [ ] `toggleEnabled` toggles state and publishes event
+- [ ] `toggleEnabled` throws NOT_FOUND for nonexistent command
+
+### K6. User Management Router Tests (`packages/api/src/routers/userManagement.test.ts` — 16 tests)
+
+- [ ] `list` returns paginated users
+- [ ] `list` supports search filtering
+- [ ] `list` rejects non-BROADCASTER role
+- [ ] `list` rejects unauthenticated calls
+- [ ] `list` rejects banned users
+- [ ] `getUser` returns user details
+- [ ] `getUser` throws NOT_FOUND for missing user
+- [ ] `updateRole` updates role and logs audit
+- [ ] `updateRole` prevents changing own role
+- [ ] `updateRole` prevents changing broadcaster's role
+- [ ] `updateRole` throws NOT_FOUND for missing user
+- [ ] `ban` bans user with reason and logs audit
+- [ ] `ban` prevents banning yourself
+- [ ] `ban` prevents banning the broadcaster
+- [ ] `unban` unbans user and logs audit
+- [ ] `unban` throws NOT_FOUND for missing user
+
+### K7. Queue Router Tests (`packages/api/src/routers/queue.test.ts` — 14 tests)
+
+- [ ] `getState` upserts and returns singleton state
+- [ ] `list` returns entries ordered by position
+- [ ] `setStatus` OPEN publishes event and logs `queue.open`
+- [ ] `setStatus` CLOSED maps to `queue.close`
+- [ ] `setStatus` PAUSED maps to `queue.pause`
+- [ ] `setStatus` rejects USER role
+- [ ] `removeEntry` removes entry, reorders positions, publishes event
+- [ ] `removeEntry` throws NOT_FOUND for missing entry
+- [ ] `pickEntry` picks next entry
+- [ ] `pickEntry` throws NOT_FOUND for empty queue (next)
+- [ ] `pickEntry` throws NOT_FOUND for empty queue (random)
+- [ ] `clear` clears all entries and publishes event
+
+### K8. Regular Router Tests (`packages/api/src/routers/regular.test.ts` — 12 tests)
+
+- [ ] `list` returns all regulars
+- [ ] `add` adds regular and publishes `regular:created`
+- [ ] `add` throws NOT_FOUND when Twitch user doesn't exist
+- [ ] `add` throws CONFLICT when already a regular
+- [ ] `add` rejects USER role
+- [ ] `remove` removes regular and publishes `regular:deleted`
+- [ ] `remove` throws NOT_FOUND for missing regular
+- [ ] `refreshUsernames` updates display names from Twitch
+
+### K9. Discord Guild Router Tests (`packages/api/src/routers/discordGuild.test.ts` — 24 tests)
+
+- [ ] `getStatus` returns linked guild info
+- [ ] `getStatus` returns null when no guild linked
+- [ ] `listAvailableGuilds` returns unlinked guilds
+- [ ] `getGuildChannels` returns filtered text/announcement channels
+- [ ] `getGuildChannels` throws NOT_FOUND when no guild linked
+- [ ] `getGuildRoles` filters out managed roles and @everyone
+- [ ] `linkGuild` links guild and publishes `discord:settings-updated`
+- [ ] `linkGuild` throws NOT_FOUND for unknown guild
+- [ ] `linkGuild` throws CONFLICT when linked to another user
+- [ ] `linkGuild` rejects MODERATOR role
+- [ ] `setNotificationChannel` sets channel and publishes event
+- [ ] `setNotificationChannel` throws NOT_FOUND when no guild linked
+- [ ] `setNotificationRole` sets role and publishes event
+- [ ] `enable` enables notifications
+- [ ] `disable` disables notifications
+- [ ] `listMonitoredChannels` returns monitored channels
+- [ ] `updateChannelSettings` updates settings and publishes event
+- [ ] `updateChannelSettings` throws NOT_FOUND for unknown channel
+- [ ] `updateWelcomeSettings` updates welcome settings
+- [ ] `testWelcomeMessage` publishes test welcome event
+- [ ] `testNotification` publishes test notification event
+- [ ] `testNotification` throws PRECONDITION_FAILED when no channel set
+
+### K10. User Router Tests (`packages/api/src/routers/user.test.ts` — 10 tests)
+
+- [ ] `getProfile` returns profile with connected accounts
+- [ ] `getProfile` throws NOT_FOUND when user doesn't exist
+- [ ] `getProfile` throws UNAUTHORIZED without session
+- [ ] `exportData` returns full user data export
+- [ ] `exportData` returns null botChannel when none exists
+- [ ] `importStreamElements` imports commands and publishes events
+- [ ] `importStreamElements` skips existing commands
+- [ ] `importStreamElements` skips invalid names
+- [ ] `importStreamElements` maps SE access levels correctly
+- [ ] `importStreamElements` throws PRECONDITION_FAILED when bot not enabled
+
+### K11. Audit Log Router Tests (`packages/api/src/routers/auditLog.test.ts` — 7 tests)
+
+- [ ] BROADCASTER sees all logs without role filter
+- [ ] MODERATOR only sees USER and MODERATOR logs
+- [ ] USER only sees USER logs
+- [ ] Supports action and resourceType filters
+- [ ] Returns isChannelOwner flag for each item
+- [ ] Paginates results
+- [ ] Throws UNAUTHORIZED without session
+
+### K12. Setup Router Tests (`packages/api/src/routers/setup.test.ts` — 12 tests)
+
+- [ ] `status` returns true when setup complete
+- [ ] `status` returns false when not configured
+- [ ] `status` works without authentication (public procedure)
+- [ ] `getStep` returns current setup step
+- [ ] `getStep` returns null when no step saved
+- [ ] `getStep` requires authentication
+- [ ] `saveStep` upserts the setup step
+- [ ] `complete` completes setup with valid token
+- [ ] `complete` throws FORBIDDEN with invalid token
+- [ ] `complete` throws FORBIDDEN when no token exists
+- [ ] `startBotAuth` initiates device code flow
+- [ ] `startBotAuth` throws on Twitch API failure
+- [ ] `pollBotAuth` returns pending when not yet complete
+- [ ] `pollBotAuth` stores credentials on success
+- [ ] `pollBotAuth` throws on non-pending errors
+- [ ] `pollBotAuth` throws when validation fails
+
+### K13. Full Suite Verification
+
+- [ ] Run `pnpm test` — all 395 tests pass across 35 test files
+- [ ] No test file has import/mock errors
+- [ ] All new tests use `vi.hoisted()` pattern for mock factories

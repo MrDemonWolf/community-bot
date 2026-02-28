@@ -4,4 +4,6 @@ export default defineWorkspace([
   "apps/twitch",
   "apps/discord",
   "apps/web",
+  "packages/events",
+  "packages/api",
 ]);
