@@ -50,6 +50,7 @@ RUN npm install -g prisma
 COPY --from=build /usr/src/app/apps/web/.next/standalone ./
 COPY --from=build /usr/src/app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build /usr/src/app/packages/db/prisma ./packages/db/prisma
+RUN rm -rf packages/db/node_modules
 COPY apps/web/entrypoint.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh
 
