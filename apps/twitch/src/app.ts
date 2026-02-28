@@ -38,16 +38,17 @@ export let botStatus = {
   status: "offline" as "offline" | "connecting" | "online",
 };
 
+// Start API server immediately so healthchecks pass even if later init fails
+listenWithFallback(api, {
+  port: env.PORT,
+  host: env.HOST,
+  name: "Twitch Bot",
+});
+
 async function main() {
   // Verify database connection on startup
   await prisma.user.findFirst();
   logger.database.connected("Prisma");
-
-  listenWithFallback(api, {
-    port: env.PORT,
-    host: env.HOST,
-    name: "Twitch Bot",
-  });
 
   const eventBus = new EventBus(env.REDIS_URL);
   setEventBus(eventBus);
@@ -245,5 +246,8 @@ async function main() {
 
 main().catch((err) => {
   logger.error("Twitch Bot", "Fatal error", err);
-  process.exit(1);
+  logger.info(
+    "Twitch Bot",
+    "API server remains active for healthchecks. Chat features are unavailable."
+  );
 });
