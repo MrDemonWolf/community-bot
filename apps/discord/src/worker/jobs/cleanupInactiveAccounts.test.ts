@@ -62,7 +62,7 @@ describe("cleanupInactiveAccounts", () => {
     );
   });
 
-  it("does NOT delete users with ADMIN/MODERATOR/LEAD_MODERATOR roles", async () => {
+  it("does NOT delete users with BROADCASTER/MODERATOR/LEAD_MODERATOR roles", async () => {
     mockPrisma.user.findMany.mockResolvedValue([]);
 
     await cleanupInactiveAccounts();

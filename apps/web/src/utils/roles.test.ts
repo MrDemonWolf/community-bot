@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { getRoleDisplay, ROLE_DISPLAY } from "./roles";
 
 describe("getRoleDisplay", () => {
-  it("returns ADMIN display", () => {
-    const result = getRoleDisplay("ADMIN");
+  it("returns BROADCASTER display", () => {
+    const result = getRoleDisplay("BROADCASTER");
     expect(result.label).toBe("Owner");
     expect(result.className).toContain("brand-main");
   });
@@ -25,8 +25,8 @@ describe("getRoleDisplay", () => {
 
   it("returns BROADCASTER display when USER is channel owner", () => {
     const result = getRoleDisplay("USER", true);
-    expect(result.label).toBe("Broadcaster");
-    expect(result.className).toContain("brand-twitch");
+    expect(result.label).toBe("Owner");
+    expect(result.className).toContain("brand-main");
   });
 
   it("returns normal USER display when not channel owner", () => {
@@ -35,15 +35,14 @@ describe("getRoleDisplay", () => {
   });
 
   it("does not override non-USER roles with isChannelOwner", () => {
-    const result = getRoleDisplay("ADMIN", true);
+    const result = getRoleDisplay("BROADCASTER", true);
     expect(result.label).toBe("Owner");
   });
 
   it("ROLE_DISPLAY has all expected roles", () => {
-    expect(ROLE_DISPLAY).toHaveProperty("ADMIN");
+    expect(ROLE_DISPLAY).toHaveProperty("BROADCASTER");
     expect(ROLE_DISPLAY).toHaveProperty("LEAD_MODERATOR");
     expect(ROLE_DISPLAY).toHaveProperty("MODERATOR");
-    expect(ROLE_DISPLAY).toHaveProperty("BROADCASTER");
     expect(ROLE_DISPLAY).toHaveProperty("USER");
   });
 });

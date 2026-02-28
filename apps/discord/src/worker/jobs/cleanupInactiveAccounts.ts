@@ -14,7 +14,7 @@ export default async function cleanupInactiveAccounts(): Promise<void> {
     const broadcasterUserId = broadcasterConfig?.value ?? "";
 
     // Find inactive users:
-    // - Must be role USER (not ADMIN, MODERATOR, LEAD_MODERATOR)
+    // - Must be role USER (not BROADCASTER, MODERATOR, LEAD_MODERATOR)
     // - Must not be the broadcaster
     // - Must have no sessions with expiresAt in the last 365 days
     // - Must have been created more than 365 days ago

@@ -1,5 +1,5 @@
 import { prisma } from "@community-bot/db";
-import { protectedProcedure, router } from "../index";
+import { protectedProcedure, leadModProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
@@ -99,7 +99,7 @@ export const discordGuildRouter = router({
       .map((r) => ({ id: r.id, name: r.name, color: r.color }));
   }),
 
-  linkGuild: protectedProcedure
+  linkGuild: leadModProcedure
     .input(z.object({ guildId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -155,7 +155,7 @@ export const discordGuildRouter = router({
       };
     }),
 
-  setNotificationChannel: protectedProcedure
+  setNotificationChannel: leadModProcedure
     .input(z.object({ channelId: z.string().nullable() }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -196,7 +196,7 @@ export const discordGuildRouter = router({
       return { success: true };
     }),
 
-  setNotificationRole: protectedProcedure
+  setNotificationRole: leadModProcedure
     .input(z.object({ roleId: z.string().nullable() }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -237,7 +237,7 @@ export const discordGuildRouter = router({
       return { success: true };
     }),
 
-  enable: protectedProcedure.mutation(async ({ ctx }) => {
+  enable: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
     const guild = await prisma.discordGuild.findFirst({
@@ -273,7 +273,7 @@ export const discordGuildRouter = router({
     return { success: true };
   }),
 
-  disable: protectedProcedure.mutation(async ({ ctx }) => {
+  disable: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
     const guild = await prisma.discordGuild.findFirst({
@@ -346,7 +346,7 @@ export const discordGuildRouter = router({
     }));
   }),
 
-  updateChannelSettings: protectedProcedure
+  updateChannelSettings: leadModProcedure
     .input(
       z.object({
         channelId: z.string().min(1),
@@ -452,7 +452,7 @@ export const discordGuildRouter = router({
     };
   }),
 
-  updateWelcomeSettings: protectedProcedure
+  updateWelcomeSettings: leadModProcedure
     .input(
       z.object({
         welcomeEnabled: z.boolean().optional(),
@@ -517,7 +517,7 @@ export const discordGuildRouter = router({
       return { success: true };
     }),
 
-  testWelcomeMessage: protectedProcedure
+  testWelcomeMessage: leadModProcedure
     .input(z.object({ type: z.enum(["welcome", "leave", "dm"]) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -552,7 +552,7 @@ export const discordGuildRouter = router({
       return { success: true };
     }),
 
-  testNotification: protectedProcedure.mutation(async ({ ctx }) => {
+  testNotification: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
     const guild = await prisma.discordGuild.findFirst({

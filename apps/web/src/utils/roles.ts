@@ -2,7 +2,7 @@ export const ROLE_DISPLAY: Record<
   string,
   { label: string; className: string }
 > = {
-  ADMIN: {
+  BROADCASTER: {
     label: "Owner",
     className: "bg-brand-main/15 text-brand-main",
   },
@@ -13,10 +13,6 @@ export const ROLE_DISPLAY: Record<
   MODERATOR: {
     label: "Moderator",
     className: "bg-green-500/15 text-green-500",
-  },
-  BROADCASTER: {
-    label: "Broadcaster",
-    className: "bg-brand-twitch/15 text-brand-twitch",
   },
   USER: {
     label: "User",

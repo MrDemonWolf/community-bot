@@ -237,7 +237,110 @@
 - [ ] "View Profile" button links to `/p`
 - [ ] Button does not render when `NEXT_PUBLIC_CHANNEL_NAME` is not set
 
-## F. Automated Tests
+## F. Auth, Permissions & User Management (Phase 5)
+
+### F1. Schema Migration
+
+- [ ] `pnpm db:migrate` runs cleanly (renames ADMIN→BROADCASTER, adds ban fields)
+- [ ] Existing ADMIN users in the database are now BROADCASTER after migration
+- [ ] `pnpm check-types` — no type errors
+
+### F2. USER Role
+
+- [ ] Can log in and view dashboard
+- [ ] Can view commands page (read-only — no create/edit/delete buttons)
+- [ ] Can view regulars page (read-only — no add/remove buttons)
+- [ ] Can view Discord settings (read-only — no mutation controls)
+- [ ] Cannot see Users page in sidebar
+- [ ] Cannot access `/dashboard/users` directly (tRPC rejects)
+- [ ] Bot controls card is visible but enable/disable/mute are hidden
+- [ ] Can view own profile in Settings page
+- [ ] Can export data
+
+### F3. MODERATOR Role
+
+- [ ] All USER permissions plus:
+- [ ] Can create, edit, delete, and toggle commands
+- [ ] Can add and remove regulars
+- [ ] Can import from StreamElements
+- [ ] Cannot enable/disable/mute the bot
+- [ ] Cannot modify Discord settings
+- [ ] Cannot see Users page in sidebar
+
+### F4. LEAD_MODERATOR Role
+
+- [ ] All MODERATOR permissions plus:
+- [ ] Can enable/disable the bot
+- [ ] Can mute/unmute the bot
+- [ ] Can update default command toggles and access levels
+- [ ] Can modify all Discord settings (link guild, set channel/role, enable/disable, welcome, test notifications)
+- [ ] Cannot see Users page in sidebar
+
+### F5. BROADCASTER Role
+
+- [ ] All LEAD_MODERATOR permissions plus:
+- [ ] Can see "Management" section with "Users" link in sidebar
+- [ ] Can access `/dashboard/users` page
+- [ ] Can search users by name/email
+- [ ] Can filter users by role
+- [ ] Can change a user's role (USER ↔ MODERATOR ↔ LEAD_MODERATOR)
+- [ ] Cannot change own role (tRPC rejects)
+- [ ] Cannot change another BROADCASTER's role (tRPC rejects)
+- [ ] Can ban a user with an optional reason
+- [ ] Can unban a user
+- [ ] Cannot ban self (tRPC rejects)
+- [ ] Audit log shows all entries (BROADCASTER sees everything)
+
+### F6. Ban System
+
+- [ ] Banned user can still log in
+- [ ] Banned user sees "Account Suspended" page with ban reason when accessing `/dashboard`
+- [ ] Banned user's tRPC mutations are rejected with FORBIDDEN
+- [ ] Unbanning restores dashboard access immediately
+- [ ] Ban reason displays correctly (or gracefully hidden if none)
+
+### F7. Setup Wizard
+
+- [ ] First user completing setup is promoted to BROADCASTER (not ADMIN)
+- [ ] Setup wizard text says "Sign in to become the broadcaster."
+
+### F8. Audit Log
+
+- [ ] Role change logged as `user.role-change` with previous/new role
+- [ ] Ban logged as `user.ban` with target name and reason
+- [ ] Unban logged as `user.unban` with target name
+- [ ] BROADCASTER sees all audit entries
+- [ ] LEAD_MODERATOR sees entries from their level and below
+- [ ] MODERATOR sees entries from their level and below
+- [ ] USER sees only USER-level entries
+
+### F9. Auto-Link Twitch from Discord (On Login)
+
+- [ ] Discord OAuth now requests `connections` scope (check consent screen)
+- [ ] After Discord login, if user has verified Twitch connection and no Twitch account linked, Account entry is auto-created
+- [ ] No duplicate created if Twitch already linked
+- [ ] No error if no Twitch connection on Discord
+
+### F10. Auto-Link Twitch from Discord (Background Sync)
+
+- [ ] `sync-twitch-links` job scheduled daily at 4 AM
+- [ ] Job processes users with Discord OAuth tokens
+- [ ] Skips users who already have Twitch linked
+- [ ] Creates Twitch Account entries for users with verified Twitch connections
+- [ ] Handles expired/invalid tokens gracefully (skips, no crash)
+- [ ] Logs summary (linked, skipped, errors)
+
+### F11. Regression
+
+- [ ] Commands CRUD still works for MODERATOR+ roles
+- [ ] Regulars add/remove still works for MODERATOR+ roles
+- [ ] Bot enable/disable/mute still works for LEAD_MODERATOR+ roles
+- [ ] Discord settings still work for LEAD_MODERATOR+ roles
+- [ ] Cleanup inactive accounts job still only targets USER role
+- [ ] Role display badges show correctly (Owner, Lead Mod, Moderator, User)
+- [ ] Channel owner USER still shows "Owner" badge via `getRoleDisplay`
+
+## G. Automated Tests
 
 - [ ] Run `pnpm test` — all tests pass
 - [ ] Run `pnpm check-types` — all packages pass

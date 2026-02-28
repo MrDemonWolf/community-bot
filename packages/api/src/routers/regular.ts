@@ -1,5 +1,5 @@
 import { prisma } from "@community-bot/db";
-import { protectedProcedure, router } from "../index";
+import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { getTwitchUserByLogin, getTwitchUserById } from "../utils/twitch";
@@ -13,7 +13,7 @@ export const regularRouter = router({
     return regulars;
   }),
 
-  add: protectedProcedure
+  add: moderatorProcedure
     .input(z.object({ username: z.string().min(1).max(50) }))
     .mutation(async ({ ctx, input }) => {
       const username = input.username.toLowerCase().trim();
@@ -65,7 +65,7 @@ export const regularRouter = router({
       return regular;
     }),
 
-  remove: protectedProcedure
+  remove: moderatorProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const regular = await prisma.twitchRegular.findUnique({

@@ -3,7 +3,7 @@
  *
  * Handles the first-time setup flow: checking status, persisting wizard
  * progress, authorizing the bot's Twitch account via Device Code Flow,
- * and finalizing setup (promoting the user to ADMIN, setting broadcaster).
+ * and finalizing setup (promoting the user to BROADCASTER, setting broadcaster).
  */
 import { prisma } from "@community-bot/db";
 import { env } from "@community-bot/env/server";
@@ -46,7 +46,7 @@ export const setupRouter = router({
 
   /**
    * Finalize setup: validate the one-time token, set broadcaster,
-   * promote user to ADMIN, and clean up transient config keys.
+   * promote user to BROADCASTER, and clean up transient config keys.
    */
   complete: protectedProcedure
     .input(z.object({ token: z.string() }))
@@ -78,7 +78,7 @@ export const setupRouter = router({
         prisma.systemConfig.deleteMany({ where: { key: "setupStep" } }),
         prisma.user.update({
           where: { id: userId },
-          data: { role: "ADMIN" },
+          data: { role: "BROADCASTER" },
         }),
       ]);
 

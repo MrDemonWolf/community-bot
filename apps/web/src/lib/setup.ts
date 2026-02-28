@@ -3,7 +3,7 @@
  *
  * On first startup the web dashboard generates a one-time setup token and
  * logs a URL. The first user to visit that URL completes the setup wizard,
- * becomes the broadcaster, and is promoted to ADMIN. Runtime config is
+ * becomes the broadcaster, and is promoted to BROADCASTER. Runtime config is
  * stored in the SystemConfig table as key-value pairs.
  */
 import { prisma } from "@community-bot/db";

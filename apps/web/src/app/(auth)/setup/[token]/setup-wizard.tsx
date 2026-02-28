@@ -259,7 +259,7 @@ export default function SetupWizard({ token }: { token: string }) {
           </CardTitle>
           <p className="text-sm text-muted-foreground">
             {step === "sign-in" &&
-              "Sign in to become the broadcaster and admin."}
+              "Sign in to become the broadcaster."}
             {step === "authorize-bot" &&
               "Log in with the bot\u2019s Twitch account to authorize chat access."}
             {step === "link-twitch" &&

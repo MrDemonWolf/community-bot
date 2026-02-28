@@ -1,5 +1,5 @@
 import { prisma } from "@community-bot/db";
-import { protectedProcedure, router } from "../index";
+import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 import { TRPCError } from "@trpc/server";
@@ -34,7 +34,7 @@ export const chatCommandRouter = router({
     return commands;
   }),
 
-  create: protectedProcedure
+  create: moderatorProcedure
     .input(
       z.object({
         name: z
@@ -118,7 +118,7 @@ export const chatCommandRouter = router({
       return command;
     }),
 
-  update: protectedProcedure
+  update: moderatorProcedure
     .input(
       z.object({
         id: z.string().uuid(),
@@ -195,7 +195,7 @@ export const chatCommandRouter = router({
       return command_updated;
     }),
 
-  delete: protectedProcedure
+  delete: moderatorProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
@@ -229,7 +229,7 @@ export const chatCommandRouter = router({
       return { success: true };
     }),
 
-  toggleEnabled: protectedProcedure
+  toggleEnabled: moderatorProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);

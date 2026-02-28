@@ -1,5 +1,5 @@
 import { prisma } from "@community-bot/db";
-import { protectedProcedure, router } from "../index";
+import { protectedProcedure, leadModProcedure, router } from "../index";
 import { z } from "zod";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 import { logAudit } from "../utils/audit";
@@ -57,7 +57,7 @@ export const botChannelRouter = router({
   }),
 
   /** Enable the bot for the current user's Twitch channel */
-  enable: protectedProcedure.mutation(async ({ ctx }) => {
+  enable: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
     // Get linked Twitch account
@@ -114,7 +114,7 @@ export const botChannelRouter = router({
   }),
 
   /** Disable the bot for the current user's Twitch channel */
-  disable: protectedProcedure.mutation(async ({ ctx }) => {
+  disable: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
     const botChannel = await prisma.botChannel.findUnique({
@@ -150,7 +150,7 @@ export const botChannelRouter = router({
   }),
 
   /** Mute or unmute the bot in the user's channel */
-  mute: protectedProcedure
+  mute: leadModProcedure
     .input(z.object({ muted: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -189,7 +189,7 @@ export const botChannelRouter = router({
     }),
 
   /** Update which default commands are disabled for this channel */
-  updateCommandToggles: protectedProcedure
+  updateCommandToggles: leadModProcedure
     .input(z.object({ disabledCommands: z.array(z.string()) }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -235,7 +235,7 @@ export const botChannelRouter = router({
     }),
 
   /** Update the access level override for a default command */
-  updateCommandAccessLevel: protectedProcedure
+  updateCommandAccessLevel: leadModProcedure
     .input(
       z.object({
         commandName: z.string(),
