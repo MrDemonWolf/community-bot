@@ -4,155 +4,208 @@ Everything the bot can do, at a glance.
 
 ---
 
-## Twitch Bot (22 built-in commands)
+## Twitch Bot — Chat Commands
 
-### Chat Commands (everyone)
-- `!ping` — Check if the bot is alive
-- `!uptime` — How long the stream has been live
-- `!accountage [user]` — How old a Twitch account is (aliases: `!accage`, `!created`)
-- `!title` — Current stream title
-- `!game` — Current game/category
-- `!followage` — How long you've followed the channel
-- `!vanish` — Clear your own chat messages
-- `!clip` — Create a Twitch clip
-- `!commands` — Link to the public commands page
+| Command | What it does | Who can use it |
+|---------|-------------|----------------|
+| `!ping` | Check if the bot is alive | Everyone |
+| `!uptime` | How long the stream has been live | Everyone |
+| `!accountage [user]` | How old a Twitch account is | Everyone |
+| `!title` | Current stream title | Everyone |
+| `!game` | Current game/category | Everyone |
+| `!followage` | How long you've followed the channel | Everyone |
+| `!vanish` | Clear your own chat messages | Everyone |
+| `!clip` | Create a Twitch clip | Everyone |
+| `!commands` | Link to the public commands page | Everyone |
 
-### Song Requests (everyone)
-- `!sr <song>` — Request a song (aliases: `!songrequest`, `!song`)
-- `!sr list` / `!sr queue` — See next 5 songs
-- `!sr current` — Currently playing song
-- `!sr remove` — Remove your own requests
+## Twitch Bot — Song Requests
 
-### Queue (everyone)
-- `!queue join` / `!queue leave` — Join or leave the viewer queue
-- `!queue list` — See the queue (up to 10)
-- `!queue position` — Check your spot
+| Command | What it does | Who can use it |
+|---------|-------------|----------------|
+| `!sr <song>` | Request a song | Everyone |
+| `!sr list` | See next 5 songs in queue | Everyone |
+| `!sr current` | Currently playing song | Everyone |
+| `!sr remove` | Remove your own requests | Everyone |
+| `!sr skip` | Skip the current song | Mod+ |
+| `!sr remove <position>` | Remove a specific song | Mod+ |
+| `!sr clear` | Clear the entire queue | Mod+ |
 
-### Quotes (everyone can view, mods can add/remove)
-- `!quote` — Random quote
-- `!quote <number>` — Specific quote
-- `!quote search <text>` — Search quotes
-- `!quote add <text>` — Add a quote (mod+)
-- `!quote remove <number>` — Remove a quote (mod+)
+## Twitch Bot — Viewer Queue
 
-### Counters (mod+)
-- `!counter <name>` — Show a counter value
-- `!counter <name> +` / `-` — Increment or decrement
-- `!counter <name> set <value>` — Set to exact value
-- `!counter <name> create` / `delete` — Create or delete
+| Command | What it does | Who can use it |
+|---------|-------------|----------------|
+| `!queue join` | Join the viewer queue | Everyone |
+| `!queue leave` | Leave the queue | Everyone |
+| `!queue list` | See the queue (up to 10) | Everyone |
+| `!queue position` | Check your spot | Everyone |
+| `!queue open` / `close` | Open or close the queue | Mod+ |
+| `!queue pause` / `unpause` | Pause or resume the queue | Mod+ |
+| `!queue pick [random/user]` | Pick next, random, or specific viewer | Mod+ |
+| `!queue remove <user>` | Remove a viewer | Mod+ |
+| `!queue clear` | Clear the entire queue | Mod+ |
 
-### Moderation (mod+)
-- `!bot mute` / `!bot unmute` — Mute/unmute the bot
-- `!permit <user> [seconds]` — Temporarily bypass spam filters
-- `!nuke <phrase> [seconds]` — Timeout all recent users who said a phrase
-- `!shoutout <user>` — Shout out another streamer (alias: `!so`)
-- `!reloadcommands` — Force-reload commands from DB
+## Twitch Bot — Quotes
 
-### Song Request Management (mod+)
-- `!sr skip` — Skip current song
-- `!sr remove <position>` — Remove a specific song
-- `!sr clear` — Clear the queue
+| Command | What it does | Who can use it |
+|---------|-------------|----------------|
+| `!quote` | Show a random quote | Everyone |
+| `!quote <number>` | Show a specific quote | Everyone |
+| `!quote search <text>` | Search quotes by keyword | Everyone |
+| `!quote add <text>` | Add a new quote | Mod+ |
+| `!quote remove <number>` | Remove a quote | Mod+ |
 
-### Queue Management (mod+)
-- `!queue open` / `close` / `pause` / `unpause`
-- `!queue pick` / `pick random` / `pick <user>`
-- `!queue remove <user>` / `clear`
+## Twitch Bot — Counters
 
-### Giveaways (mod+)
-- `!giveaway start <keyword> [title]` — Start a keyword giveaway (alias: `!ga`)
-- `!giveaway draw` / `reroll` — Pick a winner
-- `!giveaway end` — End the giveaway
-- `!giveaway count` — Show entry count
-- Viewers enter by typing the keyword in chat
+| Command | What it does | Who can use it |
+|---------|-------------|----------------|
+| `!counter <name>` | Show a counter's value | Mod+ |
+| `!counter <name> +` / `-` | Increment or decrement | Mod+ |
+| `!counter <name> set <value>` | Set to an exact value | Mod+ |
+| `!counter <name> create` | Create a new counter | Mod+ |
+| `!counter <name> delete` | Delete a counter | Mod+ |
 
-### Polls (mod+)
-- `!poll create "Question" "Opt1" "Opt2" [duration]` — Create a Twitch-native poll
-- `!poll end` — End poll early
-- `!poll results` — Show current results
+## Twitch Bot — Moderation
 
-### Broadcaster Only
-- `!filesay <url>` — Read a text file and send each line to chat
-- `!command add/edit/remove/show/options` — Full command management from chat
+| Command | What it does | Who can use it |
+|---------|-------------|----------------|
+| `!bot mute` / `unmute` | Mute or unmute the bot | Mod+ |
+| `!permit <user> [seconds]` | Temporarily bypass spam filters | Mod+ |
+| `!nuke <phrase> [seconds]` | Timeout users who said a phrase | Mod+ |
+| `!shoutout <user>` | Shout out another streamer | Mod+ |
+| `!reloadcommands` | Force-reload commands from DB | Mod+ |
 
-### Other Twitch Features
-- **Custom commands** — Database-driven with variables, cooldowns, access levels, regex triggers, aliases
-- **Response variables** — `{user}`, `{channel}`, `{counter <name>}`, `{game}`, `{title}`, etc.
-- **Recurring timers** — Scheduled messages at configurable intervals
-- **Spam filters** — Caps, links, symbols, emotes, repetition, banned words (each toggleable)
-- **AI shoutouts** — Google Gemini-powered personalized shoutout messages (optional)
-- **Stream status tracking** — Online/offline command filtering
-- **Auto-reload** — Commands and regulars refresh every 5 minutes + instant EventBus updates
-- **Access levels** — Everyone, Subscriber, Regular, VIP, Moderator, Lead Moderator, Broadcaster
+## Twitch Bot — Giveaways
+
+| Command | What it does | Who can use it |
+|---------|-------------|----------------|
+| `!giveaway start <keyword> [title]` | Start a keyword giveaway | Mod+ |
+| `!giveaway draw` | Randomly pick a winner | Mod+ |
+| `!giveaway reroll` | Pick a new winner | Mod+ |
+| `!giveaway end` | End the giveaway | Mod+ |
+| `!giveaway count` | Show entry count | Mod+ |
+| *(type the keyword)* | Enter the giveaway | Everyone |
+
+## Twitch Bot — Polls
+
+| Command | What it does | Who can use it |
+|---------|-------------|----------------|
+| `!poll create "Q" "O1" "O2" [dur]` | Create a Twitch-native poll | Mod+ |
+| `!poll end` | End the poll early | Mod+ |
+| `!poll results` | Show current results | Mod+ |
+
+## Twitch Bot — Broadcaster Only
+
+| Command | What it does |
+|---------|-------------|
+| `!filesay <url>` | Read a text file and send each line to chat |
+| `!command add <name> <response>` | Create a custom command |
+| `!command edit <name> <response>` | Edit a command's response |
+| `!command remove <name>` | Delete a command |
+| `!command show <name>` | Show a command's settings |
+| `!command options <name> <flags>` | Modify cooldown, access level, aliases, etc. |
+
+## Twitch Bot — Other Features
+
+| Feature | Description |
+|---------|-------------|
+| Custom commands | Database-driven with variables, cooldowns, access levels, regex triggers, aliases |
+| Response variables | `{user}`, `{channel}`, `{counter name}`, `{game}`, `{title}`, and more |
+| Recurring timers | Scheduled chat messages at configurable intervals |
+| Spam filters | Caps, links, symbols, emotes, repetition, banned words (each toggleable) |
+| AI shoutouts | Google Gemini-powered personalized shoutout messages (optional) |
+| Stream status tracking | Commands can be filtered to online-only or offline-only |
+| Auto-reload | Commands and regulars refresh every 5 min + instant EventBus updates |
+| Access levels | Everyone, Subscriber, Regular, VIP, Moderator, Lead Moderator, Broadcaster |
 
 ---
 
-## Discord Bot
+## Discord Bot — Slash Commands
 
-### Slash Commands
-- `/twitch add <username>` — Monitor a Twitch channel for live notifications
-- `/twitch remove <username>` — Stop monitoring a channel
-- `/twitch list` — Show all monitored channels
-- `/twitch test <username>` — Send a test notification (owner only)
-- `/twitch notifications set-channel <channel>` — Set the notification channel
-- `/twitch notifications set-role <role>` — Set the role to ping on go-live
-- `/quote show [number]` — Show a random or specific quote
-- `/quote add <text>` — Add a quote
-- `/quote remove <number>` — Remove a quote
-- `/quote search <text>` — Search quotes
+| Command | What it does |
+|---------|-------------|
+| `/twitch add <username>` | Monitor a Twitch channel for live notifications |
+| `/twitch remove <username>` | Stop monitoring a channel |
+| `/twitch list` | Show all monitored channels |
+| `/twitch test <username>` | Send a test notification (owner only) |
+| `/twitch notifications set-channel` | Set the notification channel |
+| `/twitch notifications set-role` | Set the role to ping on go-live |
+| `/quote show [number]` | Show a random or specific quote |
+| `/quote add <text>` | Add a quote |
+| `/quote remove <number>` | Remove a quote |
+| `/quote search <text>` | Search quotes by keyword |
 
-### Other Discord Features
-- **Twitch live notifications** — Rich embeds when monitored channels go live/offline
-- **Welcome & leave messages** — Configurable messages when members join/leave
-- **Auto-role** — Assign a role to new members automatically
-- **DM welcome** — Send a private welcome to new members
-- **Guild sync** — Auto-sync guild data to DB on join/leave
-- **Real-time config** — Dashboard changes apply instantly via EventBus
+## Discord Bot — Other Features
+
+| Feature | Description |
+|---------|-------------|
+| Twitch live notifications | Rich embeds when monitored channels go live/offline |
+| Welcome & leave messages | Configurable messages when members join/leave |
+| Auto-role | Assign a role to new members automatically |
+| DM welcome | Send a private welcome message to new members |
+| Guild sync | Auto-sync guild data to DB on join/leave |
+| Real-time config | Dashboard changes apply instantly via EventBus |
 
 ---
 
-## Web Dashboard
+## Web Dashboard — Main
 
-### Main Dashboard
-- **Audit log feed** — Real-time log of all changes with user avatars and timestamps
-- **Bot controls** — Enable/disable/mute the Twitch bot
-- **Quick stats** — Commands, regulars, queue, bot status, quotes, counters, timers, song requests, giveaways (auto-refresh every 30s)
+| Feature | Description |
+|---------|-------------|
+| Audit log feed | Real-time log of all changes with user avatars and timestamps |
+| Bot controls | Enable/disable/mute the Twitch bot |
+| Quick stats | Commands, regulars, queue, bot status, quotes, counters, timers, song requests, giveaways (auto-refresh 30s) |
 
-### Twitch Management Pages
-- **Commands** — Create, edit, delete, toggle custom commands + configure default command toggles and access levels
-- **Regulars** — Manage trusted users
-- **Queue** — Open/close/pause, pick viewers, manage entries
-- **Quotes** — View, add, remove quotes (shared with Discord)
-- **Counters** — Create, edit, delete named counters
-- **Timers** — Create, edit, toggle recurring chat timers
-- **Song Requests** — View queue, skip/remove songs, configure settings
-- **Moderation** — Configure spam filters (caps, links, symbols, emotes, repetition, banned words)
-- **Giveaways** — Create giveaways, draw winners, view entries and history
-- **Polls** — Create Twitch-native polls, view results and history
+## Web Dashboard — Twitch Management
 
-### Discord Management
-- **Discord Settings** — Link a Discord server, set notification channel/role, enable/disable
-- **Welcome & Leave** — Configure welcome messages, leave messages, auto-role, DM welcomes
+| Page | What you can do |
+|------|----------------|
+| Commands | Create, edit, delete, toggle custom commands + configure default command toggles and access levels |
+| Regulars | Manage trusted users |
+| Queue | Open/close/pause, pick viewers, manage entries |
+| Quotes | View, add, remove quotes (shared with Discord) |
+| Counters | Create, edit, delete named counters |
+| Timers | Create, edit, toggle recurring chat timers |
+| Song Requests | View queue, skip/remove songs, configure settings |
+| Moderation | Configure spam filters (caps, links, symbols, emotes, repetition, banned words) |
+| Giveaways | Create giveaways, draw winners, view entries and history |
+| Polls | Create Twitch-native polls, view results and history |
 
-### Admin
-- **User Management** — Manage roles, ban/unban users (broadcaster only)
-- **Settings** — Profile, AI shoutout toggle, data export/import
+## Web Dashboard — Discord Management
 
-### Public Pages (no login needed)
-- `/p` — Broadcaster profile with stream status, commands preview, queue, song requests, quotes
-- `/p/commands` — All enabled chat commands
-- `/p/queue` — Current viewer queue
-- `/p/quotes` — Browse all quotes with game tags
-- `/p/song-requests` — Current song request queue
+| Page | What you can do |
+|------|----------------|
+| Discord Settings | Link a Discord server, set notification channel/role, enable/disable |
+| Welcome & Leave | Configure welcome messages, leave messages, auto-role, DM welcomes |
+
+## Web Dashboard — Admin
+
+| Page | What you can do |
+|------|----------------|
+| User Management | Manage roles, ban/unban users (broadcaster only) |
+| Settings | Profile, AI shoutout toggle, data export/import |
+
+## Web Dashboard — Public Pages (no login needed)
+
+| Path | What it shows |
+|------|--------------|
+| `/p` | Broadcaster profile with stream status, commands preview, queue, song requests, quotes |
+| `/p/commands` | All enabled chat commands |
+| `/p/queue` | Current viewer queue |
+| `/p/quotes` | Browse all quotes with game tags |
+| `/p/song-requests` | Current song request queue |
 
 ---
 
 ## Infrastructure
-- **Monorepo** — Turborepo with shared packages (DB, env, events, auth, API, server)
-- **Database** — PostgreSQL via Prisma (shared schema across all services)
-- **Redis** — EventBus pub/sub + BullMQ job queue
-- **Auth** — Discord + Twitch OAuth via better-auth
-- **Role hierarchy** — User < Moderator < Lead Moderator < Broadcaster (Admin)
-- **Setup wizard** — First-user setup flow with one-time token
-- **Docker** — docker-compose with PostgreSQL, Redis, and all services
-- **Health checks** — `/health` endpoints on all services
-- **657 unit tests** across 66 files + ~95 integration tests
+
+| Component | Description |
+|-----------|-------------|
+| Monorepo | Turborepo with shared packages (DB, env, events, auth, API, server) |
+| Database | PostgreSQL via Prisma (shared schema across all services) |
+| Redis | EventBus pub/sub + BullMQ job queue |
+| Auth | Discord + Twitch OAuth via better-auth |
+| Role hierarchy | User < Moderator < Lead Moderator < Broadcaster (Admin) |
+| Setup wizard | First-user setup flow with one-time token |
+| Docker | docker-compose with PostgreSQL, Redis, and all services |
+| Health checks | `/health` endpoints on all services |
+| Tests | 657 unit tests across 66 files + ~95 integration tests |
