@@ -13,7 +13,8 @@ import {
 } from "../services/streamStatusManager.js";
 import { executeCommand } from "../services/commandExecutor.js";
 import { trackMessage } from "../services/chatterTracker.js";
-import { getBroadcasterId } from "../services/broadcasterCache.js";
+import { getBroadcasterId, getBotChannelId } from "../services/broadcasterCache.js";
+import { addEntry } from "../services/giveawayManager.js";
 import { isMuted } from "../services/botState.js";
 import { checkMessage, handleViolation } from "../services/spamFilter.js";
 import {
@@ -208,6 +209,14 @@ export function registerMessageEvents(chatClient: ChatClient): void {
           logger.commands.error(cmd.name, user, msg.userInfo.userId);
         });
       return; // First match wins
+    }
+
+    // Phase 4: Giveaway keyword detection
+    const botChannelId = getBotChannelId(channel);
+    if (botChannelId) {
+      addEntry(botChannelId, user, msg.userInfo.userId, text).catch(() => {
+        // Silently ignore giveaway entry errors
+      });
     }
   });
 }

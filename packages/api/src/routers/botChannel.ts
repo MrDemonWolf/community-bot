@@ -349,4 +349,27 @@ export const botChannelRouter = router({
 
       return { success: true };
     }),
+
+  /** Get extended stats for the current user's bot channel */
+  stats: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const botChannel = await prisma.botChannel.findUnique({
+      where: { userId },
+    });
+
+    if (!botChannel || !botChannel.enabled) {
+      return { quotes: 0, counters: 0, timers: 0, songRequests: 0, giveaways: 0 };
+    }
+
+    const [quotes, counters, timers, songRequests, giveaways] = await Promise.all([
+      prisma.quote.count({ where: { botChannelId: botChannel.id } }),
+      prisma.twitchCounter.count({ where: { botChannelId: botChannel.id } }),
+      prisma.twitchTimer.count({ where: { botChannelId: botChannel.id, enabled: true } }),
+      prisma.songRequest.count({ where: { botChannelId: botChannel.id } }),
+      prisma.giveaway.count({ where: { botChannelId: botChannel.id } }),
+    ]);
+
+    return { quotes, counters, timers, songRequests, giveaways };
+  }),
 });

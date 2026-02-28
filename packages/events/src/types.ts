@@ -63,6 +63,11 @@ export interface EventMap {
   "song-request:updated": { channelId: string };
   "song-request:settings-updated": { channelId: string };
 
+  // Giveaway events
+  "giveaway:started": { giveawayId: string; channelId: string };
+  "giveaway:ended": { giveawayId: string; channelId: string };
+  "giveaway:winner": { giveawayId: string; channelId: string };
+
   // Bot status
   "bot:status": {
     service: "discord" | "twitch";

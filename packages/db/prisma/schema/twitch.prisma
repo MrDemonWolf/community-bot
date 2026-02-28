@@ -133,6 +133,7 @@ model BotChannel {
   spamFilter       SpamFilter?
   songRequests        SongRequest[]
   songRequestSettings SongRequestSettings?
+  giveaways           Giveaway[]
 }
 
 model Quote {
@@ -254,4 +255,30 @@ model DefaultCommandOverride {
   botChannel   BotChannel        @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
 
   @@unique([botChannelId, commandName])
+}
+
+model Giveaway {
+  id           String          @id @default(uuid())
+  title        String
+  keyword      String
+  isActive     Boolean         @default(true)
+  winnerName   String?
+  botChannelId String
+  botChannel   BotChannel      @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+  entries      GiveawayEntry[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([botChannelId, isActive])
+}
+
+model GiveawayEntry {
+  id             String   @id @default(uuid())
+  giveawayId     String
+  giveaway       Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  twitchUsername  String
+  twitchUserId   String
+  createdAt      DateTime @default(now())
+
+  @@unique([giveawayId, twitchUserId])
 }

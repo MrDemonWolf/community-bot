@@ -19,6 +19,8 @@ import { nuke } from "./nuke.js";
 import { vanish } from "./vanish.js";
 import { clip } from "./clip.js";
 import { sr } from "./sr.js";
+import { poll } from "./poll.js";
+import { giveaway } from "./giveaway.js";
 
 export const commands = new Map<string, TwitchCommand>();
 
@@ -47,3 +49,6 @@ commands.set(clip.name, clip);
 commands.set(sr.name, sr);
 commands.set("songrequest", sr);
 commands.set("song", sr);
+commands.set(poll.name, poll);
+commands.set(giveaway.name, giveaway);
+commands.set("ga", giveaway);

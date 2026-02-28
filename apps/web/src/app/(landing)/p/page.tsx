@@ -92,6 +92,15 @@ async function getProfileData() {
         })
       : [];
 
+  const quotes = botChannel
+    ? await prisma.quote.findMany({
+        where: { botChannelId: botChannel.id },
+        orderBy: { quoteNumber: "desc" },
+        select: { id: true, quoteNumber: true, text: true },
+        take: 5,
+      })
+    : [];
+
   return {
     user,
     twitchChannel,
@@ -100,6 +109,7 @@ async function getProfileData() {
     queueEntries,
     songRequestsEnabled: songRequestSettings?.enabled ?? false,
     songRequests,
+    quotes,
   };
 }
 
@@ -107,7 +117,7 @@ export default async function PublicPage() {
   const data = await getProfileData();
   if (!data) return notFound();
 
-  const { user, twitchChannel, commands, queueState, queueEntries, songRequestsEnabled, songRequests } = data;
+  const { user, twitchChannel, commands, queueState, queueEntries, songRequestsEnabled, songRequests, quotes } = data;
   const isLive = twitchChannel?.isLive ?? false;
   const twitchUsername = twitchChannel?.username;
 
@@ -195,6 +205,39 @@ export default async function PublicPage() {
               </span>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Quotes Preview */}
+      {quotes.length > 0 && (
+        <div
+          className="animate-fade-in-up rounded-xl border border-border bg-card p-6"
+          style={{ animationDelay: "250ms" }}
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-semibold text-foreground">Quotes</h3>
+            <Link
+              href={"/p/quotes" as Route}
+              className="text-sm text-brand-main transition-colors hover:text-brand-main/70"
+            >
+              View all
+            </Link>
+          </div>
+          <ol className="space-y-2">
+            {quotes.map((quote) => (
+              <li
+                key={quote.id}
+                className="flex items-center gap-3 rounded-md bg-surface-raised px-3 py-2 text-sm"
+              >
+                <span className="font-mono text-xs text-muted-foreground/70">
+                  #{quote.quoteNumber}
+                </span>
+                <span className="truncate text-muted-foreground">
+                  &ldquo;{quote.text}&rdquo;
+                </span>
+              </li>
+            ))}
+          </ol>
         </div>
       )}
 

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import prisma from "@community-bot/db";
 import { getBroadcasterUserId } from "@/lib/setup";
 import Image from "next/image";
-import { User, Terminal, Trophy, Music } from "lucide-react";
+import { User, Terminal, Trophy, Music, BookOpen } from "lucide-react";
 import SidebarLink from "./sidebar-link";
 
 async function getLayoutData() {
@@ -53,11 +53,16 @@ async function getLayoutData() {
       })
     : null;
 
+  const hasQuotes = botChannel
+    ? (await prisma.quote.count({ where: { botChannelId: botChannel.id } })) > 0
+    : false;
+
   return {
     user,
     twitchUsername: twitchChannel?.username ?? null,
     isLive: twitchChannel?.isLive ?? false,
     hasCommands,
+    hasQuotes,
     queueStatus: queueState?.status ?? "CLOSED",
     songRequestsEnabled: songRequestSettings?.enabled ?? false,
   };
@@ -73,7 +78,7 @@ export default async function PublicLayout({
   const data = await getLayoutData();
   if (!data) return notFound();
 
-  const { user, twitchUsername, isLive, hasCommands, queueStatus, songRequestsEnabled } = data;
+  const { user, twitchUsername, isLive, hasCommands, hasQuotes, queueStatus, songRequestsEnabled } = data;
 
   return (
     <div className="-mt-[1px] flex flex-col">
@@ -138,6 +143,13 @@ export default async function PublicLayout({
                   href="/p/commands"
                   icon={<Terminal className="h-4 w-4" />}
                   label="Commands"
+                />
+              )}
+              {hasQuotes && (
+                <SidebarLink
+                  href="/p/quotes"
+                  icon={<BookOpen className="h-4 w-4" />}
+                  label="Quotes"
                 />
               )}
               {queueStatus !== "CLOSED" && (

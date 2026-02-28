@@ -1,0 +1,44 @@
+---
+title: Polls
+description: Twitch-native poll management via chat commands.
+---
+
+The poll system lets moderators create and manage Twitch-native polls directly from chat. Polls use the Twitch Helix API, so they appear as native Twitch polls in the viewer's chat.
+
+## Commands
+
+### Moderator Commands
+
+| Command | Description |
+|---------|-------------|
+| `!poll create "Question" "Option 1" "Option 2" [duration]` | Create a new poll |
+| `!poll end` | End the currently active poll |
+| `!poll results` | Show the latest poll results |
+
+## How It Works
+
+- Use quoted strings for the question and each option (minimum 2, maximum 5 options).
+- The optional duration is specified in seconds (15–1800). Defaults to 60 seconds.
+- Polls are created using the Twitch Helix API, so they appear as native Twitch polls.
+- Only one poll can be active at a time.
+
+## Examples
+
+```
+!poll create "Best game?" "Minecraft" "Fortnite" "Valorant" 120
+!poll results
+!poll end
+```
+
+## Dashboard Management
+
+Polls can also be managed from the web dashboard at `/dashboard/polls`. The dashboard supports:
+
+- Creating new polls with a form UI
+- Viewing active poll results with progress bars
+- Ending active polls
+- Browsing poll history
+
+## Requirements
+
+The bot must have the **Manage Polls** scope on the broadcaster's Twitch account for poll commands to work.

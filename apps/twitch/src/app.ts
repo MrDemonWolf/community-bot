@@ -29,7 +29,7 @@ import {
 } from "./services/disabledCommandsCache.js";
 import { setEventBus } from "./services/eventBusAccessor.js";
 import * as streamStatusManager from "./services/streamStatusManager.js";
-import { loadBroadcasterIds } from "./services/broadcasterCache.js";
+import { loadBroadcasterIds, loadBotChannelIds } from "./services/broadcasterCache.js";
 import * as timerManager from "./services/timerManager.js";
 import * as spamFilter from "./services/spamFilter.js";
 import * as songRequestManager from "./services/songRequestManager.js";
@@ -57,6 +57,7 @@ async function main() {
   await loadMutedState();
   await loadDisabledCommands();
   await loadBroadcasterIds();
+  await loadBotChannelIds();
 
   let authProvider: Awaited<ReturnType<typeof createAuthProvider>>["authProvider"] | null = null;
   let botUsername: string | null = null;

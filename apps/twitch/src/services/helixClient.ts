@@ -31,3 +31,49 @@ export async function helixFetch<T = unknown>(
 
   return res.json() as Promise<HelixResponse<T>>;
 }
+
+async function getAuthHeaders() {
+  const cred = await prisma.twitchCredential.findFirst();
+  const accessToken = cred?.accessToken ?? "";
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    "Client-Id": env.TWITCH_APPLICATION_CLIENT_ID,
+    "Content-Type": "application/json",
+  };
+}
+
+export async function helixPost<T = unknown>(
+  endpoint: string,
+  body: Record<string, unknown>
+): Promise<HelixResponse<T>> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`https://api.twitch.tv/helix/${endpoint}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Helix API error: ${res.status} ${res.statusText}`);
+  }
+
+  return res.json() as Promise<HelixResponse<T>>;
+}
+
+export async function helixPatch<T = unknown>(
+  endpoint: string,
+  body: Record<string, unknown>
+): Promise<HelixResponse<T>> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`https://api.twitch.tv/helix/${endpoint}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Helix API error: ${res.status} ${res.statusText}`);
+  }
+
+  return res.json() as Promise<HelixResponse<T>>;
+}

@@ -16,6 +16,8 @@ import { counterRouter } from "./counter";
 import { timerRouter } from "./timer";
 import { spamFilterRouter } from "./spamFilter";
 import { songRequestRouter } from "./songRequest";
+import { giveawayRouter } from "./giveaway";
+import { pollRouter } from "./poll";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -41,5 +43,7 @@ export const appRouter = router({
   timer: timerRouter,
   spamFilter: spamFilterRouter,
   songRequest: songRequestRouter,
+  giveaway: giveawayRouter,
+  poll: pollRouter,
 });
 export type AppRouter = typeof appRouter;

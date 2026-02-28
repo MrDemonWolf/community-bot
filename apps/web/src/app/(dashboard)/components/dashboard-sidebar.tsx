@@ -22,6 +22,8 @@ import {
   Timer,
   Shield,
   Music,
+  Gift,
+  BarChart3,
 } from "lucide-react";
 
 const twitchLinks = [
@@ -77,6 +79,18 @@ const twitchLinks = [
     href: "/dashboard/moderation",
     label: "Moderation",
     icon: Shield,
+    exact: false,
+  },
+  {
+    href: "/dashboard/giveaways",
+    label: "Giveaways",
+    icon: Gift,
+    exact: false,
+  },
+  {
+    href: "/dashboard/polls",
+    label: "Polls",
+    icon: BarChart3,
     exact: false,
   },
 ];

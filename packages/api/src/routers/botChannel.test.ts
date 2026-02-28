@@ -190,4 +190,39 @@ describe("botChannelRouter", () => {
       await expect(caller.updateCommandAccessLevel({ commandName: "fake", accessLevel: "MODERATOR" })).rejects.toThrow("Invalid command name");
     });
   });
+
+  describe("stats", () => {
+    it("returns counts for all resource types", async () => {
+      const caller = createCaller(mockSession());
+      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.quote.count.mockResolvedValue(10);
+      p.twitchCounter.count.mockResolvedValue(3);
+      p.twitchTimer.count.mockResolvedValue(2);
+      p.songRequest.count.mockResolvedValue(5);
+      p.giveaway.count.mockResolvedValue(1);
+
+      const result = await caller.stats();
+      expect(result).toEqual({
+        quotes: 10,
+        counters: 3,
+        timers: 2,
+        songRequests: 5,
+        giveaways: 1,
+      });
+    });
+
+    it("returns zeros when bot not enabled", async () => {
+      const caller = createCaller(mockSession());
+      p.botChannel.findUnique.mockResolvedValue(null);
+
+      const result = await caller.stats();
+      expect(result).toEqual({
+        quotes: 0,
+        counters: 0,
+        timers: 0,
+        songRequests: 0,
+        giveaways: 0,
+      });
+    });
+  });
 });
