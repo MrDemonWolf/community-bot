@@ -45,10 +45,11 @@ FROM node:24-alpine AS production
 WORKDIR /usr/src/app
 
 RUN apk add --no-cache openssl curl
+RUN npm install -g prisma
 
 COPY --from=build /usr/src/app/apps/web/.next/standalone ./
 COPY --from=build /usr/src/app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=build /usr/src/app/packages/db ./packages/db
+COPY --from=build /usr/src/app/packages/db/prisma ./packages/db/prisma
 COPY apps/web/entrypoint.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh
 
