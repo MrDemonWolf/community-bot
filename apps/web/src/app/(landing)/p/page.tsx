@@ -75,14 +75,39 @@ async function getProfileData() {
         })
       : [];
 
-  return { user, twitchChannel, commands, queueState, queueEntries };
+  const songRequestSettings = botChannel
+    ? await prisma.songRequestSettings.findUnique({
+        where: { botChannelId: botChannel.id },
+        select: { enabled: true },
+      })
+    : null;
+
+  const songRequests =
+    songRequestSettings?.enabled && botChannel
+      ? await prisma.songRequest.findMany({
+          where: { botChannelId: botChannel.id },
+          orderBy: { position: "asc" },
+          select: { id: true, position: true, title: true, requestedBy: true },
+          take: 5,
+        })
+      : [];
+
+  return {
+    user,
+    twitchChannel,
+    commands,
+    queueState,
+    queueEntries,
+    songRequestsEnabled: songRequestSettings?.enabled ?? false,
+    songRequests,
+  };
 }
 
 export default async function PublicPage() {
   const data = await getProfileData();
   if (!data) return notFound();
 
-  const { user, twitchChannel, commands, queueState, queueEntries } = data;
+  const { user, twitchChannel, commands, queueState, queueEntries, songRequestsEnabled, songRequests } = data;
   const isLive = twitchChannel?.isLive ?? false;
   const twitchUsername = twitchChannel?.username;
 
@@ -212,6 +237,42 @@ export default async function PublicPage() {
               No one in the queue yet.
             </p>
           )}
+        </div>
+      )}
+
+      {/* Song Requests */}
+      {songRequestsEnabled && songRequests.length > 0 && (
+        <div
+          className="animate-fade-in-up rounded-xl border border-border bg-card p-6"
+          style={{ animationDelay: "400ms" }}
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-semibold text-foreground">Song Requests</h3>
+            <Link
+              href={"/p/song-requests" as Route}
+              className="text-sm text-brand-main transition-colors hover:text-brand-main/70"
+            >
+              View all
+            </Link>
+          </div>
+          <ol className="space-y-2">
+            {songRequests.map((song) => (
+              <li
+                key={song.id}
+                className="flex items-center gap-3 rounded-md bg-surface-raised px-3 py-2 text-sm"
+              >
+                <span className="font-mono text-xs text-muted-foreground/70">
+                  #{song.position}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <span className="truncate text-foreground">{song.title}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    — {song.requestedBy}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
       )}
     </>
