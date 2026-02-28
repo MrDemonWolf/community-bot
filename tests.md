@@ -712,3 +712,161 @@
 - [ ] Run `pnpm test` — all 395 tests pass across 35 test files
 - [ ] No test file has import/mock errors
 - [ ] All new tests use `vi.hoisted()` pattern for mock factories
+
+---
+
+## Phase 9: Integration Tests — Bot Services & tRPC API with Real Database
+
+### Prerequisites
+
+- Local PostgreSQL running (`docker compose up -d postgres`)
+- Create test database: `createdb -U postgres community_bot_test`
+- Or set `TEST_DATABASE_URL` env var to your test database
+
+### L1. Infrastructure
+
+- [ ] `packages/db/src/test-client.ts` — exports `testPrisma`, `cleanDatabase()`, seed helpers
+- [ ] `packages/db/src/integration-setup.ts` — runs `prisma migrate deploy` against test DB
+- [ ] `packages/api/vitest.integration.config.ts` — includes `*.integration.test.ts`, sequential, 30s timeout
+- [ ] `apps/twitch/vitest.integration.config.ts` — same pattern for Twitch bot
+- [ ] `apps/discord/vitest.integration.config.ts` — same pattern for Discord bot
+- [ ] `vitest.config.ts` (root) — excludes `*.integration.test.ts` from unit runs
+- [ ] `pnpm test` runs only unit tests (395 tests, 35 files — no integration tests)
+- [ ] `pnpm test:integration` runs all integration tests sequentially
+
+### L2. tRPC Queue Router Integration (12 tests)
+
+- [ ] `getState` creates and returns singleton CLOSED state
+- [ ] `setStatus` persists OPEN status to real DB
+- [ ] `setStatus` transitions between all statuses
+- [ ] `list` returns entries ordered by position
+- [ ] `removeEntry` removes entry and reorders positions via raw SQL
+- [ ] `removeEntry` throws NOT_FOUND for non-existent entry
+- [ ] `pickEntry` picks next (lowest position) and reorders
+- [ ] `pickEntry` picks random entry
+- [ ] `pickEntry` throws NOT_FOUND for empty queue (next)
+- [ ] `pickEntry` throws NOT_FOUND for empty queue (random)
+- [ ] `clear` removes all entries from database
+- [ ] Position reordering verified with real `$executeRawUnsafe`
+
+### L3. tRPC ChatCommand Router Integration (12 tests)
+
+- [ ] `create` creates command with correct `botChannelId`
+- [ ] `create` duplicate → CONFLICT error (compound unique constraint)
+- [ ] `create` rejects built-in command names
+- [ ] `create` lowercases name and aliases
+- [ ] `list` returns only commands for user's bot channel
+- [ ] `update` updates command fields in DB
+- [ ] `update` throws NOT_FOUND for command from different channel
+- [ ] `delete` removes command from DB
+- [ ] `toggleEnabled` flips enabled flag
+
+### L4. tRPC BotChannel Router Integration (8 tests)
+
+- [ ] `getStatus` returns null when not enabled
+- [ ] `getStatus` returns bot channel when enabled
+- [ ] `enable` creates BotChannel record
+- [ ] `enable` re-enables previously disabled channel
+- [ ] `disable` sets enabled to false
+- [ ] `updateCommandToggles` updates disabledCommands array
+- [ ] `updateCommandAccessLevel` creates DefaultCommandOverride
+- [ ] `updateCommandAccessLevel` deletes override when reverting to default
+
+### L5. tRPC Regular Router Integration (6 tests)
+
+- [ ] `add` creates TwitchRegular in DB
+- [ ] `add` duplicate → CONFLICT (unique constraint)
+- [ ] `add` throws NOT_FOUND for unknown Twitch user
+- [ ] `remove` deletes regular from DB
+- [ ] `list` returns all regulars ordered by createdAt desc
+
+### L6. tRPC UserManagement Router Integration (6 tests)
+
+- [ ] `updateRole` changes role in DB
+- [ ] `updateRole` rejects self-change
+- [ ] `updateRole` rejects changing broadcaster role
+- [ ] `ban` sets banned flag and reason in DB
+- [ ] `ban` rejects self-ban
+- [ ] `unban` clears all ban fields
+
+### L7. tRPC AuditLog Router Integration (5 tests)
+
+- [ ] Broadcaster sees all audit entries
+- [ ] Moderator only sees entries at their level and below
+- [ ] Pagination works with real data
+- [ ] Enriches entries with isChannelOwner flag
+- [ ] Filters by action prefix
+
+### L8. tRPC Setup Router Integration (4 tests)
+
+- [ ] `status` returns false when no config exists
+- [ ] `status` returns true when setupComplete configured
+- [ ] `complete` with valid token finalizes setup (sets broadcaster, promotes user, deletes token)
+- [ ] `complete` with invalid token throws FORBIDDEN
+
+### L9. Twitch QueueManager Integration (15 tests)
+
+- [ ] `getQueueStatus` defaults to CLOSED
+- [ ] `setQueueStatus` persists status changes
+- [ ] Status transitions between OPEN/PAUSED/CLOSED
+- [ ] `join` creates entry with correct position
+- [ ] `join` duplicate → rejected
+- [ ] `join` when CLOSED → rejected
+- [ ] `join` when PAUSED → rejected
+- [ ] `leave` removes entry and reorders positions
+- [ ] `leave` returns false for non-existent user
+- [ ] `getPosition` returns correct position
+- [ ] `pick("next")` picks lowest position
+- [ ] `pick("random")` picks random entry
+- [ ] `pick` by username (case-insensitive)
+- [ ] `remove` by username with reordering
+- [ ] `clear` removes all entries
+- [ ] `listEntries` returns ordered entries
+
+### L10. Twitch CommandCache Integration (8 tests)
+
+- [ ] `load` loads enabled commands from DB
+- [ ] `load` skips disabled commands
+- [ ] `getByNameOrAlias` finds by name (case-insensitive)
+- [ ] `getByNameOrAlias` finds by alias
+- [ ] `getByNameOrAlias` returns undefined for non-existent
+- [ ] `getRegexCommands` returns regex-type commands with compiled RegExp
+- [ ] `reload` refreshes cache after DB changes
+- [ ] Multi-channel isolation: commands separated per channel
+
+### L11. Twitch AccessControl Integration (6 tests)
+
+- [ ] `loadRegulars` loads from real DB
+- [ ] `loadRegulars` refreshes when new regulars added
+- [ ] `loadRegulars` removes deleted regulars
+- [ ] `meetsAccessLevel` — EVERYONE/EVERYONE → true
+- [ ] `meetsAccessLevel` — REGULAR/MODERATOR → false
+- [ ] `meetsAccessLevel` — BROADCASTER meets all levels
+
+### L12. Discord GuildCreate/Delete Integration (5 tests)
+
+- [ ] `guildCreateEvent` creates DiscordGuild record
+- [ ] `guildCreateEvent` handles duplicate guild gracefully
+- [ ] `guildDeleteEvent` removes DiscordGuild record
+- [ ] `guildDeleteEvent` handles non-existent guild gracefully
+- [ ] Round-trip: create → delete → re-create works
+
+### L13. Discord CheckTwitchStreams Integration (8 tests)
+
+- [ ] `resolveNotificationChannelId` uses per-channel override
+- [ ] `resolveNotificationChannelId` falls back to guild default
+- [ ] `resolveNotificationChannelId` returns null when neither set
+- [ ] `resolveRoleMention` formats @everyone
+- [ ] `resolveRoleMention` formats role mention with ID
+- [ ] TwitchChannel created with guild association and queried correctly
+- [ ] Channels with disabled guilds are filtered out
+- [ ] TwitchNotification records created and queried correctly
+- [ ] Multiple guilds monitoring same channel both have records
+- [ ] Stream status fields updated on TwitchChannel
+
+### L14. Full Integration Suite Verification
+
+- [ ] `docker compose up -d postgres` — PostgreSQL running
+- [ ] `pnpm test:integration` — all ~95 integration tests pass
+- [ ] `pnpm test` — all 395 unit tests still pass (no regression)
+- [ ] Integration tests properly excluded from `pnpm test` via root `vitest.config.ts`
