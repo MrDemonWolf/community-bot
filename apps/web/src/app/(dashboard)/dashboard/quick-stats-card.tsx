@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Terminal, Users, Radio } from "lucide-react";
+import { Terminal, Users, Radio, ListOrdered } from "lucide-react";
 
 export default function QuickStatsCard() {
   const { data: botStatus } = useQuery(
@@ -19,6 +19,12 @@ export default function QuickStatsCard() {
   );
   const { data: regulars } = useQuery(
     trpc.regular.list.queryOptions()
+  );
+  const { data: queueState } = useQuery(
+    trpc.queue.getState.queryOptions()
+  );
+  const { data: queueEntries } = useQuery(
+    trpc.queue.list.queryOptions()
   );
 
   const botChannel = botStatus?.botChannel;
@@ -56,6 +62,28 @@ export default function QuickStatsCard() {
           <span className="text-sm font-medium text-foreground">
             {regulars?.length ?? 0}
           </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <ListOrdered className="size-4" />
+            Queue
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-xs font-medium ${
+                queueState?.status === "OPEN"
+                  ? "text-green-500"
+                  : queueState?.status === "PAUSED"
+                    ? "text-amber-500"
+                    : "text-muted-foreground"
+              }`}
+            >
+              {queueState?.status ?? "CLOSED"}
+            </span>
+            <span className="text-sm font-medium text-foreground">
+              {queueEntries?.length ?? 0}
+            </span>
+          </div>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

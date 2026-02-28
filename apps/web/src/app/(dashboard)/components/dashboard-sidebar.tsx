@@ -16,6 +16,7 @@ import {
   Home,
   MessageSquare,
   UserCog,
+  ListOrdered,
 } from "lucide-react";
 
 const twitchLinks = [
@@ -35,6 +36,12 @@ const twitchLinks = [
     href: "/dashboard/regulars",
     label: "Regulars",
     icon: Users,
+    exact: false,
+  },
+  {
+    href: "/dashboard/queue",
+    label: "Queue",
+    icon: ListOrdered,
     exact: false,
   },
 ];
