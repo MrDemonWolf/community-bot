@@ -447,30 +447,18 @@ export default function SetupWizard({ token }: { token: string }) {
             {/* Step 4: Enable Bot */}
             {step === "enable-bot" && (
               <div className="flex flex-col gap-3">
-                {skippedTwitch || !botStatus?.hasTwitchLinked ? (
-                  <div className="rounded-xl bg-surface-raised p-4 text-center text-sm text-muted-foreground">
-                    Skipped — you can enable the bot later from the dashboard.
+                {botStatus?.hasTwitchLinked ? (
+                  <div className="flex items-start gap-3 rounded-xl border border-brand-main/15 bg-brand-main/5 p-4 text-sm text-muted-foreground">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-brand-main" />
+                    <span>
+                      Twitch account linked. The bot will automatically join
+                      your channel when you complete setup.
+                    </span>
                   </div>
                 ) : (
-                  <>
-                    {botStatus?.botChannel?.enabled ? (
-                      <div className="flex items-center justify-center gap-2 rounded-xl bg-green-500/10 p-4 text-sm text-green-600 dark:text-green-400">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Bot joined #{botStatus.botChannel.twitchUsername}!
-                      </div>
-                    ) : (
-                      <Button
-                        size="lg"
-                        className="w-full rounded-md bg-brand-main py-6 text-sm font-bold text-white hover:bg-brand-main/80"
-                        disabled={enableBotMutation.isPending}
-                        onClick={handleEnableBot}
-                      >
-                        {enableBotMutation.isPending
-                          ? "Enabling..."
-                          : "Enable Bot"}
-                      </Button>
-                    )}
-                  </>
+                  <div className="rounded-xl bg-surface-raised p-4 text-center text-sm text-muted-foreground">
+                    No Twitch account linked — you can enable the bot later from the dashboard.
+                  </div>
                 )}
 
                 <Button
@@ -479,7 +467,7 @@ export default function SetupWizard({ token }: { token: string }) {
                   onClick={() => completeMutation.mutate({ token })}
                   disabled={completeMutation.isPending}
                 >
-                  {completeMutation.isPending ? "Completing..." : "Continue"}
+                  {completeMutation.isPending ? "Completing..." : "Complete Setup"}
                 </Button>
 
                 {completeMutation.isError && (
