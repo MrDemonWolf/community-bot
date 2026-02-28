@@ -9,7 +9,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: community-bot
+      POSTGRES_DB: postgres
     ports:
       # Bound to 127.0.0.1 to prevent external access. Use a reverse proxy
       # or SSH tunnel if you need remote access.
@@ -23,7 +23,7 @@ services:
       retries: 5
 
   redis:
-    image: redis:7-alpine
+    image: redis:8.4.2-alpine
     ports:
       - "127.0.0.1:6379:6379"
     healthcheck:

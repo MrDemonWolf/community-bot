@@ -13,6 +13,10 @@ export const poll: TwitchCommand = {
 
     const subCommand = args[0]?.toLowerCase();
     const broadcasterId = getBroadcasterId(channel);
+    if (!broadcasterId) {
+      chatClient.say(channel, `@${user}, Could not resolve broadcaster ID.`);
+      return;
+    }
 
     if (subCommand === "create") {
       // Parse quoted strings from args

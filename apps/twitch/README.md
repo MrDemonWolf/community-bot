@@ -102,7 +102,7 @@ Create a `.env` file in the project root:
 
 ```env
 # Database (matches docker-compose defaults)
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/community-bot"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/postgres"
 
 # Twitch Application
 TWITCH_APPLICATION_CLIENT_ID=your-client-id-here

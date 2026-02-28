@@ -144,7 +144,7 @@ docker compose logs -f twitch
 ### Database Backups
 
 ```bash
-docker compose exec postgres pg_dump -U postgres community-bot > backup-$(date +%Y%m%d).sql
+docker compose exec postgres pg_dump -U postgres postgres > backup-$(date +%Y%m%d).sql
 ```
 
 ### Firewall

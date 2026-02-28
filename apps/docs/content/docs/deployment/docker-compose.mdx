@@ -76,10 +76,10 @@ PostgreSQL data is stored in a named Docker volume (`postgres-data`). This persi
 
 ```bash
 # Create a backup
-docker compose exec postgres pg_dump -U postgres community-bot > backup.sql
+docker compose exec postgres pg_dump -U postgres postgres > backup.sql
 
 # Restore from backup
-docker compose exec -T postgres psql -U postgres community-bot < backup.sql
+docker compose exec -T postgres psql -U postgres postgres < backup.sql
 ```
 
 ### Web Service
