@@ -82,6 +82,33 @@ export const setupRouter = router({
         }),
       ]);
 
+      // Auto-enable the bot if the user has a linked Twitch account
+      const twitchAccount = await prisma.account.findFirst({
+        where: { userId, providerId: "twitch" },
+      });
+
+      if (twitchAccount) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const twitchUserId = twitchAccount.accountId;
+        const twitchUsername = user?.name?.toLowerCase() ?? twitchUserId;
+
+        const botChannel = await prisma.botChannel.upsert({
+          where: { userId },
+          create: { userId, twitchUsername, twitchUserId, enabled: true },
+          update: { enabled: true, twitchUsername, twitchUserId },
+        });
+
+        try {
+          const { eventBus } = await import("../events");
+          await eventBus.publish("channel:join", {
+            channelId: botChannel.twitchUserId,
+            username: botChannel.twitchUsername,
+          });
+        } catch {
+          // EventBus may not be connected during setup — not critical
+        }
+      }
+
       return { success: true };
     }),
 
