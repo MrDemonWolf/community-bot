@@ -57,7 +57,6 @@ Change Discord settings   →   discord:settings-*   →   Discord reloads guild
 Send test notification    →   discord:test-*       →   Discord sends embed
 Mute/unmute bot           →   bot:mute             →   Twitch toggles mute
 Queue change (chat/dash)  →   queue:updated        →   Other side syncs
-Test welcome message      →   discord:test-welcome →   Discord sends message
 Add/remove quote          →   quote:*              →   —
 Update counter            →   counter:updated      →   —
 Update timer settings     →   timer:updated        →   Twitch reloads timers
@@ -135,9 +134,8 @@ Fired when the queue state changes (open/close/pause, entries added/removed). Bo
 |-------|---------|-----------|------------|
 | `discord:settings-updated` | `{ guildId }` | Web | Discord |
 | `discord:test-notification` | `{ guildId }` | Web | Discord |
-| `discord:test-welcome` | `{ guildId, type }` | Web | Discord |
 
-`discord:settings-updated` fires when notification settings are changed from the web dashboard (channel, role, enable/disable). The Discord bot reloads guild settings in response. `discord:test-notification` triggers a test notification embed in the configured channel. `discord:test-welcome` triggers a test welcome, leave, or DM message — the `type` field is `"welcome"`, `"leave"`, or `"dm"`.
+`discord:settings-updated` fires when notification settings are changed from the web dashboard (channel, role, enable/disable). The Discord bot reloads guild settings in response. `discord:test-notification` triggers a test notification embed in the configured channel.
 
 ### Quotes & Counters
 
