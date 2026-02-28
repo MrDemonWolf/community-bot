@@ -400,8 +400,62 @@
 - [ ] Verify that no hidden mutation buttons means no FORBIDDEN toast errors appear during normal navigation
 - [ ] Read-only views display all data correctly — no missing information
 
-## H. Automated Tests
+## H. Viewer Queue Dashboard Management (Phase 6)
+
+### H1. Queue Status Controls
+
+- [ ] Open `/dashboard/queue` — page loads, shows current queue state
+- [ ] Status badge shows correct color: green (OPEN), amber (PAUSED), grey (CLOSED)
+- [ ] Click Open → status changes to OPEN, success toast, audit log entry created
+- [ ] Click Pause → status changes to PAUSED, success toast
+- [ ] Click Close → status changes to CLOSED, success toast
+- [ ] Active status button is disabled (can't set status to current status)
+
+### H2. Queue Entry Management
+
+- [ ] With entries in queue: table shows position, username, joined time
+- [ ] Pick Next removes the lowest position entry, returns username in toast
+- [ ] Pick Random removes a random entry, returns username in toast
+- [ ] Remove button on individual entry shows confirm/cancel before deleting
+- [ ] After removing an entry, remaining entries reorder positions correctly
+- [ ] Clear Queue shows confirm step, then removes all entries
+
+### H3. Empty / Disabled States
+
+- [ ] "Queue is empty" message shown when no entries exist
+- [ ] "Enable the bot for your channel first" shown when bot is not enabled
+- [ ] Pick Next / Pick Random / Clear Queue buttons hidden when queue is empty
+
+### H4. Role Guards
+
+- [ ] **USER**: Can see queue status and entry list (read-only), no control buttons
+- [ ] **MODERATOR**: Can see and use all controls (Open/Close/Pause, Pick, Remove, Clear)
+- [ ] **LEAD_MODERATOR**: Same as MODERATOR
+- [ ] **BROADCASTER**: Same as MODERATOR
+
+### H5. Sidebar & Quick Stats
+
+- [ ] Sidebar shows "Queue" link with ListOrdered icon under Twitch section
+- [ ] Queue link active state highlights when on `/dashboard/queue`
+- [ ] Quick Stats card shows queue status (OPEN/PAUSED/CLOSED) with correct color
+- [ ] Quick Stats card shows queue entry count
+
+### H6. Audit Logging
+
+- [ ] `queue.open` logged when opening queue
+- [ ] `queue.close` logged when closing queue
+- [ ] `queue.pause` logged when pausing queue
+- [ ] `queue.pick` logged when picking entry (includes mode and username)
+- [ ] `queue.remove-entry` logged when removing entry (includes username)
+- [ ] `queue.clear` logged when clearing queue (includes count)
+
+### H7. EventBus (Twitch Bot)
+
+- [ ] Queue mutations from Twitch chat (`!queue join/leave/pick/remove/clear/open/close/pause`) publish `queue:updated` event
+- [ ] Verify no crash if EventBus is not initialized (graceful catch in bot startup)
+
+## I. Automated Tests
 
 - [ ] Run `pnpm test` — all tests pass
-- [ ] Run `pnpm check-types` — all packages pass
+- [ ] Run `pnpm check-types` — all packages pass (verified for Phase 6)
 - [ ] Run `pnpm turbo build --filter="!web"` — all builds succeed

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://www.mrdemonwolf.com/wp-content/uploads/2022/12/logo-white-border.png" alt="MrDemonWolf Logo" width="150" />
+</p>
+
 # Community Bot - All-in-One Stream Management Platform
 
 Community Bot is a self-hosted monorepo that brings together
