@@ -139,7 +139,7 @@ export default function UsersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">All Roles</SelectItem>
-            <SelectItem value="BROADCASTER">Owner</SelectItem>
+            <SelectItem value="BROADCASTER">Broadcaster</SelectItem>
             <SelectItem value="LEAD_MODERATOR">Lead Mod</SelectItem>
             <SelectItem value="MODERATOR">Moderator</SelectItem>
             <SelectItem value="USER">User</SelectItem>

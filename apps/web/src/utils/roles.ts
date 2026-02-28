@@ -3,7 +3,7 @@ export const ROLE_DISPLAY: Record<
   { label: string; className: string }
 > = {
   BROADCASTER: {
-    label: "Owner",
+    label: "Broadcaster",
     className: "bg-brand-main/15 text-brand-main",
   },
   LEAD_MODERATOR: {
