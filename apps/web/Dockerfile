@@ -48,6 +48,10 @@ RUN apk add --no-cache openssl curl
 
 COPY --from=build /usr/src/app/apps/web/.next/standalone ./
 COPY --from=build /usr/src/app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build /usr/src/app/packages/db/prisma ./packages/db/prisma
+COPY apps/web/entrypoint.sh ./entrypoint.sh
+COPY apps/web/scripts/log-setup-url.mjs ./scripts/log-setup-url.mjs
+RUN chmod +x entrypoint.sh
 
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
@@ -55,4 +59,5 @@ ENV PORT=3000
 
 EXPOSE 3000
 
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["node", "apps/web/server.js"]
