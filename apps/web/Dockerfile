@@ -45,7 +45,6 @@ FROM node:24-alpine AS production
 WORKDIR /usr/src/app
 
 RUN apk add --no-cache openssl curl
-RUN npm install -g prisma
 
 COPY --from=build /usr/src/app/apps/web/.next/standalone ./
 COPY --from=build /usr/src/app/apps/web/.next/static ./apps/web/.next/static
