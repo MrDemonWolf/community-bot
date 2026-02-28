@@ -55,7 +55,7 @@ All model/enum definitions live in `packages/db/prisma/schema/` as split domain 
 | `schema.prisma` | Generator + datasource config |
 | `auth.prisma` | User, Session, Account, Verification, BotChannel relation on User |
 | `discord.prisma` | DiscordGuild |
-| `twitch.prisma` | TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular, BotChannel, enums |
+| `twitch.prisma` | TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular, BotChannel, Quote, TwitchCounter, TwitchTimer, SpamFilter, SpamPermit, SongRequest, SongRequestSettings, DefaultCommandOverride, enums |
 | `queue.prisma` | QueueEntry, QueueState, QueueStatus |
 | `audit.prisma` | AuditLog |
 | `system.prisma` | SystemConfig (key-value runtime config) |
@@ -90,6 +90,13 @@ await eventBus.on("channel:join", (payload) => { /* handle */ });
 | `discord:settings-updated` | `{ guildId }` | Web | Discord |
 | `discord:test-notification` | `{ guildId }` | Web | Discord |
 | `bot:status` | `{ service, status }` | Discord/Twitch | Any |
+| `quote:created` | `{ quoteId }` | Web/Twitch | — |
+| `quote:deleted` | `{ quoteId }` | Web/Twitch | — |
+| `counter:updated` | `{ counterName, channelId }` | Web/Twitch | Any |
+| `timer:updated` | `{ channelId }` | Web | Twitch |
+| `spam-filter:updated` | `{ channelId }` | Web | Twitch |
+| `song-request:updated` | `{ channelId }` | Web/Twitch | Any |
+| `song-request:settings-updated` | `{ channelId }` | Web | Twitch |
 
 ## Audit Log System
 
@@ -117,6 +124,24 @@ Actions use dot-separated strings: `domain.verb`. Current instrumented actions:
 | `discord.enable` | Discord notifications enabled |
 | `discord.disable` | Discord notifications disabled |
 | `import.streamelements` | Commands imported from StreamElements |
+| `bot.ai-shoutout-enable` | AI-enhanced shoutouts enabled for channel |
+| `bot.ai-shoutout-disable` | AI-enhanced shoutouts disabled for channel |
+| `bot.mute` | Bot muted in channel |
+| `bot.unmute` | Bot unmuted in channel |
+| `quote.create` | Quote added |
+| `quote.delete` | Quote removed |
+| `counter.create` | Named counter created |
+| `counter.update` | Counter value changed |
+| `counter.delete` | Counter deleted |
+| `timer.create` | Chat timer created |
+| `timer.update` | Chat timer updated |
+| `timer.delete` | Chat timer deleted |
+| `timer.toggle` | Chat timer enabled/disabled |
+| `spam-filter.update` | Spam filter configuration updated |
+| `song-request.skip` | Song request skipped |
+| `song-request.remove` | Song request removed |
+| `song-request.clear` | Song request queue cleared |
+| `song-request.settings-update` | Song request settings updated |
 
 ### Role-Based Visibility
 
@@ -146,7 +171,7 @@ Each app has its own validated env config in the shared package using `@t3-oss/e
 - `packages/env/src/server.ts` — Web dashboard server env (includes `DISCORD_BOT_TOKEN` for Discord REST API calls)
 - `packages/env/src/web.ts` — Web dashboard client env
 - `packages/env/src/discord.ts` — Discord bot env
-- `packages/env/src/twitch.ts` — Twitch bot env
+- `packages/env/src/twitch.ts` — Twitch bot env (includes optional `GEMINI_API_KEY` and `AI_SHOUTOUT_ENABLED` for AI shoutouts)
 
 Apps re-export from their local `src/utils/env.ts` for convenience.
 
@@ -167,15 +192,15 @@ Both bots use ESM (`"type": "module"`) with NodeNext module resolution. All rela
 
 ## Discord Bot (`apps/discord/`)
 
-discord.js v14, Express API, BullMQ job queue (Redis), EventBus. Features include Twitch live stream notifications, slash commands, background job scheduling, guild database sync. The bot subscribes to `discord:settings-updated` EventBus events to reload guild settings when changed from the web dashboard. Guilds with `enabled: false` are skipped during notification checks. Entry point: `src/app.ts`.
+discord.js v14, Express API, BullMQ job queue (Redis), EventBus. Features include Twitch live stream notifications, slash commands (including cross-platform `/quote` command), background job scheduling, guild database sync. The bot subscribes to `discord:settings-updated` EventBus events to reload guild settings when changed from the web dashboard. Guilds with `enabled: false` are skipped during notification checks. Entry point: `src/app.ts`.
 
 ## Twitch Bot (`apps/twitch/`)
 
-@twurple/chat + @twurple/auth v7, Express API, EventBus. Channels are loaded from the database (`BotChannel` table) at startup. Features include database-driven chat commands with variables/cooldowns/access levels, viewer queue, stream status tracking, Device Code Flow auth. The bot subscribes to EventBus events for real-time channel join/leave and command/regular reload. Entry point: `src/app.ts`.
+@twurple/chat + @twurple/auth v7, Express API, EventBus. Channels are loaded from the database (`BotChannel` table) at startup. Features include database-driven chat commands with variables/cooldowns/access levels, viewer queue, stream status tracking, Device Code Flow auth, quotes (cross-platform with Discord), named counters, recurring chat timers, spam filters (caps/links/symbols/emotes/repetition/banned words), moderation commands (permit/nuke/vanish/clip), song requests, and AI-enhanced shoutouts via Google Gemini. The bot subscribes to EventBus events for real-time channel join/leave, command/regular reload, timer updates, and spam filter config changes. Entry point: `src/app.ts`.
 
 ## Web Dashboard (`apps/web/`)
 
-Next.js with tRPC, better-auth, and EventBus. On first startup, a setup wizard flow (`/setup/{token}`) designates the broadcaster and promotes them to ADMIN (see "First-User Setup Wizard" section). Features a two-column dashboard layout with an audit log feed, bot controls card, and quick stats. Users can manage the Twitch bot (enable/disable, commands, regulars) and Discord settings (link guild, notification channel/role, enable/disable notifications) from `/dashboard/discord`. All mutations are logged to the audit log with role-based visibility in the dashboard feed.
+Next.js with tRPC, better-auth, and EventBus. On first startup, a setup wizard flow (`/setup/{token}`) designates the broadcaster and promotes them to BROADCASTER (see "First-User Setup Wizard" section). Features a two-column dashboard layout with an audit log feed, bot controls card, and quick stats. Users can manage the Twitch bot (enable/disable, commands, regulars, quotes, counters, timers, spam filters/moderation, song requests, AI shoutout toggle) and Discord settings (link guild, notification channel/role, enable/disable notifications) from the dashboard. All mutations are logged to the audit log with role-based visibility in the dashboard feed.
 
 ## Web Dashboard Design System (`apps/web/`)
 

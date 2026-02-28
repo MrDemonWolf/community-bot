@@ -45,6 +45,7 @@ export const botChannelRouter = router({
             twitchUserId: botChannel.twitchUserId,
             enabled: botChannel.enabled,
             muted: botChannel.muted,
+            aiShoutoutEnabled: botChannel.aiShoutoutEnabled,
             disabledCommands: botChannel.disabledCommands,
             commandOverrides: botChannel.commandOverrides.map((o) => ({
               commandName: o.commandName,
@@ -232,6 +233,38 @@ export const botChannelRouter = router({
       });
 
       return { success: true };
+    }),
+
+  /** Toggle AI-enhanced shoutouts for this channel */
+  toggleAiShoutout: leadModProcedure
+    .input(z.object({ enabled: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const botChannel = await prisma.botChannel.findUnique({
+        where: { userId },
+      });
+
+      if (!botChannel || !botChannel.enabled) {
+        throw new Error("Bot is not enabled for your channel.");
+      }
+
+      await prisma.botChannel.update({
+        where: { userId },
+        data: { aiShoutoutEnabled: input.enabled },
+      });
+
+      await logAudit({
+        userId,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: input.enabled ? "bot.ai-shoutout-enable" : "bot.ai-shoutout-disable",
+        resourceType: "BotChannel",
+        resourceId: botChannel.id,
+        metadata: { aiShoutoutEnabled: input.enabled },
+      });
+
+      return { success: true, aiShoutoutEnabled: input.enabled };
     }),
 
   /** Update the access level override for a default command */

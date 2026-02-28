@@ -30,6 +30,9 @@ import {
 import { setEventBus } from "./services/eventBusAccessor.js";
 import * as streamStatusManager from "./services/streamStatusManager.js";
 import { loadBroadcasterIds } from "./services/broadcasterCache.js";
+import * as timerManager from "./services/timerManager.js";
+import * as spamFilter from "./services/spamFilter.js";
+import * as songRequestManager from "./services/songRequestManager.js";
 
 export let botStatus = {
   status: "offline" as "offline" | "connecting" | "online",
@@ -105,6 +108,43 @@ async function main() {
     await reloadForChannel(payload.channelId);
   });
 
+  // Timer updated via web dashboard — reload timers for that channel
+  await eventBus.on("timer:updated", async (payload) => {
+    logger.info("EventBus", `Timer updated for channel: ${payload.channelId}`);
+    // payload.channelId is the botChannel.id; we need to look up the username
+    const botChannel = await prisma.botChannel.findUnique({
+      where: { id: payload.channelId },
+      select: { twitchUsername: true },
+    });
+    if (botChannel) {
+      await timerManager.reloadTimers(botChannel.twitchUsername);
+    }
+  });
+
+  // Spam filter updated via web dashboard — reload for that channel
+  await eventBus.on("spam-filter:updated", async (payload) => {
+    logger.info("EventBus", `Spam filter updated for channel: ${payload.channelId}`);
+    const botChannel = await prisma.botChannel.findUnique({
+      where: { id: payload.channelId },
+      select: { twitchUsername: true },
+    });
+    if (botChannel) {
+      await spamFilter.reloadSpamFilter(botChannel.twitchUsername);
+    }
+  });
+
+  // Song request settings updated via web dashboard — reload for that channel
+  await eventBus.on("song-request:settings-updated", async (payload) => {
+    logger.info("EventBus", `Song request settings updated for channel: ${payload.channelId}`);
+    const botChannel = await prisma.botChannel.findUnique({
+      where: { id: payload.channelId },
+      select: { twitchUsername: true },
+    });
+    if (botChannel) {
+      await songRequestManager.reloadSettings(botChannel.twitchUsername);
+    }
+  });
+
   // Fallback cron: reload commands + regulars every 5 minutes
   cron.schedule("*/5 * * * *", async () => {
     try {
@@ -150,6 +190,14 @@ async function main() {
   registerJoinEvents(chatClient);
   registerPartEvents(chatClient);
 
+  // Set chat client for timer manager and load timers + spam filters for all channels
+  timerManager.setChatClient(chatClient);
+  for (const ch of channels) {
+    await timerManager.loadTimers(ch);
+    await spamFilter.loadSpamFilter(ch);
+    await songRequestManager.loadSettings(ch);
+  }
+
   // Subscribe to EventBus events that require chat
   await eventBus.on("channel:join", async (payload) => {
     logger.info("EventBus", `Joining channel: ${payload.username}`);
@@ -160,12 +208,17 @@ async function main() {
       getAccessToken,
       eventBus
     );
+    await timerManager.loadTimers(payload.username);
+    await spamFilter.loadSpamFilter(payload.username);
+    await songRequestManager.loadSettings(payload.username);
   });
 
   await eventBus.on("channel:leave", async (payload) => {
     logger.info("EventBus", `Leaving channel: ${payload.username}`);
     chatClient.part(payload.username);
     streamStatusManager.removeChannel(payload.username);
+    timerManager.stopTimers(payload.username);
+    songRequestManager.clearCache(payload.username);
   });
 
   // Mute/unmute via web dashboard

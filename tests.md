@@ -709,7 +709,7 @@
 
 ### K13. Full Suite Verification
 
-- [ ] Run `pnpm test` — all 395 tests pass across 35 test files
+- [ ] Run `pnpm test` — all 523 tests pass across 52 test files
 - [ ] No test file has import/mock errors
 - [ ] All new tests use `vi.hoisted()` pattern for mock factories
 
@@ -868,5 +868,256 @@
 
 - [ ] `docker compose up -d postgres` — PostgreSQL running
 - [ ] `pnpm test:integration` — all ~95 integration tests pass
-- [ ] `pnpm test` — all 395 unit tests still pass (no regression)
+- [ ] `pnpm test` — all 523 unit tests still pass (no regression)
 - [ ] Integration tests properly excluded from `pnpm test` via root `vitest.config.ts`
+
+---
+
+## Phase 10: Quotes, Counters & New Built-in Commands
+
+### M1. Title Command (`apps/twitch/src/commands/title.test.ts` — 2 tests)
+
+- [ ] Shows current stream title
+- [ ] Shows "offline or unavailable" when no title
+
+### M2. Game Command (`apps/twitch/src/commands/game.test.ts` — 2 tests)
+
+- [ ] Shows current game/category
+- [ ] Shows "offline or unavailable" when no game
+
+### M3. Followage Command (`apps/twitch/src/commands/followage.test.ts` — 3 tests)
+
+- [ ] Shows how long user has followed
+- [ ] Shows "not following" when user doesn't follow
+- [ ] Shows error when API fails
+
+### M4. Shoutout Command (`apps/twitch/src/commands/shoutout.test.ts` — 9 tests)
+
+- [ ] Does nothing if user is not a mod
+- [ ] Shows usage when no args
+- [ ] Shouts out a user with game info
+- [ ] Shouts out without game when none set
+- [ ] Shows error when user not found
+- [ ] Strips @ from username
+- [ ] Sends AI shoutout when enabled for channel
+- [ ] Does not send AI shoutout when disabled for channel
+- [ ] Still sends standard shoutout when AI fails
+
+### M5. Quote Command (`apps/twitch/src/commands/quote.test.ts` — 8 tests)
+
+- [ ] Shows random quote
+- [ ] Shows specific quote by number
+- [ ] Shows "no quotes" when empty
+- [ ] Shows "not found" for missing number
+- [ ] Adds a new quote (mod only)
+- [ ] Removes a quote by number (mod only)
+- [ ] Non-mods cannot add quotes
+- [ ] Searches quotes by keyword
+
+### M6. Counter Command (`apps/twitch/src/commands/counter.test.ts` — 8 tests)
+
+- [ ] Shows counter value
+- [ ] Increments counter
+- [ ] Decrements counter
+- [ ] Sets counter to specific value
+- [ ] Creates a new counter
+- [ ] Deletes a counter
+- [ ] Shows error for non-existent counter
+- [ ] Shows error for unknown subcommand
+
+### M7. Quote tRPC Router (`packages/api/src/routers/quote.test.ts` — 10 tests)
+
+- [ ] `list` returns quotes for user's bot channel
+- [ ] `list` throws PRECONDITION_FAILED when bot not enabled
+- [ ] `add` creates quote with auto-incrementing number
+- [ ] `add` rejects USER role
+- [ ] `remove` deletes quote by number
+- [ ] `remove` throws NOT_FOUND for missing quote
+- [ ] `get` returns specific quote by number
+- [ ] `search` finds quotes by keyword
+
+### M8. Counter tRPC Router (`packages/api/src/routers/counter.test.ts` — 8 tests)
+
+- [ ] `list` returns all counters for bot channel
+- [ ] `create` creates a new counter
+- [ ] `create` rejects duplicate names
+- [ ] `update` updates counter value
+- [ ] `update` throws NOT_FOUND for missing counter
+- [ ] `delete` deletes a counter
+- [ ] `delete` throws NOT_FOUND for missing counter
+
+---
+
+## Phase 11: Timers
+
+### N1. Timer Manager (`apps/twitch/src/services/timerManager.test.ts` — 10 tests)
+
+- [ ] Loads timers from database for a channel
+- [ ] Starts interval timers for enabled timers
+- [ ] Does not start disabled timers
+- [ ] Respects chat lines threshold
+- [ ] Only fires when stream is live
+- [ ] Reloads timers when called
+- [ ] Stops all timers for a channel
+- [ ] Stops all timers globally
+- [ ] Handles empty timer list
+- [ ] Supports variable substitution in timer messages
+
+### N2. Timer tRPC Router (`packages/api/src/routers/timer.test.ts` — 10 tests)
+
+- [ ] `list` returns timers for bot channel
+- [ ] `list` throws PRECONDITION_FAILED when bot not enabled
+- [ ] `create` creates a new timer
+- [ ] `create` rejects duplicate names
+- [ ] `create` rejects USER role
+- [ ] `update` updates timer settings
+- [ ] `update` throws NOT_FOUND for missing timer
+- [ ] `delete` deletes a timer
+- [ ] `delete` throws NOT_FOUND for missing timer
+- [ ] `toggleEnabled` toggles timer enabled state
+
+---
+
+## Phase 12: Spam Filters & Moderation Commands
+
+### O1. Spam Filter Service (`apps/twitch/src/services/spamFilter.test.ts` — 22 tests)
+
+- [ ] Loads spam filter config from database
+- [ ] Returns null config when none exists
+- [ ] Caches filter config per channel
+- [ ] `checkCaps` detects excessive uppercase
+- [ ] `checkCaps` allows short messages
+- [ ] `checkCaps` allows messages under threshold
+- [ ] `checkLinks` detects URLs
+- [ ] `checkLinks` allows subs when configured
+- [ ] `checkSymbols` detects excessive symbols
+- [ ] `checkSymbols` allows messages under threshold
+- [ ] `checkEmotes` detects excessive emotes
+- [ ] `checkEmotes` allows messages under limit
+- [ ] `checkRepetition` detects repeated characters
+- [ ] `checkRepetition` allows messages under threshold
+- [ ] `checkBannedWords` detects banned words (case-insensitive)
+- [ ] `checkBannedWords` allows clean messages
+- [ ] `checkMessage` runs all enabled filters
+- [ ] `checkMessage` skips exempt users
+- [ ] `checkMessage` skips mods and broadcasters
+- [ ] `checkMessage` checks active permits
+- [ ] `handleViolation` sends timeout and warning via say
+- [ ] Reloads filter config for channel
+
+### O2. Permit Command (`apps/twitch/src/commands/permit.test.ts` — 5 tests)
+
+- [ ] Creates a permit with default duration
+- [ ] Creates a permit with custom duration
+- [ ] Caps duration at 3600 seconds
+- [ ] Shows usage when no username given
+- [ ] Does nothing if user is not a mod
+
+### O3. Nuke Command (`apps/twitch/src/commands/nuke.test.ts` — 5 tests)
+
+- [ ] Timeouts users matching phrase
+- [ ] Uses custom timeout duration from last arg
+- [ ] Excludes the issuing mod from timeout
+- [ ] Shows usage when no phrase given
+- [ ] Does nothing if user is not a mod
+
+### O4. Vanish Command (`apps/twitch/src/commands/vanish.test.ts` — 2 tests)
+
+- [ ] Self-timeouts for 1 second
+- [ ] Works for any user
+
+### O5. Clip Command (`apps/twitch/src/commands/clip.test.ts` — 3 tests)
+
+- [ ] Creates a clip and returns URL
+- [ ] Shows error when clip creation fails
+- [ ] Shows error on API error
+
+### O6. Spam Filter tRPC Router (`packages/api/src/routers/spamFilter.test.ts` — 6 tests)
+
+- [ ] `get` returns filter config or defaults
+- [ ] `get` throws PRECONDITION_FAILED when bot not enabled
+- [ ] `update` upserts filter config
+- [ ] `update` publishes spam-filter:updated event
+- [ ] `update` logs audit action
+- [ ] `update` rejects USER role
+
+---
+
+## Phase 13: AI-Enhanced Shoutouts
+
+### P1. AI Shoutout Service (`apps/twitch/src/services/aiShoutout.test.ts` — 5 tests)
+
+- [ ] Returns AI-generated message on success
+- [ ] Returns null when streamer not found
+- [ ] Returns null when Gemini API fails
+- [ ] Returns null when GEMINI_API_KEY is not set
+- [ ] Uses cache for repeated calls
+
+### P2. Full Suite Verification
+
+- [ ] Run `pnpm test` — all 523 tests pass across 52 test files
+- [ ] No test file has import/mock errors
+
+---
+
+## Phase 14: Song Requests
+
+### P1. Database Schema
+
+- [ ] `SongRequest` model with `position`, `title`, `requestedBy`, `botChannelId`
+- [ ] `SongRequestSettings` model with `enabled`, `maxQueueSize`, `maxPerUser`, `minAccessLevel`
+- [ ] `pnpm db:generate` succeeds
+
+### P2. EventBus Events
+
+- [ ] `song-request:updated` event type defined
+- [ ] `song-request:settings-updated` event type defined
+
+### P3. Default Command
+
+- [ ] `sr` command registered with aliases `songrequest`, `song`
+
+### P4. Song Request Manager Service
+
+- [ ] `loadSettings` / `reloadSettings` / `clearCache` — settings cache management
+- [ ] `addRequest` — validates enabled, queue size, per-user limit, access level
+- [ ] `removeRequest` — removes by position, reorders
+- [ ] `removeByUser` — removes all of a user's requests
+- [ ] `skipRequest` — removes position 1, reorders
+- [ ] `listRequests` — returns ordered entries
+- [ ] `currentRequest` — returns position 1 entry
+- [ ] `clearRequests` — deletes all for channel
+
+### P5. Chat Command (`!sr`)
+
+- [ ] `!sr <title>` — request a song
+- [ ] `!sr list` / `!sr queue` — show next 5 songs
+- [ ] `!sr current` — show current song
+- [ ] `!sr remove` — viewer removes own requests
+- [ ] `!sr remove <position>` — mod removes by position
+- [ ] `!sr skip` — mod skips current song
+- [ ] `!sr clear` — mod clears queue
+- [ ] Non-mod rejected for mod-only subcommands
+
+### P6. tRPC Router
+
+- [ ] `list` — returns queue ordered by position
+- [ ] `current` — returns first entry
+- [ ] `skip` — removes first entry, publishes event, logs audit
+- [ ] `remove` — removes by id, publishes event, logs audit
+- [ ] `clear` — deletes all, publishes event, logs audit
+- [ ] `getSettings` — returns settings (with defaults)
+- [ ] `updateSettings` — upserts settings, publishes event, logs audit
+
+### P7. Dashboard Page
+
+- [ ] Settings card with enable toggle, max queue size, max per user, access level
+- [ ] Queue table with position, title, requester, time, actions
+- [ ] Skip/remove/clear actions work
+- [ ] Bot-not-enabled guard shown
+
+### P8. Full Suite Verification
+
+- [ ] Run `pnpm test` — all 564 tests pass across 55 test files
+- [ ] `pnpm turbo build --filter="!web"` succeeds
+- [ ] `pnpm --filter docs build` succeeds

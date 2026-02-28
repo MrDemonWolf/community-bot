@@ -169,7 +169,7 @@ async function replaceAsync(
 
 // ── Main substitution ──
 
-async function substituteVariables(
+export async function substituteVariables(
   template: string,
   ctx: CommandContext
 ): Promise<string> {
@@ -355,6 +355,31 @@ async function substituteVariables(
   if (/\{twitchemotes\}/i.test(result) && broadcasterId) {
     const emotes = await getTwitchEmotes(broadcasterId);
     result = result.replace(/\{twitchemotes\}/gi, emotes);
+  }
+
+  // {counter <name>} — returns current value of a named counter
+  if (/\{counter\s+[^}]+\}/i.test(result)) {
+    result = await replaceAsync(
+      result,
+      /\{counter\s+([^}]+)\}/gi,
+      async (_match, counterName: string) => {
+        try {
+          const channelName = channel.replace(/^#/, "").toLowerCase();
+          const botChannel = await prisma.botChannel.findFirst({
+            where: { twitchUsername: channelName },
+            select: { id: true },
+          });
+          if (!botChannel) return "(counter error)";
+
+          const counter = await prisma.twitchCounter.findUnique({
+            where: { name_botChannelId: { name: counterName.trim().toLowerCase(), botChannelId: botChannel.id } },
+          });
+          return counter ? String(counter.value) : "0";
+        } catch {
+          return "(counter error)";
+        }
+      }
+    );
   }
 
   // {weather <location>}

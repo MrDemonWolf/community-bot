@@ -11,6 +11,11 @@ import { discordGuildRouter } from "./discordGuild";
 import { setupRouter } from "./setup";
 import { userManagementRouter } from "./userManagement";
 import { queueRouter } from "./queue";
+import { quoteRouter } from "./quote";
+import { counterRouter } from "./counter";
+import { timerRouter } from "./timer";
+import { spamFilterRouter } from "./spamFilter";
+import { songRequestRouter } from "./songRequest";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -31,5 +36,10 @@ export const appRouter = router({
   setup: setupRouter,
   userManagement: userManagementRouter,
   queue: queueRouter,
+  quote: quoteRouter,
+  counter: counterRouter,
+  timer: timerRouter,
+  spamFilter: spamFilterRouter,
+  songRequest: songRequestRouter,
 });
 export type AppRouter = typeof appRouter;

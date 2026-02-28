@@ -1,0 +1,49 @@
+---
+title: Quotes
+description: Cross-platform quote system for saving memorable moments.
+---
+
+The quote system lets you save memorable things said on stream. Quotes are stored per channel and shared across both Twitch and Discord.
+
+## Twitch Commands
+
+### Viewer Commands
+
+| Command | Description |
+|---------|-------------|
+| `!quote` | Display a random quote |
+| `!quote <number>` | Display a specific quote by number |
+| `!quote search <text>` | Search quotes by keyword |
+
+### Moderator Commands
+
+| Command | Description |
+|---------|-------------|
+| `!quote add <text>` | Add a new quote (auto-records current game) |
+| `!quote remove <number>` | Remove a quote by its number |
+
+## Discord Commands
+
+Quotes are also accessible from Discord via the `/quote` slash command:
+
+| Command | Description |
+|---------|-------------|
+| `/quote` | Display a random quote (or by number) |
+| `/quote add text:"quote text"` | Add a new quote |
+| `/quote remove number:5` | Remove a quote by number |
+| `/quote search text:"keyword"` | Search quotes by text |
+
+## How It Works
+
+- Each quote is assigned an auto-incrementing number per channel.
+- The `source` field tracks whether a quote was added from Twitch or Discord.
+- The current game/category is automatically recorded when adding a quote from Twitch.
+- Quotes are managed per bot channel — the broadcaster's linked Twitch and Discord share the same quote pool.
+
+## Dashboard Management
+
+Quotes can also be managed from the web dashboard at `/dashboard/quotes`. The dashboard supports:
+
+- Viewing all quotes with search and pagination
+- Adding new quotes
+- Removing quotes

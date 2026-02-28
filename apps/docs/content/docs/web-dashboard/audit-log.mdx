@@ -23,6 +23,8 @@ Actions use dot-separated strings following the convention `domain.verb`:
 | `bot.unmute` | Bot unmuted for channel |
 | `bot.command-toggles` | Default command toggles updated |
 | `bot.command-access-level` | Default command access level changed |
+| `bot.ai-shoutout-enable` | AI-enhanced shoutouts enabled |
+| `bot.ai-shoutout-disable` | AI-enhanced shoutouts disabled |
 
 ### Commands
 
@@ -71,6 +73,36 @@ Actions use dot-separated strings following the convention `domain.verb`:
 | `queue.pick` | Viewer picked from queue |
 | `queue.remove-entry` | Viewer removed from queue |
 | `queue.clear` | All queue entries cleared |
+
+### Quotes
+
+| Action | Description |
+|--------|-------------|
+| `quote.create` | Quote added |
+| `quote.delete` | Quote removed |
+
+### Counters
+
+| Action | Description |
+|--------|-------------|
+| `counter.create` | Counter created |
+| `counter.update` | Counter value updated |
+| `counter.delete` | Counter deleted |
+
+### Timers
+
+| Action | Description |
+|--------|-------------|
+| `timer.create` | Timer created |
+| `timer.update` | Timer updated |
+| `timer.delete` | Timer deleted |
+| `timer.toggle` | Timer enabled/disabled |
+
+### Spam Filters
+
+| Action | Description |
+|--------|-------------|
+| `spam-filter.update` | Spam filter configuration updated |
 
 ### Imports
 

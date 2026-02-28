@@ -17,6 +17,11 @@ import {
   MessageSquare,
   UserCog,
   ListOrdered,
+  Quote,
+  Hash,
+  Timer,
+  Shield,
+  Music,
 } from "lucide-react";
 
 const twitchLinks = [
@@ -42,6 +47,36 @@ const twitchLinks = [
     href: "/dashboard/queue",
     label: "Queue",
     icon: ListOrdered,
+    exact: false,
+  },
+  {
+    href: "/dashboard/quotes",
+    label: "Quotes",
+    icon: Quote,
+    exact: false,
+  },
+  {
+    href: "/dashboard/counters",
+    label: "Counters",
+    icon: Hash,
+    exact: false,
+  },
+  {
+    href: "/dashboard/timers",
+    label: "Timers",
+    icon: Timer,
+    exact: false,
+  },
+  {
+    href: "/dashboard/song-requests",
+    label: "Song Requests",
+    icon: Music,
+    exact: false,
+  },
+  {
+    href: "/dashboard/moderation",
+    label: "Moderation",
+    icon: Shield,
     exact: false,
   },
 ];
