@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   Terminal,
   Users,
-  Settings,
   User,
   Home,
   MessageSquare,
@@ -218,24 +217,6 @@ export function SidebarContent({
           </nav>
         </div>
       )}
-
-      {/* Settings */}
-      <div>
-        <nav className="flex flex-col gap-0.5">
-          <Link
-            href="/dashboard/settings"
-            onClick={onNavigate}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading transition-all duration-200 ${
-              pathname.startsWith("/dashboard/settings")
-                ? "bg-brand-main/10 font-medium text-brand-main"
-                : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
-            }`}
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Link>
-        </nav>
-      </div>
 
       {/* Back to Home */}
       <div className="mt-auto">

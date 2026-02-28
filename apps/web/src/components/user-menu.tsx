@@ -101,9 +101,6 @@ export default function UserMenu() {
                 {roleInfo.label}
               </span>
             </div>
-            <p className="truncate text-xs text-muted-foreground">
-              {session.user.email}
-            </p>
           </div>
         </div>
         <DropdownMenuSeparator className="bg-border" />

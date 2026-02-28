@@ -124,7 +124,6 @@ function AccountTab() {
                 {roleInfo.label}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">{profile.email}</p>
             <p className="text-xs text-muted-foreground/70">
               Member since{" "}
               {new Date(profile.createdAt).toLocaleDateString()}

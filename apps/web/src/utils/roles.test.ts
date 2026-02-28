@@ -4,7 +4,7 @@ import { getRoleDisplay, ROLE_DISPLAY } from "./roles";
 describe("getRoleDisplay", () => {
   it("returns BROADCASTER display", () => {
     const result = getRoleDisplay("BROADCASTER");
-    expect(result.label).toBe("Owner");
+    expect(result.label).toBe("Broadcaster");
     expect(result.className).toContain("brand-main");
   });
 
@@ -25,7 +25,7 @@ describe("getRoleDisplay", () => {
 
   it("returns BROADCASTER display when USER is channel owner", () => {
     const result = getRoleDisplay("USER", true);
-    expect(result.label).toBe("Owner");
+    expect(result.label).toBe("Broadcaster");
     expect(result.className).toContain("brand-main");
   });
 
@@ -36,7 +36,7 @@ describe("getRoleDisplay", () => {
 
   it("does not override non-USER roles with isChannelOwner", () => {
     const result = getRoleDisplay("BROADCASTER", true);
-    expect(result.label).toBe("Owner");
+    expect(result.label).toBe("Broadcaster");
   });
 
   it("ROLE_DISPLAY has all expected roles", () => {
