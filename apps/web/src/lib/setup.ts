@@ -20,18 +20,22 @@ export async function ensureSetupToken() {
   });
   if (setupComplete?.value === "true") return;
 
-  // Check if token already exists
+  // Check if token already exists; create one if not
   const existing = await prisma.systemConfig.findUnique({
     where: { key: "setupToken" },
   });
-  if (existing) return;
 
-  const token = randomBytes(32).toString("hex");
-  await prisma.systemConfig.upsert({
-    where: { key: "setupToken" },
-    create: { key: "setupToken", value: token },
-    update: { value: token },
-  });
+  const token = existing
+    ? existing.value
+    : randomBytes(32).toString("hex");
+
+  if (!existing) {
+    await prisma.systemConfig.upsert({
+      where: { key: "setupToken" },
+      create: { key: "setupToken", value: token },
+      update: { value: token },
+    });
+  }
 
   const url = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3001"}/setup/${token}`;
   console.log("");
