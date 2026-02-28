@@ -71,7 +71,7 @@ export async function drawWinner(botChannelId: string) {
   return winner.twitchUsername;
 }
 
-export async function endGiveaway(botChannelId: string) {
+export async function endGiveaway(botChannelId: string): Promise<{ count: number }> {
   return prisma.giveaway.updateMany({
     where: { botChannelId, isActive: true },
     data: { isActive: false },

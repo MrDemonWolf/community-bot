@@ -38,7 +38,7 @@ async function getHelixHeaders(userId: string) {
 }
 
 export const pollRouter = router({
-  list: protectedProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async ({ ctx }): Promise<Array<{ id: string; title: string; status: string; choices: { title: string; votes: number }[]; started_at: string; ended_at?: string }>> => {
     const { headers, broadcasterId } = await getHelixHeaders(ctx.session.user.id);
 
     const res = await fetch(
