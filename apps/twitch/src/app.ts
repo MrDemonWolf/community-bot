@@ -245,9 +245,33 @@ async function main() {
 }
 
 main().catch((err) => {
-  logger.error("Twitch Bot", "Fatal error", err);
+  const message = err instanceof Error ? err.message : String(err);
+
+  // Provide a clear, actionable message based on the failure type
+  if (
+    message.includes("credentials") ||
+    message.includes("token") ||
+    message.includes("TwitchCredential")
+  ) {
+    logger.warn(
+      "Twitch Bot",
+      "Twitch credentials not found. Complete the setup wizard at the web dashboard, then restart the bot."
+    );
+  } else if (
+    message.includes("ECONNREFUSED") ||
+    message.includes("connect")
+  ) {
+    logger.error(
+      "Twitch Bot",
+      "Could not connect to a required service (database or Redis). Check that PostgreSQL and Redis are running.",
+      err
+    );
+  } else {
+    logger.error("Twitch Bot", "Startup failed", err);
+  }
+
   logger.info(
     "Twitch Bot",
-    "API server remains active for healthchecks. Chat features are unavailable."
+    "API server remains active for healthchecks. Chat features are unavailable until the issue is resolved."
   );
 });
