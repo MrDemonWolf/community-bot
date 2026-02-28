@@ -146,3 +146,23 @@ See [Song Requests](/docs/twitch-bot/song-requests) for setup and configuration 
 - `!queue clear` — Clear the entire queue
 
 See [Queue System](/docs/twitch-bot/queue-system) for more details.
+
+### Giveaway Commands
+
+**Moderator/Broadcaster commands:**
+- `!giveaway start <keyword> [title]` — Start a new giveaway with a keyword viewers type to enter (alias: `!ga`)
+- `!giveaway draw` — Randomly draw a winner from entries
+- `!giveaway reroll` — Draw a new winner (re-roll)
+- `!giveaway end` — End the active giveaway
+- `!giveaway count` — Show the current number of entries
+
+Viewers enter by typing the keyword in chat. Each viewer can only enter once per giveaway. See [Giveaways](/docs/twitch-bot/giveaways) for details.
+
+### Poll Commands
+
+**Moderator/Broadcaster commands:**
+- `!poll create "Question" "Option 1" "Option 2" [duration]` — Create a Twitch-native poll (2-5 options, default 60s duration)
+- `!poll end` — End the active poll early
+- `!poll results` — Show the current poll results
+
+Uses the Twitch Helix API to create native Twitch polls. See [Polls](/docs/twitch-bot/polls) for details.

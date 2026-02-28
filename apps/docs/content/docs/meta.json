@@ -27,6 +27,8 @@
     "twitch-bot/timers",
     "twitch-bot/moderation",
     "twitch-bot/song-requests",
+    "twitch-bot/giveaways",
+    "twitch-bot/polls",
     "twitch-bot/ai-shoutouts",
     "twitch-bot/queue-system",
     "twitch-bot/stream-status",

@@ -48,6 +48,40 @@ Set a role to ping when a Twitch stream goes live.
 **Parameters:**
 - `role` (required) — The Discord role to mention in notifications
 
+---
+
+## `/quote` Commands
+
+The `/quote` command group provides cross-platform quote management, shared with the Twitch bot.
+
+### `/quote show [number]`
+
+Show a random quote, or a specific quote by number.
+
+**Parameters:**
+- `number` (optional) — The quote number to display. Omit for a random quote.
+
+### `/quote add <text>`
+
+Add a new quote to the shared quote database.
+
+**Parameters:**
+- `text` (required) — The quote text to add
+
+### `/quote remove <number>`
+
+Remove a quote by its number.
+
+**Parameters:**
+- `number` (required) — The quote number to remove
+
+### `/quote search <text>`
+
+Search quotes by keyword.
+
+**Parameters:**
+- `text` (required) — The text to search for in quotes
+
 ## Related
 
 - [Twitch Notifications](/docs/discord-bot/twitch-notifications) — How the notification system works
