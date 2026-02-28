@@ -1,5 +1,15 @@
 import { prisma } from "@community-bot/db";
 import { QueueStatus } from "@community-bot/db";
+import { getEventBus } from "./eventBusAccessor.js";
+
+async function publishQueueUpdated(): Promise<void> {
+  try {
+    const eventBus = getEventBus();
+    await eventBus.publish("queue:updated", { channelId: "singleton" });
+  } catch {
+    // EventBus may not be initialized during early startup
+  }
+}
 
 export async function getQueueStatus(): Promise<QueueStatus> {
   const state = await prisma.queueState.findUnique({
@@ -14,6 +24,7 @@ export async function setQueueStatus(status: QueueStatus): Promise<void> {
     update: { status },
     create: { id: "singleton", status },
   });
+  await publishQueueUpdated();
 }
 
 export async function join(
@@ -41,6 +52,7 @@ export async function join(
     data: { twitchUserId: userId, twitchUsername: username, position },
   });
 
+  await publishQueueUpdated();
   return { ok: true, position };
 }
 
@@ -58,6 +70,7 @@ export async function leave(userId: string): Promise<boolean> {
     entry.position
   );
 
+  await publishQueueUpdated();
   return true;
 }
 
@@ -108,6 +121,7 @@ export async function pick(
     entry.position
   );
 
+  await publishQueueUpdated();
   return { twitchUsername: entry.twitchUsername, position: entry.position };
 }
 
@@ -124,9 +138,11 @@ export async function remove(username: string): Promise<boolean> {
     entry.position
   );
 
+  await publishQueueUpdated();
   return true;
 }
 
 export async function clear(): Promise<void> {
   await prisma.queueEntry.deleteMany();
+  await publishQueueUpdated();
 }

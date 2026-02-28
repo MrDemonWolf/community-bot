@@ -16,6 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import CommandDialog from "./command-dialog";
+import { canManageCommands } from "@/utils/roles";
 
 function formatAccessLevel(level: string): string {
   return level
@@ -31,6 +32,8 @@ export default function CustomCommandsTab() {
   const { data: botStatus } = useQuery(
     trpc.botChannel.getStatus.queryOptions()
   );
+  const { data: profile } = useQuery(trpc.user.getProfile.queryOptions());
+  const canManage = canManageCommands(profile?.role ?? "USER");
   const { data: commands, isLoading } = useQuery(
     trpc.chatCommand.list.queryOptions()
   );
@@ -116,10 +119,12 @@ export default function CustomCommandsTab() {
             className="pl-8"
           />
         </div>
-        <Button onClick={handleCreate} size="sm">
-          <Plus className="size-3.5" data-icon="inline-start" />
-          Create
-        </Button>
+        {canManage && (
+          <Button onClick={handleCreate} size="sm">
+            <Plus className="size-3.5" data-icon="inline-start" />
+            Create
+          </Button>
+        )}
       </div>
 
       {/* Commands Table */}
@@ -130,7 +135,7 @@ export default function CustomCommandsTab() {
               ? "No commands match your search."
               : "No custom commands yet."}
           </p>
-          {!search && (
+          {!search && canManage && (
             <Button
               onClick={handleCreate}
               variant="outline"
@@ -156,12 +161,16 @@ export default function CustomCommandsTab() {
                 <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Access
                 </th>
-                <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Enabled
-                </th>
-                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Actions
-                </th>
+                {canManage && (
+                  <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Enabled
+                  </th>
+                )}
+                {canManage && (
+                  <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -184,78 +193,82 @@ export default function CustomCommandsTab() {
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {formatAccessLevel(cmd.accessLevel)}
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => toggleMutation.mutate({ id: cmd.id })}
-                      disabled={toggleMutation.isPending}
-                      className="inline-flex items-center justify-center"
-                      aria-label={`Toggle ${cmd.name}`}
-                    >
-                      {toggleMutation.isPending ? (
-                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                      ) : (
-                        <div
-                          className={`relative h-6 w-11 rounded-full transition-colors ${
-                            cmd.enabled
-                              ? "bg-brand-main"
-                              : "bg-muted"
-                          }`}
-                        >
-                          <div
-                            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                              cmd.enabled
-                                ? "translate-x-5"
-                                : "translate-x-0.5"
-                            }`}
-                          />
-                        </div>
-                      )}
-                    </button>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => handleEdit(cmd)}
-                        aria-label={`Edit ${cmd.name}`}
+                  {canManage && (
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => toggleMutation.mutate({ id: cmd.id })}
+                        disabled={toggleMutation.isPending}
+                        className="inline-flex items-center justify-center"
+                        aria-label={`Toggle ${cmd.name}`}
                       >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                      {deleteConfirmId === cmd.id ? (
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="destructive"
-                            size="xs"
-                            onClick={() =>
-                              deleteMutation.mutate({ id: cmd.id })
-                            }
-                            disabled={deleteMutation.isPending}
+                        {toggleMutation.isPending ? (
+                          <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <div
+                            className={`relative h-6 w-11 rounded-full transition-colors ${
+                              cmd.enabled
+                                ? "bg-brand-main"
+                                : "bg-muted"
+                            }`}
                           >
-                            {deleteMutation.isPending
-                              ? "..."
-                              : "Confirm"}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="xs"
-                            onClick={() => setDeleteConfirmId(null)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
+                            <div
+                              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                                cmd.enabled
+                                  ? "translate-x-5"
+                                  : "translate-x-0.5"
+                              }`}
+                            />
+                          </div>
+                        )}
+                      </button>
+                    </td>
+                  )}
+                  {canManage && (
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          onClick={() => setDeleteConfirmId(cmd.id)}
-                          aria-label={`Delete ${cmd.name}`}
+                          onClick={() => handleEdit(cmd)}
+                          aria-label={`Edit ${cmd.name}`}
                         >
-                          <Trash2 className="size-3.5 text-red-400" />
+                          <Pencil className="size-3.5" />
                         </Button>
-                      )}
-                    </div>
-                  </td>
+                        {deleteConfirmId === cmd.id ? (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="destructive"
+                              size="xs"
+                              onClick={() =>
+                                deleteMutation.mutate({ id: cmd.id })
+                              }
+                              disabled={deleteMutation.isPending}
+                            >
+                              {deleteMutation.isPending
+                                ? "..."
+                                : "Confirm"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              onClick={() => setDeleteConfirmId(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() => setDeleteConfirmId(cmd.id)}
+                            aria-label={`Delete ${cmd.name}`}
+                          >
+                            <Trash2 className="size-3.5 text-red-400" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

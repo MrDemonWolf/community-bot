@@ -1,0 +1,39 @@
+---
+title: Timers
+description: Recurring chat messages that post at set intervals.
+---
+
+Timers are recurring messages that the bot automatically posts to chat at configurable intervals. Use them for reminders, social links, rules, or any repeated message.
+
+## How It Works
+
+- Each timer has a name, message, and interval (in minutes).
+- Timers can optionally require a minimum number of chat messages between posts (`chatLines` threshold).
+- Timers only fire when the channel is live (checked via the stream status manager).
+- Timer messages support the same [response variables](/docs/twitch-bot/response-variables) as custom commands.
+- Timers are loaded from the database on startup and reloaded via EventBus when updated from the dashboard.
+
+## Configuration
+
+Timers are managed exclusively from the web dashboard at `/dashboard/timers`. There are no chat commands for timer management.
+
+### Timer Settings
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Name | Unique identifier for the timer | — |
+| Message | The message to post (supports variables) | — |
+| Interval | Minutes between posts | 5 |
+| Chat Lines | Minimum chat messages required between posts (0 = ignore) | 0 |
+| Enabled | Whether the timer is active | Yes |
+
+## Dashboard Management
+
+The dashboard at `/dashboard/timers` supports:
+
+- Creating new timers with name, message, interval, and chat line threshold
+- Editing existing timers
+- Enabling/disabling individual timers
+- Deleting timers
+
+Changes are applied in real-time via the EventBus — no bot restart required.

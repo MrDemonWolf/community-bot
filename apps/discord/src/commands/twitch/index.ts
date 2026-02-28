@@ -1,6 +1,6 @@
 import {
   ChannelType,
-  PermissionFlagsBits,
+  MessageFlags,
   SlashCommandBuilder,
 } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
@@ -12,11 +12,11 @@ import { handleTest } from "./test.js";
 import { handleSetChannel } from "./notifications-set-channel.js";
 import { handleSetRole } from "./notifications-set-role.js";
 import logger from "../../utils/logger.js";
+import { hasPermission } from "../../utils/permissions.js";
 
 export const twitchCommand = new SlashCommandBuilder()
   .setName("twitch")
   .setDescription("Manage Twitch live stream notifications")
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addSubcommand((sub) =>
     sub
       .setName("add")
@@ -85,6 +85,14 @@ export const twitchCommand = new SlashCommandBuilder()
 export async function handleTwitchCommand(
   interaction: ChatInputCommandInteraction
 ): Promise<void> {
+  if (!(await hasPermission(interaction, "admin"))) {
+    await interaction.reply({
+      content: "You need the Admin role or Manage Server permission to use this command.",
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
   const subcommandGroup = interaction.options.getSubcommandGroup(false);
   const subcommand = interaction.options.getSubcommand();
 

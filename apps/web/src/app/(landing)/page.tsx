@@ -51,6 +51,17 @@ export default function Home() {
                 </Link>
               )}
               <AuthCtaButton />
+              {channelName && (
+                <Link href={"/p" as Route}>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="px-6"
+                  >
+                    View Profile
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

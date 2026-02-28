@@ -21,6 +21,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { canManageCommands } from "@/utils/roles";
 
 export default function RegularsPage() {
   const queryClient = useQueryClient();
@@ -29,6 +30,8 @@ export default function RegularsPage() {
   const { data: botStatus } = useQuery(
     trpc.botChannel.getStatus.queryOptions()
   );
+  const { data: profile } = useQuery(trpc.user.getProfile.queryOptions());
+  const canManage = canManageCommands(profile?.role ?? "USER");
   const { data: regulars, isLoading } = useQuery(
     trpc.regular.list.queryOptions()
   );
@@ -136,10 +139,12 @@ export default function RegularsPage() {
             />
             Refresh Names
           </Button>
-          <Button onClick={() => setDialogOpen(true)} size="sm">
-            <Plus className="size-3.5" />
-            Add Regular
-          </Button>
+          {canManage && (
+            <Button onClick={() => setDialogOpen(true)} size="sm">
+              <Plus className="size-3.5" />
+              Add Regular
+            </Button>
+          )}
         </div>
 
         {/* Regulars Table */}
@@ -150,7 +155,7 @@ export default function RegularsPage() {
                 ? "No regulars match your search."
                 : "No regulars added yet."}
             </p>
-            {!search && (
+            {!search && canManage && (
               <Button
                 onClick={() => setDialogOpen(true)}
                 variant="outline"
@@ -179,9 +184,11 @@ export default function RegularsPage() {
                   <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Date Added
                   </th>
-                  <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Actions
-                  </th>
+                  {canManage && (
+                    <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -202,38 +209,40 @@ export default function RegularsPage() {
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {new Date(regular.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      {deleteConfirmId === regular.id ? (
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="destructive"
-                            size="xs"
-                            onClick={() =>
-                              removeMutation.mutate({ id: regular.id })
-                            }
-                            disabled={removeMutation.isPending}
-                          >
-                            {removeMutation.isPending ? "..." : "Confirm"}
-                          </Button>
+                    {canManage && (
+                      <td className="px-4 py-3 text-right">
+                        {deleteConfirmId === regular.id ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="destructive"
+                              size="xs"
+                              onClick={() =>
+                                removeMutation.mutate({ id: regular.id })
+                              }
+                              disabled={removeMutation.isPending}
+                            >
+                              {removeMutation.isPending ? "..." : "Confirm"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              onClick={() => setDeleteConfirmId(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
                           <Button
                             variant="ghost"
-                            size="xs"
-                            onClick={() => setDeleteConfirmId(null)}
+                            size="icon-xs"
+                            onClick={() => setDeleteConfirmId(regular.id)}
+                            aria-label={`Remove ${regular.twitchUsername}`}
                           >
-                            Cancel
+                            <Trash2 className="size-3.5 text-red-400" />
                           </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => setDeleteConfirmId(regular.id)}
-                          aria-label={`Remove ${regular.twitchUsername}`}
-                        >
-                          <Trash2 className="size-3.5 text-red-400" />
-                        </Button>
-                      )}
-                    </td>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

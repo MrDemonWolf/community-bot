@@ -1,0 +1,45 @@
+---
+title: Giveaways
+description: Keyword-based giveaway system for Twitch chat.
+---
+
+The giveaway system lets moderators run keyword-based giveaways in chat. Viewers enter by typing the keyword, and a winner is randomly drawn.
+
+## Commands
+
+### Moderator Commands
+
+| Command | Description |
+|---------|-------------|
+| `!giveaway start <keyword> [title]` | Start a new giveaway with the given keyword |
+| `!giveaway draw` | Draw a random winner from entries |
+| `!giveaway reroll` | Pick a new winner (reroll) |
+| `!giveaway end` | End the active giveaway |
+
+### Viewer Commands
+
+| Command | Description |
+|---------|-------------|
+| `!giveaway count` | Show the number of entries |
+
+## How It Works
+
+- A moderator starts a giveaway with `!giveaway start <keyword>`.
+- Viewers enter by typing the keyword in chat (e.g., `!enter`).
+- Each viewer can only enter once per giveaway.
+- Starting a new giveaway automatically ends any previous active giveaway.
+- The `!giveaway draw` command randomly selects a winner from all entries.
+- Use `!giveaway reroll` to pick a different winner if needed.
+
+## Dashboard Management
+
+Giveaways can also be managed from the web dashboard at `/dashboard/giveaways`. The dashboard supports:
+
+- Creating new giveaways
+- Drawing and rerolling winners
+- Viewing entry counts
+- Browsing giveaway history
+
+## Aliases
+
+The `!ga` alias is available as a shorthand for `!giveaway`.

@@ -6,7 +6,7 @@ const ROLE_HIERARCHY: Record<string, number> = {
   USER: 0,
   MODERATOR: 1,
   LEAD_MODERATOR: 2,
-  ADMIN: 3,
+  BROADCASTER: 3,
 };
 
 export const auditLogRouter = router({
@@ -37,8 +37,8 @@ export const auditLogRouter = router({
 
       const where: Record<string, unknown> = {};
 
-      // ADMIN sees all, others see only logs from their level and below
-      if (currentRole !== "ADMIN") {
+      // BROADCASTER sees all, others see only logs from their level and below
+      if (currentRole !== "BROADCASTER") {
         where.userRole = { in: visibleRoles };
       }
 

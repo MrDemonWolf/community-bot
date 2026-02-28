@@ -3,7 +3,7 @@ title: Slash Commands
 description: Discord slash commands for managing Twitch notifications.
 ---
 
-All commands are under the `/twitch` command group. All `/twitch` commands require the **Manage Server** Discord permission.
+All commands are under the `/twitch` command group. All `/twitch` commands require the configured **Admin Role** or the **Manage Server** Discord permission.
 
 **Prerequisites:** A notification channel must be set with `/twitch notifications set-channel` before live notifications will work.
 
@@ -47,6 +47,49 @@ Set a role to ping when a Twitch stream goes live.
 
 **Parameters:**
 - `role` (required) — The Discord role to mention in notifications
+
+---
+
+## `/quote` Commands
+
+The `/quote` command group provides cross-platform quote management, shared with the Twitch bot. The `/quote add` and `/quote remove` subcommands require the configured **Mod Role** or the **Manage Messages** Discord permission.
+
+### `/quote show [number]`
+
+Show a random quote, or a specific quote by number.
+
+**Parameters:**
+- `number` (optional) — The quote number to display. Omit for a random quote.
+
+### `/quote add <text>`
+
+Add a new quote to the shared quote database.
+
+**Parameters:**
+- `text` (required) — The quote text to add
+
+### `/quote remove <number>`
+
+Remove a quote by its number.
+
+**Parameters:**
+- `number` (required) — The quote number to remove
+
+### `/quote search <text>`
+
+Search quotes by keyword.
+
+**Parameters:**
+- `text` (required) — The text to search for in quotes
+
+## Configurable Role Mapping
+
+By default, `/twitch` commands require the **Manage Server** Discord permission and `/quote add`/`remove` require **Manage Messages**. You can override this by configuring role mappings in the web dashboard under **Discord Settings > Role Mapping**:
+
+- **Admin Role** — Members with this role can use `/twitch` commands (falls back to Manage Server)
+- **Mod Role** — Members with this role can use `/quote add` and `/quote remove` (falls back to Manage Messages). Members with the Admin Role also have mod permissions.
+
+When a role mapping is configured, users with that role can use the corresponding commands even without the default Discord permission. If no role is configured, the bot falls back to checking the standard Discord permission.
 
 ## Related
 

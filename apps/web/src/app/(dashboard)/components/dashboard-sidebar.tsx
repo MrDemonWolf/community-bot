@@ -15,6 +15,15 @@ import {
   User,
   Home,
   MessageSquare,
+  UserCog,
+  ListOrdered,
+  Quote,
+  Hash,
+  Timer,
+  Shield,
+  Music,
+  Gift,
+  BarChart3,
 } from "lucide-react";
 
 const twitchLinks = [
@@ -36,6 +45,54 @@ const twitchLinks = [
     icon: Users,
     exact: false,
   },
+  {
+    href: "/dashboard/queue",
+    label: "Queue",
+    icon: ListOrdered,
+    exact: false,
+  },
+  {
+    href: "/dashboard/quotes",
+    label: "Quotes",
+    icon: Quote,
+    exact: false,
+  },
+  {
+    href: "/dashboard/counters",
+    label: "Counters",
+    icon: Hash,
+    exact: false,
+  },
+  {
+    href: "/dashboard/timers",
+    label: "Timers",
+    icon: Timer,
+    exact: false,
+  },
+  {
+    href: "/dashboard/song-requests",
+    label: "Song Requests",
+    icon: Music,
+    exact: false,
+  },
+  {
+    href: "/dashboard/moderation",
+    label: "Moderation",
+    icon: Shield,
+    exact: false,
+  },
+  {
+    href: "/dashboard/giveaways",
+    label: "Giveaways",
+    icon: Gift,
+    exact: false,
+  },
+  {
+    href: "/dashboard/polls",
+    label: "Polls",
+    icon: BarChart3,
+    exact: false,
+  },
 ];
 
 export function SidebarContent({
@@ -49,6 +106,9 @@ export function SidebarContent({
   const { data: botStatus } = useQuery(
     trpc.botChannel.getStatus.queryOptions()
   );
+  const { data: profile } = useQuery(trpc.user.getProfile.queryOptions());
+
+  const isBroadcaster = profile?.role === "BROADCASTER";
 
   const isActive = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
@@ -135,6 +195,29 @@ export function SidebarContent({
           </Link>
         </nav>
       </div>
+
+      {/* Management section — BROADCASTER only */}
+      {isBroadcaster && (
+        <div>
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
+            Management
+          </p>
+          <nav className="flex flex-col gap-0.5">
+            <Link
+              href={"/dashboard/users" as Route}
+              onClick={onNavigate}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading transition-all duration-200 ${
+                pathname.startsWith("/dashboard/users")
+                  ? "bg-brand-main/10 font-medium text-brand-main"
+                  : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
+              }`}
+            >
+              <UserCog className="h-4 w-4" />
+              Users
+            </Link>
+          </nav>
+        </div>
+      )}
 
       {/* Settings */}
       <div>

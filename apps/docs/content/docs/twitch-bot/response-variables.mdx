@@ -50,6 +50,14 @@ Use these placeholders in the `response` field of custom commands. They are repl
 
 Emote lists are space-separated and truncated to 400 characters.
 
+## Counter Variables
+
+| Variable | Description | Example Output |
+|----------|-------------|----------------|
+| `{counter <name>}` | Value of a named counter | `{counter deaths}` → `42` |
+
+Counter values are fetched from the database at runtime. If the counter does not exist, the placeholder is left as-is. See [Counters](/docs/twitch-bot/counters) for managing counters.
+
 ## Positional Arguments
 
 | Variable | Description | Example |

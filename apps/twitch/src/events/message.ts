@@ -13,8 +13,10 @@ import {
 } from "../services/streamStatusManager.js";
 import { executeCommand } from "../services/commandExecutor.js";
 import { trackMessage } from "../services/chatterTracker.js";
-import { getBroadcasterId } from "../services/broadcasterCache.js";
+import { getBroadcasterId, getBotChannelId } from "../services/broadcasterCache.js";
+import { addEntry } from "../services/giveawayManager.js";
 import { isMuted } from "../services/botState.js";
+import { checkMessage, handleViolation } from "../services/spamFilter.js";
 import {
   isCommandDisabled,
   getAccessLevelOverride,
@@ -81,13 +83,24 @@ function passesChecks(
 
 export function registerMessageEvents(chatClient: ChatClient): void {
   chatClient.onMessage((channel, user, text, msg) => {
-    trackMessage(channel, user);
+    trackMessage(channel, user, text);
 
     // When muted for this channel, only allow "!bot unmute" through
     if (isMuted(channel)) {
       const trimmed = text.trim().toLowerCase();
       if (trimmed !== "!bot unmute") return;
     }
+
+    // Spam filter check — runs before command dispatch
+    checkMessage(channel, user, text, msg)
+      .then((violation) => {
+        if (violation) {
+          handleViolation(chatClient, channel, user, violation);
+        }
+      })
+      .catch(() => {
+        // Silently ignore spam filter errors to not block message flow
+      });
 
     // Phase 1: Built-in prefix commands (highest priority)
     if (text.startsWith(COMMAND_PREFIX)) {
@@ -196,6 +209,14 @@ export function registerMessageEvents(chatClient: ChatClient): void {
           logger.commands.error(cmd.name, user, msg.userInfo.userId);
         });
       return; // First match wins
+    }
+
+    // Phase 4: Giveaway keyword detection
+    const botChannelId = getBotChannelId(channel);
+    if (botChannelId) {
+      addEntry(botChannelId, user, msg.userInfo.userId, text).catch(() => {
+        // Silently ignore giveaway entry errors
+      });
     }
   });
 }

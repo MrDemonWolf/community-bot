@@ -11,7 +11,7 @@
     "lint": "eslint . --ext .js --fix",
     "format": "prettier-eslint --write $PWD/'**/*.{js,json}'",
     "db:import": "tsx src/scripts/importCommands.ts",
-    "test": "cross-env NODE_ENV=test mocha tests --exit",
+    "test": "vitest run",
     "check-types": "tsc --noEmit"
   },
   "author": "MrDemonWolf, Inc",

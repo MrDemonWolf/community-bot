@@ -30,6 +30,21 @@ The live notification includes:
 - Stream thumbnail
 - Link to the Twitch channel
 
+## Per-Channel Overrides
+
+Each monitored Twitch channel can have its own notification overrides, configured from the web dashboard's [Discord Settings](/docs/web-dashboard/discord-settings) page:
+
+| Override | Description |
+|----------|-------------|
+| **Custom channel** | Post this channel's notifications to a different Discord channel than the default |
+| **Custom role** | Ping a different role for this channel's notifications |
+| **Custom embed** | Use a custom embed template built with the visual embed builder |
+| **Update while live** | Edit the notification with updated viewer counts while the stream is live |
+| **Delete when offline** | Delete the notification message when the stream goes offline |
+| **Auto-publish** | Crosspost the notification if posted in an announcement channel |
+
+When no overrides are set, the guild's default notification channel and role are used.
+
 ## Web Dashboard Integration
 
 Guilds can be enabled or disabled from the web dashboard's Discord settings page (`/dashboard/discord`). When a guild has notifications disabled (`enabled: false`), it is skipped during stream checks. Settings changes made in the dashboard propagate to the Discord bot in real time via the `discord:settings-updated` EventBus event.

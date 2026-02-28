@@ -12,6 +12,8 @@ Community Bot provides several public pages that viewers and community members c
 | `/p` | Public landing page for the broadcaster's channel |
 | `/p/commands` | Lists all enabled Twitch chat commands with their triggers and descriptions |
 | `/p/queue` | Shows the current viewer queue status and entries |
+| `/p/quotes` | Browse all quotes with search, game tags, and attribution |
+| `/p/song-requests` | Shows the current song request queue with position tracking |
 
 These pages read the broadcaster from the `SystemConfig` table (set during the [setup wizard](/docs/getting-started/setup-wizard)) and display data for their channel.
 
@@ -35,3 +37,5 @@ Older URLs using `/public/*` are automatically redirected:
 | `/public` | `/p` |
 | `/public/commands` | `/p/commands` |
 | `/public/queue` | `/p/queue` |
+| `/public/quotes` | `/p/quotes` |
+| `/public/song-requests` | `/p/song-requests` |

@@ -50,12 +50,81 @@ Manages database commands from chat. See [Database Commands](/docs/twitch-bot/da
 Requires moderator or broadcaster access.
 
 ### `!reloadcommands`
-Immediately reloads commands and regulars from the database without waiting for the 5-minute cron cycle. Requires moderator or broadcaster access.
+Immediately reloads commands and regulars from the database without waiting for the 5-minute cron cycle. Requires broadcaster access.
 
 ### `!commands`
 Sends a link to the public commands page. Requires the `WEB_URL` environment variable to be set on the Twitch bot. If not configured, the bot replies with a "not configured" message.
 
 See [Public Pages](/docs/web-dashboard/public-pages) for what viewers see. Set `WEB_URL` in [Environment Variables](/docs/getting-started/environment-variables).
+
+### `!title`
+Shows the current stream title.
+
+### `!game`
+Shows the current game or category being played.
+
+### `!followage`
+Shows how long you have been following the channel.
+
+### `!shoutout <username>` / `!so <username>`
+Shouts out another streamer with their last played game and a link to their channel. Strips leading `@` from usernames. Requires moderator or broadcaster access.
+
+**Aliases:** `!so`
+
+If AI-enhanced shoutouts are enabled (requires `GEMINI_API_KEY` and per-channel toggle), a personalized AI-generated message is also posted after the standard shoutout. See [AI Shoutouts](/docs/twitch-bot/ai-shoutouts) for details.
+
+### `!quote`
+Manage and display quotes.
+
+**Viewer subcommands:**
+- `!quote` — Display a random quote
+- `!quote <number>` — Display a specific quote by number
+- `!quote search <text>` — Search quotes by keyword
+
+**Moderator subcommands:**
+- `!quote add <text>` — Add a new quote (records the current game)
+- `!quote remove <number>` — Remove a quote by number
+
+Quotes are shared across Twitch and Discord. See [Quotes](/docs/twitch-bot/quotes) for details.
+
+### `!counter`
+Manage named counters (e.g., death counters, win counters). Requires moderator or broadcaster access.
+
+- `!counter <name>` — Show the current value of a counter
+- `!counter <name> +` — Increment by 1
+- `!counter <name> -` — Decrement by 1
+- `!counter <name> set <value>` — Set to a specific value
+- `!counter <name> create` — Create a new counter
+- `!counter <name> delete` — Delete a counter
+
+Use `{counter <name>}` in custom command responses to display a counter's value. See [Counters](/docs/twitch-bot/counters) for details.
+
+### `!permit <username> [seconds]`
+Temporarily allows a user to bypass spam filters. Default duration is 60 seconds, maximum 3600 seconds. Requires moderator or broadcaster access.
+
+### `!nuke <word/phrase> [seconds]`
+Scans recent chat messages and timeouts all users who sent messages containing the specified word or phrase. Default timeout duration is 300 seconds. The issuing moderator is excluded from timeout. Requires moderator or broadcaster access.
+
+### `!vanish`
+Clears your own messages from chat by self-applying a 1-second timeout. Available to everyone.
+
+### `!clip`
+Creates a Twitch clip of the current stream moment and returns the clip URL. Available to everyone.
+
+### Song Request Commands
+
+**Viewer commands:**
+- `!sr <song title>` — Request a song (aliases: `!songrequest`, `!song`)
+- `!sr list` / `!sr queue` — Show the next 5 songs in the queue
+- `!sr current` — Show the currently playing song
+- `!sr remove` — Remove all of your own song requests
+
+**Moderator commands:**
+- `!sr skip` — Skip the current song
+- `!sr remove <position>` — Remove a song at a specific position
+- `!sr clear` — Clear the entire song request queue
+
+See [Song Requests](/docs/twitch-bot/song-requests) for setup and configuration details.
 
 ### Queue Commands
 
@@ -77,3 +146,23 @@ See [Public Pages](/docs/web-dashboard/public-pages) for what viewers see. Set `
 - `!queue clear` — Clear the entire queue
 
 See [Queue System](/docs/twitch-bot/queue-system) for more details.
+
+### Giveaway Commands
+
+**Moderator/Broadcaster commands:**
+- `!giveaway start <keyword> [title]` — Start a new giveaway with a keyword viewers type to enter (alias: `!ga`)
+- `!giveaway draw` — Randomly draw a winner from entries
+- `!giveaway reroll` — Draw a new winner (re-roll)
+- `!giveaway end` — End the active giveaway
+- `!giveaway count` — Show the current number of entries
+
+Viewers enter by typing the keyword in chat. Each viewer can only enter once per giveaway. See [Giveaways](/docs/twitch-bot/giveaways) for details.
+
+### Poll Commands
+
+**Moderator/Broadcaster commands:**
+- `!poll create "Question" "Option 1" "Option 2" [duration]` — Create a Twitch-native poll (2-5 options, default 60s duration)
+- `!poll end` — End the active poll early
+- `!poll results` — Show the current poll results
+
+Uses the Twitch Helix API to create native Twitch polls. See [Polls](/docs/twitch-bot/polls) for details.

@@ -1,9 +1,40 @@
-import type { Client, TextChannel } from "discord.js";
+import type { Client, TextChannel, NewsChannel } from "discord.js";
+import { ChannelType } from "discord.js";
 
 import { prisma } from "@community-bot/db";
 import { getStreams } from "../../twitch/api.js";
-import { buildLiveEmbed, buildOfflineEmbed } from "../../twitch/embeds.js";
+import {
+  buildLiveEmbed,
+  buildOfflineEmbed,
+  buildCustomEmbed,
+  type TemplateVariables,
+  formatDuration,
+} from "../../twitch/embeds.js";
 import logger from "../../utils/logger.js";
+
+/**
+ * Resolve the notification channel ID for a given TwitchChannel,
+ * falling back to the guild default.
+ */
+export function resolveNotificationChannelId(
+  channel: { notificationChannelId: string | null },
+  guild: { notificationChannelId: string | null }
+): string | null {
+  return channel.notificationChannelId ?? guild.notificationChannelId;
+}
+
+/**
+ * Resolve the role mention string for a given TwitchChannel,
+ * falling back to the guild default.
+ */
+export function resolveRoleMention(
+  channel: { notificationRoleId: string | null },
+  guild: { notificationRoleId: string | null }
+): string {
+  const roleId = channel.notificationRoleId ?? guild.notificationRoleId;
+  if (!roleId) return "";
+  return roleId === "everyone" ? "@everyone" : `<@&${roleId}>`;
+}
 
 export default async function checkTwitchStreams(client: Client): Promise<void> {
   try {
@@ -30,8 +61,11 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
     // 3. Process each channel
     for (const channel of channels) {
       const guild = channel.DiscordGuild;
-      if (!guild?.notificationChannelId) continue;
+      if (!guild) continue;
       if (guild.enabled === false) continue;
+
+      const notifChannelId = resolveNotificationChannelId(channel, guild);
+      if (!notifChannelId) continue;
 
       const stream = streamMap.get(channel.twitchChannelId);
       const wasLive = channel.isLive;
@@ -52,34 +86,62 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
           });
 
           const discordChannel = (await client.channels.fetch(
-            guild.notificationChannelId
-          )) as TextChannel | null;
+            notifChannelId
+          )) as TextChannel | NewsChannel | null;
           if (!discordChannel) continue;
 
           const startedAt = new Date(stream.started_at);
-          const roleMention = guild.notificationRoleId
-            ? guild.notificationRoleId === "everyone"
-              ? "@everyone"
-              : `<@&${guild.notificationRoleId}>`
-            : "";
+          const roleMention = resolveRoleMention(channel, guild);
 
-          const embed = buildLiveEmbed({
-            displayName: channel.displayName ?? channel.username ?? "",
-            username: channel.username ?? "",
-            profileImageUrl: channel.profileImageUrl ?? "",
-            stream,
-            startedAt,
-          });
+          const templateVars: TemplateVariables = {
+            streamer: channel.displayName ?? channel.username ?? "",
+            title: stream.title,
+            game: stream.game_name,
+            viewers: stream.viewer_count.toLocaleString(),
+            url: `https://www.twitch.tv/${channel.username ?? ""}`,
+            thumbnail: stream.thumbnail_url,
+            duration: formatDuration(Date.now() - startedAt.getTime()),
+          };
+
+          const embed =
+            channel.useCustomMessage && channel.customOnlineMessage
+              ? buildCustomEmbed(channel.customOnlineMessage, templateVars)
+              : null;
+
+          const finalEmbed =
+            embed ??
+            buildLiveEmbed({
+              displayName: channel.displayName ?? channel.username ?? "",
+              username: channel.username ?? "",
+              profileImageUrl: channel.profileImageUrl ?? "",
+              stream,
+              startedAt,
+            });
 
           const message = await discordChannel.send({
             content: roleMention || undefined,
-            embeds: [embed],
+            embeds: [finalEmbed],
           });
+
+          // Auto-publish in announcement channels
+          if (
+            channel.autoPublish &&
+            discordChannel.type === ChannelType.GuildAnnouncement
+          ) {
+            try {
+              await message.crosspost();
+            } catch {
+              logger.debug(
+                "Twitch Streams",
+                `Could not crosspost notification for ${channel.displayName ?? channel.username}`
+              );
+            }
+          }
 
           await prisma.twitchNotification.create({
             data: {
               messageId: message.id,
-              channelId: guild.notificationChannelId,
+              channelId: notifChannelId,
               guildId: guild.guildId,
               twitchChannelId: channel.id,
               isLive: true,
@@ -93,6 +155,8 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
           );
         } else if (wasLive && isNowLive && stream && activeNotification) {
           // --- Still Live (update embed) ---
+          if (!channel.updateMessageLive) continue;
+
           await prisma.twitchChannel.update({
             where: { id: channel.id },
             data: {
@@ -104,7 +168,7 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
           try {
             const discordChannel = (await client.channels.fetch(
               activeNotification.channelId
-            )) as TextChannel | null;
+            )) as TextChannel | NewsChannel | null;
             if (!discordChannel) continue;
 
             const message = await discordChannel.messages.fetch(
@@ -114,23 +178,36 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
             const startedAt =
               activeNotification.streamStartedAt ?? new Date(stream.started_at);
 
-            const embed = buildLiveEmbed({
-              displayName: channel.displayName ?? channel.username ?? "",
-              username: channel.username ?? "",
-              profileImageUrl: channel.profileImageUrl ?? "",
-              stream,
-              startedAt,
-            });
+            const templateVars: TemplateVariables = {
+              streamer: channel.displayName ?? channel.username ?? "",
+              title: stream.title,
+              game: stream.game_name,
+              viewers: stream.viewer_count.toLocaleString(),
+              url: `https://www.twitch.tv/${channel.username ?? ""}`,
+              thumbnail: stream.thumbnail_url,
+              duration: formatDuration(Date.now() - startedAt.getTime()),
+            };
 
-            const roleMention = guild.notificationRoleId
-              ? guild.notificationRoleId === "everyone"
-                ? "@everyone"
-                : `<@&${guild.notificationRoleId}>`
-              : "";
+            const embed =
+              channel.useCustomMessage && channel.customOnlineMessage
+                ? buildCustomEmbed(channel.customOnlineMessage, templateVars)
+                : null;
+
+            const finalEmbed =
+              embed ??
+              buildLiveEmbed({
+                displayName: channel.displayName ?? channel.username ?? "",
+                username: channel.username ?? "",
+                profileImageUrl: channel.profileImageUrl ?? "",
+                stream,
+                startedAt,
+              });
+
+            const roleMention = resolveRoleMention(channel, guild);
 
             await message.edit({
               content: roleMention || undefined,
-              embeds: [embed],
+              embeds: [finalEmbed],
             });
           } catch {
             // Message may have been deleted — ignore
@@ -157,38 +234,57 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
             try {
               const discordChannel = (await client.channels.fetch(
                 activeNotification.channelId
-              )) as TextChannel | null;
+              )) as TextChannel | NewsChannel | null;
               if (!discordChannel) continue;
 
-              const message = await discordChannel.messages.fetch(
-                activeNotification.messageId
-              );
+              if (channel.deleteWhenOffline) {
+                // Delete the notification message instead of editing to offline
+                const message = await discordChannel.messages.fetch(
+                  activeNotification.messageId
+                );
+                await message.delete();
+              } else {
+                const message = await discordChannel.messages.fetch(
+                  activeNotification.messageId
+                );
 
-              const startedAt =
-                activeNotification.streamStartedAt ??
-                channel.lastStartedAt ??
-                offlineAt;
+                const startedAt =
+                  activeNotification.streamStartedAt ??
+                  channel.lastStartedAt ??
+                  offlineAt;
 
-              const embed = buildOfflineEmbed({
-                displayName: channel.displayName ?? channel.username ?? "",
-                username: channel.username ?? "",
-                profileImageUrl: channel.profileImageUrl ?? "",
-                title: channel.lastStreamTitle ?? "Stream",
-                gameName: channel.lastGameName ?? "Unknown",
-                startedAt,
-                offlineAt,
-              });
+                const templateVars: TemplateVariables = {
+                  streamer: channel.displayName ?? channel.username ?? "",
+                  title: channel.lastStreamTitle ?? "Stream",
+                  game: channel.lastGameName ?? "Unknown",
+                  url: `https://www.twitch.tv/${channel.username ?? ""}`,
+                  duration: formatDuration(offlineAt.getTime() - startedAt.getTime()),
+                };
 
-              const roleMention = guild.notificationRoleId
-                ? guild.notificationRoleId === "everyone"
-                  ? "@everyone"
-                  : `<@&${guild.notificationRoleId}>`
-                : "";
+                const embed =
+                  channel.useCustomMessage && channel.customOfflineMessage
+                    ? buildCustomEmbed(channel.customOfflineMessage, templateVars)
+                    : null;
 
-              await message.edit({
-                content: roleMention || undefined,
-                embeds: [embed],
-              });
+                const finalEmbed =
+                  embed ??
+                  buildOfflineEmbed({
+                    displayName: channel.displayName ?? channel.username ?? "",
+                    username: channel.username ?? "",
+                    profileImageUrl: channel.profileImageUrl ?? "",
+                    title: channel.lastStreamTitle ?? "Stream",
+                    gameName: channel.lastGameName ?? "Unknown",
+                    startedAt,
+                    offlineAt,
+                  });
+
+                const roleMention = resolveRoleMention(channel, guild);
+
+                await message.edit({
+                  content: roleMention || undefined,
+                  embeds: [finalEmbed],
+                });
+              }
             } catch {
               logger.debug(
                 "Twitch Streams",

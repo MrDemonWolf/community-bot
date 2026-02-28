@@ -9,6 +9,34 @@ model DiscordGuild {
   notificationRoleId    String?
   joinedAt              DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
+  // Welcome message
+  welcomeEnabled       Boolean @default(false)
+  welcomeChannelId     String?
+  welcomeMessage       String?
+  welcomeUseEmbed      Boolean @default(false)
+  welcomeEmbedJson     String?
+
+  // Leave message
+  leaveEnabled         Boolean @default(false)
+  leaveChannelId       String?
+  leaveMessage         String?
+  leaveUseEmbed        Boolean @default(false)
+  leaveEmbedJson       String?
+
+  // Configurable role mapping for Discord permission checks
+  adminRoleId          String?
+  modRoleId            String?
+
+  // Auto-role on join
+  autoRoleEnabled      Boolean @default(false)
+  autoRoleId           String?
+
+  // DM welcome
+  dmWelcomeEnabled     Boolean @default(false)
+  dmWelcomeMessage     String?
+  dmWelcomeUseEmbed    Boolean @default(false)
+  dmWelcomeEmbedJson   String?
+
   TwitchChannel         TwitchChannel[]
   TwitchNotification    TwitchNotification[]
 

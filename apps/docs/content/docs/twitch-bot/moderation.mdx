@@ -1,0 +1,63 @@
+---
+title: Moderation & Spam Filters
+description: Configurable spam filters and moderation commands for Twitch chat.
+---
+
+The bot includes configurable spam filters that automatically moderate chat, plus several moderation commands for manual intervention.
+
+## Spam Filters
+
+Spam filters run on every chat message before command processing. Six filter types are available, each independently toggled:
+
+| Filter | What It Checks | Key Settings |
+|--------|---------------|--------------|
+| **Caps** | Excessive uppercase characters | Min message length, max uppercase % |
+| **Links** | URLs in messages | Option to allow subscribers |
+| **Symbols** | Excessive symbols/special characters | Max symbol % |
+| **Emotes** | Excessive emote usage | Max emote count |
+| **Repetition** | Repeated characters or words | Max repeated count |
+| **Banned Words** | Specific words or phrases | Custom word list |
+
+### How It Works
+
+1. Each message is checked against all enabled filters in order: banned words, links, caps, symbols, emotes, repetition.
+2. Users at or above the configured **exempt level** bypass all filters (default: Subscriber).
+3. Moderators and broadcasters are always exempt.
+4. Users with an active **permit** (from `!permit`) bypass filters temporarily.
+5. On violation, the user is timed out for the configured duration and a warning message is sent.
+
+### Configuration
+
+Spam filters are configured from the web dashboard at `/dashboard/moderation`. Global settings include:
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Exempt Level | Users at or above this level skip filters | Subscriber |
+| Timeout Duration | Timeout length in seconds | 5 |
+| Warning Message | Message sent to chat on violation | "Please don't spam." |
+
+## Moderation Commands
+
+### `!permit <username> [seconds]`
+
+Temporarily allows a user to bypass spam filters. Useful for letting someone post a link or message that would normally be filtered.
+
+- Default duration: 60 seconds
+- Maximum duration: 3600 seconds (1 hour)
+- Requires: Moderator or Broadcaster
+
+### `!nuke <word/phrase> [seconds]`
+
+Scans recent chat messages (last 100) and timeouts all users who sent messages containing the specified word or phrase.
+
+- Default timeout: 300 seconds (5 minutes)
+- The issuing moderator is excluded from timeout
+- Requires: Moderator or Broadcaster
+
+### `!vanish`
+
+Clears your own messages from chat by self-applying a 1-second timeout. Available to everyone — a popular Fossabot-style command.
+
+### `!clip`
+
+Creates a Twitch clip of the current stream moment via the Helix API and returns the clip URL. Available to everyone.

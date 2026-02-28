@@ -56,6 +56,12 @@ Add/remove regular        →   regular:*            →   Twitch reloads regula
 Change Discord settings   →   discord:settings-*   →   Discord reloads guild
 Send test notification    →   discord:test-*       →   Discord sends embed
 Mute/unmute bot           →   bot:mute             →   Twitch toggles mute
+Queue change (chat/dash)  →   queue:updated        →   Other side syncs
+Test welcome message      →   discord:test-welcome →   Discord sends message
+Add/remove quote          →   quote:*              →   —
+Update counter            →   counter:updated      →   —
+Update timer settings     →   timer:updated        →   Twitch reloads timers
+Update spam filter config →   spam-filter:updated  →   Twitch reloads filters
 ```
 
 The constructor accepts an optional `prefix` option:
@@ -110,9 +116,9 @@ Published by the Twitch bot when a monitored stream goes live or offline. The Di
 
 | Event | Payload | Publisher | Subscriber |
 |-------|---------|-----------|------------|
-| `queue:updated` | `{ channelId }` | Any | Any |
+| `queue:updated` | `{ channelId }` | Twitch, Web | Twitch, Web |
 
-Fired when the queue state changes (open/close/pause, entries added/removed).
+Fired when the queue state changes (open/close/pause, entries added/removed). Both the Twitch bot (via chat commands) and the Web dashboard (via the queue management page) publish this event to keep each other in sync.
 
 ### Bot Controls
 
@@ -129,8 +135,28 @@ Fired when the queue state changes (open/close/pause, entries added/removed).
 |-------|---------|-----------|------------|
 | `discord:settings-updated` | `{ guildId }` | Web | Discord |
 | `discord:test-notification` | `{ guildId }` | Web | Discord |
+| `discord:test-welcome` | `{ guildId, type }` | Web | Discord |
 
-`discord:settings-updated` fires when notification settings are changed from the web dashboard (channel, role, enable/disable). The Discord bot reloads guild settings in response. `discord:test-notification` triggers a test notification embed in the configured channel.
+`discord:settings-updated` fires when notification settings are changed from the web dashboard (channel, role, enable/disable). The Discord bot reloads guild settings in response. `discord:test-notification` triggers a test notification embed in the configured channel. `discord:test-welcome` triggers a test welcome, leave, or DM message — the `type` field is `"welcome"`, `"leave"`, or `"dm"`.
+
+### Quotes & Counters
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `quote:created` | `{ quoteId }` | Web/Twitch | — |
+| `quote:deleted` | `{ quoteId }` | Web/Twitch | — |
+| `counter:updated` | `{ counterName, channelId }` | Web/Twitch | Any |
+
+Quote events are informational. Counter events notify when a counter value changes.
+
+### Timers & Spam Filters
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `timer:updated` | `{ channelId }` | Web | Twitch |
+| `spam-filter:updated` | `{ channelId }` | Web | Twitch |
+
+`timer:updated` fires when timer settings change from the dashboard. The Twitch bot reloads timers for the affected channel. `spam-filter:updated` fires when spam filter configuration changes, causing the Twitch bot to reload the filter config.
 
 ## API Reference
 

@@ -4,7 +4,7 @@
  * Every mutation in the web dashboard calls `logAudit()` to record who
  * did what. The user's current role is looked up at write time so the
  * dashboard can filter the feed by role hierarchy (USER < MODERATOR <
- * LEAD_MODERATOR < ADMIN). Metadata captures action-specific details
+ * LEAD_MODERATOR < BROADCASTER). Metadata captures action-specific details
  * like old/new values or resource names.
  */
 import { prisma } from "@community-bot/db";
