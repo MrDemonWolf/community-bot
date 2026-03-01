@@ -30,6 +30,7 @@ export const discordGuildRouter = router({
           name: guild.name,
           icon: guildIconUrl(guild.guildId, guild.icon),
           enabled: guild.enabled,
+          muted: guild.muted,
           notificationChannelId: guild.notificationChannelId,
           notificationRoleId: guild.notificationRoleId,
           adminRoleId: guild.adminRoleId,
@@ -604,6 +605,80 @@ export const discordGuildRouter = router({
 
       return { success: true };
     }),
+
+  mute: leadModProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const guild = await prisma.discordGuild.findFirst({
+      where: { userId },
+    });
+
+    if (!guild) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No Discord server linked.",
+      });
+    }
+
+    await prisma.discordGuild.update({
+      where: { id: guild.id },
+      data: { muted: true },
+    });
+
+    const { eventBus } = await import("../events");
+    await eventBus.publish("discord:mute", {
+      guildId: guild.guildId,
+      muted: true,
+    });
+
+    await logAudit({
+      userId,
+      userName: ctx.session.user.name,
+      userImage: ctx.session.user.image,
+      action: "discord.mute",
+      resourceType: "DiscordGuild",
+      resourceId: guild.id,
+    });
+
+    return { success: true };
+  }),
+
+  unmute: leadModProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const guild = await prisma.discordGuild.findFirst({
+      where: { userId },
+    });
+
+    if (!guild) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No Discord server linked.",
+      });
+    }
+
+    await prisma.discordGuild.update({
+      where: { id: guild.id },
+      data: { muted: false },
+    });
+
+    const { eventBus } = await import("../events");
+    await eventBus.publish("discord:mute", {
+      guildId: guild.guildId,
+      muted: false,
+    });
+
+    await logAudit({
+      userId,
+      userName: ctx.session.user.name,
+      userImage: ctx.session.user.image,
+      action: "discord.unmute",
+      resourceType: "DiscordGuild",
+      resourceId: guild.id,
+    });
+
+    return { success: true };
+  }),
 
   testNotification: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;

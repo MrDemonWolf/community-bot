@@ -18,6 +18,7 @@ import {
   ToggleRight,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
+import { PlatformBadges } from "@/components/platform-badges";
 
 interface TimerFormState {
   name: string;
@@ -142,7 +143,7 @@ export default function TimersPage() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-foreground">Timers</h1>
+        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Timers <PlatformBadges platforms={["twitch"]} /></h1>
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -158,7 +159,7 @@ export default function TimersPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-foreground">Timers</h1>
+        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Timers <PlatformBadges platforms={["twitch"]} /></h1>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -169,7 +170,7 @@ export default function TimersPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Timers</h1>
+        <h1 className="flex items-center gap-3 text-2xl font-bold text-foreground">Timers <PlatformBadges platforms={["twitch"]} /></h1>
         {canManage && !showForm && (
           <Button size="sm" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); }}>
             <Plus className="size-3.5" />

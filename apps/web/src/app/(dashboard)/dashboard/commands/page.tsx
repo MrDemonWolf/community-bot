@@ -6,6 +6,7 @@ import { trpc } from "@/utils/trpc";
 import CommandToggles from "./command-toggles";
 import CustomCommandsTab from "./custom-commands-tab";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
+import { PlatformBadges } from "@/components/platform-badges";
 
 type Tab = "custom" | "default";
 
@@ -18,8 +19,8 @@ export default function CommandsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-foreground">
-        Commands
+      <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">
+        Commands <PlatformBadges platforms={["twitch"]} />
       </h1>
 
       {/* Tab bar */}

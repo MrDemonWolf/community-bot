@@ -18,6 +18,7 @@ import {
   Eraser,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
+import { PlatformBadges } from "@/components/platform-badges";
 
 const statusConfig = {
   OPEN: { label: "Open", className: "bg-green-500/15 text-green-500" },
@@ -99,7 +100,7 @@ export default function QueuePage() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-foreground">Queue</h1>
+        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Queue <PlatformBadges platforms={["twitch"]} /></h1>
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -115,7 +116,7 @@ export default function QueuePage() {
   if (stateLoading || entriesLoading) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-foreground">Queue</h1>
+        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Queue <PlatformBadges platforms={["twitch"]} /></h1>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -128,7 +129,7 @@ export default function QueuePage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-foreground">Queue</h1>
+      <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Queue <PlatformBadges platforms={["twitch"]} /></h1>
 
       <div className="space-y-4">
         {/* Status + Controls */}

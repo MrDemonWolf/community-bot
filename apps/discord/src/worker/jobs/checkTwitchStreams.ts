@@ -63,6 +63,7 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
       const guild = channel.DiscordGuild;
       if (!guild) continue;
       if (guild.enabled === false) continue;
+      if (guild.muted === true) continue;
 
       const notifChannelId = resolveNotificationChannelId(channel, guild);
       if (!notifChannelId) continue;

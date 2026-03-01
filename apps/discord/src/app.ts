@@ -157,6 +157,13 @@ eventBus.on("discord:settings-updated", async (payload) => {
   );
 });
 
+eventBus.on("discord:mute", async (payload) => {
+  logger.info(
+    "EventBus",
+    `Discord bot ${payload.muted ? "muted" : "unmuted"} for guild: ${payload.guildId}`
+  );
+});
+
 eventBus.on("discord:test-notification", async (payload) => {
   try {
     const { buildLiveEmbed, buildOfflineEmbed } = await import(
