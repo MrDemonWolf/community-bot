@@ -5,7 +5,7 @@ describe("getRoleDisplay", () => {
   it("returns BROADCASTER display", () => {
     const result = getRoleDisplay("BROADCASTER");
     expect(result.label).toBe("Broadcaster");
-    expect(result.className).toContain("brand-main");
+    expect(result.className).toContain("purple-500");
   });
 
   it("returns MODERATOR display", () => {
@@ -26,7 +26,7 @@ describe("getRoleDisplay", () => {
   it("returns BROADCASTER display when USER is channel owner", () => {
     const result = getRoleDisplay("USER", true);
     expect(result.label).toBe("Broadcaster");
-    expect(result.className).toContain("brand-main");
+    expect(result.className).toContain("purple-500");
   });
 
   it("returns normal USER display when not channel owner", () => {
