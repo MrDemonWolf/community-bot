@@ -31,14 +31,14 @@ describe("accessControl (integration)", () => {
 
   describe("loadRegulars", () => {
     it("loads regulars from the real database", async () => {
-      await testPrisma.twitchRegular.create({
+      await testPrisma.regular.create({
         data: {
           twitchUserId: "reg-1",
           twitchUsername: "Regular1",
           addedBy: "test",
         },
       });
-      await testPrisma.twitchRegular.create({
+      await testPrisma.regular.create({
         data: {
           twitchUserId: "reg-2",
           twitchUsername: "Regular2",
@@ -57,7 +57,7 @@ describe("accessControl (integration)", () => {
       await loadRegulars();
       expect(isRegular("new-reg")).toBe(false);
 
-      await testPrisma.twitchRegular.create({
+      await testPrisma.regular.create({
         data: {
           twitchUserId: "new-reg",
           twitchUsername: "NewRegular",
@@ -70,7 +70,7 @@ describe("accessControl (integration)", () => {
     });
 
     it("removes regulars that were deleted from DB", async () => {
-      const regular = await testPrisma.twitchRegular.create({
+      const regular = await testPrisma.regular.create({
         data: {
           twitchUserId: "temp-reg",
           twitchUsername: "TempReg",
@@ -81,7 +81,7 @@ describe("accessControl (integration)", () => {
       await loadRegulars();
       expect(isRegular("temp-reg")).toBe(true);
 
-      await testPrisma.twitchRegular.delete({ where: { id: regular.id } });
+      await testPrisma.regular.delete({ where: { id: regular.id } });
 
       await loadRegulars();
       expect(isRegular("temp-reg")).toBe(false);

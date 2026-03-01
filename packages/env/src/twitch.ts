@@ -29,6 +29,7 @@ export const env = createEnv({
     APPLE_WEATHERKIT_SERVICE_ID: z.string().optional(),
     APPLE_WEATHERKIT_PRIVATE_KEY: z.string().optional(),
     GEMINI_API_KEY: z.string().optional(),
+    YOUTUBE_API_KEY: z.string().optional(),
     AI_SHOUTOUT_ENABLED: z.string().optional(),
     WEB_URL: z.string().url().optional(),
     HOST: z.string().default("localhost"),

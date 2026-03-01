@@ -59,7 +59,7 @@ describe("regularRouter (integration)", () => {
   }
 
   describe("add", () => {
-    it("creates a TwitchRegular in the database", async () => {
+    it("creates a Regular in the database", async () => {
       mocks.getTwitchUserByLogin.mockResolvedValue({
         id: "twitch-42",
         display_name: "CoolViewer",
@@ -71,7 +71,7 @@ describe("regularRouter (integration)", () => {
       expect(regular.twitchUserId).toBe("twitch-42");
       expect(regular.twitchUsername).toBe("CoolViewer");
 
-      const dbRegular = await testPrisma.twitchRegular.findUnique({
+      const dbRegular = await testPrisma.regular.findUnique({
         where: { twitchUserId: "twitch-42" },
       });
       expect(dbRegular).not.toBeNull();
@@ -102,7 +102,7 @@ describe("regularRouter (integration)", () => {
 
   describe("remove", () => {
     it("deletes the regular from the database", async () => {
-      const regular = await testPrisma.twitchRegular.create({
+      const regular = await testPrisma.regular.create({
         data: {
           twitchUserId: "twitch-99",
           twitchUsername: "RemoveMe",
@@ -114,7 +114,7 @@ describe("regularRouter (integration)", () => {
       const result = await caller.remove({ id: regular.id });
       expect(result.success).toBe(true);
 
-      const dbRegular = await testPrisma.twitchRegular.findUnique({
+      const dbRegular = await testPrisma.regular.findUnique({
         where: { id: regular.id },
       });
       expect(dbRegular).toBeNull();
@@ -123,7 +123,7 @@ describe("regularRouter (integration)", () => {
 
   describe("list", () => {
     it("returns all regulars ordered by createdAt desc", async () => {
-      await testPrisma.twitchRegular.create({
+      await testPrisma.regular.create({
         data: {
           twitchUserId: "t1",
           twitchUsername: "First",
@@ -131,7 +131,7 @@ describe("regularRouter (integration)", () => {
           createdAt: new Date("2024-01-01"),
         },
       });
-      await testPrisma.twitchRegular.create({
+      await testPrisma.regular.create({
         data: {
           twitchUserId: "t2",
           twitchUsername: "Second",

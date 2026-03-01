@@ -151,6 +151,9 @@ export const songRequestRouter = router({
         maxQueueSize: 50,
         maxPerUser: 5,
         minAccessLevel: "EVERYONE",
+        maxDuration: null,
+        autoPlayEnabled: false,
+        activePlaylistId: null,
       }
     );
   }),
@@ -172,6 +175,9 @@ export const songRequestRouter = router({
             "BROADCASTER",
           ])
           .optional(),
+        maxDuration: z.number().int().min(1).max(36000).nullable().optional(),
+        autoPlayEnabled: z.boolean().optional(),
+        activePlaylistId: z.string().uuid().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

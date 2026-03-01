@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   AlertCircle,
+  ExternalLink,
   Loader2,
   Music,
   SkipForward,
@@ -34,6 +35,16 @@ const ACCESS_LEVELS = [
   "BROADCASTER",
 ] as const;
 
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export default function SongRequestsPage() {
   const queryClient = useQueryClient();
   const listQueryKey = trpc.songRequest.list.queryOptions().queryKey;
@@ -51,12 +62,18 @@ export default function SongRequestsPage() {
   const { data: settings, isLoading: loadingSettings } = useQuery(
     trpc.songRequest.getSettings.queryOptions()
   );
+  const { data: playlistData } = useQuery(
+    trpc.playlist.list.queryOptions()
+  );
 
   const [settingsForm, setSettingsForm] = useState<{
     enabled: boolean;
     maxQueueSize: number;
     maxPerUser: number;
     minAccessLevel: string;
+    maxDuration: number | null;
+    autoPlayEnabled: boolean;
+    activePlaylistId: string | null;
   } | null>(null);
 
   // Initialize form from fetched settings
@@ -65,6 +82,9 @@ export default function SongRequestsPage() {
     maxQueueSize: settings.maxQueueSize,
     maxPerUser: settings.maxPerUser,
     minAccessLevel: settings.minAccessLevel,
+    maxDuration: settings.maxDuration ?? null,
+    autoPlayEnabled: settings.autoPlayEnabled ?? false,
+    activePlaylistId: settings.activePlaylistId ?? null,
   } : null);
 
   function invalidateAll() {
@@ -120,6 +140,9 @@ export default function SongRequestsPage() {
       maxQueueSize: currentSettings.maxQueueSize,
       maxPerUser: currentSettings.maxPerUser,
       minAccessLevel: currentSettings.minAccessLevel as any,
+      maxDuration: currentSettings.maxDuration,
+      autoPlayEnabled: currentSettings.autoPlayEnabled,
+      activePlaylistId: currentSettings.activePlaylistId,
     });
   }
 
@@ -231,6 +254,73 @@ export default function SongRequestsPage() {
                   </Select>
                 </div>
               </div>
+
+              {/* YouTube & Playlist Settings */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Max Duration (seconds)
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={36000}
+                    value={currentSettings.maxDuration ?? ""}
+                    placeholder="No limit"
+                    onChange={(e) =>
+                      setSettingsForm({
+                        ...currentSettings,
+                        maxDuration: e.target.value ? parseInt(e.target.value) || null : null,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Auto-Play from Playlist
+                  </label>
+                  <Button
+                    variant={currentSettings.autoPlayEnabled ? "default" : "outline"}
+                    size="sm"
+                    className="w-full"
+                    onClick={() =>
+                      setSettingsForm({
+                        ...currentSettings,
+                        autoPlayEnabled: !currentSettings.autoPlayEnabled,
+                      })
+                    }
+                  >
+                    {currentSettings.autoPlayEnabled ? "Enabled" : "Disabled"}
+                  </Button>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Active Playlist
+                  </label>
+                  <Select
+                    value={currentSettings.activePlaylistId ?? "none"}
+                    onValueChange={(v) =>
+                      setSettingsForm({
+                        ...currentSettings,
+                        activePlaylistId: v === "none" ? null : v,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="None" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {playlistData?.playlists?.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} ({p.entryCount} songs)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               {settingsForm && (
                 <div className="flex items-center gap-2">
                   <Button
@@ -300,6 +390,12 @@ export default function SongRequestsPage() {
                     Title
                   </th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Duration
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Source
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Requested By
                   </th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -322,7 +418,42 @@ export default function SongRequestsPage() {
                       {r.position}
                     </td>
                     <td className="max-w-xs px-4 py-3 text-sm text-foreground">
-                      <span className="line-clamp-1">{r.title}</span>
+                      <div className="flex items-center gap-2">
+                        {r.youtubeThumbnail && (
+                          <img
+                            src={r.youtubeThumbnail}
+                            alt=""
+                            className="h-8 w-14 shrink-0 rounded object-cover"
+                          />
+                        )}
+                        <span className="line-clamp-1">{r.title}</span>
+                        {r.youtubeVideoId && (
+                          <a
+                            href={`https://youtu.be/${r.youtubeVideoId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <ExternalLink className="size-3.5" />
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {r.youtubeDuration
+                        ? formatDuration(r.youtubeDuration)
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                          r.source === "playlist"
+                            ? "bg-brand-main/10 text-brand-main"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {r.source === "playlist" ? "Playlist" : "Viewer"}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {r.requestedBy}
