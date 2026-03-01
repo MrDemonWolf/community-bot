@@ -20,6 +20,7 @@ import {
   Timer,
   Shield,
   Music,
+  ListMusic,
   Gift,
   BarChart3,
   ChevronRight,
@@ -94,6 +95,7 @@ export function SidebarContent({
         { href: "/dashboard/counters", label: "Counters", icon: Hash },
         { href: "/dashboard/timers", label: "Timers", icon: Timer },
         { href: "/dashboard/song-requests", label: "Song Requests", icon: Music },
+        { href: "/dashboard/playlists", label: "Playlists", icon: ListMusic },
       ],
     },
     {

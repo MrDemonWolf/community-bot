@@ -1,5 +1,7 @@
 import { TwitchCommand } from "../types/command.js";
 import * as srm from "../services/songRequestManager.js";
+import { lookupVideo, isYouTubeEnabled, formatDuration } from "../services/youtubeService.js";
+import type { YouTubeVideoInfo } from "../services/youtubeService.js";
 
 export const sr: TwitchCommand = {
   name: "sr",
@@ -14,7 +16,6 @@ export const sr: TwitchCommand = {
         await client.say(channel, `@${user}, only moderators can enable song requests.`);
         return;
       }
-      // This is a convenience toggle; real settings are managed from the dashboard.
       await client.say(channel, `@${user}, use the web dashboard to enable/disable song requests.`);
       return;
     }
@@ -37,7 +38,10 @@ export const sr: TwitchCommand = {
       }
       const total = await srm.getQueueCount(channel);
       const display = entries
-        .map((e) => `${e.position}. ${e.title} (${e.requestedBy})`)
+        .map((e) => {
+          const duration = e.youtubeDuration ? ` [${formatDuration(e.youtubeDuration)}]` : "";
+          return `${e.position}. ${e.title}${duration} (${e.requestedBy})`;
+        })
         .join(", ");
       const suffix = total > entries.length ? ` (${total} total)` : "";
       await client.say(channel, `Song queue: ${display}${suffix}`);
@@ -51,7 +55,9 @@ export const sr: TwitchCommand = {
         await client.say(channel, `@${user}, no song is currently queued.`);
         return;
       }
-      await client.say(channel, `Now playing: ${current.title} (requested by ${current.requestedBy})`);
+      const duration = current.youtubeDuration ? ` [${formatDuration(current.youtubeDuration)}]` : "";
+      const link = current.youtubeVideoId ? ` | https://youtu.be/${current.youtubeVideoId}` : "";
+      await client.say(channel, `Now playing: ${current.title}${duration} (requested by ${current.requestedBy})${link}`);
       return;
     }
 
@@ -66,7 +72,11 @@ export const sr: TwitchCommand = {
         await client.say(channel, `@${user}, the song request queue is empty.`);
         return;
       }
-      await client.say(channel, `@${user}, skipped: ${skipped.title} (requested by ${skipped.requestedBy})`);
+      let message = `@${user}, skipped: ${skipped.title} (requested by ${skipped.requestedBy})`;
+      if (skipped.autoPlaySong) {
+        message += ` | Now playing from playlist: ${skipped.autoPlaySong.title}`;
+      }
+      await client.say(channel, message);
       return;
     }
 
@@ -111,19 +121,63 @@ export const sr: TwitchCommand = {
       return;
     }
 
+    // --- !sr playlist [list|<name>] ---
+    if (sub === "playlist") {
+      const playlistSub = args[1]?.toLowerCase();
+
+      if (!playlistSub || playlistSub === "list") {
+        const playlists = await srm.listPlaylists(channel);
+        if (playlists.length === 0) {
+          await client.say(channel, `@${user}, no playlists available. Create one from the dashboard.`);
+          return;
+        }
+        const names = playlists.map((p) => p.name).join(", ");
+        await client.say(channel, `Available playlists: ${names}`);
+        return;
+      }
+
+      // Activate a playlist (mod only)
+      if (!isMod) {
+        await client.say(channel, `@${user}, only moderators can activate playlists.`);
+        return;
+      }
+
+      const playlistName = args.slice(1).join(" ");
+      const activated = await srm.activatePlaylist(channel, playlistName);
+      if (activated) {
+        await client.say(channel, `@${user}, playlist "${playlistName}" activated with auto-play enabled.`);
+      } else {
+        await client.say(channel, `@${user}, playlist "${playlistName}" not found.`);
+      }
+      return;
+    }
+
     // --- !sr <title> — request a song ---
     if (!sub) {
       await client.say(
         channel,
-        `@${user}, usage: !sr <song title> | list | current | skip | remove | clear`
+        `@${user}, usage: !sr <song title> | list | current | skip | remove | clear | playlist`
       );
       return;
     }
 
     const title = args.join(" ");
-    const result = await srm.addRequest(channel, title, user, msg);
+
+    // Look up YouTube metadata if available
+    let displayTitle = title;
+    let youtubeInfo: YouTubeVideoInfo | undefined = undefined;
+    if (isYouTubeEnabled()) {
+      const info = await lookupVideo(title);
+      if (info) {
+        youtubeInfo = info;
+        displayTitle = info.title;
+      }
+    }
+
+    const result = await srm.addRequest(channel, displayTitle, user, msg, youtubeInfo);
     if (result.ok) {
-      await client.say(channel, `@${user}, "${title}" added to the queue at position ${result.position}.`);
+      const duration = youtubeInfo ? ` [${formatDuration(youtubeInfo.duration)}]` : "";
+      await client.say(channel, `@${user}, "${displayTitle}"${duration} added to the queue at position ${result.position}.`);
     } else {
       await client.say(channel, `@${user}, ${result.reason}`);
     }

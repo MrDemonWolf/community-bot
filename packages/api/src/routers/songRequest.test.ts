@@ -168,6 +168,9 @@ describe("songRequestRouter", () => {
       const result = await caller.getSettings();
       expect(result.enabled).toBe(false);
       expect(result.maxQueueSize).toBe(50);
+      expect(result.maxDuration).toBeNull();
+      expect(result.autoPlayEnabled).toBe(false);
+      expect(result.activePlaylistId).toBeNull();
     });
   });
 

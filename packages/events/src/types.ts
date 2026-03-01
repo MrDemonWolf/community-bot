@@ -16,8 +16,8 @@ export interface EventMap {
   "command:deleted": { commandId: string };
 
   // Regular (trusted user) changes
-  "regular:created": { twitchUserId: string };
-  "regular:deleted": { twitchUserId: string };
+  "regular:created": { twitchUserId?: string; discordUserId?: string };
+  "regular:deleted": { twitchUserId?: string; discordUserId?: string };
 
   // Stream status (published by Twitch bot)
   "stream:online": {
@@ -59,6 +59,12 @@ export interface EventMap {
   // Song request changes
   "song-request:updated": { channelId: string };
   "song-request:settings-updated": { channelId: string };
+
+  // Playlist events
+  "playlist:created": { playlistId: string; channelId: string };
+  "playlist:updated": { playlistId: string; channelId: string };
+  "playlist:deleted": { playlistId: string; channelId: string };
+  "playlist:activated": { playlistId: string | null; channelId: string };
 
   // Giveaway events
   "giveaway:started": { giveawayId: string; channelId: string };

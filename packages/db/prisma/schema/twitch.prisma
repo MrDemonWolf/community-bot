@@ -104,13 +104,15 @@ model TwitchChatCommand {
   @@unique([name, botChannelId])
 }
 
-model TwitchRegular {
-  id             String   @id @default(uuid())
-  twitchUserId   String   @unique
-  twitchUsername String
-  addedBy        String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+model Regular {
+  id              String   @id @default(uuid())
+  twitchUserId    String?  @unique
+  twitchUsername   String?
+  discordUserId   String?  @unique
+  discordUsername  String?
+  addedBy         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model BotChannel {
@@ -133,6 +135,7 @@ model BotChannel {
   spamFilter       SpamFilter?
   songRequests        SongRequest[]
   songRequestSettings SongRequestSettings?
+  playlists           Playlist[]
   giveaways           Giveaway[]
 }
 
@@ -224,27 +227,35 @@ model SpamPermit {
 }
 
 model SongRequest {
-  id           String     @id @default(uuid())
-  position     Int
-  title        String
-  requestedBy  String
-  botChannelId String
-  botChannel   BotChannel @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
-  createdAt    DateTime   @default(now())
+  id               String     @id @default(uuid())
+  position         Int
+  title            String
+  requestedBy      String
+  youtubeVideoId   String?
+  youtubeDuration  Int?
+  youtubeThumbnail String?
+  youtubeChannel   String?
+  source           String     @default("viewer")
+  botChannelId     String
+  botChannel       BotChannel @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+  createdAt        DateTime   @default(now())
 
   @@index([botChannelId, position])
 }
 
 model SongRequestSettings {
-  id              String            @id @default(uuid())
-  botChannelId    String            @unique
-  botChannel      BotChannel        @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
-  enabled         Boolean           @default(false)
-  maxQueueSize    Int               @default(50)
-  maxPerUser      Int               @default(5)
-  minAccessLevel  TwitchAccessLevel @default(EVERYONE)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id               String            @id @default(uuid())
+  botChannelId     String            @unique
+  botChannel       BotChannel        @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+  enabled          Boolean           @default(false)
+  maxQueueSize     Int               @default(50)
+  maxPerUser       Int               @default(5)
+  minAccessLevel   TwitchAccessLevel @default(EVERYONE)
+  maxDuration      Int?
+  autoPlayEnabled  Boolean           @default(false)
+  activePlaylistId String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 model DefaultCommandOverride {
@@ -281,4 +292,31 @@ model GiveawayEntry {
   createdAt      DateTime @default(now())
 
   @@unique([giveawayId, twitchUserId])
+}
+
+model Playlist {
+  id           String          @id @default(uuid())
+  name         String
+  botChannelId String
+  botChannel   BotChannel      @relation(fields: [botChannelId], references: [id], onDelete: Cascade)
+  entries      PlaylistEntry[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([name, botChannelId])
+}
+
+model PlaylistEntry {
+  id               String   @id @default(uuid())
+  position         Int
+  title            String
+  youtubeVideoId   String?
+  youtubeDuration  Int?
+  youtubeThumbnail String?
+  youtubeChannel   String?
+  playlistId       String
+  playlist         Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+
+  @@index([playlistId, position])
 }

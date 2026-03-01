@@ -16,6 +16,7 @@ import { counterRouter } from "./counter";
 import { timerRouter } from "./timer";
 import { spamFilterRouter } from "./spamFilter";
 import { songRequestRouter } from "./songRequest";
+import { playlistRouter } from "./playlist";
 import { giveawayRouter } from "./giveaway";
 import { pollRouter } from "./poll";
 
@@ -43,6 +44,7 @@ export const appRouter = router({
   timer: timerRouter,
   spamFilter: spamFilterRouter,
   songRequest: songRequestRouter,
+  playlist: playlistRouter,
   giveaway: giveawayRouter,
   poll: pollRouter,
 });

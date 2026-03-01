@@ -147,6 +147,18 @@ async function main() {
     }
   });
 
+  // Playlist activated via web dashboard — reload song request settings
+  await eventBus.on("playlist:activated", async (payload) => {
+    logger.info("EventBus", `Playlist activated for channel: ${payload.channelId}`);
+    const botChannel = await prisma.botChannel.findUnique({
+      where: { id: payload.channelId },
+      select: { twitchUsername: true },
+    });
+    if (botChannel) {
+      await songRequestManager.reloadSettings(botChannel.twitchUsername);
+    }
+  });
+
   // Fallback cron: reload commands + regulars every 5 minutes
   cron.schedule("*/5 * * * *", async () => {
     try {
