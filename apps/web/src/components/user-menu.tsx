@@ -72,8 +72,8 @@ export default function UserMenu() {
           </span>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64 border-border bg-popover">
-        <div className="flex items-center gap-3 px-3 py-3">
+      <DropdownMenuContent className="w-64">
+        <div className="flex items-center gap-3 px-3 py-2.5">
           {session.user.image ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
@@ -101,19 +101,16 @@ export default function UserMenu() {
             </div>
           </div>
         </div>
-        <DropdownMenuSeparator className="bg-border" />
+        <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <Link href="/dashboard/settings">
-            <DropdownMenuItem className="gap-2 py-2.5 text-muted-foreground">
+            <DropdownMenuItem className="gap-2 py-2 text-muted-foreground">
               <Settings className="h-4 w-4" />
               Settings
             </DropdownMenuItem>
           </Link>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="bg-border" />
-        <DropdownMenuGroup>
           <DropdownMenuItem
-            className="gap-2 py-2.5 text-red-500 dark:text-red-400"
+            className="gap-2 py-2 text-red-500 dark:text-red-400"
             onClick={() => {
               authClient.signOut({
                 fetchOptions: {
