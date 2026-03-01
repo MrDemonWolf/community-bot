@@ -16,6 +16,13 @@ import {
   Save,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ACCESS_LEVELS = [
   "EVERYONE",
@@ -210,22 +217,18 @@ export default function SongRequestsPage() {
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
                     Min Access Level
                   </label>
-                  <select
-                    className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
-                    value={currentSettings.minAccessLevel}
-                    onChange={(e) =>
-                      setSettingsForm({
-                        ...currentSettings,
-                        minAccessLevel: e.target.value,
-                      })
-                    }
-                  >
-                    {ACCESS_LEVELS.map((level) => (
-                      <option key={level} value={level}>
-                        {level.charAt(0) + level.slice(1).toLowerCase().replace(/_/g, " ")}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={currentSettings.minAccessLevel} onValueChange={(v) => { if (v) setSettingsForm({ ...currentSettings, minAccessLevel: v }); }}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACCESS_LEVELS.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {level.charAt(0) + level.slice(1).toLowerCase().replace(/_/g, " ")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               {settingsForm && (

@@ -81,7 +81,7 @@ export default function BotControlsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-heading">Bot Controls</CardTitle>
+        <CardTitle className="font-heading">Twitch Bot</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Not joined */}

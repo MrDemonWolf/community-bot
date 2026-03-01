@@ -16,6 +16,13 @@ import {
   X,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FilterState {
   capsEnabled: boolean;
@@ -206,20 +213,18 @@ export default function ModerationPage() {
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
                   Exempt Level
                 </label>
-                <select
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                  value={form.exemptLevel}
-                  onChange={(e) =>
-                    setForm({ ...form, exemptLevel: e.target.value })
-                  }
-                  disabled={!canManage}
-                >
-                  {ACCESS_LEVELS.map((l) => (
-                    <option key={l} value={l}>
-                      {l.replace(/_/g, " ")}
-                    </option>
-                  ))}
-                </select>
+                <Select value={form.exemptLevel} onValueChange={(v) => { if (v) setForm({ ...form, exemptLevel: v }); }} disabled={!canManage}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ACCESS_LEVELS.map((l) => (
+                      <SelectItem key={l} value={l}>
+                        {l.replace(/_/g, " ")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">

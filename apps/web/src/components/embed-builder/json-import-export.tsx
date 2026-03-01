@@ -61,7 +61,7 @@ export function JsonImportExport({
             setError("");
           }}
           rows={6}
-          className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 font-mono text-xs outline-none focus-visible:ring-1"
+          className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-2.5 py-2 font-mono text-xs outline-none focus-visible:ring-1"
         />
         {error && (
           <p className="text-xs text-destructive">{error}</p>

@@ -430,19 +430,19 @@ function NotificationChannelCard({
           </div>
         ) : canEdit ? (
             <div className="flex gap-3">
-              <select
-                value={channelId}
-                onChange={(e) => setChannelId(e.target.value)}
-                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex-1 rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
-              >
-                <option value="">Select a channel...</option>
-                <option value="_none">(None)</option>
-                {channels?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    # {c.name}
-                  </option>
-                ))}
-              </select>
+              <Select value={channelId || "_placeholder"} onValueChange={(v) => setChannelId(v === "_placeholder" ? "" : v ?? "")}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select a channel..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">(None)</SelectItem>
+                  {channels?.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      # {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button
                 size="sm"
                 disabled={mutation.isPending}
@@ -531,20 +531,20 @@ function NotificationRoleCard({
           </div>
         ) : canEdit ? (
             <div className="flex gap-3">
-              <select
-                value={roleId}
-                onChange={(e) => setRoleId(e.target.value)}
-                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex-1 rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
-              >
-                <option value="">Select a role...</option>
-                <option value="_none">No mention</option>
-                <option value="everyone">@everyone</option>
-                {roles?.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    @{r.name}
-                  </option>
-                ))}
-              </select>
+              <Select value={roleId || "_placeholder"} onValueChange={(v) => setRoleId(v === "_placeholder" ? "" : v ?? "")}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select a role..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">No mention</SelectItem>
+                  <SelectItem value="everyone">@everyone</SelectItem>
+                  {roles?.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      @{r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button
                 size="sm"
                 disabled={mutation.isPending}
@@ -642,35 +642,37 @@ function RoleMappingCard({
               <label className="text-sm font-medium text-foreground">
                 Admin Role
               </label>
-              <select
-                value={adminRoleId}
-                onChange={(e) => setAdminRoleId(e.target.value)}
-                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
-              >
-                <option value="">None (use Discord permissions)</option>
-                {roles?.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    @{r.name}
-                  </option>
-                ))}
-              </select>
+              <Select value={adminRoleId || "_none"} onValueChange={(v) => setAdminRoleId(v === "_none" ? "" : v ?? "")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="None (use Discord permissions)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">None (use Discord permissions)</SelectItem>
+                  {roles?.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      @{r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground">
                 Mod Role
               </label>
-              <select
-                value={modRoleId}
-                onChange={(e) => setModRoleId(e.target.value)}
-                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
-              >
-                <option value="">None (use Discord permissions)</option>
-                {roles?.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    @{r.name}
-                  </option>
-                ))}
-              </select>
+              <Select value={modRoleId || "_none"} onValueChange={(v) => setModRoleId(v === "_none" ? "" : v ?? "")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="None (use Discord permissions)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_none">None (use Discord permissions)</SelectItem>
+                  {roles?.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      @{r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button
               size="sm"

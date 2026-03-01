@@ -43,7 +43,7 @@ export function EmbedFieldRow({
           onChange={(e) => onChange({ ...field, value: e.target.value })}
           placeholder="Field value"
           rows={2}
-          className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-1 text-xs outline-none focus-visible:ring-1"
+          className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-2.5 py-1 text-xs outline-none focus-visible:ring-1"
         />
         <Label className="gap-2">
           <Checkbox
