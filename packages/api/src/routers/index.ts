@@ -19,6 +19,8 @@ import { songRequestRouter } from "./songRequest";
 import { playlistRouter } from "./playlist";
 import { giveawayRouter } from "./giveaway";
 import { pollRouter } from "./poll";
+import { discordTemplatesRouter } from "./discordTemplates";
+import { discordScheduledRouter } from "./discordScheduled";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -47,5 +49,7 @@ export const appRouter = router({
   playlist: playlistRouter,
   giveaway: giveawayRouter,
   poll: pollRouter,
+  discordTemplates: discordTemplatesRouter,
+  discordScheduled: discordScheduledRouter,
 });
 export type AppRouter = typeof appRouter;

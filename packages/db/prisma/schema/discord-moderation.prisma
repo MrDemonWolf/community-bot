@@ -1,0 +1,63 @@
+enum DiscordCaseType {
+  BAN
+  TEMPBAN
+  KICK
+  WARN
+  MUTE
+  UNBAN
+  UNWARN
+  UNMUTE
+  NOTE
+}
+
+model DiscordCase {
+  id          String           @id @default(uuid())
+  guildId     String
+  caseNumber  Int
+  type        DiscordCaseType
+  targetId    String
+  targetTag   String
+  moderatorId String
+  moderatorTag String
+  reason      String?
+  duration    Int?
+  expiresAt   DateTime?
+  resolved    Boolean          @default(false)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  notes       DiscordCaseNote[]
+
+  @@unique([guildId, caseNumber])
+  @@index([guildId])
+  @@index([targetId])
+  @@index([moderatorId])
+}
+
+model DiscordCaseNote {
+  id        String   @id @default(uuid())
+  caseId    String
+  authorId  String
+  authorTag String
+  content   String
+  createdAt DateTime @default(now())
+
+  case DiscordCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+}
+
+model DiscordWarnThreshold {
+  id        String           @id @default(uuid())
+  guildId   String
+  count     Int
+  action    DiscordCaseType
+  duration  Int?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([guildId, count])
+  @@index([guildId])
+}

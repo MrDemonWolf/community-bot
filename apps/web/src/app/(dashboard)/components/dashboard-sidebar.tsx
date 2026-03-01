@@ -24,6 +24,8 @@ import {
   Gift,
   BarChart3,
   ChevronRight,
+  FileText,
+  Clock,
 } from "lucide-react";
 
 interface NavLink {
@@ -106,7 +108,18 @@ export function SidebarContent({
           href: "/dashboard/discord",
           label: "Settings",
           icon: MessageSquare,
+          exact: true,
           suffix: discordDot,
+        },
+        {
+          href: "/dashboard/discord/templates",
+          label: "Templates",
+          icon: FileText,
+        },
+        {
+          href: "/dashboard/discord/scheduled",
+          label: "Scheduled",
+          icon: Clock,
         },
       ],
     },

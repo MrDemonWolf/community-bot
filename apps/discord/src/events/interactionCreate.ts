@@ -7,11 +7,17 @@ import type {
 
 import commands from "../commands/index.js";
 import logger from "../utils/logger.js";
+import { autocompleteEvent } from "./autocomplete.js";
 
 export async function interactionCreateEvent(
   interaction: Interaction
 ) {
   try {
+    if (interaction.isAutocomplete()) {
+      await autocompleteEvent(interaction);
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) {
       return;
     }

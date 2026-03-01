@@ -74,6 +74,18 @@ export interface EventMap {
   "giveaway:ended": { giveawayId: string; channelId: string };
   "giveaway:winner": { giveawayId: string; channelId: string };
 
+  // Discord moderation cases
+  "discord:case-created": { caseId: string; guildId: string };
+
+  // Discord scheduled messages
+  "discord:scheduled-send": { scheduledMessageId: string; guildId: string };
+
+  // Discord custom commands updated
+  "discord:commands-updated": { guildId: string };
+
+  // Discord log config updated
+  "discord:log-config-updated": { guildId: string };
+
   // Bot status
   "bot:status": {
     service: "discord" | "twitch";
