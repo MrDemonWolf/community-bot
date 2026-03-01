@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { auth } from "@community-bot/auth";
 import AuditLogFeed from "./audit-log-feed";
 import BotControlsCard from "./bot-controls-card";
+import DiscordStatusCard from "./discord-status-card";
 import QuickStatsCard from "./quick-stats-card";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function DashboardPage() {
         <AuditLogFeed />
         <div className="space-y-6">
           <BotControlsCard />
+          <DiscordStatusCard />
           <QuickStatsCard />
         </div>
       </div>

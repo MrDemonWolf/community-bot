@@ -14,6 +14,13 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2, Settings } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { EmbedBuilder } from "@/components/embed-builder/embed-builder";
 
 interface ChannelData {
@@ -151,19 +158,20 @@ export function ChannelSettingsDialog({
             {channelsLoading ? (
               <div className="h-8 rounded bg-muted animate-pulse" />
             ) : (
-              <select
-                value={notifChannelId}
-                onChange={(e) => setNotifChannelId(e.target.value)}
-                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
-              >
-                <option value="">Use guild default</option>
-                <option value="_none">(None)</option>
-                {channels?.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    # {c.name}
-                  </option>
-                ))}
-              </select>
+              <Select value={notifChannelId || "_default"} onValueChange={(v) => setNotifChannelId(v === "_default" ? "" : v ?? "")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Use guild default" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_default">Use guild default</SelectItem>
+                  <SelectItem value="_none">(None)</SelectItem>
+                  {channels?.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      # {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
 
@@ -175,20 +183,21 @@ export function ChannelSettingsDialog({
             {rolesLoading ? (
               <div className="h-8 rounded bg-muted animate-pulse" />
             ) : (
-              <select
-                value={notifRoleId}
-                onChange={(e) => setNotifRoleId(e.target.value)}
-                className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-2 text-xs outline-none focus-visible:ring-1"
-              >
-                <option value="">Use guild default</option>
-                <option value="_none">No mention</option>
-                <option value="everyone">@everyone</option>
-                {roles?.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    @{r.name}
-                  </option>
-                ))}
-              </select>
+              <Select value={notifRoleId || "_default"} onValueChange={(v) => setNotifRoleId(v === "_default" ? "" : v ?? "")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Use guild default" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_default">Use guild default</SelectItem>
+                  <SelectItem value="_none">No mention</SelectItem>
+                  <SelectItem value="everyone">@everyone</SelectItem>
+                  {roles?.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      @{r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             )}
           </div>
 

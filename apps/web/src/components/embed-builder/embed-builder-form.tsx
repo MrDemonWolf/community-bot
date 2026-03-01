@@ -100,7 +100,7 @@ export function EmbedBuilderForm({
               onChange={(e) => set("description", e.target.value)}
               placeholder="Embed description (supports variables)"
               rows={3}
-              className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-none border px-2.5 py-1 text-xs outline-none focus-visible:ring-1"
+              className="border-input bg-transparent text-foreground focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-md border px-2.5 py-1 text-xs outline-none focus-visible:ring-1"
             />
           </Field>
           <Field label="Color">

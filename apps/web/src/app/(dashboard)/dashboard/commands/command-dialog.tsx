@@ -15,6 +15,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { X, ChevronDown } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ACCESS_LEVELS = [
   "EVERYONE",
@@ -285,42 +292,34 @@ export default function CommandDialog({
           {/* Response Type + Access Level */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="cmd-type">Response Type</Label>
-              <select
-                id="cmd-type"
-                value={responseType}
-                onChange={(e) =>
-                  setResponseType(
-                    e.target.value as (typeof RESPONSE_TYPES)[number]
-                  )
-                }
-                className="h-8 w-full rounded-xl border border-border bg-card px-2.5 text-xs text-foreground"
-              >
-                {RESPONSE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {formatLabel(t)}
-                  </option>
-                ))}
-              </select>
+              <Label>Response Type</Label>
+              <Select value={responseType} onValueChange={(v) => { if (v) setResponseType(v as (typeof RESPONSE_TYPES)[number]); }}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {RESPONSE_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {formatLabel(t)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cmd-access">Access Level</Label>
-              <select
-                id="cmd-access"
-                value={accessLevel}
-                onChange={(e) =>
-                  setAccessLevel(
-                    e.target.value as (typeof ACCESS_LEVELS)[number]
-                  )
-                }
-                className="h-8 w-full rounded-xl border border-border bg-card px-2.5 text-xs text-foreground"
-              >
-                {ACCESS_LEVELS.map((l) => (
-                  <option key={l} value={l}>
-                    {formatLabel(l)}
-                  </option>
-                ))}
-              </select>
+              <Label>Access Level</Label>
+              <Select value={accessLevel} onValueChange={(v) => { if (v) setAccessLevel(v as (typeof ACCESS_LEVELS)[number]); }}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACCESS_LEVELS.map((l) => (
+                    <SelectItem key={l} value={l}>
+                      {formatLabel(l)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -352,23 +351,19 @@ export default function CommandDialog({
 
           {/* Stream Status */}
           <div className="space-y-1.5">
-            <Label htmlFor="cmd-stream">Stream Status</Label>
-            <select
-              id="cmd-stream"
-              value={streamStatus}
-              onChange={(e) =>
-                setStreamStatus(
-                  e.target.value as (typeof STREAM_STATUSES)[number]
-                )
-              }
-              className="h-8 w-full rounded-xl border border-border bg-card px-2.5 text-xs text-foreground"
-            >
-              {STREAM_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {formatLabel(s)}
-                </option>
-              ))}
-            </select>
+            <Label>Stream Status</Label>
+            <Select value={streamStatus} onValueChange={(v) => { if (v) setStreamStatus(v as (typeof STREAM_STATUSES)[number]); }}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STREAM_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {formatLabel(s)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Aliases */}

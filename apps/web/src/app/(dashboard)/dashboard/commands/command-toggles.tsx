@@ -7,6 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { canControlBot } from "@/utils/roles";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ACCESS_LEVELS = [
   "EVERYONE",
@@ -150,21 +157,19 @@ export default function CommandToggles() {
                   </td>
                   <td className="px-4 py-3">
                     {canControl ? (
-                      <select
-                        value={currentAccess}
-                        onChange={(e) =>
-                          handleAccessChange(cmd.name, e.target.value)
-                        }
-                        disabled={isPending || isDisabled}
-                        className="rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground"
-                      >
-                        {ACCESS_LEVELS.map((level) => (
-                          <option key={level} value={level}>
-                            {formatAccessLevel(level)}
-                            {level === cmd.accessLevel ? " (default)" : ""}
-                          </option>
-                        ))}
-                      </select>
+                      <Select value={currentAccess} onValueChange={(v) => { if (v) handleAccessChange(cmd.name, v); }} disabled={isPending || isDisabled}>
+                        <SelectTrigger size="sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ACCESS_LEVELS.map((level) => (
+                            <SelectItem key={level} value={level}>
+                              {formatAccessLevel(level)}
+                              {level === cmd.accessLevel ? " (default)" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     ) : (
                       <span className="text-xs text-muted-foreground">
                         {formatAccessLevel(currentAccess)}

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { authClient } from "@/lib/auth-client";
@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   Terminal,
   Users,
-  User,
   Home,
   MessageSquare,
   UserCog,
@@ -23,76 +22,24 @@ import {
   Music,
   Gift,
   BarChart3,
+  ChevronRight,
 } from "lucide-react";
 
-const twitchLinks = [
-  {
-    href: "/dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    exact: true,
-  },
-  {
-    href: "/dashboard/commands",
-    label: "Commands",
-    icon: Terminal,
-    exact: false,
-  },
-  {
-    href: "/dashboard/regulars",
-    label: "Regulars",
-    icon: Users,
-    exact: false,
-  },
-  {
-    href: "/dashboard/queue",
-    label: "Queue",
-    icon: ListOrdered,
-    exact: false,
-  },
-  {
-    href: "/dashboard/quotes",
-    label: "Quotes",
-    icon: Quote,
-    exact: false,
-  },
-  {
-    href: "/dashboard/counters",
-    label: "Counters",
-    icon: Hash,
-    exact: false,
-  },
-  {
-    href: "/dashboard/timers",
-    label: "Timers",
-    icon: Timer,
-    exact: false,
-  },
-  {
-    href: "/dashboard/song-requests",
-    label: "Song Requests",
-    icon: Music,
-    exact: false,
-  },
-  {
-    href: "/dashboard/moderation",
-    label: "Moderation",
-    icon: Shield,
-    exact: false,
-  },
-  {
-    href: "/dashboard/giveaways",
-    label: "Giveaways",
-    icon: Gift,
-    exact: false,
-  },
-  {
-    href: "/dashboard/polls",
-    label: "Polls",
-    icon: BarChart3,
-    exact: false,
-  },
-];
+interface NavLink {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  exact?: boolean;
+  suffix?: React.ReactNode;
+}
+
+interface NavGroup {
+  key: string;
+  label: string;
+  links: NavLink[];
+}
+
+const STORAGE_KEY = "sidebar-collapsed";
 
 export function SidebarContent({
   session,
@@ -109,114 +56,166 @@ export function SidebarContent({
 
   const isBroadcaster = profile?.role === "BROADCASTER";
 
-  const isActive = (href: string, exact: boolean) =>
+  const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
 
+  const discordDot = (
+    <span
+      className={`ml-auto h-2 w-2 rounded-full ${
+        botStatus?.hasDiscordLinked ? "bg-green-500" : "bg-muted"
+      }`}
+    />
+  );
+
+  const groups: NavGroup[] = [
+    {
+      key: "chat",
+      label: "Chat",
+      links: [
+        { href: "/dashboard/commands", label: "Commands", icon: Terminal },
+        { href: "/dashboard/regulars", label: "Regulars", icon: Users },
+        { href: "/dashboard/moderation", label: "Moderation", icon: Shield },
+        { href: "/dashboard/quotes", label: "Quotes", icon: Quote },
+      ],
+    },
+    {
+      key: "interactive",
+      label: "Interactive",
+      links: [
+        { href: "/dashboard/queue", label: "Queue", icon: ListOrdered },
+        { href: "/dashboard/giveaways", label: "Giveaways", icon: Gift },
+        { href: "/dashboard/polls", label: "Polls", icon: BarChart3 },
+      ],
+    },
+    {
+      key: "features",
+      label: "Features",
+      links: [
+        { href: "/dashboard/counters", label: "Counters", icon: Hash },
+        { href: "/dashboard/timers", label: "Timers", icon: Timer },
+        { href: "/dashboard/song-requests", label: "Song Requests", icon: Music },
+      ],
+    },
+    {
+      key: "discord",
+      label: "Discord",
+      links: [
+        {
+          href: "/dashboard/discord",
+          label: "Settings",
+          icon: MessageSquare,
+          suffix: discordDot,
+        },
+      ],
+    },
+    ...(isBroadcaster
+      ? [
+          {
+            key: "management",
+            label: "Management",
+            links: [
+              { href: "/dashboard/users", label: "Users", icon: UserCog },
+            ],
+          },
+        ]
+      : []),
+  ];
+
+  // Initialize collapsed state from localStorage
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setCollapsed(JSON.parse(stored));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const persistCollapsed = useCallback((next: Record<string, boolean>) => {
+    setCollapsed(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleGroup = (key: string) => {
+    persistCollapsed({ ...collapsed, [key]: !collapsed[key] });
+  };
+
+  // Check if a group should be expanded because the current path matches
+  const isGroupActive = (group: NavGroup) =>
+    group.links.some((link) => isActive(link.href, link.exact));
+
+  const isExpanded = (group: NavGroup) =>
+    isGroupActive(group) || !collapsed[group.key];
+
   return (
-    <div className="flex h-full flex-col gap-6 p-5">
-      {/* User info */}
-      <div className="flex items-center gap-3 rounded-xl bg-surface-raised p-3">
-        {session.user.image ? (
-          <Image
-            src={session.user.image}
-            alt={session.user.name}
-            width={40}
-            height={40}
-            className="rounded-full"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-overlay">
-            <User className="h-5 w-5 text-muted-foreground" />
-          </div>
-        )}
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">
-            {session.user.name}
-          </p>
-          {botStatus?.botChannel?.twitchUsername && (
-            <p className="truncate text-xs text-muted-foreground">
-              {botStatus.botChannel.twitchUsername}
-            </p>
-          )}
-        </div>
-      </div>
+    <div className="flex h-full flex-col gap-2 p-5">
+      {/* Dashboard link (standalone) */}
+      <nav className="flex flex-col gap-0.5">
+        <Link
+          href={"/dashboard" as Route}
+          onClick={onNavigate}
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading transition-all duration-200 ${
+            isActive("/dashboard", true)
+              ? "bg-brand-main/10 font-medium text-brand-main"
+              : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
+          }`}
+        >
+          <LayoutDashboard className="h-4 w-4" />
+          Dashboard
+        </Link>
+      </nav>
 
-      {/* Twitch section */}
-      <div>
-        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-          Twitch
-        </p>
-        <nav className="flex flex-col gap-0.5">
-          {twitchLinks.map((link) => {
-            const active = isActive(link.href, link.exact);
-            return (
-              <Link
-                key={link.href}
-                href={link.href as Route}
-                onClick={onNavigate}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading transition-all duration-200 ${
-                  active
-                    ? "bg-brand-main/10 font-medium text-brand-main"
-                    : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
-                }`}
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-
-      {/* Discord section */}
-      <div>
-        <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-          Discord
-        </p>
-        <nav className="flex flex-col gap-0.5">
-          <Link
-            href={"/dashboard/discord" as Route}
-            onClick={onNavigate}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading transition-all duration-200 ${
-              pathname.startsWith("/dashboard/discord")
-                ? "bg-brand-main/10 font-medium text-brand-main"
-                : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
-            }`}
-          >
-            <MessageSquare className="h-4 w-4" />
-            Settings
-            <span
-              className={`ml-auto h-2 w-2 rounded-full ${
-                botStatus?.hasDiscordLinked ? "bg-green-500" : "bg-muted"
-              }`}
-            />
-          </Link>
-        </nav>
-      </div>
-
-      {/* Management section — BROADCASTER only */}
-      {isBroadcaster && (
-        <div>
-          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-            Management
-          </p>
-          <nav className="flex flex-col gap-0.5">
-            <Link
-              href={"/dashboard/users" as Route}
-              onClick={onNavigate}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading transition-all duration-200 ${
-                pathname.startsWith("/dashboard/users")
-                  ? "bg-brand-main/10 font-medium text-brand-main"
-                  : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
-              }`}
+      {/* Grouped sections */}
+      {groups.map((group) => {
+        const expanded = isExpanded(group);
+        return (
+          <div key={group.key}>
+            <button
+              type="button"
+              onClick={() => toggleGroup(group.key)}
+              className="flex w-full cursor-pointer items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 transition-colors hover:text-muted-foreground"
             >
-              <UserCog className="h-4 w-4" />
-              Users
-            </Link>
-          </nav>
-        </div>
-      )}
+              <ChevronRight
+                className={`h-3 w-3 transition-transform duration-200 ${
+                  expanded ? "rotate-90" : ""
+                }`}
+              />
+              {group.label}
+            </button>
+            {expanded && (
+              <nav className="flex flex-col gap-0.5">
+                {group.links.map((link) => {
+                  const active = isActive(link.href, link.exact);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href as Route}
+                      onClick={onNavigate}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading transition-all duration-200 ${
+                        active
+                          ? "bg-brand-main/10 font-medium text-brand-main"
+                          : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
+                      }`}
+                    >
+                      <link.icon className="h-4 w-4" />
+                      {link.label}
+                      {link.suffix}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
+          </div>
+        );
+      })}
 
       {/* Back to Home */}
       <div className="mt-auto">
