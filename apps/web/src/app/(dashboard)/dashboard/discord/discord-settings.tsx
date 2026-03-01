@@ -262,6 +262,7 @@ function GuildInfoCard({
     name: string | null;
     icon: string | null;
     enabled: boolean;
+    muted: boolean;
   };
   queryKey: readonly unknown[];
   queryClient: ReturnType<typeof useQueryClient>;
@@ -292,9 +293,15 @@ function GuildInfoCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
         <EnableToggle
           enabled={guild.enabled}
+          queryKey={queryKey}
+          queryClient={queryClient}
+          canEdit={canEdit}
+        />
+        <MuteToggle
+          muted={guild.muted}
           queryKey={queryKey}
           queryClient={queryClient}
           canEdit={canEdit}
@@ -364,6 +371,72 @@ function EnableToggle({
         >
           {isPending && <Loader2 className="size-4 animate-spin" />}
           {enabled ? "Disable" : "Enable"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function MuteToggle({
+  muted,
+  queryKey,
+  queryClient,
+  canEdit,
+}: {
+  muted: boolean;
+  queryKey: readonly unknown[];
+  queryClient: ReturnType<typeof useQueryClient>;
+  canEdit: boolean;
+}) {
+  const muteMutation = useMutation(
+    trpc.discordGuild.mute.mutationOptions({
+      onSuccess: () => {
+        toast.success("Discord bot muted. Notifications paused.");
+        queryClient.invalidateQueries({ queryKey });
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    })
+  );
+
+  const unmuteMutation = useMutation(
+    trpc.discordGuild.unmute.mutationOptions({
+      onSuccess: () => {
+        toast.success("Discord bot unmuted. Notifications resumed.");
+        queryClient.invalidateQueries({ queryKey });
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    })
+  );
+
+  const isPending = muteMutation.isPending || unmuteMutation.isPending;
+
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        {muted ? (
+          <AlertCircle className="size-4 text-amber-500" />
+        ) : (
+          <CheckCircle2 className="size-4 text-green-500" />
+        )}
+        <span className="text-sm">
+          {muted ? "Bot muted (notifications paused)" : "Bot active"}
+        </span>
+      </div>
+      {canEdit && (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isPending}
+          onClick={() =>
+            muted ? unmuteMutation.mutate() : muteMutation.mutate()
+          }
+        >
+          {isPending && <Loader2 className="size-4 animate-spin" />}
+          {muted ? "Unmute" : "Mute"}
         </Button>
       )}
     </div>

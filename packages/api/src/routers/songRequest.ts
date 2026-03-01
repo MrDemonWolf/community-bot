@@ -1,5 +1,5 @@
 import { prisma } from "@community-bot/db";
-import { protectedProcedure, moderatorProcedure, router } from "../index";
+import { publicProcedure, protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
@@ -19,7 +19,41 @@ async function getUserBotChannel(userId: string) {
   return botChannel;
 }
 
+async function getBroadcasterBotChannelId(): Promise<string | null> {
+  const config = await prisma.systemConfig.findUnique({
+    where: { key: "broadcasterUserId" },
+  });
+  if (!config) return null;
+
+  const botChannel = await prisma.botChannel.findUnique({
+    where: { userId: config.value },
+    select: { id: true },
+  });
+
+  return botChannel?.id ?? null;
+}
+
 export const songRequestRouter = router({
+  publicCurrent: publicProcedure.query(async () => {
+    const botChannelId = await getBroadcasterBotChannelId();
+    if (!botChannelId) return null;
+
+    const song = await prisma.songRequest.findFirst({
+      where: { botChannelId, position: 1 },
+      select: {
+        id: true,
+        title: true,
+        requestedBy: true,
+        youtubeVideoId: true,
+        youtubeThumbnail: true,
+        youtubeDuration: true,
+        source: true,
+      },
+    });
+
+    return song;
+  }),
+
   list: protectedProcedure.query(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 

@@ -100,7 +100,7 @@ export function SidebarContent({
     },
     {
       key: "discord",
-      label: "Discord",
+      label: "Discord Bot",
       links: [
         {
           href: "/dashboard/discord",

@@ -16,6 +16,7 @@ import {
   Quote as QuoteIcon,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
+import { PlatformBadges } from "@/components/platform-badges";
 
 export default function QuotesPage() {
   const queryClient = useQueryClient();
@@ -64,7 +65,7 @@ export default function QuotesPage() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-foreground">Quotes</h1>
+        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Quotes <PlatformBadges platforms={["twitch", "discord"]} /></h1>
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -80,7 +81,7 @@ export default function QuotesPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-foreground">Quotes</h1>
+        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Quotes <PlatformBadges platforms={["twitch", "discord"]} /></h1>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -96,7 +97,7 @@ export default function QuotesPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-foreground">Quotes</h1>
+      <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Quotes <PlatformBadges platforms={["twitch", "discord"]} /></h1>
 
       <div className="space-y-4">
         {/* Add + Search bar */}

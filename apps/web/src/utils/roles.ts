@@ -4,11 +4,11 @@ export const ROLE_DISPLAY: Record<
 > = {
   BROADCASTER: {
     label: "Broadcaster",
-    className: "bg-brand-main/15 text-brand-main",
+    className: "bg-purple-500/15 text-purple-500",
   },
   LEAD_MODERATOR: {
     label: "Lead Mod",
-    className: "bg-purple-500/15 text-purple-500",
+    className: "bg-amber-500/15 text-amber-500",
   },
   MODERATOR: {
     label: "Moderator",

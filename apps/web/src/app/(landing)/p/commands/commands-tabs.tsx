@@ -13,7 +13,7 @@ interface CustomCommand {
 function formatAccessLevel(level: string) {
   return level
     .split("_")
-    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w.charAt(0) + w.slice(1).toLowerCase()))
     .join(" ");
 }
 

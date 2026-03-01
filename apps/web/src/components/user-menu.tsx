@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Settings, ChevronDown } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import {
@@ -54,10 +54,9 @@ export default function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <button className="flex items-center gap-2 rounded-full border border-border bg-surface-raised py-1 pl-1 pr-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-overlay sm:pl-3" />
+          <button className="flex items-center rounded-full border border-border bg-surface-raised p-0.5 transition-colors hover:bg-surface-overlay" />
         }
       >
-        <span className="hidden sm:inline">{session.user.name}</span>
         {session.user.image ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
@@ -72,7 +71,6 @@ export default function UserMenu() {
             {session.user.name.charAt(0).toUpperCase()}
           </span>
         )}
-        <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground sm:block" />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64 border-border bg-popover">
         <div className="flex items-center gap-3 px-3 py-3">

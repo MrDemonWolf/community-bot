@@ -9,14 +9,19 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Copy,
   ExternalLink,
   Loader2,
   Music,
+  Play,
   SkipForward,
   Trash2,
   Save,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
+import { PlatformBadges } from "@/components/platform-badges";
 import {
   Select,
   SelectContent,
@@ -65,7 +70,12 @@ export default function SongRequestsPage() {
   const { data: playlistData } = useQuery(
     trpc.playlist.list.queryOptions()
   );
+  const { data: currentSong } = useQuery({
+    ...trpc.songRequest.current.queryOptions(),
+    refetchInterval: 10000,
+  });
 
+  const [showPlayer, setShowPlayer] = useState(false);
   const [settingsForm, setSettingsForm] = useState<{
     enabled: boolean;
     maxQueueSize: number;
@@ -94,10 +104,13 @@ export default function SongRequestsPage() {
 
   const updateSettingsMutation = useMutation(
     trpc.songRequest.updateSettings.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
         toast.success("Settings saved.");
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: listQueryKey }),
+          queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
+        ]);
         setSettingsForm(null);
-        invalidateAll();
       },
       onError: (err) => toast.error(err.message),
     })
@@ -149,7 +162,7 @@ export default function SongRequestsPage() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-foreground">Song Requests</h1>
+        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Song Requests <PlatformBadges platforms={["twitch"]} /></h1>
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -165,7 +178,7 @@ export default function SongRequestsPage() {
   if (loadingRequests || loadingSettings) {
     return (
       <div>
-        <h1 className="mb-6 text-2xl font-bold text-foreground">Song Requests</h1>
+        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Song Requests <PlatformBadges platforms={["twitch"]} /></h1>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -175,9 +188,105 @@ export default function SongRequestsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-foreground">Song Requests</h1>
+      <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Song Requests <PlatformBadges platforms={["twitch"]} /></h1>
 
       <div className="space-y-6">
+        {/* Now Playing Card */}
+        <Card>
+          <CardContent className="pt-4">
+            {currentSong ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-main/10">
+                      <Play className="size-4 text-brand-main" />
+                    </div>
+                    <h2 className="text-sm font-semibold text-foreground">Now Playing</h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {canManage && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => skipMutation.mutate()}
+                        disabled={skipMutation.isPending}
+                      >
+                        <SkipForward className="size-3.5" />
+                        Skip
+                      </Button>
+                    )}
+                    {currentSong.youtubeVideoId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowPlayer(!showPlayer)}
+                      >
+                        {showPlayer ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                        {showPlayer ? "Hide Player" : "Show Player"}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {currentSong.youtubeThumbnail && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={currentSong.youtubeThumbnail}
+                      alt=""
+                      className="h-12 w-20 shrink-0 rounded object-cover"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-medium text-foreground">{currentSong.title}</p>
+                      {currentSong.youtubeVideoId && (
+                        <a
+                          href={`https://youtu.be/${currentSong.youtubeVideoId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 text-muted-foreground hover:text-foreground"
+                        >
+                          <ExternalLink className="size-3.5" />
+                        </a>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>Requested by {currentSong.requestedBy}</span>
+                      {currentSong.youtubeDuration && (
+                        <>
+                          <span>&middot;</span>
+                          <span>{formatDuration(currentSong.youtubeDuration)}</span>
+                        </>
+                      )}
+                      {currentSong.source === "playlist" && (
+                        <span className="rounded-full bg-brand-main/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-main">
+                          Playlist
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {showPlayer && currentSong.youtubeVideoId && (
+                  <div className="overflow-hidden rounded-lg">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${currentSong.youtubeVideoId}?autoplay=0`}
+                      title={currentSong.title}
+                      className="aspect-video w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 text-muted-foreground">
+                <Music className="size-5" />
+                <span className="text-sm">No song currently playing.</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Settings Card */}
         {canManage && currentSettings && (
           <Card>
@@ -188,19 +297,31 @@ export default function SongRequestsPage() {
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
                     Enabled
                   </label>
-                  <Button
-                    variant={currentSettings.enabled ? "default" : "outline"}
-                    size="sm"
-                    className="w-full"
-                    onClick={() =>
-                      setSettingsForm({
-                        ...currentSettings,
-                        enabled: !currentSettings.enabled,
-                      })
-                    }
-                  >
-                    {currentSettings.enabled ? "Enabled" : "Disabled"}
-                  </Button>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={currentSettings.enabled}
+                      onClick={() =>
+                        setSettingsForm({
+                          ...currentSettings,
+                          enabled: !currentSettings.enabled,
+                        })
+                      }
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-main focus-visible:ring-offset-2 ${
+                        currentSettings.enabled ? "bg-brand-main" : "bg-muted"
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
+                          currentSettings.enabled ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                    <span className="text-sm text-muted-foreground">
+                      {currentSettings.enabled ? "On" : "Off"}
+                    </span>
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -247,7 +368,7 @@ export default function SongRequestsPage() {
                     <SelectContent>
                       {ACCESS_LEVELS.map((level) => (
                         <SelectItem key={level} value={level}>
-                          {level.charAt(0) + level.slice(1).toLowerCase().replace(/_/g, " ")}
+                          {level.split("_").map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w.charAt(0) + w.slice(1).toLowerCase())).join(" ")}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -279,19 +400,31 @@ export default function SongRequestsPage() {
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
                     Auto-Play from Playlist
                   </label>
-                  <Button
-                    variant={currentSettings.autoPlayEnabled ? "default" : "outline"}
-                    size="sm"
-                    className="w-full"
-                    onClick={() =>
-                      setSettingsForm({
-                        ...currentSettings,
-                        autoPlayEnabled: !currentSettings.autoPlayEnabled,
-                      })
-                    }
-                  >
-                    {currentSettings.autoPlayEnabled ? "Enabled" : "Disabled"}
-                  </Button>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={currentSettings.autoPlayEnabled}
+                      onClick={() =>
+                        setSettingsForm({
+                          ...currentSettings,
+                          autoPlayEnabled: !currentSettings.autoPlayEnabled,
+                        })
+                      }
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-main focus-visible:ring-offset-2 ${
+                        currentSettings.autoPlayEnabled ? "bg-brand-main" : "bg-muted"
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
+                          currentSettings.autoPlayEnabled ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                    <span className="text-sm text-muted-foreground">
+                      {currentSettings.autoPlayEnabled ? "On" : "Off"}
+                    </span>
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -481,9 +614,26 @@ export default function SongRequestsPage() {
           </div>
         )}
 
-        <p className="text-xs text-muted-foreground">
-          Song requests are managed via chat commands (!sr) or this dashboard. Enable song requests in settings above.
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-xs text-muted-foreground">
+            Song requests are managed via chat commands (!sr) or this dashboard. Enable song requests in settings above.
+          </p>
+          {canManage && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => {
+                const url = `${window.location.origin}/overlay/song-requests`;
+                navigator.clipboard.writeText(url);
+                toast.success("Overlay URL copied! Add it as a Browser Source in OBS.");
+              }}
+            >
+              <Copy className="size-3.5" />
+              Copy Overlay URL
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

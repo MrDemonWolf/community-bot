@@ -16,9 +16,20 @@ import {
 import Image from "next/image";
 import { getRoleDisplay, canManageCommands } from "@/utils/roles";
 
-const PROVIDER_ICONS: Record<string, { label: string; className: string }> = {
-  twitch: { label: "Twitch", className: "text-brand-twitch" },
-  discord: { label: "Discord", className: "text-brand-discord" },
+const PROVIDER_INFO: Record<
+  string,
+  { label: string; className: string; bgClassName: string }
+> = {
+  twitch: {
+    label: "Twitch",
+    className: "text-brand-twitch",
+    bgClassName: "bg-brand-twitch/10",
+  },
+  discord: {
+    label: "Discord",
+    className: "text-brand-discord",
+    bgClassName: "bg-brand-discord/10",
+  },
 };
 
 type Tab = "account" | "features" | "data";
@@ -145,22 +156,33 @@ function AccountTab() {
           ) : (
             <div className="space-y-3">
               {profile.connectedAccounts.map((account) => {
-                const providerInfo = PROVIDER_ICONS[account.provider] ?? {
+                const info = PROVIDER_INFO[account.provider] ?? {
                   label: account.provider,
                   className: "text-foreground",
+                  bgClassName: "bg-muted",
                 };
                 return (
                   <div
                     key={account.provider}
-                    className="flex items-center gap-3 rounded-lg bg-surface-raised p-3"
+                    className="flex items-center gap-3 rounded-lg border border-border p-3"
                   >
-                    <span
-                      className={`text-sm font-semibold ${providerInfo.className}`}
+                    <div
+                      className={`flex h-9 w-9 items-center justify-center rounded-lg ${info.bgClassName}`}
                     >
-                      {providerInfo.label}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ID: {account.accountId}
+                      <span className={`text-sm font-bold ${info.className}`}>
+                        {info.label.charAt(0)}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm font-semibold ${info.className}`}>
+                        {info.label}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        ID: {account.accountId}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-medium text-green-500">
+                      Connected
                     </span>
                   </div>
                 );

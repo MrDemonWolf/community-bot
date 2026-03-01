@@ -40,6 +40,9 @@ export interface EventMap {
   // Discord settings
   "discord:settings-updated": { guildId: string };
 
+  // Discord bot mute/unmute
+  "discord:mute": { guildId: string; muted: boolean };
+
   // Discord test notification (triggered from web dashboard)
   "discord:test-notification": { guildId: string };
 
