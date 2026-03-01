@@ -123,6 +123,8 @@ Actions use dot-separated strings: `domain.verb`. Current instrumented actions:
 | `discord.set-role` | Notification role configured |
 | `discord.enable` | Discord notifications enabled |
 | `discord.disable` | Discord notifications disabled |
+| `discord.add-channel` | Twitch channel added to Discord monitoring |
+| `discord.remove-channel` | Twitch channel removed from Discord monitoring |
 | `import.streamelements` | Commands imported from StreamElements |
 | `bot.ai-shoutout-enable` | AI-enhanced shoutouts enabled for channel |
 | `bot.ai-shoutout-disable` | AI-enhanced shoutouts disabled for channel |
