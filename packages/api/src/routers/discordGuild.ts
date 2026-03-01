@@ -8,6 +8,7 @@ import {
   type DiscordChannel,
   type DiscordRole,
 } from "../utils/discord";
+import { getTwitchUserByLogin } from "../utils/twitch";
 
 function guildIconUrl(guildId: string, icon: string | null): string | null {
   if (!icon) return null;
@@ -469,6 +470,136 @@ export const discordGuildRouter = router({
         resourceType: "TwitchChannel",
         resourceId: channel.id,
         metadata: { channelName: channel.displayName ?? channel.username, ...data },
+      });
+
+      return { success: true };
+    }),
+
+  addMonitoredChannel: leadModProcedure
+    .input(z.object({ username: z.string().min(1).max(25) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const guild = await prisma.discordGuild.findFirst({
+        where: { userId },
+      });
+
+      if (!guild) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No Discord server linked.",
+        });
+      }
+
+      let twitchUser;
+      try {
+        twitchUser = await getTwitchUserByLogin(input.username.toLowerCase());
+      } catch {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to look up Twitch user. Please try again.",
+        });
+      }
+
+      if (!twitchUser) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Twitch user not found.",
+        });
+      }
+
+      const existing = await prisma.twitchChannel.findUnique({
+        where: {
+          twitchChannelId_guildId: {
+            twitchChannelId: twitchUser.id,
+            guildId: guild.id,
+          },
+        },
+      });
+
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `${twitchUser.display_name} is already being monitored.`,
+        });
+      }
+
+      const channel = await prisma.twitchChannel.create({
+        data: {
+          twitchChannelId: twitchUser.id,
+          username: twitchUser.login,
+          displayName: twitchUser.display_name,
+          profileImageUrl: twitchUser.profile_image_url,
+          guildId: guild.id,
+        },
+      });
+
+      const { eventBus } = await import("../events");
+      await eventBus.publish("discord:settings-updated", {
+        guildId: guild.guildId,
+      });
+
+      await logAudit({
+        userId,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "discord.add-channel",
+        resourceType: "TwitchChannel",
+        resourceId: channel.id,
+        metadata: { channelName: twitchUser.display_name },
+      });
+
+      return { id: channel.id, displayName: twitchUser.display_name };
+    }),
+
+  removeMonitoredChannel: leadModProcedure
+    .input(z.object({ channelId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const guild = await prisma.discordGuild.findFirst({
+        where: { userId },
+      });
+
+      if (!guild) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No Discord server linked.",
+        });
+      }
+
+      const channel = await prisma.twitchChannel.findFirst({
+        where: { id: input.channelId, guildId: guild.id },
+      });
+
+      if (!channel) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Monitored channel not found.",
+        });
+      }
+
+      await prisma.twitchNotification.deleteMany({
+        where: { twitchChannelId: channel.id },
+      });
+
+      await prisma.twitchChannel.delete({
+        where: { id: channel.id },
+      });
+
+      const { eventBus } = await import("../events");
+      await eventBus.publish("discord:settings-updated", {
+        guildId: guild.guildId,
+      });
+
+      await logAudit({
+        userId,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "discord.remove-channel",
+        resourceType: "TwitchChannel",
+        resourceId: channel.id,
+        metadata: { channelName: channel.displayName ?? channel.username },
       });
 
       return { success: true };

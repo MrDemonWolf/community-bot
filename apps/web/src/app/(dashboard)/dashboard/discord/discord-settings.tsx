@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import {
   Loader2,
   CheckCircle2,
@@ -28,6 +29,8 @@ import {
   AlertCircle,
   Send,
   Radio,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { ChannelSettingsDialog } from "./channel-settings-dialog";
 import { canControlBot } from "@/utils/roles";
@@ -707,6 +710,10 @@ function RoleMappingCard({
 }
 
 function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
+  const [newUsername, setNewUsername] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
   const {
     data: channels,
     isLoading,
@@ -716,6 +723,32 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
 
   const monitoredChannelsQueryKey =
     trpc.discordGuild.listMonitoredChannels.queryOptions().queryKey;
+
+  const addMutation = useMutation(
+    trpc.discordGuild.addMonitoredChannel.mutationOptions({
+      onSuccess: (data) => {
+        setNewUsername("");
+        void queryClient.invalidateQueries({ queryKey: monitoredChannelsQueryKey });
+        toast.success(`Now monitoring ${data.displayName}.`);
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    })
+  );
+
+  const removeMutation = useMutation(
+    trpc.discordGuild.removeMonitoredChannel.mutationOptions({
+      onSuccess: () => {
+        setDeleteConfirmId(null);
+        void queryClient.invalidateQueries({ queryKey: monitoredChannelsQueryKey });
+        toast.success("Channel removed.");
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    })
+  );
 
   return (
     <Card>
@@ -727,6 +760,35 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {canEdit && (
+          <form
+            className="mb-4 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const trimmed = newUsername.trim();
+              if (trimmed) addMutation.mutate({ username: trimmed });
+            }}
+          >
+            <Input
+              placeholder="Twitch username..."
+              value={newUsername}
+              onChange={(e) => setNewUsername(e.target.value)}
+              className="flex-1"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!newUsername.trim() || addMutation.isPending}
+            >
+              {addMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Plus className="size-4" />
+              )}
+              Add
+            </Button>
+          </form>
+        )}
         {isLoading ? (
           <div className="space-y-3">
             <Skeleton className="h-12 w-full" />
@@ -747,7 +809,7 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
           </div>
         ) : !channels || channels.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No monitored Twitch channels yet.
+            No monitored Twitch channels yet.{canEdit && " Add one above to get started."}
           </p>
         ) : (
           <div className="divide-y divide-border">
@@ -788,10 +850,43 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
                   </div>
                 </div>
                 {canEdit && (
-                  <ChannelSettingsDialog
-                    channel={ch}
-                    monitoredChannelsQueryKey={monitoredChannelsQueryKey}
-                  />
+                  <div className="flex items-center gap-1.5">
+                    <ChannelSettingsDialog
+                      channel={ch}
+                      monitoredChannelsQueryKey={monitoredChannelsQueryKey}
+                    />
+                    {deleteConfirmId === ch.id ? (
+                      <>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={removeMutation.isPending}
+                          onClick={() => removeMutation.mutate({ channelId: ch.id })}
+                        >
+                          {removeMutation.isPending && (
+                            <Loader2 className="size-4 animate-spin" />
+                          )}
+                          Remove
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteConfirmId(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-400 hover:text-red-300"
+                        onClick={() => setDeleteConfirmId(ch.id)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
