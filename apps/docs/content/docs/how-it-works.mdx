@@ -1,0 +1,192 @@
+---
+title: How it Works
+description: A visual, ADHD-friendly guide to how Community Bot's services connect and communicate.
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+<Callout title="TL;DR" type="info">
+Four services (Web Dashboard, Twitch Bot, Discord Bot, Docs) share one database and talk to each other through a Redis event bus. Change something in the dashboard and the bots pick it up instantly.
+</Callout>
+
+## The Big Picture
+
+Here's the full system at a glance — every box is a running service, every line is a connection.
+
+```mermaid
+flowchart TB
+  subgraph Services
+    WEB["🌐 Web Dashboard\n(Next.js)"]
+    TWITCH["💬 Twitch Bot\n(@twurple/chat)"]
+    DISCORD["🤖 Discord Bot\n(discord.js)"]
+    DOCS["📖 Docs Site\n(Fumadocs)"]
+  end
+
+  subgraph Infrastructure
+    PG[("🐘 PostgreSQL\n(Prisma)")]
+    REDIS[("⚡ Redis\n(Pub/Sub + Cache)")]
+  end
+
+  WEB <-->|reads/writes| PG
+  TWITCH <-->|reads/writes| PG
+  DISCORD <-->|reads/writes| PG
+
+  WEB <-->|publishes/subscribes| REDIS
+  TWITCH <-->|publishes/subscribes| REDIS
+  DISCORD <-->|publishes/subscribes| REDIS
+
+  WEB -.->|static site| DOCS
+```
+
+<Callout title="Key takeaway" type="info">
+The database is the source of truth. Redis is the messenger. Each service can run independently — if one goes down, the others keep working.
+</Callout>
+
+## Services at a Glance
+
+| Service | What it does | Tech |
+|---------|-------------|------|
+| **Web Dashboard** | Manage bot settings, commands, users, and view audit logs | Next.js, tRPC, better-auth |
+| **Twitch Bot** | Respond to chat commands, manage queues, moderate chat | @twurple/chat, Express API |
+| **Discord Bot** | Post live stream notifications, slash commands | discord.js v14, BullMQ |
+| **Docs Site** | This documentation you're reading right now | Fumadocs (Next.js) |
+
+## How Services Talk: The Event Bus
+
+Services don't call each other directly. Instead, they publish events to Redis and subscribe to the ones they care about.
+
+```mermaid
+flowchart LR
+  WEB["🌐 Web Dashboard"]
+  TWITCH["💬 Twitch Bot"]
+  DISCORD["🤖 Discord Bot"]
+  BUS(("⚡ Redis\nEvent Bus"))
+
+  WEB -->|"command:updated\nchannel:join\nbot:mute"| BUS
+  BUS -->|"command:updated\nchannel:join\nbot:mute"| TWITCH
+
+  TWITCH -->|"stream:online\nstream:offline"| BUS
+  BUS -->|"stream:online\nstream:offline"| DISCORD
+
+  WEB -->|"discord:settings-updated"| BUS
+  BUS -->|"discord:settings-updated"| DISCORD
+```
+
+<Callout title="Why events?" type="info">
+Events are fire-and-forget. The Web Dashboard doesn't need to know *how* the Twitch Bot reloads commands — it just says "hey, commands changed" and moves on. This keeps services loosely coupled and easy to develop independently.
+</Callout>
+
+## Walk-Through: Chat Command
+
+What happens when a viewer types `!hello` in Twitch chat?
+
+```mermaid
+sequenceDiagram
+  participant V as 👤 Viewer
+  participant T as 💬 Twitch Chat
+  participant B as 🤖 Twitch Bot
+  participant DB as 🐘 Database
+
+  V->>T: Types !hello
+  T->>B: Message event
+  B->>B: Parse command prefix
+  B->>DB: Look up "hello" command
+  DB-->>B: Response template + cooldown + access level
+  B->>B: Check access level & cooldown
+  B->>B: Replace variables ($(user), $(channel), etc.)
+  B->>T: Send response
+  T-->>V: "Hey there, viewer! 👋"
+```
+
+<Callout title="Performance note" type="info">
+Commands are cached in memory after first load. The bot only hits the database when it receives a `command:updated` event from the dashboard, so chat responses are fast.
+</Callout>
+
+## Walk-Through: Stream Goes Live
+
+What happens when a monitored Twitch channel starts streaming?
+
+```mermaid
+sequenceDiagram
+  participant API as 🔔 Twitch API
+  participant TB as 💬 Twitch Bot
+  participant BUS as ⚡ Event Bus
+  participant DB as 🐘 Database
+  participant DC as 🤖 Discord Bot
+  participant CH as 📢 Discord Channel
+
+  API->>TB: Stream online webhook
+  TB->>DB: Update stream status
+  TB->>BUS: Publish stream:online
+  BUS->>DC: Receive stream:online
+  DC->>DB: Look up guild notification settings
+  DB-->>DC: Channel ID, role ID, enabled flag
+  DC->>CH: Send embed with stream info + @role ping
+```
+
+## Walk-Through: Dashboard Setting Change
+
+What happens when you toggle a command off in the web dashboard?
+
+```mermaid
+sequenceDiagram
+  participant U as 👤 User
+  participant W as 🌐 Web Dashboard
+  participant DB as 🐘 Database
+  participant BUS as ⚡ Event Bus
+  participant AL as 📋 Audit Log
+  participant TB as 💬 Twitch Bot
+
+  U->>W: Toggle command off
+  W->>DB: Update command (enabled = false)
+  W->>AL: Log "command.toggle" action
+  W->>BUS: Publish command:updated
+  BUS->>TB: Receive command:updated
+  TB->>DB: Reload command from DB
+  TB->>TB: Update in-memory cache
+  Note over TB: Command is now disabled — bot ignores it in chat
+```
+
+## Shared Packages
+
+All services share common code through internal packages. Here's what depends on what:
+
+```mermaid
+flowchart BT
+  subgraph Apps
+    WEB["🌐 Web Dashboard"]
+    TWITCH["💬 Twitch Bot"]
+    DISCORD["🤖 Discord Bot"]
+  end
+
+  subgraph Packages
+    DB["📦 db\n(Prisma client)"]
+    ENV["📦 env\n(Zod validation)"]
+    EVENTS["📦 events\n(Redis Pub/Sub)"]
+    SERVER["📦 server\n(Express utilities)"]
+    AUTH["📦 auth\n(better-auth)"]
+    API["📦 api\n(tRPC routers)"]
+    CONFIG["📦 config\n(tsconfig)"]
+  end
+
+  WEB --> DB & ENV & EVENTS & AUTH & API & CONFIG
+  TWITCH --> DB & ENV & EVENTS & SERVER & CONFIG
+  DISCORD --> DB & ENV & EVENTS & SERVER & CONFIG
+```
+
+| Package | Purpose |
+|---------|---------|
+| **db** | Prisma schema + generated client. Single source of truth for all models. |
+| **env** | Zod-validated environment variables per app. Catch misconfigs at startup. |
+| **events** | Type-safe Redis Pub/Sub event bus. Keeps services in sync. |
+| **server** | Shared Express API server with health checks and port fallback. |
+| **auth** | better-auth config for Discord + Twitch OAuth in the web dashboard. |
+| **api** | tRPC routers and utilities shared by the web dashboard. |
+| **config** | Base TypeScript config extended by all packages. |
+
+## Where to Go Next
+
+- **[Architecture](/docs/development/architecture)** — Deeper dive into the codebase structure
+- **[Event Bus](/docs/development/event-bus)** — Full list of events and how to add new ones
+- **[Database](/docs/development/database)** — Schema overview and migration guide
+- **[Installation](/docs/getting-started/installation)** — Get the project running locally

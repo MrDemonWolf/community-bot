@@ -23,7 +23,7 @@ export const metadata: Metadata = {
       { url: "/favicon.ico", sizes: "256x256" },
       { url: "/icon.png", type: "image/png", sizes: "512x512" },
     ],
-    apple: "/apple-icon.png",
+    apple: { url: "/apple-icon.png", sizes: "180x180" },
   },
 };
 
