@@ -128,6 +128,35 @@ const topics: Record<string, HelpTopic> = {
       { name: "/case search <query>", value: "Search cases by reason text." },
     ],
   },
+  cc: {
+    title: "Custom Commands",
+    description: "Create and manage custom slash commands for your server.",
+    fields: [
+      { name: "/cc run <name>", value: "Run a custom command." },
+      { name: "/cc create <name> <response>", value: "Create a new custom command." },
+      { name: "/cc edit <name>", value: "Edit an existing custom command." },
+      { name: "/cc delete <name>", value: "Delete a custom command." },
+      { name: "/cc list", value: "List all custom commands." },
+      { name: "/cc toggle <name>", value: "Enable or disable a custom command." },
+    ],
+  },
+  report: {
+    title: "User Reports",
+    description: "Report users and manage reports.",
+    fields: [
+      { name: "/report user <user> <reason>", value: "Report a user to the moderators." },
+      { name: "/report status <id> <status>", value: "Update a report's status (mod only)." },
+      { name: "/report list [status] [target]", value: "List reports with optional filters (mod only)." },
+    ],
+  },
+  data: {
+    title: "Data Privacy",
+    description: "Manage your personal data stored by the bot.",
+    fields: [
+      { name: "/data export", value: "Export all data the bot has about you in this server." },
+      { name: "/data delete", value: "Request deletion of your data (moderation cases excluded)." },
+    ],
+  },
   schedule: {
     title: "Scheduled Messages",
     description: "Schedule one-time or recurring messages.",

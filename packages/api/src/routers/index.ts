@@ -23,6 +23,7 @@ import { discordTemplatesRouter } from "./discordTemplates";
 import { discordScheduledRouter } from "./discordScheduled";
 import { discordRolesRouter } from "./discordRoles";
 import { discordModerationRouter } from "./discordModeration";
+import { discordCustomCommandsRouter } from "./discordCustomCommands";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -55,5 +56,6 @@ export const appRouter = router({
   discordScheduled: discordScheduledRouter,
   discordRoles: discordRolesRouter,
   discordModeration: discordModerationRouter,
+  discordCustomCommands: discordCustomCommandsRouter,
 });
 export type AppRouter = typeof appRouter;

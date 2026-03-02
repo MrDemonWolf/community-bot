@@ -70,6 +70,23 @@ export async function autocompleteEvent(
       return;
     }
 
+    if (commandName === "cc" && focused.name === "name") {
+      const cmds = await prisma.discordCustomCommand.findMany({
+        where: {
+          guildId,
+          name: { contains: query, mode: "insensitive" },
+        },
+        take: 25,
+        select: { name: true },
+        orderBy: { name: "asc" },
+      });
+
+      await interaction.respond(
+        cmds.map((c) => ({ name: c.name, value: c.name }))
+      );
+      return;
+    }
+
     await interaction.respond([]);
   } catch (error) {
     logger.error("Autocomplete", "Failed to handle autocomplete", error);

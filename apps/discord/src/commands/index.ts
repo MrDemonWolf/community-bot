@@ -18,6 +18,12 @@ import {
 import { rolesCommand, handleRolesCommand } from "./roles/index.js";
 import { modCommand, handleModCommand } from "./mod/index.js";
 import { caseCommand, handleCaseCommand } from "./case/index.js";
+import {
+  customCommandCommand,
+  handleCustomCommandCommand,
+} from "./customcommand/index.js";
+import { reportCommand, handleReportCommand } from "./report/index.js";
+import { dataCommand, handleDataCommand } from "./data/index.js";
 
 export interface Command {
   data: SlashCommandBuilder;
@@ -69,6 +75,21 @@ commands.set(modCommand.name, {
 commands.set(caseCommand.name, {
   data: caseCommand,
   execute: handleCaseCommand,
+});
+
+commands.set(customCommandCommand.name, {
+  data: customCommandCommand,
+  execute: handleCustomCommandCommand,
+});
+
+commands.set(reportCommand.name, {
+  data: reportCommand,
+  execute: handleReportCommand,
+});
+
+commands.set(dataCommand.name, {
+  data: dataCommand,
+  execute: handleDataCommand,
 });
 
 export default commands;
