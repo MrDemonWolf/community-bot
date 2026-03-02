@@ -16,7 +16,7 @@ import { guildDeleteEvent } from "./events/guildDelete.js";
 import { interactionCreateEvent } from "./events/interactionCreate.js";
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
 });
 
 /**
@@ -73,6 +73,56 @@ client.on(Events.GuildUpdate, async (_oldGuild, newGuild) => {
  */
 client.on(Events.InteractionCreate, (interaction) => {
   interactionCreateEvent(interaction);
+});
+
+/**
+ * Server event logging — channel, role, and voice events.
+ * Uses the eventLogger utility to dispatch embeds to configured log channels.
+ */
+import { dispatchLog } from "./utils/eventLogger.js";
+import {
+  channelCreateEmbed,
+  channelDeleteEmbed,
+  channelUpdateEmbed,
+  roleCreateEmbed,
+  roleDeleteEmbed,
+  roleUpdateEmbed,
+  voiceStateUpdateEmbed,
+} from "./utils/logEmbeds.js";
+
+client.on(Events.ChannelCreate, (channel) => {
+  if (!channel.guild) return;
+  dispatchLog(client, channel.guild.id, "server", channelCreateEmbed(channel));
+});
+
+client.on(Events.ChannelDelete, (channel) => {
+  if (!("guild" in channel) || !channel.guild) return;
+  dispatchLog(client, channel.guild.id, "server", channelDeleteEmbed(channel));
+});
+
+client.on(Events.ChannelUpdate, (oldChannel, newChannel) => {
+  if (!("guild" in newChannel) || !newChannel.guild) return;
+  const embed = channelUpdateEmbed(oldChannel, newChannel);
+  if (embed) dispatchLog(client, newChannel.guild.id, "server", embed);
+});
+
+client.on(Events.GuildRoleCreate, (role) => {
+  dispatchLog(client, role.guild.id, "server", roleCreateEmbed(role));
+});
+
+client.on(Events.GuildRoleDelete, (role) => {
+  dispatchLog(client, role.guild.id, "server", roleDeleteEmbed(role));
+});
+
+client.on(Events.GuildRoleUpdate, (oldRole, newRole) => {
+  const embed = roleUpdateEmbed(oldRole, newRole);
+  if (embed) dispatchLog(client, newRole.guild.id, "server", embed);
+});
+
+client.on(Events.VoiceStateUpdate, (oldState, newState) => {
+  const guildId = newState.guild.id;
+  const embed = voiceStateUpdateEmbed(oldState, newState);
+  if (embed) dispatchLog(client, guildId, "voice", embed);
 });
 
 client.login(env.DISCORD_APPLICATION_BOT_TOKEN);
@@ -154,6 +204,15 @@ eventBus.on("discord:settings-updated", async (payload) => {
   logger.info(
     "EventBus",
     `Discord settings updated for guild: ${payload.guildId}`
+  );
+});
+
+eventBus.on("discord:log-config-updated", async (payload) => {
+  const { clearLogConfigCache } = await import("./utils/eventLogger.js");
+  clearLogConfigCache(payload.guildId);
+  logger.info(
+    "EventBus",
+    `Log config updated for guild: ${payload.guildId}`
   );
 });
 
