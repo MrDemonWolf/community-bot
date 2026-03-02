@@ -3,16 +3,42 @@ title: Overview
 description: Overview of the Community Bot Discord bot.
 ---
 
-The Discord bot is built with [discord.js](https://discord.js.org/) v14 and provides Twitch live stream notifications and server management via slash commands.
+The Discord bot is built with [discord.js](https://discord.js.org/) v14 and provides server moderation, self-assignable roles, message templates, scheduled messages, custom commands, user reports, event logging, Twitch live notifications, and cross-platform quotes — all via slash commands.
 
 ## Features
 
-- **Twitch stream notifications** — Monitors configured Twitch channels and posts embed notifications when they go live
-- **Slash commands** — Full slash command interface for managing Twitch channel subscriptions and cross-platform quotes
-- **Background jobs** — BullMQ-powered job queue for periodic tasks (activity rotation, stream checking)
-- **Guild sync** — Automatically syncs guild data to the database on join/leave
-- **Dashboard-controlled settings** — Notification channel, role, and enable/disable can be managed from the web dashboard
-- **EventBus integration** — Subscribes to `discord:settings-updated` events to reload guild settings in real time
+- **Moderation system** — Ban, tempban, kick, warn, and mute with auto-incrementing case numbers, moderator notes, and configurable warning escalation (e.g., 3 warns = auto-ban)
+- **Case management** — Look up, list, search, and annotate moderation cases with paginated results
+- **Self-assignable roles** — Role panels with buttons or select menus that users click to toggle roles
+- **Message templates** — Reusable text and embed templates with variable substitution (`{server}`, `{user}`, `{memberCount}`)
+- **Scheduled messages** — One-time or recurring (cron-based) messages to any channel, with template support
+- **Custom commands** — Guild-scoped slash commands with text or embed responses, role restrictions, and use tracking
+- **User reports** — Community reporting system with status workflow (Open → Investigating → Resolved/Dismissed)
+- **Event logging** — Configurable log channels for moderation actions, server events (channel/role changes), and voice activity
+- **Data privacy** — Users can export or delete their data (GDPR compliance)
+- **Twitch stream notifications** — Monitors Twitch channels and posts embed notifications when they go live
+- **Cross-platform quotes** — Shared quote database with the Twitch bot
+- **Background jobs** — BullMQ-powered job queue for periodic tasks (activity rotation, stream checking, scheduled messages)
+- **Dashboard-controlled settings** — All features configurable from the web dashboard with real-time EventBus sync
+
+## Command Summary
+
+| Command | Permission | Description |
+|---------|-----------|-------------|
+| `/help` | Public | Contextual help for any command group |
+| `/mod` | Mod | Ban, tempban, kick, warn, mute, and reverse actions |
+| `/case` | Mod | Look up, list, search, and annotate moderation cases |
+| `/config` | Admin | Configure log channels and warning escalation thresholds |
+| `/roles` | Admin | Create and manage self-assignable role panels |
+| `/template` | Admin | Create reusable message templates with variables |
+| `/schedule` | Admin | Set up one-time or recurring scheduled messages |
+| `/cc` | Mod/Public | Create and run custom slash commands |
+| `/report` | Public/Mod | Report users and manage report status |
+| `/data` | Public | Export or delete your personal data |
+| `/twitch` | Admin | Manage Twitch live stream notifications |
+| `/quote` | Public/Mod | View, add, remove, and search quotes |
+
+See [Slash Commands](/docs/discord-bot/slash-commands) for full documentation of every command and subcommand.
 
 To set up your Discord application, see [Create a Discord Application](/docs/getting-started/create-discord-app).
 
@@ -20,8 +46,10 @@ To set up your Discord application, see [Create a Discord Application](/docs/get
 
 The bot runs as a single Node.js process with:
 
-1. **Discord.js client** — Connects to Discord Gateway with guild intents
-2. **BullMQ worker** — Processes background jobs (activity updates every 15min, stream checks every 90s)
-3. **Express API** — HTTP server on port 3141 (configurable) with [comprehensive health check](/docs/development/health-checks) endpoint
-4. **Redis** — Used by BullMQ for job queue persistence
-5. **PostgreSQL** — Stores guild settings and Twitch notification configs via Prisma
+1. **Discord.js client** — Connects to Discord Gateway with guild intents (no privileged intents required)
+2. **Interaction handler** — Routes slash commands, buttons, select menus, and autocomplete to dedicated handlers
+3. **Event logger** — Dispatches moderation and server events to configured log channels with TTL-cached config
+4. **BullMQ worker** — Processes background jobs (activity updates, stream checks, scheduled messages)
+5. **Express API** — HTTP server on port 3141 (configurable) with [comprehensive health check](/docs/development/health-checks) endpoint
+6. **Redis** — Used by BullMQ for job queue persistence and EventBus pub/sub
+7. **PostgreSQL** — Stores all data (cases, templates, schedules, role panels, reports, guild settings) via Prisma

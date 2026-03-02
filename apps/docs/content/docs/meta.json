@@ -41,7 +41,6 @@
     "web-dashboard/public-pages",
     "web-dashboard/audit-log",
     "web-dashboard/discord-settings",
-    "web-dashboard/welcome-messages",
     "web-dashboard/user-management",
     "web-dashboard/queue-management",
     "---Development---",

@@ -309,7 +309,7 @@ No new external integrations wanted.
 | Welcome messages | ❌ Wanted (toggleable) |
 | `!lurk` / `!unlurk` | ❌ Wanted (toggleable) |
 | First-message detection | ❌ Wanted (toggleable) |
-| Social links (dashboard-managed) | ❌ Wanted (like linkden app) |
+| Social links (dashboard-managed) | ❌ Wanted (like social links app) |
 | Auto-thank subscribers | ❌ Wanted (toggleable, requires EventSub) |
 
 ### Wanted Changes

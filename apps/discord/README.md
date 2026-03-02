@@ -1,182 +1,86 @@
-# Community Bot for MrDemonWolf, Inc. - Discord
+# Community Bot — Discord
 
-A custom Discord bot powering the MrDemonWolf community. Features Twitch live stream notifications with rich embeds that update in real-time, slash commands for managing monitored channels, background job scheduling, and automatic guild sync. Built with TypeScript, [discord.js](https://discord.js.org/) v14, Express, BullMQ, and Prisma v7 (PostgreSQL).
+The Discord bot for Community Bot. Built with [discord.js](https://discord.js.org/) v14, Express, BullMQ, and Prisma. Features moderation with case tracking, self-assignable role panels, message templates, scheduled messages, custom commands, user reports, event logging, Twitch live notifications, and cross-platform quotes — all via slash commands.
 
-## Features
+## Commands
 
-- **Twitch Live Notifications**: Automatically sends rich embeds when monitored Twitch channels go live, updates them with viewer counts while streaming, and edits to an offline state when the stream ends.
-- **Slash Commands**: Full `/twitch` command suite for adding/removing monitored channels, configuring notification channels and roles, and testing notifications.
-- **Background Job Scheduling**: BullMQ-powered repeating jobs for stream polling (every 90s) and rotating bot activity status.
-- **Automatic Guild Sync**: Tracks joined/left servers in the database, prunes stale guilds on startup.
-- **REST API**: Express health/status endpoints with Helmet, CORS, and Morgan middleware.
-
-## Usage
-
-Here's a quick guide to the available slash commands:
-
-- `/twitch add <username>` - Start monitoring a Twitch channel for live streams.
-- `/twitch remove <username>` - Stop monitoring a Twitch channel.
-- `/twitch list` - View all monitored channels with live/offline status and current config.
-- `/twitch test <username>` - Send a test notification that auto-edits to offline after 10s (owner only).
-- `/twitch notifications set-channel #channel` - Set the channel for stream notifications.
-- `/twitch notifications set-role @role` - Set the role to mention when a stream goes live.
-
-All `/twitch` commands require **Manage Server** permission except `/twitch test` which is restricted to the bot owner.
+| Command | Description | Permission |
+|---------|-------------|------------|
+| `/help` | Contextual help for any command group | Public |
+| `/mod` | Ban, tempban, kick, warn, mute, unban, unmute, unwarn | Mod |
+| `/case` | Look up, list, search, and annotate moderation cases | Mod |
+| `/config` | Configure log channels and warning escalation thresholds | Admin |
+| `/roles` | Create and manage self-assignable role panels | Admin |
+| `/template` | Create reusable message templates with variables | Admin |
+| `/schedule` | Set up one-time or recurring scheduled messages | Admin |
+| `/cc` | Create and run custom slash commands | Mod/Public |
+| `/report` | Report users and manage report status | Public/Mod |
+| `/data` | Export or delete your personal data | Public |
+| `/twitch` | Manage Twitch live stream notifications | Admin |
+| `/quote` | View, add, remove, and search quotes | Public/Mod |
 
 ## Development
 
-### Prerequisites
-
-- Node.js 22.x
-- pnpm
-- PostgreSQL database
-- Redis server
+This app is part of the Community Bot monorepo. All commands should be run from the monorepo root.
 
 ### Setup
 
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/MrDemonWolf/community-bot-discord.git
-   cd community-bot-discord
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-3. Start infrastructure (PostgreSQL and Redis):
-
-   ```bash
-   docker compose up -d postgres redis
-   ```
-
-4. Copy environment variables:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-5. Configure your environment variables in `.env`:
-
-   - `DATABASE_URL` - PostgreSQL connection string
-   - `REDIS_URL` - Redis connection string
-   - `DISCORD_APPLICATION_ID` - From the [Discord Developer Portal](https://discord.com/developers/applications)
-   - `DISCORD_APPLICATION_PUBLIC_KEY` - From the Discord Developer Portal
-   - `DISCORD_APPLICATION_BOT_TOKEN` - From the Discord Developer Portal (Bot tab)
-   - `OWNER_ID` - Your Discord user ID
-   - `MAIN_GUILD_ID` - Your primary server ID
-   - `MAIN_CHANNEL_ID` - Your primary channel ID
-   - `TWITCH_CLIENT_ID` - From the [Twitch Developer Console](https://dev.twitch.tv/console/apps)
-
-6. Generate Prisma client:
-
-   ```bash
-   pnpm prisma:generate
-   ```
-
-7. Run database migrations:
-
-   ```bash
-   pnpm prisma:migrate
-   ```
-
-8. Start the bot:
-
-   ```bash
-   pnpm dev
-   ```
-
-### Development Scripts
-
-- `pnpm dev` - Start development server with hot reload
-- `pnpm build` - Clean build for production
-- `pnpm start` - Start production server
-- `pnpm lint` - Run ESLint with auto-fix
-- `pnpm format` - Prettier + ESLint formatting
-- `pnpm test` - Run Mocha tests
-- `pnpm prisma:studio` - Open Prisma Studio to view/edit database
-
-### Prisma Schema Sync
-
-**Do NOT edit `prisma/schema.prisma` directly.** The source of truth for all Prisma models is the monorepo at `../community-bot/packages/db/prisma/schema/`.
-
-To sync after schema changes in the monorepo:
-
 ```bash
-pnpm prisma:sync        # Pull models from monorepo
-pnpm prisma:generate    # Regenerate the Prisma client
+# From monorepo root
+pnpm install
+docker compose up -d postgres redis
+pnpm db:generate
+pnpm db:push
+pnpm dev
 ```
 
-Migrations are owned by this project. After schema changes:
+### Environment
 
-```bash
-pnpm prisma:sync && pnpm prisma:generate && pnpm prisma:migrate
-```
-
-### Code Quality
-
-This project uses:
-
-- **ESLint** with TypeScript support for code linting
-- **TypeScript** in strict mode for type safety
-- **Prisma** for database management
-- **Consola** for structured, namespaced logging
-- **Zod** for environment variable validation
+Discord bot environment variables are validated in `packages/env/src/discord.ts`. Required variables include `DISCORD_APPLICATION_ID`, `DISCORD_APPLICATION_BOT_TOKEN`, `DATABASE_URL`, `REDIS_URL`, and others. See the monorepo `.env.example` for the full list.
 
 ### Project Structure
 
 ```
 src/
-  app.ts                          # Entry point — starts Discord, BullMQ, Prisma, Express
+  app.ts                        # Entry point — Discord client, BullMQ, Express, EventBus
   commands/
-    index.ts                      # Slash command registry (Map<string, Command>)
-    twitch/
-      index.ts                    # /twitch command definition + subcommand router
-      add.ts                      # /twitch add — monitor a Twitch channel
-      remove.ts                   # /twitch remove — stop monitoring
-      list.ts                     # /twitch list — show monitored channels + config
-      test.ts                     # /twitch test — send fake notification (owner only)
-      notifications-set-channel.ts  # /twitch notifications set-channel
-      notifications-set-role.ts     # /twitch notifications set-role
-  twitch/
-    api.ts                        # Twitch Helix API wrapper (users, streams)
-    embeds.ts                     # Live/offline Discord embed builders
-    index.ts                      # Barrel export
+    index.ts                    # Slash command registry
+    case/                       # /case — case management
+    config/                     # /config — log channels & thresholds
+    customcommand/              # /cc — custom commands
+    data/                       # /data — data export/delete
+    help/                       # /help — contextual help
+    mod/                        # /mod — moderation actions
+    quote/                      # /quote — cross-platform quotes
+    report/                     # /report — user reports
+    roles/                      # /roles — role panels
+    schedule/                   # /schedule — scheduled messages
+    template/                   # /template — message templates
+    twitch/                     # /twitch — Twitch notifications
   events/
-    ready.ts                      # Guild sync, slash command registration
-    interactionCreate.ts          # Slash command routing
-    guildCreate.ts                # Track new guild joins
-    guildDelete.ts                # Track guild leaves
-  worker/
-    index.ts                      # BullMQ worker — routes jobs by name
-    jobs/
-      setActivity.ts              # Rotating bot activity status (cron)
-      checkTwitchStreams.ts        # Twitch stream polling (every 90s)
-  api/
-    index.ts                      # Express server setup
-    routes/
-      status.ts                   # GET /status endpoint
-  database/
-    index.ts                      # Prisma client singleton
+    interactionCreate.ts        # Routes commands, buttons, select menus, autocomplete
+    buttonHandler.ts            # Role panel button interactions
+    selectMenuHandler.ts        # Role panel select menu interactions
+    autocomplete.ts             # Autocomplete for template/schedule/panel names
+    ready.ts                    # Guild sync, slash command registration
+    guildCreate.ts / guildDelete.ts
   utils/
-    env.ts                        # Zod-validated environment variables
-    logger.ts                     # Namespaced consola logger
-    guildDatabase.ts              # Guild sync helpers
-    setActivity.ts                # Activity type/status helpers
-    cronParser.ts                 # Cron expression utilities
+    permissions.ts              # Role-based permission checks (admin/mod)
+    pagination.ts               # Paginated embed utility
+    eventLogger.ts              # Log dispatch with TTL-cached config
+    logEmbeds.ts                # Embed builders for event types
+    cronParser.ts               # Cron expression utilities
+  worker/
+    index.ts                    # BullMQ worker
+    jobs/
+      setActivity.ts            # Rotating bot activity
+      checkTwitchStreams.ts      # Stream polling (90s)
+      sendScheduledMessage.ts   # Scheduled message delivery
+  twitch/
+    api.ts                      # Twitch Helix API wrapper
+    embeds.ts                   # Live/offline notification embeds
 ```
 
 ## License
 
-![GitHub license](https://img.shields.io/github/license/MrDemonWolf/community-bot-discord.svg?style=for-the-badge&logo=github)
-
-## Contact
-
-If you have any questions, suggestions, or feedback, feel free to reach out!
-
-- Discord: [Join my server](https://mrdwolf.net/discord)
-
-Made with love by <a href="https://www.mrdemonwolf.com">MrDemonWolf, Inc.</a>
+See the monorepo root [LICENSE](../../LICENSE) file.

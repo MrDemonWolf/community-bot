@@ -1,97 +1,422 @@
 ---
 title: Slash Commands
-description: Discord slash commands for managing Twitch notifications.
+description: Complete reference for all Discord bot slash commands.
 ---
 
-All commands are under the `/twitch` command group. All `/twitch` commands require the configured **Admin Role** or the **Manage Server** Discord permission.
+## `/help [topic]`
+
+Displays contextual help for any command group. If no topic is specified, shows an overview of all available commands.
+
+**Parameters:**
+- `topic` (optional) — Choose from: twitch, quote, config, roles, template, mod, case, cc, report, data, schedule
+
+---
+
+## `/mod` — Moderation
+
+All `/mod` commands require the configured **Mod Role** or the **Manage Messages** Discord permission. Every action creates a numbered moderation case and logs to the configured moderation log channel.
+
+### `/mod ban <user> [reason] [delete-days]`
+
+Permanently ban a user from the server.
+
+- `user` (required) — The user to ban
+- `reason` (optional) — Reason for the ban
+- `delete-days` (optional) — Days of message history to delete (0–7)
+
+### `/mod tempban <user> <duration> [reason]`
+
+Temporarily ban a user. The bot does not auto-unban — use `/mod unban` to lift.
+
+- `user` (required) — The user to ban
+- `duration` (required) — Duration in minutes
+- `reason` (optional) — Reason for the ban
+
+### `/mod kick <user> [reason]`
+
+Kick a user from the server.
+
+- `user` (required) — The user to kick
+- `reason` (optional) — Reason for the kick
+
+### `/mod warn <user> <reason>`
+
+Warn a user. If the user's active warning count hits a configured threshold (see `/config thresholds`), the escalation action (ban, kick, or mute) is automatically applied.
+
+- `user` (required) — The user to warn
+- `reason` (required) — Reason for the warning
+
+### `/mod mute <user> <duration> [reason]`
+
+Timeout a user using Discord's built-in timeout feature. Maximum duration: 28 days (40,320 minutes).
+
+- `user` (required) — The user to mute
+- `duration` (required) — Duration in minutes (1–40,320)
+- `reason` (optional) — Reason for the mute
+
+### `/mod unban <user-id> [reason]`
+
+Unban a previously banned user. Requires the user ID (not a mention, since banned users can't be mentioned).
+
+- `user-id` (required) — The user ID to unban
+- `reason` (optional) — Reason for the unban
+
+### `/mod unmute <user> [reason]`
+
+Remove a timeout from a user.
+
+- `user` (required) — The user to unmute
+- `reason` (optional) — Reason for removing the mute
+
+### `/mod unwarn <user> [reason]`
+
+Remove the most recent active warning from a user.
+
+- `user` (required) — The user to unwarn
+- `reason` (optional) — Reason for removing the warning
+
+---
+
+## `/case` — Case Management
+
+All `/case` commands require the configured **Mod Role** or the **Manage Messages** Discord permission. Results are paginated with navigation buttons.
+
+### `/case lookup <number>`
+
+Look up a specific moderation case by its number. Shows full details including type, target, moderator, reason, duration, resolution status, and notes.
+
+- `number` (required) — The case number to look up
+
+### `/case list [user] [type]`
+
+List recent moderation cases with optional filters. Shows up to 100 cases, 10 per page. Resolved cases are shown with strikethrough.
+
+- `user` (optional) — Filter cases for a specific user
+- `type` (optional) — Filter by case type (BAN, TEMPBAN, KICK, WARN, MUTE, UNBAN, UNWARN, UNMUTE, NOTE)
+
+### `/case note <number> <content>`
+
+Add a moderator note to a case.
+
+- `number` (required) — The case number
+- `content` (required) — The note content
+
+### `/case search <query>`
+
+Search cases by reason text (case-insensitive). Returns up to 50 results.
+
+- `query` (required) — Text to search for in case reasons
+
+---
+
+## `/config` — Server Configuration
+
+All `/config` commands require the configured **Admin Role** or the **Manage Server** Discord permission.
+
+### Log Channels
+
+#### `/config log set-moderation <channel>`
+
+Set the channel where moderation actions (bans, kicks, warns, mutes, reports) are logged.
+
+#### `/config log set-server <channel>`
+
+Set the channel where server events (channel/role create/delete/update) are logged.
+
+#### `/config log set-voice <channel>`
+
+Set the channel where voice activity (joins, leaves, moves) is logged.
+
+#### `/config log view`
+
+View the current log channel configuration for all three categories.
+
+### Warning Thresholds
+
+Configure automatic escalation when a user reaches a certain number of active warnings.
+
+#### `/config thresholds set <count> <action> [duration]`
+
+Set an escalation action at a specific warning count. For example, "at 3 warnings, auto-ban."
+
+- `count` (required) — Warning count to trigger at (1–50)
+- `action` (required) — Action to take: BAN, KICK, or MUTE
+- `duration` (optional) — Duration in minutes (required for MUTE)
+
+#### `/config thresholds clear <count>`
+
+Remove a warning threshold.
+
+- `count` (required) — The warning count threshold to remove
+
+#### `/config thresholds list`
+
+List all configured warning thresholds.
+
+---
+
+## `/roles` — Self-Assignable Roles
+
+All `/roles` commands require the configured **Admin Role** or the **Manage Server** Discord permission. Panels support up to 25 roles each.
+
+### Panel Management
+
+#### `/roles panel create <name> [title] [description] [use-menu]`
+
+Create a new role panel. By default, panels use buttons. Set `use-menu` to `true` for a dropdown select menu instead.
+
+- `name` (required) — Panel name (unique per guild)
+- `title` (optional) — Panel embed title (default: "Role Selection")
+- `description` (optional) — Panel embed description
+- `use-menu` (optional) — Use a select menu instead of buttons
+
+#### `/roles panel delete <name>`
+
+Delete a role panel and all its buttons. Autocomplete available.
+
+#### `/roles panel list`
+
+List all role panels with their mode (buttons/menu), post status, and assigned roles. Paginated, 5 panels per page.
+
+### Button Management
+
+#### `/roles button add <panel> <role> <label> [emoji] [style]`
+
+Add a role button to a panel.
+
+- `panel` (required) — Panel name (autocomplete)
+- `role` (required) — The role to assign/remove on click
+- `label` (required) — Button label text
+- `emoji` (optional) — Button emoji
+- `style` (optional) — Button style: primary (blue), secondary (grey), success (green), danger (red)
+
+#### `/roles button remove <panel> <role>`
+
+Remove a role button from a panel.
+
+### Posting
+
+#### `/roles post <panel> [channel]`
+
+Post a role panel to a channel. Users can click buttons or use the select menu to toggle roles.
+
+- `panel` (required) — Panel name (autocomplete)
+- `channel` (optional) — Target channel (defaults to current)
+
+#### `/roles refresh <panel>`
+
+Update an already-posted panel message with the current button/menu configuration.
+
+---
+
+## `/template` — Message Templates
+
+All `/template` commands require the configured **Admin Role** or the **Manage Server** Discord permission. Templates support text content, embed JSON, or both.
+
+**Supported variables:** `{server}` (server name), `{user}` (command user), `{memberCount}` (server member count)
+
+### `/template create <name> [content] [embed-json]`
+
+Create a new message template. At least one of `content` or `embed-json` is required.
+
+### `/template edit <name> [content] [embed-json]`
+
+Edit an existing template. Autocomplete available for name.
+
+### `/template delete <name>`
+
+Delete a template. Autocomplete available.
+
+### `/template list`
+
+List all templates with pagination (10 per page). Shows whether each template has text, embed, or both.
+
+### `/template preview <name>`
+
+Preview a template with variables replaced in the current context.
+
+### `/template send <name> [channel]`
+
+Send a template to a channel with variable substitution.
+
+---
+
+## `/schedule` — Scheduled Messages
+
+All `/schedule` commands require the configured **Admin Role** or the **Manage Server** Discord permission.
+
+### `/schedule create <name> <channel> <type> [content] [cron] [template]`
+
+Create a scheduled message. Must provide either `content` or `template`.
+
+- `name` (required) — Schedule name
+- `channel` (required) — Target text channel
+- `type` (required) — `ONCE` (manual trigger) or `RECURRING` (cron-based)
+- `content` (optional) — Message content
+- `cron` (optional) — Cron expression (required for RECURRING, e.g., `0 9 * * *` for daily at 9 AM)
+- `template` (optional) — Template name to use (autocomplete)
+
+### `/schedule edit <name> [content] [cron] [channel]`
+
+Edit a scheduled message. Autocomplete available for name.
+
+### `/schedule delete <name>`
+
+Delete a scheduled message.
+
+### `/schedule list`
+
+List all scheduled messages (8 per page) with status, type, schedule, and target channel.
+
+### `/schedule enable <name>` / `/schedule disable <name>`
+
+Toggle a scheduled message on or off without deleting it.
+
+---
+
+## `/cc` — Custom Commands
+
+Custom commands are guild-scoped slash commands with dynamic responses.
+
+- **Creating/editing/toggling** requires the **Mod Role** or **Manage Messages** permission
+- **Deleting** requires the **Admin Role** or **Manage Server** permission
+- **Running** is public (unless the command has role restrictions)
+
+**Supported variables:** `{user}`, `{usermention}`, `{userid}`, `{server}`, `{channel}`, `{membercount}`
+
+### `/cc create <name> <response> [description] [ephemeral]`
+
+Create a custom command. Names are normalized to lowercase alphanumeric with hyphens (1–32 characters).
+
+- `ephemeral` (optional) — If true, responses are only visible to the user who ran the command
+
+### `/cc edit <name> [response] [description] [ephemeral]`
+
+Edit a custom command. Autocomplete available.
+
+### `/cc delete <name>`
+
+Delete a custom command (Admin only). Autocomplete available.
+
+### `/cc list`
+
+List all custom commands with status and use count.
+
+### `/cc toggle <name>`
+
+Enable or disable a custom command.
+
+### `/cc run <name>`
+
+Run a custom command. Checks role restrictions and enabled status.
+
+---
+
+## `/report` — User Reports
+
+Anyone can report a user. Managing reports requires the **Mod Role** or **Manage Messages** permission.
+
+### `/report user <user> <reason>`
+
+Report a user to the moderators. Cannot report yourself or bots. Creates a report with OPEN status and logs to the moderation log channel.
+
+### `/report status <id> <status> [resolution]`
+
+Update a report's status. Mod only.
+
+- `id` (required) — Report number
+- `status` (required) — INVESTIGATING, RESOLVED, or DISMISSED
+- `resolution` (optional) — Resolution notes
+
+### `/report list [status] [target]`
+
+List reports with optional filters. Mod only. Paginated, 8 per page.
+
+- `status` (optional) — Filter by OPEN, INVESTIGATING, RESOLVED, or DISMISSED
+- `target` (optional) — Filter by reported user
+
+---
+
+## `/data` — Data Privacy
+
+Available to all users. Allows exporting or deleting your personal data.
+
+### `/data export`
+
+Exports all data the bot has about you in this server as a JSON file. Includes moderation cases, reports (as reporter or target), and active warning count.
+
+### `/data delete`
+
+Deletes your data from the server. Reports where you are the reporter are deleted. Moderation cases (bans, warns, etc.) are **not** deleted as they are server moderation records.
+
+---
+
+## `/twitch` — Twitch Notifications
+
+All `/twitch` commands require the configured **Admin Role** or the **Manage Server** Discord permission.
 
 **Prerequisites:** A notification channel must be set with `/twitch notifications set-channel` before live notifications will work.
 
-## `/twitch add <username>`
+### `/twitch add <username>`
 
-Add a Twitch channel to monitor for live stream notifications. Validates the username against the Twitch API and stores the channel in the database.
+Add a Twitch channel to monitor for live stream notifications. Validates the username against the Twitch API.
 
-**Parameters:**
-- `username` (required) — The Twitch channel username to monitor
+### `/twitch remove <username>`
 
-## `/twitch remove <username>`
+Remove a Twitch channel from the notification list.
 
-Remove a Twitch channel from the notification list. Also removes all associated notification records.
+### `/twitch list`
 
-**Parameters:**
-- `username` (required) — The Twitch channel username to stop monitoring
+List all monitored Twitch channels with live/offline status indicators.
 
-## `/twitch list`
+### `/twitch test <username>`
 
-List all Twitch channels currently being monitored in this guild. Shows an embed with the current notification channel, notification role, and all monitored channels with live/offline status indicators.
+Send a test notification to verify setup. **Bot owner only** (`OWNER_ID` env var). After 10 seconds, the embed updates to show offline state.
 
-## `/twitch test <username>`
+### `/twitch notifications set-channel <channel>`
 
-Send a test notification for a Twitch channel to verify the setup is working correctly. Sends a simulated live notification embed to the configured channel with a fake viewer count. After 10 seconds, the embed is edited to show an offline state. Useful for verifying your notification channel and role configuration.
+Set the Discord channel for Twitch live notifications.
 
-**Restricted to the bot owner only** (the `OWNER_ID` configured in environment variables).
+### `/twitch notifications set-role <role>`
 
-**Parameters:**
-- `username` (required) — The Twitch channel to send a test notification for
-
-## `/twitch notifications set-channel <channel>`
-
-Set the Discord channel where Twitch live notifications will be posted. Only text channels are accepted.
-
-**Parameters:**
-- `channel` (required) — The Discord text channel to receive notifications
-
-## `/twitch notifications set-role <role>`
-
-Set a role to ping when a Twitch stream goes live.
-
-**Parameters:**
-- `role` (required) — The Discord role to mention in notifications
+Set a role to ping when a stream goes live.
 
 ---
 
-## `/quote` Commands
+## `/quote` — Cross-Platform Quotes
 
-The `/quote` command group provides cross-platform quote management, shared with the Twitch bot. The `/quote add` and `/quote remove` subcommands require the configured **Mod Role** or the **Manage Messages** Discord permission.
+Shared quote database with the Twitch bot. Adding and removing quotes requires the **Mod Role** or **Manage Messages** permission.
 
 ### `/quote show [number]`
 
 Show a random quote, or a specific quote by number.
 
-**Parameters:**
-- `number` (optional) — The quote number to display. Omit for a random quote.
-
 ### `/quote add <text>`
 
-Add a new quote to the shared quote database.
-
-**Parameters:**
-- `text` (required) — The quote text to add
+Add a new quote.
 
 ### `/quote remove <number>`
 
-Remove a quote by its number.
-
-**Parameters:**
-- `number` (required) — The quote number to remove
+Remove a quote by number.
 
 ### `/quote search <text>`
 
 Search quotes by keyword.
 
-**Parameters:**
-- `text` (required) — The text to search for in quotes
+---
 
 ## Configurable Role Mapping
 
-By default, `/twitch` commands require the **Manage Server** Discord permission and `/quote add`/`remove` require **Manage Messages**. You can override this by configuring role mappings in the web dashboard under **Discord Settings > Role Mapping**:
+By default, commands check standard Discord permissions:
+- **Admin commands** — Manage Server permission
+- **Mod commands** — Manage Messages permission
 
-- **Admin Role** — Members with this role can use `/twitch` commands (falls back to Manage Server)
-- **Mod Role** — Members with this role can use `/quote add` and `/quote remove` (falls back to Manage Messages). Members with the Admin Role also have mod permissions.
+You can override this by configuring role mappings in the web dashboard under **Discord Settings > Role Mapping**:
 
-When a role mapping is configured, users with that role can use the corresponding commands even without the default Discord permission. If no role is configured, the bot falls back to checking the standard Discord permission.
+- **Admin Role** — Members with this role can use admin-level commands (`/twitch`, `/config`, `/roles`, `/template`, `/schedule`, `/cc delete`)
+- **Mod Role** — Members with this role can use mod-level commands (`/mod`, `/case`, `/report status/list`, `/cc create/edit/toggle`, `/quote add/remove`). Admin role holders also have mod permissions.
 
 ## Related
 
 - [Twitch Notifications](/docs/discord-bot/twitch-notifications) — How the notification system works
-- [Discord Settings](/docs/web-dashboard/discord-settings) — Manage notification settings from the web dashboard
+- [Discord Settings](/docs/web-dashboard/discord-settings) — Manage settings from the web dashboard
