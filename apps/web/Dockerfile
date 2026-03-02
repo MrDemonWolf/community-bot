@@ -2,8 +2,7 @@ FROM node:24-alpine AS base
 
 WORKDIR /usr/src/app
 
-RUN apk add --no-cache openssl
-RUN corepack enable
+RUN apk add --no-cache openssl && corepack enable
 
 FROM base AS deps
 
@@ -36,8 +35,8 @@ COPY packages/auth ./packages/auth
 COPY apps/web ./apps/web
 COPY turbo.json tsconfig.json ./
 
-RUN pnpm --filter @community-bot/db db:generate
 RUN --mount=type=cache,target=/usr/src/app/apps/web/.next/cache \
+    pnpm --filter @community-bot/db db:generate && \
     pnpm --filter web build
 
 FROM node:24-alpine AS production

@@ -2,8 +2,7 @@ FROM node:24-alpine AS base
 
 WORKDIR /usr/src/app
 
-RUN apk add --no-cache openssl
-RUN corepack enable
+RUN apk add --no-cache openssl && corepack enable
 
 FROM base AS deps
 
@@ -30,15 +29,14 @@ COPY packages/server ./packages/server
 COPY apps/discord ./apps/discord
 COPY turbo.json tsconfig.json ./
 
-RUN pnpm --filter @community-bot/db db:generate
-RUN pnpm --filter discord-bot build
+RUN pnpm --filter @community-bot/db db:generate && \
+    pnpm --filter discord-bot build
 
 FROM node:24-alpine AS production
 
 WORKDIR /usr/src/app
 
-RUN apk add --no-cache openssl curl
-RUN npm install -g tsx
+RUN apk add --no-cache openssl curl && npm install -g tsx
 
 COPY --from=build /usr/src/app/apps/discord/dist ./apps/discord/dist
 COPY --from=build /usr/src/app/apps/discord/node_modules ./apps/discord/node_modules

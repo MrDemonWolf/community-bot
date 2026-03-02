@@ -1,0 +1,17 @@
+node_modules
+.turbo
+.next
+dist
+.git
+.gitignore
+.claude
+.env*
+*.log
+coverage
+tmp
+.vscode
+.idea
+.DS_Store
+README.md
+CLAUDE.md
+apps/docs
