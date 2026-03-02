@@ -74,7 +74,7 @@ export const discordTemplatesRouter = router({
         });
       }
 
-      if (input.embedJson) {
+      if (input.embedJson !== undefined && input.embedJson.trim() !== "") {
         try {
           JSON.parse(input.embedJson);
         } catch {
@@ -141,7 +141,7 @@ export const discordTemplatesRouter = router({
         });
       }
 
-      if (input.embedJson) {
+      if (input.embedJson !== undefined && input.embedJson.trim() !== "") {
         try {
           JSON.parse(input.embedJson);
         } catch {

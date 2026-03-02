@@ -85,6 +85,29 @@ export const discordScheduledRouter = router({
         });
       }
 
+      if (input.embedJson) {
+        try {
+          JSON.parse(input.embedJson);
+        } catch {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid embed JSON.",
+          });
+        }
+      }
+
+      if (input.templateId) {
+        const template = await prisma.discordMessageTemplate.findFirst({
+          where: { id: input.templateId, guildId: guild.guildId },
+        });
+        if (!template) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Template not found in this guild.",
+          });
+        }
+      }
+
       const existing = await prisma.discordScheduledMessage.findUnique({
         where: { guildId_name: { guildId: guild.guildId, name } },
       });
@@ -152,6 +175,29 @@ export const discordScheduledRouter = router({
           code: "NOT_FOUND",
           message: "Scheduled message not found.",
         });
+      }
+
+      if (input.embedJson) {
+        try {
+          JSON.parse(input.embedJson);
+        } catch {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid embed JSON.",
+          });
+        }
+      }
+
+      if (input.templateId) {
+        const template = await prisma.discordMessageTemplate.findFirst({
+          where: { id: input.templateId, guildId: guild.guildId },
+        });
+        if (!template) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Template not found in this guild.",
+          });
+        }
       }
 
       const updated = await prisma.discordScheduledMessage.update({

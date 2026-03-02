@@ -45,7 +45,7 @@ export const scheduleCommand = new SlashCommandBuilder()
         opt
           .setName("content")
           .setDescription("Message content")
-          .setRequired(true)
+          .setRequired(false)
       )
       .addStringOption((opt) =>
         opt
@@ -192,6 +192,13 @@ async function handleCreate(
     const content = interaction.options.getString("content");
     const cron = interaction.options.getString("cron");
     const templateName = interaction.options.getString("template");
+
+    if (!content && !templateName) {
+      await interaction.editReply({
+        content: "Provide either message content or a template.",
+      });
+      return;
+    }
 
     if (type === "RECURRING" && !cron) {
       await interaction.editReply({

@@ -34,7 +34,7 @@ export default function TemplatesPage() {
   const queryClient = useQueryClient();
   const listQueryKey = trpc.discordTemplates.list.queryOptions().queryKey;
 
-  const { data: discordStatus } = useQuery(
+  const { data: discordStatus, isLoading: isStatusLoading } = useQuery(
     trpc.discordGuild.getStatus.queryOptions()
   );
   const { data: profile } = useQuery(trpc.user.getProfile.queryOptions());
@@ -133,15 +133,28 @@ export default function TemplatesPage() {
     setShowForm(true);
   }
 
+  if (isStatusLoading) {
+    return (
+      <div>
+        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">
+          Templates <PlatformBadges platforms={["discord"]} />
+        </h1>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
   if (!discordStatus) {
     return (
       <div>
         <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">
           Templates <PlatformBadges platforms={["discord"]} />
         </h1>
-        <Card className="border-amber-500/30 bg-amber-500/5">
+        <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="flex items-center gap-3">
-            <AlertCircle className="size-5 text-amber-500" />
+            <AlertCircle className="size-5 text-destructive" />
             <p className="text-sm text-muted-foreground">
               Link a Discord server first to manage templates.
             </p>
