@@ -2,6 +2,7 @@
   "title": "Docs",
   "pages": [
     "index",
+    "how-it-works",
     "---Getting Started---",
     "getting-started/installation",
     "getting-started/create-twitch-app",

@@ -12,10 +12,11 @@
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
+    "@types/mdx": "^2.0.13",
     "fumadocs-core": "^16.6.0",
     "fumadocs-mdx": "^14.2.7",
     "fumadocs-ui": "^16.6.0",
-    "@types/mdx": "^2.0.13",
+    "mermaid": "^11.12.3",
     "next": "catalog:",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
