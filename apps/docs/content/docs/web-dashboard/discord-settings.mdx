@@ -61,9 +61,41 @@ When you save settings on the Discord settings page:
 3. The Discord bot receives the event and reloads the guild's settings from the database
 4. Changes take effect immediately without requiring a bot restart
 
+## Discord Management Pages
+
+Beyond the main settings page, the dashboard provides dedicated management pages for Discord bot features:
+
+### Role Mapping (`/dashboard/discord`)
+
+Configure which Discord roles map to Admin and Mod permissions for the bot's slash commands. Admin role holders can use `/twitch`, `/config`, `/roles`, `/template`, `/schedule`, and `/cc delete`. Mod role holders can use `/mod`, `/case`, `/report`, and `/quote` management commands.
+
+### Moderation Cases (`/dashboard/discord/moderation`)
+
+View and search all moderation cases (bans, kicks, warns, mutes) with filtering by type and user. Each case shows the target, moderator, reason, and timestamp.
+
+### Message Templates (`/dashboard/discord/templates`)
+
+Create and manage reusable message templates with text content and/or embed JSON. Templates can be previewed live and used in scheduled messages.
+
+### Scheduled Messages (`/dashboard/discord/scheduled`)
+
+Create one-time or recurring scheduled messages with cron expressions. Schedules can reference templates and be toggled on/off without deletion.
+
+### Custom Commands (`/dashboard/discord/custom-commands`)
+
+Create and manage guild-scoped custom slash commands with response text, embed support, role restrictions, and ephemeral mode.
+
+### Role Panels (`/dashboard/discord/roles`)
+
+Manage self-assignable role panels with buttons or select menus. Configure panel appearance, add/remove role buttons, and post panels to channels.
+
+### User Reports (`/dashboard/discord/reports`)
+
+View and manage user reports with status filtering (Open, Investigating, Resolved, Dismissed).
+
 ## Audit Logging
 
-All Discord settings changes are recorded in the audit log:
+All Discord settings and management changes are recorded in the audit log:
 
 | Action | When |
 |--------|------|
@@ -73,3 +105,6 @@ All Discord settings changes are recorded in the audit log:
 | `discord.channel-settings` | Per-channel notification overrides are updated |
 | `discord.enable` | Notifications are enabled |
 | `discord.disable` | Notifications are disabled |
+| `discord.template.create/update/delete` | Template changes |
+| `discord.schedule.create/update/delete/enable/disable` | Schedule changes |
+| `discord.case.note` | Moderator note added to a case |

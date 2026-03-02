@@ -46,21 +46,27 @@ Events are published to channels with a configurable prefix (default: `events`),
 ### Event Flow Summary
 
 ```
-Web Dashboard action          Event published         Bot reaction
-─────────────────────         ───────────────         ────────────
-Enable bot for channel    →   channel:join        →   Twitch joins chat
-Disable bot for channel   →   channel:leave       →   Twitch leaves chat
-Create/edit/delete cmd    →   command:*            →   Twitch reloads cache
-Toggle built-in commands  →   commands:defaults-*  →   Twitch reloads defaults
-Add/remove regular        →   regular:*            →   Twitch reloads regulars
-Change Discord settings   →   discord:settings-*   →   Discord reloads guild
-Send test notification    →   discord:test-*       →   Discord sends embed
-Mute/unmute bot           →   bot:mute             →   Twitch toggles mute
-Queue change (chat/dash)  →   queue:updated        →   Other side syncs
-Add/remove quote          →   quote:*              →   —
-Update counter            →   counter:updated      →   —
-Update timer settings     →   timer:updated        →   Twitch reloads timers
-Update spam filter config →   spam-filter:updated  →   Twitch reloads filters
+Web Dashboard action          Event published              Bot reaction
+─────────────────────         ───────────────              ────────────
+Enable bot for channel    →   channel:join             →   Twitch joins chat
+Disable bot for channel   →   channel:leave            →   Twitch leaves chat
+Create/edit/delete cmd    →   command:*                →   Twitch reloads cache
+Toggle built-in commands  →   commands:defaults-*      →   Twitch reloads defaults
+Add/remove regular        →   regular:*                →   Twitch reloads regulars
+Change Discord settings   →   discord:settings-*       →   Discord reloads guild
+Send test notification    →   discord:test-*           →   Discord sends embed
+Mute/unmute bot           →   bot:mute                 →   Twitch toggles mute
+Queue change (chat/dash)  →   queue:updated            →   Other side syncs
+Add/remove quote          →   quote:*                  →   —
+Update counter            →   counter:updated          →   —
+Update timer settings     →   timer:updated            →   Twitch reloads timers
+Update spam filter config →   spam-filter:updated      →   Twitch reloads filters
+Song request changes      →   song-request:*           →   Other side syncs
+Playlist CRUD             →   playlist:*               →   Other side syncs
+Giveaway actions          →   giveaway:*               →   Other side syncs
+Discord custom cmds CRUD  →   discord:commands-updated →   Discord re-registers cmds
+Discord log config change →   discord:log-config-*     →   Discord invalidates cache
+Discord mod action        →   discord:case-created     →   —
 ```
 
 The constructor accepts an optional `prefix` option:
@@ -155,6 +161,41 @@ Quote events are informational. Counter events notify when a counter value chang
 | `spam-filter:updated` | `{ channelId }` | Web | Twitch |
 
 `timer:updated` fires when timer settings change from the dashboard. The Twitch bot reloads timers for the affected channel. `spam-filter:updated` fires when spam filter configuration changes, causing the Twitch bot to reload the filter config.
+
+### Song Requests & Playlists
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `song-request:updated` | `{ channelId }` | Web/Twitch | Any |
+| `song-request:settings-updated` | `{ channelId }` | Web | Twitch |
+| `playlist:created` | `{ playlistId, channelId }` | Web/Twitch | Any |
+| `playlist:updated` | `{ playlistId, channelId }` | Web/Twitch | Any |
+| `playlist:deleted` | `{ playlistId, channelId }` | Web/Twitch | Any |
+| `playlist:activated` | `{ playlistId, channelId }` | Web/Twitch | Any |
+
+Song request events fire when the queue changes or settings are updated. Playlist events fire for CRUD operations and when switching the active backup playlist.
+
+### Giveaways
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `giveaway:started` | `{ giveawayId, channelId }` | Web/Twitch | Any |
+| `giveaway:ended` | `{ giveawayId, channelId }` | Web/Twitch | Any |
+| `giveaway:winner` | `{ giveawayId, channelId }` | Web/Twitch | Any |
+
+Giveaway events fire when a giveaway is started, ended, or a winner is drawn.
+
+### Discord Moderation & Bot Features
+
+| Event | Payload | Publisher | Subscriber |
+|-------|---------|-----------|------------|
+| `discord:mute` | `{ guildId, muted }` | Web | Discord |
+| `discord:case-created` | `{ caseId, guildId }` | Discord | Any |
+| `discord:scheduled-send` | `{ scheduledMessageId, guildId }` | Discord | Discord |
+| `discord:commands-updated` | `{ guildId }` | Web | Discord |
+| `discord:log-config-updated` | `{ guildId }` | Web | Discord |
+
+`discord:case-created` fires when a moderation case is created. `discord:scheduled-send` triggers a scheduled message to be sent. `discord:commands-updated` causes the Discord bot to re-register guild-scoped custom commands. `discord:log-config-updated` invalidates the log config cache.
 
 ## API Reference
 

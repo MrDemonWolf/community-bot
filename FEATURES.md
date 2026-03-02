@@ -128,26 +128,39 @@ Everything the bot can do, at a glance.
 
 | Command | What it does |
 |---------|-------------|
-| `/twitch add <username>` | Monitor a Twitch channel for live notifications |
-| `/twitch remove <username>` | Stop monitoring a channel |
-| `/twitch list` | Show all monitored channels |
-| `/twitch test <username>` | Send a test notification (owner only) |
-| `/twitch notifications set-channel` | Set the notification channel |
-| `/twitch notifications set-role` | Set the role to ping on go-live |
-| `/quote show [number]` | Show a random or specific quote |
-| `/quote add <text>` | Add a quote |
-| `/quote remove <number>` | Remove a quote |
-| `/quote search <text>` | Search quotes by keyword |
+| `/help [topic]` | Contextual help for any command group |
+| `/mod ban/tempban/kick/warn/mute` | Moderation actions with case tracking |
+| `/mod unban/unmute/unwarn` | Reverse moderation actions |
+| `/case lookup/list/note/search` | Look up, search, and annotate moderation cases |
+| `/config log set-moderation/server/voice` | Configure event log channels |
+| `/config thresholds set/clear/list` | Warning escalation thresholds |
+| `/roles panel create/delete/list` | Manage self-assignable role panels |
+| `/roles button add/remove` | Add/remove buttons from role panels |
+| `/roles post/refresh` | Post or update role panels in channels |
+| `/template create/edit/delete/list/preview/send` | Reusable message templates |
+| `/schedule create/edit/delete/list/enable/disable` | Scheduled & recurring messages |
+| `/cc create/edit/delete/list/toggle/run` | Custom slash commands |
+| `/report user/status/list` | Community reporting system |
+| `/data export/delete` | Personal data export and deletion |
+| `/twitch add/remove/list/test` | Twitch channel monitoring |
+| `/twitch notifications set-channel/set-role` | Notification config |
+| `/quote show/add/remove/search` | Cross-platform quotes |
 
 ## Discord Bot — Other Features
 
 | Feature | Description |
 |---------|-------------|
 | Twitch live notifications | Rich embeds when monitored channels go live/offline |
+| Moderation system | Ban, kick, warn, mute with auto-incrementing case numbers and escalation |
+| Case management | Searchable case history with moderator notes |
+| Event logging | Configurable channels for moderation, server, and voice events |
+| Self-assignable roles | Button and select menu role panels |
+| Message templates | Reusable templates with variable substitution |
+| Scheduled messages | One-time or cron-based recurring messages |
+| Custom commands | Guild-scoped slash commands with role restrictions |
+| User reports | Community reporting with status workflow |
+| Data privacy | GDPR-compliant data export and deletion |
 | Configurable role mapping | Map Discord roles to admin/mod permissions (falls back to Discord permissions) |
-| Welcome & leave messages | Configurable messages when members join/leave |
-| Auto-role | Assign a role to new members automatically |
-| DM welcome | Send a private welcome message to new members |
 | Guild sync | Auto-sync guild data to DB on join/leave |
 | Real-time config | Dashboard changes apply instantly via EventBus |
 
@@ -180,8 +193,13 @@ Everything the bot can do, at a glance.
 
 | Page | What you can do |
 |------|----------------|
-| Discord Settings | Link a Discord server, set notification channel/role, enable/disable |
-| Welcome & Leave | Configure welcome messages, leave messages, auto-role, DM welcomes |
+| Discord Settings | Link a Discord server, set notification channel/role, enable/disable, role mapping |
+| Moderation | View and search moderation cases |
+| Templates | Create and manage message templates |
+| Scheduled Messages | Create one-time or recurring scheduled messages |
+| Custom Commands | Manage guild-scoped custom slash commands |
+| Roles | Manage self-assignable role panels |
+| Reports | View and manage user reports |
 
 ## Web Dashboard — Admin
 
@@ -214,4 +232,4 @@ Everything the bot can do, at a glance.
 | Setup wizard | First-user setup flow with one-time token |
 | Docker | docker-compose with PostgreSQL, Redis, and all services |
 | Health checks | `/health` endpoints on all services |
-| Tests | 657 unit tests across 66 files + ~95 integration tests |
+| Tests | 735 unit tests across 68 files + ~95 integration tests |
