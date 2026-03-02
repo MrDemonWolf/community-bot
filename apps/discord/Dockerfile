@@ -2,7 +2,7 @@ FROM node:24-alpine AS base
 
 WORKDIR /usr/src/app
 
-RUN apk add --no-cache openssl && corepack enable
+RUN apk add --no-cache openssl git && corepack enable
 
 FROM base AS deps
 
