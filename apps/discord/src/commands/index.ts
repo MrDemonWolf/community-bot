@@ -16,6 +16,8 @@ import {
   handleScheduleCommand,
 } from "./schedule/index.js";
 import { rolesCommand, handleRolesCommand } from "./roles/index.js";
+import { modCommand, handleModCommand } from "./mod/index.js";
+import { caseCommand, handleCaseCommand } from "./case/index.js";
 
 export interface Command {
   data: SlashCommandBuilder;
@@ -57,6 +59,16 @@ commands.set(scheduleCommand.name, {
 commands.set(rolesCommand.name, {
   data: rolesCommand,
   execute: handleRolesCommand,
+});
+
+commands.set(modCommand.name, {
+  data: modCommand,
+  execute: handleModCommand,
+});
+
+commands.set(caseCommand.name, {
+  data: caseCommand,
+  execute: handleCaseCommand,
 });
 
 export default commands;

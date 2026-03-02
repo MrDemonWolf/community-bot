@@ -50,7 +50,7 @@ const topics: Record<string, HelpTopic> = {
   },
   config: {
     title: "Server Configuration",
-    description: "Configure logging channels and server settings.",
+    description: "Configure logging channels, thresholds, and server settings.",
     fields: [
       {
         name: "/config log set-moderation <channel>",
@@ -65,6 +65,18 @@ const topics: Record<string, HelpTopic> = {
         value: "Set the channel for voice activity logs.",
       },
       { name: "/config log view", value: "View current log channel configuration." },
+      {
+        name: "/config thresholds set <count> <action> [duration]",
+        value: "Set an auto-escalation action at a warning count.",
+      },
+      {
+        name: "/config thresholds clear <count>",
+        value: "Remove a warning threshold.",
+      },
+      {
+        name: "/config thresholds list",
+        value: "List all configured warning thresholds.",
+      },
     ],
   },
   roles: {
@@ -90,6 +102,30 @@ const topics: Record<string, HelpTopic> = {
       { name: "/template list", value: "List all templates." },
       { name: "/template preview <name>", value: "Preview a template with variable substitution." },
       { name: "/template send <name> [channel]", value: "Send a template to a channel." },
+    ],
+  },
+  mod: {
+    title: "Moderation",
+    description: "Moderate your server with bans, kicks, warns, mutes, and case tracking.",
+    fields: [
+      { name: "/mod ban <user> [reason]", value: "Ban a user from the server." },
+      { name: "/mod tempban <user> <duration> [reason]", value: "Temporarily ban a user (duration in minutes)." },
+      { name: "/mod kick <user> [reason]", value: "Kick a user from the server." },
+      { name: "/mod warn <user> <reason>", value: "Warn a user. Warnings can trigger auto-escalation." },
+      { name: "/mod mute <user> <duration> [reason]", value: "Timeout a user (duration in minutes, max 28 days)." },
+      { name: "/mod unban <user-id> [reason]", value: "Unban a user and resolve their ban case." },
+      { name: "/mod unmute <user> [reason]", value: "Remove timeout from a user." },
+      { name: "/mod unwarn <user> [reason]", value: "Remove the latest active warning from a user." },
+    ],
+  },
+  case: {
+    title: "Case Management",
+    description: "Look up and manage moderation cases.",
+    fields: [
+      { name: "/case lookup <number>", value: "View details of a specific case." },
+      { name: "/case list [user] [type]", value: "List recent cases with optional filters." },
+      { name: "/case note <number> <content>", value: "Add a note to a case." },
+      { name: "/case search <query>", value: "Search cases by reason text." },
     ],
   },
   schedule: {

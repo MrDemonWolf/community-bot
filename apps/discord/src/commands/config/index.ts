@@ -58,6 +58,56 @@ export const configCommand = new SlashCommandBuilder()
       .addSubcommand((sub) =>
         sub.setName("view").setDescription("View current log channel configuration")
       )
+  )
+  .addSubcommandGroup((group) =>
+    group
+      .setName("thresholds")
+      .setDescription("Configure warning escalation thresholds")
+      .addSubcommand((sub) =>
+        sub
+          .setName("set")
+          .setDescription("Set an escalation action at a warning count")
+          .addIntegerOption((opt) =>
+            opt
+              .setName("count")
+              .setDescription("Number of warnings to trigger action")
+              .setRequired(true)
+              .setMinValue(1)
+              .setMaxValue(50)
+          )
+          .addStringOption((opt) =>
+            opt
+              .setName("action")
+              .setDescription("Action to take")
+              .setRequired(true)
+              .addChoices(
+                { name: "Ban", value: "BAN" },
+                { name: "Kick", value: "KICK" },
+                { name: "Mute", value: "MUTE" }
+              )
+          )
+          .addIntegerOption((opt) =>
+            opt
+              .setName("duration")
+              .setDescription("Duration in minutes (required for Mute)")
+              .setMinValue(1)
+          )
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("clear")
+          .setDescription("Remove a warning threshold")
+          .addIntegerOption((opt) =>
+            opt
+              .setName("count")
+              .setDescription("Warning count to remove")
+              .setRequired(true)
+              .setMinValue(1)
+          )
+      )
+      .addSubcommand((sub) =>
+        sub.setName("list").setDescription("List all configured warning thresholds")
+      )
   ) as SlashCommandBuilder;
 
 export async function handleConfigCommand(
@@ -102,6 +152,17 @@ export async function handleConfigCommand(
         return handleSetLogChannel(interaction, "voiceChannelId");
       case "view":
         return handleViewLogConfig(interaction);
+    }
+  }
+
+  if (subcommandGroup === "thresholds") {
+    switch (subcommand) {
+      case "set":
+        return handleSetThreshold(interaction);
+      case "clear":
+        return handleClearThreshold(interaction);
+      case "list":
+        return handleListThresholds(interaction);
     }
   }
 }
@@ -188,6 +249,143 @@ async function handleViewLogConfig(
     logger.commands.error("config", username, userId, error, guildId);
     await interaction.editReply({
       content: "An error occurred while fetching log configuration.",
+    });
+  }
+}
+
+async function handleSetThreshold(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const username = interaction.user.username;
+  const userId = interaction.user.id;
+  const guildId = interaction.guildId!;
+
+  try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    const count = interaction.options.getInteger("count", true);
+    const action = interaction.options.getString("action", true) as
+      | "BAN"
+      | "KICK"
+      | "MUTE";
+    const duration = interaction.options.getInteger("duration");
+
+    if (action === "MUTE" && !duration) {
+      await interaction.editReply({
+        content: "Duration is required for Mute action.",
+      });
+      return;
+    }
+
+    await prisma.discordWarnThreshold.upsert({
+      where: { guildId_count: { guildId, count } },
+      create: {
+        guildId,
+        count,
+        action,
+        duration: action === "MUTE" ? duration : null,
+      },
+      update: {
+        action,
+        duration: action === "MUTE" ? duration : null,
+      },
+    });
+
+    const actionLabel =
+      action === "MUTE" ? `Mute (${duration}m)` : action === "BAN" ? "Ban" : "Kick";
+
+    await interaction.editReply({
+      content: `Threshold set: at **${count}** warnings → **${actionLabel}**`,
+    });
+    logger.commands.success("config thresholds set", username, userId, guildId);
+  } catch (error) {
+    logger.commands.error("config", username, userId, error, guildId);
+    await interaction.editReply({
+      content: "An error occurred while setting the threshold.",
+    });
+  }
+}
+
+async function handleClearThreshold(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const username = interaction.user.username;
+  const userId = interaction.user.id;
+  const guildId = interaction.guildId!;
+
+  try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    const count = interaction.options.getInteger("count", true);
+
+    const deleted = await prisma.discordWarnThreshold.deleteMany({
+      where: { guildId, count },
+    });
+
+    if (deleted.count === 0) {
+      await interaction.editReply({
+        content: `No threshold configured for ${count} warnings.`,
+      });
+      return;
+    }
+
+    await interaction.editReply({
+      content: `Threshold at **${count}** warnings removed.`,
+    });
+    logger.commands.success("config thresholds clear", username, userId, guildId);
+  } catch (error) {
+    logger.commands.error("config", username, userId, error, guildId);
+    await interaction.editReply({
+      content: "An error occurred while clearing the threshold.",
+    });
+  }
+}
+
+async function handleListThresholds(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const username = interaction.user.username;
+  const userId = interaction.user.id;
+  const guildId = interaction.guildId!;
+
+  try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    const thresholds = await prisma.discordWarnThreshold.findMany({
+      where: { guildId },
+      orderBy: { count: "asc" },
+    });
+
+    if (thresholds.length === 0) {
+      await interaction.editReply({
+        content:
+          "No warning thresholds configured. Use `/config thresholds set` to add one.",
+      });
+      return;
+    }
+
+    const lines = thresholds.map((t) => {
+      const actionLabel =
+        t.action === "MUTE"
+          ? `Mute (${t.duration}m)`
+          : t.action === "BAN"
+            ? "Ban"
+            : "Kick";
+      return `**${t.count}** warnings → **${actionLabel}**`;
+    });
+
+    const embed = new EmbedBuilder()
+      .setTitle("Warning Escalation Thresholds")
+      .setDescription(lines.join("\n"))
+      .setColor(BRAND_COLOR)
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [embed] });
+    logger.commands.success("config thresholds list", username, userId, guildId);
+  } catch (error) {
+    logger.commands.error("config", username, userId, error, guildId);
+    await interaction.editReply({
+      content: "An error occurred while listing thresholds.",
     });
   }
 }
