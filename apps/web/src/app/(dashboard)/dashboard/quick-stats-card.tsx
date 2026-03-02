@@ -9,34 +9,56 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Terminal, Users, Radio, ListOrdered, BookOpen, Hash, Timer, Music, Gift } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const REFETCH_INTERVAL = 30_000;
 
 export default function QuickStatsCard() {
-  const { data: botStatus } = useQuery({
+  const { data: botStatus, isLoading: loadingBot } = useQuery({
     ...trpc.botChannel.getStatus.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
   });
-  const { data: commands } = useQuery({
+  const { data: commands, isLoading: loadingCmds } = useQuery({
     ...trpc.chatCommand.list.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
   });
-  const { data: regulars } = useQuery({
+  const { data: regulars, isLoading: loadingRegs } = useQuery({
     ...trpc.regular.list.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
   });
-  const { data: queueState } = useQuery({
+  const { data: queueState, isLoading: loadingQState } = useQuery({
     ...trpc.queue.getState.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
   });
-  const { data: queueEntries } = useQuery({
+  const { data: queueEntries, isLoading: loadingQEntries } = useQuery({
     ...trpc.queue.list.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
   });
-  const { data: stats } = useQuery({
+  const { data: stats, isLoading: loadingStats } = useQuery({
     ...trpc.botChannel.stats.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
   });
+
+  const isLoading =
+    loadingBot || loadingCmds || loadingRegs || loadingQState || loadingQEntries || loadingStats;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-heading">Quick Stats</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-8" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   const botChannel = botStatus?.botChannel;
   const statusLabel = !botChannel

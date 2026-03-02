@@ -265,6 +265,12 @@ export function SidebarContent({
           <Home className="h-4 w-4" />
           Back to Home
         </Link>
+        <span className="block px-3 pt-1 text-[10px] text-muted-foreground/50">
+          v{process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0"}
+          {process.env.NEXT_PUBLIC_GIT_SHA
+            ? ` · ${process.env.NEXT_PUBLIC_GIT_SHA}`
+            : ""}
+        </span>
       </div>
     </div>
   );
@@ -276,7 +282,7 @@ export default function DashboardSidebar({
   session: typeof authClient.$Infer.Session;
 }) {
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-border bg-card lg:block">
+    <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-border bg-card lg:block">
       <SidebarContent session={session} />
     </aside>
   );
