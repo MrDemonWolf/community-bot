@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "lucide-react";
 import { getRoleDisplay } from "@/utils/roles";
 
@@ -93,7 +94,18 @@ export default function AuditLogFeed() {
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto" style={{ maxHeight: "600px" }}>
         {isLoading && (
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <Skeleton className="size-8 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                  <Skeleton className="h-2.5 w-12" />
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {!isLoading && items.length === 0 && (

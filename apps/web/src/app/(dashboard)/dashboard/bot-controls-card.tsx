@@ -18,6 +18,7 @@ import {
   VolumeX,
   Volume2,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { canControlBot } from "@/utils/roles";
 
 export default function BotControlsCard() {
@@ -76,7 +77,25 @@ export default function BotControlsCard() {
     disableMutation.isPending ||
     muteMutation.isPending;
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-heading">Twitch Bot</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start gap-3">
+            <Skeleton className="size-8 shrink-0 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-3 w-48" />
+              <Skeleton className="h-8 w-24 rounded-md" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
