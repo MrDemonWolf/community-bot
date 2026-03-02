@@ -50,6 +50,26 @@ export async function autocompleteEvent(
       return;
     }
 
+    if (
+      commandName === "roles" &&
+      (focused.name === "panel" || focused.name === "name")
+    ) {
+      const panels = await prisma.discordRolePanel.findMany({
+        where: {
+          guildId,
+          name: { contains: query, mode: "insensitive" },
+        },
+        take: 25,
+        select: { name: true },
+        orderBy: { name: "asc" },
+      });
+
+      await interaction.respond(
+        panels.map((p) => ({ name: p.name, value: p.name }))
+      );
+      return;
+    }
+
     await interaction.respond([]);
   } catch (error) {
     logger.error("Autocomplete", "Failed to handle autocomplete", error);

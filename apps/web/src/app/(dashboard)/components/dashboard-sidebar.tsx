@@ -26,6 +26,7 @@ import {
   ChevronRight,
   FileText,
   Clock,
+  ShieldCheck,
 } from "lucide-react";
 
 interface NavLink {
@@ -120,6 +121,11 @@ export function SidebarContent({
           href: "/dashboard/discord/scheduled",
           label: "Scheduled",
           icon: Clock,
+        },
+        {
+          href: "/dashboard/discord/roles",
+          label: "Role Panels",
+          icon: ShieldCheck,
         },
       ],
     },

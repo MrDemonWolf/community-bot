@@ -15,6 +15,7 @@ import {
   scheduleCommand,
   handleScheduleCommand,
 } from "./schedule/index.js";
+import { rolesCommand, handleRolesCommand } from "./roles/index.js";
 
 export interface Command {
   data: SlashCommandBuilder;
@@ -51,6 +52,11 @@ commands.set(templateCommand.name, {
 commands.set(scheduleCommand.name, {
   data: scheduleCommand,
   execute: handleScheduleCommand,
+});
+
+commands.set(rolesCommand.name, {
+  data: rolesCommand,
+  execute: handleRolesCommand,
 });
 
 export default commands;

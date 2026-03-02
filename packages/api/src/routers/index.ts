@@ -21,6 +21,7 @@ import { giveawayRouter } from "./giveaway";
 import { pollRouter } from "./poll";
 import { discordTemplatesRouter } from "./discordTemplates";
 import { discordScheduledRouter } from "./discordScheduled";
+import { discordRolesRouter } from "./discordRoles";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -51,5 +52,6 @@ export const appRouter = router({
   poll: pollRouter,
   discordTemplates: discordTemplatesRouter,
   discordScheduled: discordScheduledRouter,
+  discordRoles: discordRolesRouter,
 });
 export type AppRouter = typeof appRouter;

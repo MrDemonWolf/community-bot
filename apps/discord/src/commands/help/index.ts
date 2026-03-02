@@ -67,6 +67,43 @@ const topics: Record<string, HelpTopic> = {
       { name: "/config log view", value: "View current log channel configuration." },
     ],
   },
+  roles: {
+    title: "Role Panels",
+    description: "Create self-assignable role panels with buttons or select menus.",
+    fields: [
+      { name: "/roles panel create <name>", value: "Create a new role panel." },
+      { name: "/roles panel delete <name>", value: "Delete a role panel." },
+      { name: "/roles panel list", value: "List all role panels." },
+      { name: "/roles button add <panel> <role> <label>", value: "Add a role button to a panel." },
+      { name: "/roles button remove <panel> <role>", value: "Remove a role button from a panel." },
+      { name: "/roles post <panel> [channel]", value: "Post a role panel to a channel." },
+      { name: "/roles refresh <panel>", value: "Refresh an already-posted panel." },
+    ],
+  },
+  template: {
+    title: "Message Templates",
+    description: "Create and manage reusable message templates.",
+    fields: [
+      { name: "/template create <name>", value: "Create a new message template." },
+      { name: "/template edit <name>", value: "Edit an existing template." },
+      { name: "/template delete <name>", value: "Delete a template." },
+      { name: "/template list", value: "List all templates." },
+      { name: "/template preview <name>", value: "Preview a template with variable substitution." },
+      { name: "/template send <name> [channel]", value: "Send a template to a channel." },
+    ],
+  },
+  schedule: {
+    title: "Scheduled Messages",
+    description: "Schedule one-time or recurring messages.",
+    fields: [
+      { name: "/schedule create <name>", value: "Create a scheduled message." },
+      { name: "/schedule edit <name>", value: "Edit a scheduled message." },
+      { name: "/schedule delete <name>", value: "Delete a scheduled message." },
+      { name: "/schedule list", value: "List all scheduled messages." },
+      { name: "/schedule enable <name>", value: "Enable a scheduled message." },
+      { name: "/schedule disable <name>", value: "Disable a scheduled message." },
+    ],
+  },
 };
 
 const topicChoices = Object.keys(topics).map((key) => ({
