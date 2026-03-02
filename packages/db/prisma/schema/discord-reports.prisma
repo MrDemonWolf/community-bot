@@ -1,0 +1,26 @@
+enum DiscordReportStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+model DiscordReport {
+  id          String              @id @default(uuid())
+  guildId     String
+  reporterId  String
+  reporterTag String
+  targetId    String
+  targetTag   String
+  reason      String
+  status      DiscordReportStatus @default(OPEN)
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  resolution  String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([guildId])
+  @@index([status])
+  @@index([targetId])
+}

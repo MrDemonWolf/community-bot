@@ -31,6 +31,7 @@ import {
   Radio,
   Plus,
   Trash2,
+  ScrollText,
 } from "lucide-react";
 import { ChannelSettingsDialog } from "./channel-settings-dialog";
 import { canControlBot } from "@/utils/roles";
@@ -113,6 +114,7 @@ export default function DiscordSettings({
         queryClient={queryClient}
         canEdit={canEdit}
       />
+      <LoggingConfigCard canEdit={canEdit} />
       <TestNotificationCard hasChannel={!!guild.notificationChannelId} canEdit={canEdit} />
       <MonitoredChannelsCard canEdit={canEdit} />
     </div>
@@ -965,6 +967,172 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
                 )}
               </div>
             ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoggingConfigCard({ canEdit }: { canEdit: boolean }) {
+  const queryClient = useQueryClient();
+
+  const {
+    data: logConfig,
+    isLoading: logLoading,
+  } = useQuery(trpc.discordGuild.getLogConfig.queryOptions());
+
+  const {
+    data: channels,
+    isLoading: channelsLoading,
+    isError: channelsError,
+    refetch,
+  } = useQuery(trpc.discordGuild.getGuildChannels.queryOptions());
+
+  const [moderationChannelId, setModerationChannelId] = useState("");
+  const [serverChannelId, setServerChannelId] = useState("");
+  const [voiceChannelId, setVoiceChannelId] = useState("");
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (logConfig && !initialized) {
+      setModerationChannelId(logConfig.moderationChannelId ?? "");
+      setServerChannelId(logConfig.serverChannelId ?? "");
+      setVoiceChannelId(logConfig.voiceChannelId ?? "");
+      setInitialized(true);
+    }
+  }, [logConfig, initialized]);
+
+  const mutation = useMutation(
+    trpc.discordGuild.setLogConfig.mutationOptions({
+      onSuccess: () => {
+        toast.success("Log channels updated.");
+        void queryClient.invalidateQueries();
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    })
+  );
+
+  const isLoading = logLoading || channelsLoading;
+
+  const channelOptions = [
+    {
+      label: "Moderation Logs",
+      description: "Bans, kicks, warns, and mutes",
+      icon: ScrollText,
+      value: moderationChannelId,
+      onChange: setModerationChannelId,
+    },
+    {
+      label: "Server Logs",
+      description: "Channel and role changes",
+      icon: ScrollText,
+      value: serverChannelId,
+      onChange: setServerChannelId,
+    },
+    {
+      label: "Voice Logs",
+      description: "Voice channel joins, leaves, and moves",
+      icon: ScrollText,
+      value: voiceChannelId,
+      onChange: setVoiceChannelId,
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-heading">Event Logging</CardTitle>
+        <CardDescription>
+          Configure channels for server event logs. The bot will send embedded
+          messages when channels, roles, or voice states change.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
+        ) : channelsError ? (
+          <div className="flex items-center gap-2 text-sm text-destructive">
+            <AlertCircle className="size-4" />
+            <span>Failed to load channels.</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetch()}
+              className="text-xs"
+            >
+              Retry
+            </Button>
+          </div>
+        ) : canEdit ? (
+          <div className="space-y-4">
+            {channelOptions.map((opt) => (
+              <div key={opt.label} className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  {opt.label}
+                </label>
+                <p className="text-xs text-muted-foreground">{opt.description}</p>
+                <Select
+                  value={opt.value || "_none"}
+                  onValueChange={(v) => opt.onChange(v === "_none" ? "" : v ?? "")}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Disabled" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Disabled</SelectItem>
+                    {channels?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        # {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+            <Button
+              size="sm"
+              disabled={mutation.isPending}
+              onClick={() =>
+                mutation.mutate({
+                  moderationChannelId: moderationChannelId || null,
+                  serverChannelId: serverChannelId || null,
+                  voiceChannelId: voiceChannelId || null,
+                })
+              }
+            >
+              {mutation.isPending && (
+                <Loader2 className="size-4 animate-spin" />
+              )}
+              Save
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>
+              Moderation Logs:{" "}
+              {channels?.find((c) => c.id === moderationChannelId)
+                ? `# ${channels.find((c) => c.id === moderationChannelId)!.name}`
+                : "Disabled"}
+            </p>
+            <p>
+              Server Logs:{" "}
+              {channels?.find((c) => c.id === serverChannelId)
+                ? `# ${channels.find((c) => c.id === serverChannelId)!.name}`
+                : "Disabled"}
+            </p>
+            <p>
+              Voice Logs:{" "}
+              {channels?.find((c) => c.id === voiceChannelId)
+                ? `# ${channels.find((c) => c.id === voiceChannelId)!.name}`
+                : "Disabled"}
+            </p>
           </div>
         )}
       </CardContent>

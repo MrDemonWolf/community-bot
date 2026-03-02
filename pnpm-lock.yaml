@@ -87,6 +87,9 @@ importers:
       consola:
         specifier: ^3.4.2
         version: 3.4.2
+      cron-parser:
+        specifier: ^5.5.0
+        version: 5.5.0
       cronstrue:
         specifier: ^3.9.0
         version: 3.12.0
@@ -3075,6 +3078,10 @@ packages:
   cron-parser@4.9.0:
     resolution: {integrity: sha512-p0SaNjrHOnQeR8/VnfGbmg9te2kfyYSQ7Sc/j/6DtPL3JQvKxmjO9TSjNFpujqV3vEYYBvNNvXSxzyksBWAx1Q==}
     engines: {node: '>=12.0.0'}
+
+  cron-parser@5.5.0:
+    resolution: {integrity: sha512-oML4lKUXxizYswqmxuOCpgFS8BNUJpIu6k/2HVHyaL8Ynnf3wdf9tkns0yRdJLSIjkJ+b0DXHMZEHGpMwjnPww==}
+    engines: {node: '>=18'}
 
   cronstrue@3.12.0:
     resolution: {integrity: sha512-k9oiM4G7U1GEEktOGfZabldP0gtFWTsaRVqq9X06ifytr73mpSYYdt+zGZBeS5lRCsqMfq0y7oSHycWGIJSo6g==}
@@ -8858,6 +8865,10 @@ snapshots:
       typescript: 5.9.3
 
   cron-parser@4.9.0:
+    dependencies:
+      luxon: 3.7.2
+
+  cron-parser@5.5.0:
     dependencies:
       luxon: 3.7.2
 

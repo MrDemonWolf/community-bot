@@ -1,17 +1,32 @@
 import { MessageFlags } from "discord.js";
 
-import type {
-  Interaction,
-  ChatInputCommandInteraction,
-} from "discord.js";
+import type { Interaction } from "discord.js";
 
 import commands from "../commands/index.js";
 import logger from "../utils/logger.js";
+import { autocompleteEvent } from "./autocomplete.js";
+import { buttonHandler } from "./buttonHandler.js";
+import { selectMenuHandler } from "./selectMenuHandler.js";
 
 export async function interactionCreateEvent(
   interaction: Interaction
 ) {
   try {
+    if (interaction.isAutocomplete()) {
+      await autocompleteEvent(interaction);
+      return;
+    }
+
+    if (interaction.isButton()) {
+      await buttonHandler(interaction);
+      return;
+    }
+
+    if (interaction.isStringSelectMenu()) {
+      await selectMenuHandler(interaction);
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) {
       return;
     }
@@ -39,15 +54,14 @@ export async function interactionCreateEvent(
       command: interaction.isCommand() ? interaction.commandName : "unknown",
     });
 
-    const interactionWithError =
-      interaction as unknown as ChatInputCommandInteraction;
+    if (!interaction.isRepliable()) return;
 
-    if (interactionWithError.deferred || interactionWithError.replied) {
-      await interactionWithError.editReply({
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply({
         content: "There was an error while executing this command!",
       });
     } else {
-      await interactionWithError.reply({
+      await interaction.reply({
         content: "There was an error while executing this command!",
         flags: MessageFlags.Ephemeral,
       });
