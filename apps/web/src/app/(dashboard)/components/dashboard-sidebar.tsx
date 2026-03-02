@@ -19,11 +19,16 @@ import {
   Hash,
   Timer,
   Shield,
+  Gavel,
+  Flag,
   Music,
   ListMusic,
   Gift,
   BarChart3,
   ChevronRight,
+  FileText,
+  Clock,
+  ShieldCheck,
 } from "lucide-react";
 
 interface NavLink {
@@ -106,7 +111,38 @@ export function SidebarContent({
           href: "/dashboard/discord",
           label: "Settings",
           icon: MessageSquare,
+          exact: true,
           suffix: discordDot,
+        },
+        {
+          href: "/dashboard/discord/templates",
+          label: "Templates",
+          icon: FileText,
+        },
+        {
+          href: "/dashboard/discord/scheduled",
+          label: "Scheduled",
+          icon: Clock,
+        },
+        {
+          href: "/dashboard/discord/roles",
+          label: "Role Panels",
+          icon: ShieldCheck,
+        },
+        {
+          href: "/dashboard/discord/moderation",
+          label: "Moderation",
+          icon: Gavel,
+        },
+        {
+          href: "/dashboard/discord/custom-commands",
+          label: "Custom Commands",
+          icon: Terminal,
+        },
+        {
+          href: "/dashboard/discord/reports",
+          label: "Reports",
+          icon: Flag,
         },
       ],
     },

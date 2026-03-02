@@ -680,6 +680,86 @@ export const discordGuildRouter = router({
     return { success: true };
   }),
 
+  getLogConfig: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const guild = await prisma.discordGuild.findFirst({
+      where: { userId },
+    });
+
+    if (!guild) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No Discord server linked.",
+      });
+    }
+
+    const config = await prisma.discordLogConfig.findUnique({
+      where: { guildId: guild.guildId },
+    });
+
+    return {
+      moderationChannelId: config?.moderationChannelId ?? null,
+      serverChannelId: config?.serverChannelId ?? null,
+      voiceChannelId: config?.voiceChannelId ?? null,
+    };
+  }),
+
+  setLogConfig: leadModProcedure
+    .input(
+      z.object({
+        moderationChannelId: z.string().nullable(),
+        serverChannelId: z.string().nullable(),
+        voiceChannelId: z.string().nullable(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const guild = await prisma.discordGuild.findFirst({
+        where: { userId },
+      });
+
+      if (!guild) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No Discord server linked.",
+        });
+      }
+
+      await prisma.discordLogConfig.upsert({
+        where: { guildId: guild.guildId },
+        create: {
+          guildId: guild.guildId,
+          moderationChannelId: input.moderationChannelId,
+          serverChannelId: input.serverChannelId,
+          voiceChannelId: input.voiceChannelId,
+        },
+        update: {
+          moderationChannelId: input.moderationChannelId,
+          serverChannelId: input.serverChannelId,
+          voiceChannelId: input.voiceChannelId,
+        },
+      });
+
+      const { eventBus } = await import("../events");
+      await eventBus.publish("discord:log-config-updated", {
+        guildId: guild.guildId,
+      });
+
+      await logAudit({
+        userId,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "discord.set-log-config",
+        resourceType: "DiscordLogConfig",
+        resourceId: guild.guildId,
+        metadata: input,
+      });
+
+      return { success: true };
+    }),
+
   testNotification: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 

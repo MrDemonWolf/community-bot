@@ -1,0 +1,237 @@
+import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
+import type { ChatInputCommandInteraction } from "discord.js";
+
+import logger from "../../utils/logger.js";
+
+const BRAND_COLOR = 0x00aced;
+
+interface HelpTopic {
+  title: string;
+  description: string;
+  fields: { name: string; value: string; inline?: boolean }[];
+}
+
+const topics: Record<string, HelpTopic> = {
+  twitch: {
+    title: "Twitch Notifications",
+    description: "Monitor Twitch channels and get live notifications in Discord.",
+    fields: [
+      {
+        name: "/twitch add <username>",
+        value: "Add a Twitch channel to monitor for live notifications.",
+      },
+      {
+        name: "/twitch remove <username>",
+        value: "Stop monitoring a Twitch channel.",
+      },
+      {
+        name: "/twitch list",
+        value: "List all monitored channels and current config.",
+      },
+      {
+        name: "/twitch notifications set-channel <channel>",
+        value: "Set the channel where live notifications are sent.",
+      },
+      {
+        name: "/twitch notifications set-role <role>",
+        value: "Set the role to mention when a stream goes live.",
+      },
+    ],
+  },
+  quote: {
+    title: "Quotes",
+    description: "Save and recall memorable quotes from your community.",
+    fields: [
+      { name: "/quote show [number]", value: "Show a random quote or a specific quote by number." },
+      { name: "/quote add <text>", value: "Add a new quote." },
+      { name: "/quote remove <number>", value: "Remove a quote by number." },
+      { name: "/quote search <query>", value: "Search quotes by keyword." },
+    ],
+  },
+  config: {
+    title: "Server Configuration",
+    description: "Configure logging channels, thresholds, and server settings.",
+    fields: [
+      {
+        name: "/config log set-moderation <channel>",
+        value: "Set the channel for moderation logs (bans, kicks, warns, mutes).",
+      },
+      {
+        name: "/config log set-server <channel>",
+        value: "Set the channel for server event logs (channel/role changes).",
+      },
+      {
+        name: "/config log set-voice <channel>",
+        value: "Set the channel for voice activity logs.",
+      },
+      { name: "/config log view", value: "View current log channel configuration." },
+      {
+        name: "/config thresholds set <count> <action> [duration]",
+        value: "Set an auto-escalation action at a warning count.",
+      },
+      {
+        name: "/config thresholds clear <count>",
+        value: "Remove a warning threshold.",
+      },
+      {
+        name: "/config thresholds list",
+        value: "List all configured warning thresholds.",
+      },
+    ],
+  },
+  roles: {
+    title: "Role Panels",
+    description: "Create self-assignable role panels with buttons or select menus.",
+    fields: [
+      { name: "/roles panel create <name>", value: "Create a new role panel." },
+      { name: "/roles panel delete <name>", value: "Delete a role panel." },
+      { name: "/roles panel list", value: "List all role panels." },
+      { name: "/roles button add <panel> <role> <label>", value: "Add a role button to a panel." },
+      { name: "/roles button remove <panel> <role>", value: "Remove a role button from a panel." },
+      { name: "/roles post <panel> [channel]", value: "Post a role panel to a channel." },
+      { name: "/roles refresh <panel>", value: "Refresh an already-posted panel." },
+    ],
+  },
+  template: {
+    title: "Message Templates",
+    description: "Create and manage reusable message templates.",
+    fields: [
+      { name: "/template create <name>", value: "Create a new message template." },
+      { name: "/template edit <name>", value: "Edit an existing template." },
+      { name: "/template delete <name>", value: "Delete a template." },
+      { name: "/template list", value: "List all templates." },
+      { name: "/template preview <name>", value: "Preview a template with variable substitution." },
+      { name: "/template send <name> [channel]", value: "Send a template to a channel." },
+    ],
+  },
+  mod: {
+    title: "Moderation",
+    description: "Moderate your server with bans, kicks, warns, mutes, and case tracking.",
+    fields: [
+      { name: "/mod ban <user> [reason]", value: "Ban a user from the server." },
+      { name: "/mod tempban <user> <duration> [reason]", value: "Temporarily ban a user (duration in minutes)." },
+      { name: "/mod kick <user> [reason]", value: "Kick a user from the server." },
+      { name: "/mod warn <user> <reason>", value: "Warn a user. Warnings can trigger auto-escalation." },
+      { name: "/mod mute <user> <duration> [reason]", value: "Timeout a user (duration in minutes, max 28 days)." },
+      { name: "/mod unban <user-id> [reason]", value: "Unban a user and resolve their ban case." },
+      { name: "/mod unmute <user> [reason]", value: "Remove timeout from a user." },
+      { name: "/mod unwarn <user> [reason]", value: "Remove the latest active warning from a user." },
+    ],
+  },
+  case: {
+    title: "Case Management",
+    description: "Look up and manage moderation cases.",
+    fields: [
+      { name: "/case lookup <number>", value: "View details of a specific case." },
+      { name: "/case list [user] [type]", value: "List recent cases with optional filters." },
+      { name: "/case note <number> <content>", value: "Add a note to a case." },
+      { name: "/case search <query>", value: "Search cases by reason text." },
+    ],
+  },
+  cc: {
+    title: "Custom Commands",
+    description: "Create and manage custom slash commands for your server.",
+    fields: [
+      { name: "/cc run <name>", value: "Run a custom command." },
+      { name: "/cc create <name> <response>", value: "Create a new custom command." },
+      { name: "/cc edit <name>", value: "Edit an existing custom command." },
+      { name: "/cc delete <name>", value: "Delete a custom command." },
+      { name: "/cc list", value: "List all custom commands." },
+      { name: "/cc toggle <name>", value: "Enable or disable a custom command." },
+    ],
+  },
+  report: {
+    title: "User Reports",
+    description: "Report users and manage reports.",
+    fields: [
+      { name: "/report user <user> <reason>", value: "Report a user to the moderators." },
+      { name: "/report status <id> <status>", value: "Update a report's status (mod only)." },
+      { name: "/report list [status] [target]", value: "List reports with optional filters (mod only)." },
+    ],
+  },
+  data: {
+    title: "Data Privacy",
+    description: "Manage your personal data stored by the bot.",
+    fields: [
+      { name: "/data export", value: "Export all data the bot has about you in this server." },
+      { name: "/data delete", value: "Request deletion of your data (moderation cases excluded)." },
+    ],
+  },
+  schedule: {
+    title: "Scheduled Messages",
+    description: "Schedule one-time or recurring messages.",
+    fields: [
+      { name: "/schedule create <name>", value: "Create a scheduled message." },
+      { name: "/schedule edit <name>", value: "Edit a scheduled message." },
+      { name: "/schedule delete <name>", value: "Delete a scheduled message." },
+      { name: "/schedule list", value: "List all scheduled messages." },
+      { name: "/schedule enable <name>", value: "Enable a scheduled message." },
+      { name: "/schedule disable <name>", value: "Disable a scheduled message." },
+    ],
+  },
+};
+
+const topicChoices = Object.keys(topics).map((key) => ({
+  name: key,
+  value: key,
+}));
+
+export const helpCommand = new SlashCommandBuilder()
+  .setName("help")
+  .setDescription("Get help with bot commands and features")
+  .addStringOption((opt) =>
+    opt
+      .setName("topic")
+      .setDescription("Specific topic to get help with")
+      .setRequired(false)
+      .addChoices(...topicChoices)
+  ) as SlashCommandBuilder;
+
+export async function handleHelpCommand(
+  interaction: ChatInputCommandInteraction
+): Promise<void> {
+  const username = interaction.user.username;
+  const userId = interaction.user.id;
+
+  try {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    const topic = interaction.options.getString("topic");
+
+    if (topic && topics[topic]) {
+      const t = topics[topic];
+      const embed = new EmbedBuilder()
+        .setTitle(t.title)
+        .setDescription(t.description)
+        .addFields(t.fields)
+        .setColor(BRAND_COLOR)
+        .setFooter({ text: "Use /help to see all available topics" });
+
+      await interaction.editReply({ embeds: [embed] });
+      logger.commands.success("help", username, userId);
+      return;
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle("Bot Help")
+      .setDescription(
+        "Here are the available command groups. Use `/help topic:<name>` for detailed help on each."
+      )
+      .addFields(
+        Object.entries(topics).map(([key, t]) => ({
+          name: `\`${key}\` — ${t.title}`,
+          value: t.description,
+        }))
+      )
+      .setColor(BRAND_COLOR)
+      .setFooter({ text: "More features coming soon!" });
+
+    await interaction.editReply({ embeds: [embed] });
+    logger.commands.success("help", username, userId);
+  } catch (error) {
+    logger.commands.error("help", username, userId, error);
+    await interaction.editReply({
+      content: "An error occurred while fetching help.",
+    });
+  }
+}

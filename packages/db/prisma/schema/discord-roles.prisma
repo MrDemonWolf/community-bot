@@ -1,0 +1,35 @@
+model DiscordRolePanel {
+  id        String              @id @default(uuid())
+  guildId   String
+  name      String
+  channelId String?
+  messageId String?
+  title     String?
+  description String?
+  useMenu   Boolean             @default(false)
+  createdBy String
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  buttons   DiscordRoleButton[]
+
+  @@unique([guildId, name])
+  @@index([guildId])
+}
+
+model DiscordRoleButton {
+  id        String   @id @default(uuid())
+  panelId   String
+  roleId    String
+  label     String
+  emoji     String?
+  style     Int      @default(1)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  panel DiscordRolePanel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@unique([panelId, roleId])
+  @@index([panelId])
+}

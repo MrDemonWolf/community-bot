@@ -15,6 +15,7 @@ import setActivity from "./jobs/setActivity.js";
 import checkTwitchStreams from "./jobs/checkTwitchStreams.js";
 import cleanupInactiveAccounts from "./jobs/cleanupInactiveAccounts.js";
 import syncTwitchLinks from "./jobs/syncTwitchLinks.js";
+import sendScheduledMessage from "./jobs/sendScheduledMessage.js";
 
 const worker = new Worker(
   "community-bot-jobs",
@@ -28,6 +29,8 @@ const worker = new Worker(
         return cleanupInactiveAccounts();
       case "sync-twitch-links":
         return syncTwitchLinks();
+      case "send-scheduled-message":
+        return sendScheduledMessage(client);
       default:
         throw new Error(`No job found with name ${job.name}`);
     }
@@ -100,6 +103,18 @@ export default (queue: Queue) => {
     }
   );
 
+  queue.add(
+    "send-scheduled-message",
+    {},
+    {
+      repeat: {
+        every: 60 * 1000, // Every 60 seconds
+      },
+      removeOnComplete: true,
+      removeOnFail: false,
+    }
+  );
+
   logger.info("Worker", "Jobs have been added to the queue", {
     activityCron: cronToText(
       `*/${env.DISCORD_ACTIVITY_INTERVAL_MINUTES} * * * *`
@@ -107,5 +122,6 @@ export default (queue: Queue) => {
     twitchPollInterval: "Every 90 seconds",
     cleanupSchedule: "Daily at 3:00 AM",
     syncTwitchLinksSchedule: "Daily at 4:00 AM",
+    scheduledMessages: "Every 60 seconds",
   });
 };
