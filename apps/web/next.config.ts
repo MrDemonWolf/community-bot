@@ -6,7 +6,7 @@ function getGitSha(): string {
 	try {
 		return execSync("git rev-parse --short HEAD").toString().trim();
 	} catch {
-		return "unknown";
+		return "";
 	}
 }
 

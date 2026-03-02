@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardLoading() {
   return (
-    <div className="flex h-svh flex-col">
+    <div className="flex h-svh flex-col animate-fade-in">
       {/* Header placeholder */}
       <div className="flex h-14 shrink-0 items-center border-b border-border bg-card px-4">
         <Skeleton className="h-6 w-32" />

@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPageLoading() {
   return (
-    <div>
+    <div className="animate-fade-in">
       <Skeleton className="mb-6 h-8 w-48" />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         {/* Audit log skeleton */}
