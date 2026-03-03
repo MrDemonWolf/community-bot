@@ -31,6 +31,8 @@ async function poll(
   getAccessToken: () => Promise<string>,
   eventBus?: EventBus
 ): Promise<void> {
+  // Ensure channel is registered before any I/O so cron always retries on failure
+  const status = getOrCreate(channelName);
   try {
     const accessToken = await getAccessToken();
     const url = `${HELIX_STREAMS_URL}?user_login=${encodeURIComponent(channelName)}`;
@@ -48,7 +50,6 @@ async function poll(
 
     const data = (await res.json()) as { data?: Array<{ title?: string; game_name?: string; started_at: string }> };
     const stream = data.data?.[0];
-    const status = getOrCreate(channelName);
     const wasLive = status.live;
 
     if (stream) {
@@ -175,8 +176,9 @@ export async function start(
 
   // Poll every 60 seconds — iterate channelStatuses so dynamically added channels are included
   cron.schedule("* * * * *", () => {
+    if (!pollingConfig) return;
     for (const channel of channelStatuses.keys()) {
-      poll(channel, clientId, getAccessToken, eventBus);
+      poll(channel, pollingConfig.clientId, pollingConfig.getAccessToken, pollingConfig.eventBus);
     }
   });
 
@@ -186,14 +188,9 @@ export async function start(
   logger.info("StreamStatus", `Polling started for ${channels.length} channel(s) (${statuses.join(", ")})`);
 }
 
-export function addChannel(
-  channel: string,
-  clientId: string,
-  getAccessToken: () => Promise<string>,
-  eventBus?: EventBus
-): void {
-  if (!channelStatuses.has(channel)) {
-    poll(channel, clientId, getAccessToken, eventBus);
+export function addChannel(channel: string): void {
+  if (!channelStatuses.has(channel) && pollingConfig) {
+    poll(channel, pollingConfig.clientId, pollingConfig.getAccessToken, pollingConfig.eventBus);
   }
 }
 

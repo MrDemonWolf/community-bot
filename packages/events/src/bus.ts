@@ -33,9 +33,12 @@ export class EventBus {
 
       for (const fn of fns) {
         try {
-          fn(payload);
+          const result = fn(payload);
+          if (result && typeof (result as any).catch === "function") {
+            (result as any).catch(() => { /* isolate async handler errors */ });
+          }
         } catch {
-          // isolate handler errors so one failing handler doesn't block others
+          // isolate sync handler errors so one failing handler doesn't block others
         }
       }
     });

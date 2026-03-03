@@ -278,7 +278,6 @@ export async function removeByUser(
 
   // Delete all user entries and reorder in a single transaction
   const ids = entries.map((e) => e.id);
-  const minPosition = entries[entries.length - 1].position; // entries sorted desc
   await prisma.$transaction([
     prisma.songRequest.deleteMany({ where: { id: { in: ids } } }),
     prisma.$executeRawUnsafe(

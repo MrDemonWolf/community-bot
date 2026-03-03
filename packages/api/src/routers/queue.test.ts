@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         if (prop === "$transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
-        else if (prop === "$executeRawUnsafe") target[prop] = vi.fn();
+        else if (prop === "$executeRawUnsafe" || prop === "$executeRaw") target[prop] = vi.fn();
         else target[prop] = new Proxy({} as Record<string, any>, {
           get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
         });
@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => {
   return { prisma: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma, QueueStatus: { OPEN: "OPEN", CLOSED: "CLOSED", PAUSED: "PAUSED" } }));
+vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma, QueueStatus: { OPEN: "OPEN", CLOSED: "CLOSED", PAUSED: "PAUSED" }, Prisma: { sql: (strings: TemplateStringsArray, ...values: any[]) => ({ strings, values }) } }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
@@ -96,7 +96,7 @@ describe("queueRouter", () => {
       p.queueEntry.delete.mockResolvedValue({});
       const result = await caller.removeEntry({ id: UUID });
       expect(result.success).toBe(true);
-      expect(p.$executeRawUnsafe).toHaveBeenCalledWith(expect.stringContaining("position = position - 1"), 2);
+      expect(p.$executeRaw).toHaveBeenCalled();
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("queue:updated", { channelId: "singleton" });
     });
 

@@ -1,4 +1,4 @@
-import { prisma, QueueStatus } from "@community-bot/db";
+import { prisma, QueueStatus, Prisma } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -71,10 +71,7 @@ export const queueRouter = router({
 
       await prisma.$transaction([
         prisma.queueEntry.delete({ where: { id: input.id } }),
-        prisma.$executeRawUnsafe(
-          `UPDATE "QueueEntry" SET position = position - 1 WHERE position > $1`,
-          entry.position
-        ),
+        prisma.$executeRaw(Prisma.sql`UPDATE "QueueEntry" SET position = position - 1 WHERE position > ${entry.position}`),
       ]);
 
       await logAudit({
@@ -125,10 +122,7 @@ export const queueRouter = router({
 
       await prisma.$transaction([
         prisma.queueEntry.delete({ where: { id: entry.id } }),
-        prisma.$executeRawUnsafe(
-          `UPDATE "QueueEntry" SET position = position - 1 WHERE position > $1`,
-          entry.position
-        ),
+        prisma.$executeRaw(Prisma.sql`UPDATE "QueueEntry" SET position = position - 1 WHERE position > ${entry.position}`),
       ]);
 
       await logAudit({

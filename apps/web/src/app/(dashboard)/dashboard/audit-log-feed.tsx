@@ -15,6 +15,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "lucide-react";
 import { getRoleDisplay } from "@/utils/roles";
 
+function normalizeMetadataValue(value: unknown): string {
+  if (value == null) return "unknown";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
 function getActionDescription(
   action: string,
   metadata: Record<string, unknown> | null
@@ -31,19 +37,19 @@ function getActionDescription(
     case "bot.command-toggles":
       return "updated command toggles";
     case "bot.command-access-level":
-      return `changed access level for !${metadata?.commandName ?? "unknown"}`;
+      return `changed access level for !${normalizeMetadataValue(metadata?.commandName)}`;
     case "command.create":
-      return `created command !${metadata?.name ?? "unknown"}`;
+      return `created command !${normalizeMetadataValue(metadata?.name)}`;
     case "command.update":
-      return `updated command !${metadata?.name ?? "unknown"}`;
+      return `updated command !${normalizeMetadataValue(metadata?.name)}`;
     case "command.delete":
-      return `deleted command !${metadata?.name ?? "unknown"}`;
+      return `deleted command !${normalizeMetadataValue(metadata?.name)}`;
     case "command.toggle":
-      return `toggled command !${metadata?.name ?? "unknown"}`;
+      return `toggled command !${normalizeMetadataValue(metadata?.name)}`;
     case "regular.add":
-      return `added ${metadata?.twitchUsername ?? "someone"} as a regular`;
+      return `added ${normalizeMetadataValue(metadata?.twitchUsername)} as a regular`;
     case "regular.remove":
-      return `removed ${metadata?.twitchUsername ?? "someone"} from regulars`;
+      return `removed ${normalizeMetadataValue(metadata?.twitchUsername)} from regulars`;
     case "import.streamelements":
       return `imported ${metadata?.imported ?? 0} commands from StreamElements`;
     case "discord.link":
@@ -69,25 +75,25 @@ function getActionDescription(
     case "quote.delete":
       return `deleted quote #${metadata?.number ?? "?"}`;
     case "counter.create":
-      return `created counter "${metadata?.name ?? "unknown"}"`;
+      return `created counter "${normalizeMetadataValue(metadata?.name)}"`;
     case "counter.update":
-      return `updated counter "${metadata?.name ?? "unknown"}"`;
+      return `updated counter "${normalizeMetadataValue(metadata?.name)}"`;
     case "counter.delete":
-      return `deleted counter "${metadata?.name ?? "unknown"}"`;
+      return `deleted counter "${normalizeMetadataValue(metadata?.name)}"`;
     case "timer.create":
-      return `created timer "${metadata?.name ?? "unknown"}"`;
+      return `created timer "${normalizeMetadataValue(metadata?.name)}"`;
     case "timer.update":
-      return `updated timer "${metadata?.name ?? "unknown"}"`;
+      return `updated timer "${normalizeMetadataValue(metadata?.name)}"`;
     case "timer.delete":
-      return `deleted timer "${metadata?.name ?? "unknown"}"`;
+      return `deleted timer "${normalizeMetadataValue(metadata?.name)}"`;
     case "timer.toggle":
-      return `toggled timer "${metadata?.name ?? "unknown"}"`;
+      return `toggled timer "${normalizeMetadataValue(metadata?.name)}"`;
     case "spam-filter.update":
       return "updated spam filter settings";
     case "song-request.skip":
-      return `skipped song "${metadata?.title ?? "unknown"}"`;
+      return `skipped song "${normalizeMetadataValue(metadata?.title)}"`;
     case "song-request.remove":
-      return `removed song "${metadata?.title ?? "unknown"}"`;
+      return `removed song "${normalizeMetadataValue(metadata?.title)}"`;
     case "song-request.clear":
       return "cleared the song request queue";
     case "song-request.settings-update":

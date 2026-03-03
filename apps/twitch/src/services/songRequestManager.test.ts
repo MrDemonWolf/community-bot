@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => {
   const handler: ProxyHandler<Record<string, any>> = {
     get(target, prop: string) {
       if (!target[prop]) {
-        if (prop === "$transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
+        if (prop === "$transaction") target[prop] = vi.fn(async (arg: any) => typeof arg === "function" ? arg(new Proxy(mp, handler)) : Promise.all(arg));
         else if (prop === "$executeRawUnsafe") target[prop] = vi.fn();
         else target[prop] = new Proxy({} as Record<string, any>, {
           get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },

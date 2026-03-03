@@ -97,7 +97,7 @@ export function listenWithFallback(
 ): Promise<Server> {
   const { port, host, name } = options;
 
-  return new Promise<Server>((resolve) => {
+  return new Promise<Server>((resolve, reject) => {
     const server = app.listen(port, host, () => {
       const addr = server.address();
       const actualPort = typeof addr === "object" && addr ? addr.port : port;
@@ -131,7 +131,7 @@ export function listenWithFallback(
             message: `[${name} API] Failed to start server: ${fallbackErr.message}`,
             badge: true,
           });
-          process.exit(1);
+          reject(fallbackErr);
         });
 
         return;
@@ -141,7 +141,7 @@ export function listenWithFallback(
         message: `[${name} API] Server error: ${err.message}`,
         badge: true,
       });
-      process.exit(1);
+      reject(err);
     });
   });
 }

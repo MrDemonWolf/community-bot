@@ -148,7 +148,7 @@ export default function CustomCommandsTab() {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+        <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">

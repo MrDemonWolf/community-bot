@@ -160,17 +160,11 @@ export async function ensureGuildExists(client: Client) {
  * Returns true if the guild already existed, false if it was just created.
  */
 export async function ensureGuild(guildId: string) {
-  const existing = await prisma.discordGuild.findUnique({
-    where: { guildId },
+  const { count } = await prisma.discordGuild.createMany({
+    data: [{ guildId }],
+    skipDuplicates: true,
   });
-
-  if (!existing) {
-    await prisma.discordGuild.create({
-      data: { guildId },
-    });
-    return false;
-  }
-  return true;
+  return count === 0; // true if already existed
 }
 
 export async function syncGuildMetadata(client: Client) {
