@@ -23,11 +23,23 @@ export class EventBus {
       const eventName = channel.replace(`${this.prefix}:`, "");
       const fns = this.handlers.get(eventName);
       if (!fns) return;
+
+      let payload: unknown;
       try {
-        const payload = JSON.parse(message);
-        for (const fn of fns) fn(payload);
+        payload = JSON.parse(message);
       } catch {
-        /* ignore malformed messages */
+        return; // ignore malformed JSON
+      }
+
+      for (const fn of fns) {
+        try {
+          const result = fn(payload);
+          if (result && typeof (result as any).catch === "function") {
+            (result as any).catch(() => { /* isolate async handler errors */ });
+          }
+        } catch {
+          // isolate sync handler errors so one failing handler doesn't block others
+        }
       }
     });
   }

@@ -216,12 +216,7 @@ async function main() {
   await eventBus.on("channel:join", async (payload) => {
     logger.info("EventBus", `Joining channel: ${payload.username}`);
     chatClient.join(payload.username);
-    streamStatusManager.addChannel(
-      payload.username,
-      env.TWITCH_APPLICATION_CLIENT_ID,
-      getAccessToken,
-      eventBus
-    );
+    streamStatusManager.addChannel(payload.username);
     await timerManager.loadTimers(payload.username);
     await spamFilter.loadSpamFilter(payload.username);
     await songRequestManager.loadSettings(payload.username);

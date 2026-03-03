@@ -28,16 +28,7 @@ export const botChannelRouter = router({
     return {
       hasTwitchLinked: !!twitchAccount,
       hasDiscordLinked: !!discordAccount,
-      twitchUsername: twitchAccount
-        ? (
-            await prisma.user.findUnique({
-              where: { id: userId },
-              include: {
-                accounts: { where: { providerId: "twitch" } },
-              },
-            })
-          )?.accounts[0]?.accountId ?? null
-        : null,
+      twitchUsername: twitchAccount?.accountId ?? null,
       botChannel: botChannel
         ? {
             id: botChannel.id,

@@ -58,7 +58,7 @@ Zod-validated environment variables using `@t3-oss/env-core`. Each app has its o
 Shared Express API server configuration used by both bots. Provides:
 
 - `createApiServer(options)` — Creates a configured Express app with helmet, cors, morgan, and health check middleware
-- `listenWithFallback(app, options)` — Starts the server with automatic port fallback on EADDRINUSE
+- `listenWithFallback(app, options)` — Starts the server with automatic port fallback on EADDRINUSE, returns `Promise<Server>`
 
 ### `@community-bot/api`
 

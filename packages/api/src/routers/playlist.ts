@@ -3,21 +3,7 @@ import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
-
-async function getUserBotChannel(userId: string) {
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId },
-  });
-
-  if (!botChannel || !botChannel.enabled) {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message: "Bot is not enabled for your channel.",
-    });
-  }
-
-  return botChannel;
-}
+import { getUserBotChannel } from "../utils/botChannel";
 
 export const playlistRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -307,14 +293,14 @@ export const playlistRouter = router({
         });
       }
 
-      await prisma.playlistEntry.delete({ where: { id: input.id } });
-
-      // Reorder positions
-      await prisma.$executeRawUnsafe(
-        `UPDATE "PlaylistEntry" SET position = position - 1 WHERE "playlistId" = $1 AND position > $2`,
-        entry.playlistId,
-        entry.position
-      );
+      await prisma.$transaction([
+        prisma.playlistEntry.delete({ where: { id: input.id } }),
+        prisma.$executeRawUnsafe(
+          `UPDATE "PlaylistEntry" SET position = position - 1 WHERE "playlistId" = $1 AND position > $2`,
+          entry.playlistId,
+          entry.position
+        ),
+      ]);
 
       const { eventBus } = await import("../events");
       await eventBus.publish("playlist:updated", {

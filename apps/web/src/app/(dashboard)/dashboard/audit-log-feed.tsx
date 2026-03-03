@@ -15,6 +15,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "lucide-react";
 import { getRoleDisplay } from "@/utils/roles";
 
+function normalizeMetadataValue(value: unknown): string {
+  if (value == null) return "unknown";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
 function getActionDescription(
   action: string,
   metadata: Record<string, unknown> | null
@@ -31,19 +37,19 @@ function getActionDescription(
     case "bot.command-toggles":
       return "updated command toggles";
     case "bot.command-access-level":
-      return `changed access level for !${metadata?.commandName ?? "unknown"}`;
+      return `changed access level for !${normalizeMetadataValue(metadata?.commandName)}`;
     case "command.create":
-      return `created command !${metadata?.name ?? "unknown"}`;
+      return `created command !${normalizeMetadataValue(metadata?.name)}`;
     case "command.update":
-      return `updated command !${metadata?.name ?? "unknown"}`;
+      return `updated command !${normalizeMetadataValue(metadata?.name)}`;
     case "command.delete":
-      return `deleted command !${metadata?.name ?? "unknown"}`;
+      return `deleted command !${normalizeMetadataValue(metadata?.name)}`;
     case "command.toggle":
-      return `toggled command !${metadata?.name ?? "unknown"}`;
+      return `toggled command !${normalizeMetadataValue(metadata?.name)}`;
     case "regular.add":
-      return `added ${metadata?.twitchUsername ?? "someone"} as a regular`;
+      return `added ${normalizeMetadataValue(metadata?.twitchUsername)} as a regular`;
     case "regular.remove":
-      return `removed ${metadata?.twitchUsername ?? "someone"} from regulars`;
+      return `removed ${normalizeMetadataValue(metadata?.twitchUsername)} from regulars`;
     case "import.streamelements":
       return `imported ${metadata?.imported ?? 0} commands from StreamElements`;
     case "discord.link":
@@ -56,8 +62,48 @@ function getActionDescription(
       return "enabled Discord notifications";
     case "discord.disable":
       return "disabled Discord notifications";
-    default:
+    case "discord.add-channel":
+      return "added a monitored Twitch channel to Discord";
+    case "discord.remove-channel":
+      return "removed a monitored Twitch channel from Discord";
+    case "bot.ai-shoutout-enable":
+      return "enabled AI-enhanced shoutouts";
+    case "bot.ai-shoutout-disable":
+      return "disabled AI-enhanced shoutouts";
+    case "quote.create":
+      return `added quote #${metadata?.number ?? "?"}`;
+    case "quote.delete":
+      return `deleted quote #${metadata?.number ?? "?"}`;
+    case "counter.create":
+      return `created counter "${normalizeMetadataValue(metadata?.name)}"`;
+    case "counter.update":
+      return `updated counter "${normalizeMetadataValue(metadata?.name)}"`;
+    case "counter.delete":
+      return `deleted counter "${normalizeMetadataValue(metadata?.name)}"`;
+    case "timer.create":
+      return `created timer "${normalizeMetadataValue(metadata?.name)}"`;
+    case "timer.update":
+      return `updated timer "${normalizeMetadataValue(metadata?.name)}"`;
+    case "timer.delete":
+      return `deleted timer "${normalizeMetadataValue(metadata?.name)}"`;
+    case "timer.toggle":
+      return `toggled timer "${normalizeMetadataValue(metadata?.name)}"`;
+    case "spam-filter.update":
+      return "updated spam filter settings";
+    case "song-request.skip":
+      return `skipped song "${normalizeMetadataValue(metadata?.title)}"`;
+    case "song-request.remove":
+      return `removed song "${normalizeMetadataValue(metadata?.title)}"`;
+    case "song-request.clear":
+      return "cleared the song request queue";
+    case "song-request.settings-update":
+      return "updated song request settings";
+    default: {
+      // Convert dot-separated actions to readable text (e.g., "playlist.create" → "created a playlist")
+      const parts = action.split(".");
+      if (parts.length === 2) return `${parts[1]} ${parts[0]}`;
       return action;
+    }
   }
 }
 

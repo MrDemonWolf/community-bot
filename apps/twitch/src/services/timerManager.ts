@@ -64,7 +64,7 @@ async function fireTimer(channel: string, timer: ActiveTimer): Promise<void> {
         user: "",
         channel: `#${channelKey}`,
         args: [],
-        msg: null as any,
+        msg: { userInfo: { userId: "", displayName: "", isMod: false, isBroadcaster: false, isVip: false, isSubscriber: false } } as any,
       });
     } catch {
       // Fall back to raw message if substitution fails
