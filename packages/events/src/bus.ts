@@ -33,9 +33,9 @@ export class EventBus {
 
       for (const fn of fns) {
         try {
-          const result = fn(payload);
-          if (result && typeof (result as any).catch === "function") {
-            (result as any).catch(() => { /* isolate async handler errors */ });
+          const result: unknown = fn(payload);
+          if (result && typeof (result as { catch?: Function }).catch === "function") {
+            (result as Promise<unknown>).catch(() => { /* isolate async handler errors */ });
           }
         } catch {
           // isolate sync handler errors so one failing handler doesn't block others
