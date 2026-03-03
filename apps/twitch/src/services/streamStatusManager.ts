@@ -157,20 +157,25 @@ export function getGamesPlayed(channel?: string): string {
   return channelStatuses.get(channel)?.gamesPlayed.join(", ") ?? "";
 }
 
+// Store polling config so addChannel can participate in cron polling
+let pollingConfig: { clientId: string; getAccessToken: () => Promise<string>; eventBus?: EventBus } | null = null;
+
 export async function start(
   channels: string[],
   clientId: string,
   getAccessToken: () => Promise<string>,
   eventBus?: EventBus
 ): Promise<void> {
+  pollingConfig = { clientId, getAccessToken, eventBus };
+
   // Initial fetch for all channels
   for (const channel of channels) {
     await poll(channel, clientId, getAccessToken, eventBus);
   }
 
-  // Poll every 60 seconds
+  // Poll every 60 seconds — iterate channelStatuses so dynamically added channels are included
   cron.schedule("* * * * *", () => {
-    for (const channel of channels) {
+    for (const channel of channelStatuses.keys()) {
       poll(channel, clientId, getAccessToken, eventBus);
     }
   });

@@ -56,8 +56,48 @@ function getActionDescription(
       return "enabled Discord notifications";
     case "discord.disable":
       return "disabled Discord notifications";
-    default:
+    case "discord.add-channel":
+      return "added a monitored Twitch channel to Discord";
+    case "discord.remove-channel":
+      return "removed a monitored Twitch channel from Discord";
+    case "bot.ai-shoutout-enable":
+      return "enabled AI-enhanced shoutouts";
+    case "bot.ai-shoutout-disable":
+      return "disabled AI-enhanced shoutouts";
+    case "quote.create":
+      return `added quote #${metadata?.number ?? "?"}`;
+    case "quote.delete":
+      return `deleted quote #${metadata?.number ?? "?"}`;
+    case "counter.create":
+      return `created counter "${metadata?.name ?? "unknown"}"`;
+    case "counter.update":
+      return `updated counter "${metadata?.name ?? "unknown"}"`;
+    case "counter.delete":
+      return `deleted counter "${metadata?.name ?? "unknown"}"`;
+    case "timer.create":
+      return `created timer "${metadata?.name ?? "unknown"}"`;
+    case "timer.update":
+      return `updated timer "${metadata?.name ?? "unknown"}"`;
+    case "timer.delete":
+      return `deleted timer "${metadata?.name ?? "unknown"}"`;
+    case "timer.toggle":
+      return `toggled timer "${metadata?.name ?? "unknown"}"`;
+    case "spam-filter.update":
+      return "updated spam filter settings";
+    case "song-request.skip":
+      return `skipped song "${metadata?.title ?? "unknown"}"`;
+    case "song-request.remove":
+      return `removed song "${metadata?.title ?? "unknown"}"`;
+    case "song-request.clear":
+      return "cleared the song request queue";
+    case "song-request.settings-update":
+      return "updated song request settings";
+    default: {
+      // Convert dot-separated actions to readable text (e.g., "playlist.create" → "created a playlist")
+      const parts = action.split(".");
+      if (parts.length === 2) return `${parts[1]} ${parts[0]}`;
       return action;
+    }
   }
 }
 

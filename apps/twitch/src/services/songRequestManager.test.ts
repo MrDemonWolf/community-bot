@@ -5,13 +5,11 @@ const mocks = vi.hoisted(() => {
   const handler: ProxyHandler<Record<string, any>> = {
     get(target, prop: string) {
       if (!target[prop]) {
-        if (prop === "$executeRawUnsafe") {
-          target[prop] = vi.fn();
-        } else {
-          target[prop] = new Proxy({} as Record<string, any>, {
-            get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-          });
-        }
+        if (prop === "$transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
+        else if (prop === "$executeRawUnsafe") target[prop] = vi.fn();
+        else target[prop] = new Proxy({} as Record<string, any>, {
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
+        });
       }
       return target[prop];
     },
@@ -399,7 +397,7 @@ describe("songRequestManager", () => {
         { id: "sr-1", position: 2 },
         { id: "sr-2", position: 5 },
       ]);
-      p.songRequest.delete.mockResolvedValue({});
+      p.songRequest.deleteMany.mockResolvedValue({ count: 2 });
 
       const count = await removeByUser("#testchannel", "viewer1");
       expect(count).toBe(2);

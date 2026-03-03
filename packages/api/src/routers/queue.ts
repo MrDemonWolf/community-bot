@@ -69,13 +69,13 @@ export const queueRouter = router({
         });
       }
 
-      await prisma.queueEntry.delete({ where: { id: input.id } });
-
-      // Reorder positions for entries after the removed one
-      await prisma.$executeRawUnsafe(
-        `UPDATE "QueueEntry" SET position = position - 1 WHERE position > $1`,
-        entry.position
-      );
+      await prisma.$transaction([
+        prisma.queueEntry.delete({ where: { id: input.id } }),
+        prisma.$executeRawUnsafe(
+          `UPDATE "QueueEntry" SET position = position - 1 WHERE position > $1`,
+          entry.position
+        ),
+      ]);
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -123,13 +123,13 @@ export const queueRouter = router({
         });
       }
 
-      await prisma.queueEntry.delete({ where: { id: entry.id } });
-
-      // Reorder positions
-      await prisma.$executeRawUnsafe(
-        `UPDATE "QueueEntry" SET position = position - 1 WHERE position > $1`,
-        entry.position
-      );
+      await prisma.$transaction([
+        prisma.queueEntry.delete({ where: { id: entry.id } }),
+        prisma.$executeRawUnsafe(
+          `UPDATE "QueueEntry" SET position = position - 1 WHERE position > $1`,
+          entry.position
+        ),
+      ]);
 
       await logAudit({
         userId: ctx.session.user.id,

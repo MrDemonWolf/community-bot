@@ -1,6 +1,18 @@
 const globalCooldowns = new Map<string, number>();
 const userCooldowns = new Map<string, number>();
 
+// Prune expired entries every 5 minutes to prevent unbounded growth
+const PRUNE_INTERVAL = 5 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, expiry] of globalCooldowns) {
+    if (now >= expiry) globalCooldowns.delete(key);
+  }
+  for (const [key, expiry] of userCooldowns) {
+    if (now >= expiry) userCooldowns.delete(key);
+  }
+}, PRUNE_INTERVAL).unref();
+
 export function resetCooldowns(): void {
   globalCooldowns.clear();
   userCooldowns.clear();
