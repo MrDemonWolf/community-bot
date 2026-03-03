@@ -3,21 +3,7 @@ import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
-
-async function getUserBotChannel(userId: string) {
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId },
-  });
-
-  if (!botChannel || !botChannel.enabled) {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message: "Bot is not enabled for your channel.",
-    });
-  }
-
-  return botChannel;
-}
+import { getUserBotChannel } from "../utils/botChannel";
 
 export const quoteRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {

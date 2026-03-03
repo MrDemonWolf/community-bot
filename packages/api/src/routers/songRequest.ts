@@ -3,21 +3,7 @@ import { publicProcedure, protectedProcedure, moderatorProcedure, router } from 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
-
-async function getUserBotChannel(userId: string) {
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId },
-  });
-
-  if (!botChannel || !botChannel.enabled) {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message: "Bot is not enabled for your channel.",
-    });
-  }
-
-  return botChannel;
-}
+import { getUserBotChannel } from "../utils/botChannel";
 
 async function getBroadcasterBotChannelId(): Promise<string | null> {
   const config = await prisma.systemConfig.findUnique({
@@ -85,12 +71,13 @@ export const songRequestRouter = router({
       });
     }
 
-    await prisma.songRequest.delete({ where: { id: entry.id } });
-
-    await prisma.$executeRawUnsafe(
-      `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > 1`,
-      botChannel.id
-    );
+    await prisma.$transaction([
+      prisma.songRequest.delete({ where: { id: entry.id } }),
+      prisma.$executeRawUnsafe(
+        `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > 1`,
+        botChannel.id
+      ),
+    ]);
 
     const { eventBus } = await import("../events");
     await eventBus.publish("song-request:updated", { channelId: botChannel.id });
@@ -124,13 +111,14 @@ export const songRequestRouter = router({
         });
       }
 
-      await prisma.songRequest.delete({ where: { id: input.id } });
-
-      await prisma.$executeRawUnsafe(
-        `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > $2`,
-        botChannel.id,
-        entry.position
-      );
+      await prisma.$transaction([
+        prisma.songRequest.delete({ where: { id: input.id } }),
+        prisma.$executeRawUnsafe(
+          `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > $2`,
+          botChannel.id,
+          entry.position
+        ),
+      ]);
 
       const { eventBus } = await import("../events");
       await eventBus.publish("song-request:updated", { channelId: botChannel.id });

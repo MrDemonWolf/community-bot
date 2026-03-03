@@ -4,23 +4,9 @@ import { z } from "zod";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
+import { getUserBotChannel } from "../utils/botChannel";
 
 const DEFAULT_COMMAND_NAMES = new Set(DEFAULT_COMMANDS.map((c) => c.name));
-
-async function getUserBotChannel(userId: string) {
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId },
-  });
-
-  if (!botChannel || !botChannel.enabled) {
-    throw new TRPCError({
-      code: "PRECONDITION_FAILED",
-      message: "Bot is not enabled for your channel.",
-    });
-  }
-
-  return botChannel;
-}
 
 export const chatCommandRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {

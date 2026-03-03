@@ -21,14 +21,14 @@ export default function DashboardHeader({
       <div className="flex items-center gap-3">
         {session && (
           <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground lg:hidden">
+            <SheetTrigger aria-label="Open navigation menu" className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground lg:hidden">
               <Menu className="h-5 w-5" />
             </SheetTrigger>
             <SheetContent>
               {/* Drawer header */}
               <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
                 <Logo className="text-lg font-bold tracking-tight" />
-                <SheetClose className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground">
+                <SheetClose aria-label="Close navigation menu" className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground">
                   <X className="h-4 w-4" />
                 </SheetClose>
               </div>

@@ -249,14 +249,14 @@ export async function removeRequest(
   });
   if (!entry) return false;
 
-  await prisma.songRequest.delete({ where: { id: entry.id } });
-
-  // Reorder positions
-  await prisma.$executeRawUnsafe(
-    `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > $2`,
-    botChannelId,
-    position
-  );
+  await prisma.$transaction([
+    prisma.songRequest.delete({ where: { id: entry.id } }),
+    prisma.$executeRawUnsafe(
+      `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > $2`,
+      botChannelId,
+      position
+    ),
+  ]);
 
   publishEvent(botChannelId);
   return true;
@@ -276,14 +276,20 @@ export async function removeByUser(
 
   if (entries.length === 0) return 0;
 
-  for (const entry of entries) {
-    await prisma.songRequest.delete({ where: { id: entry.id } });
-    await prisma.$executeRawUnsafe(
-      `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > $2`,
-      botChannelId,
-      entry.position
-    );
-  }
+  // Delete all user entries and reorder in a single transaction
+  const ids = entries.map((e) => e.id);
+  await prisma.$transaction([
+    prisma.songRequest.deleteMany({ where: { id: { in: ids } } }),
+    prisma.$executeRawUnsafe(
+      `WITH positions AS (
+        SELECT position FROM "SongRequest" WHERE "botChannelId" = $1 ORDER BY position
+      )
+      UPDATE "SongRequest" SET position = sub.row_num
+      FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY position) AS row_num FROM "SongRequest" WHERE "botChannelId" = $1) sub
+      WHERE "SongRequest".id = sub.id`,
+      botChannelId
+    ),
+  ]);
 
   publishEvent(botChannelId);
   return entries.length;
@@ -304,13 +310,13 @@ export async function skipRequest(
   });
   if (!entry) return null;
 
-  await prisma.songRequest.delete({ where: { id: entry.id } });
-
-  // Reorder positions
-  await prisma.$executeRawUnsafe(
-    `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > 1`,
-    botChannelId
-  );
+  await prisma.$transaction([
+    prisma.songRequest.delete({ where: { id: entry.id } }),
+    prisma.$executeRawUnsafe(
+      `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > 1`,
+      botChannelId
+    ),
+  ]);
 
   publishEvent(botChannelId);
 

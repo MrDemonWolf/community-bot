@@ -63,7 +63,7 @@ export function createApiServer(options: ServerOptions): Application {
       origin: nodeEnv === "production" ? corsOrigin : "*",
     })
   );
-  app.set("x-powered-by", "MrDemonWolf, Inc., Community Bot");
+  // Helmet disables X-Powered-By; no need to set it
 
   if (nodeEnv === "production") {
     app.use(morgan("combined", { skip: skipHealthChecks }));
@@ -94,52 +94,54 @@ export function createApiServer(options: ServerOptions): Application {
 export function listenWithFallback(
   app: Application,
   options: ListenOptions
-): Server {
+): Promise<Server> {
   const { port, host, name } = options;
 
-  const server = app.listen(port, host, () => {
-    const addr = server.address();
-    const actualPort = typeof addr === "object" && addr ? addr.port : port;
-    consola.ready({
-      message: `[${name} API] Listening on http://${host}:${actualPort}`,
-      badge: true,
-    });
-  });
-
-  server.on("error", (err: NodeJS.ErrnoException) => {
-    if (err.code === "EADDRINUSE") {
-      consola.warn({
-        message: `[${name} API] Port ${port} in use, trying random available port...`,
+  return new Promise<Server>((resolve, reject) => {
+    const server = app.listen(port, host, () => {
+      const addr = server.address();
+      const actualPort = typeof addr === "object" && addr ? addr.port : port;
+      consola.ready({
+        message: `[${name} API] Listening on http://${host}:${actualPort}`,
         badge: true,
       });
-
-      const fallback = app.listen(0, host, () => {
-        const addr = fallback.address();
-        const actualPort =
-          typeof addr === "object" && addr ? addr.port : "unknown";
-        consola.ready({
-          message: `[${name} API] Listening on http://${host}:${actualPort}`,
-          badge: true,
-        });
-      });
-
-      fallback.on("error", (fallbackErr: Error) => {
-        consola.error({
-          message: `[${name} API] Failed to start server: ${fallbackErr.message}`,
-          badge: true,
-        });
-        process.exit(1);
-      });
-
-      return;
-    }
-
-    consola.error({
-      message: `[${name} API] Server error: ${err.message}`,
-      badge: true,
+      resolve(server);
     });
-    process.exit(1);
-  });
 
-  return server;
+    server.on("error", (err: NodeJS.ErrnoException) => {
+      if (err.code === "EADDRINUSE") {
+        consola.warn({
+          message: `[${name} API] Port ${port} in use, trying random available port...`,
+          badge: true,
+        });
+
+        const fallback = app.listen(0, host, () => {
+          const addr = fallback.address();
+          const actualPort =
+            typeof addr === "object" && addr ? addr.port : "unknown";
+          consola.ready({
+            message: `[${name} API] Listening on http://${host}:${actualPort}`,
+            badge: true,
+          });
+          resolve(fallback);
+        });
+
+        fallback.on("error", (fallbackErr: Error) => {
+          consola.error({
+            message: `[${name} API] Failed to start server: ${fallbackErr.message}`,
+            badge: true,
+          });
+          reject(fallbackErr);
+        });
+
+        return;
+      }
+
+      consola.error({
+        message: `[${name} API] Server error: ${err.message}`,
+        badge: true,
+      });
+      reject(err);
+    });
+  });
 }
