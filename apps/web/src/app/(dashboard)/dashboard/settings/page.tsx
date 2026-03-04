@@ -12,27 +12,43 @@ import {
   Loader2,
   User,
   Sparkles,
+  LinkIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { getRoleDisplay, canManageCommands } from "@/utils/roles";
+import { PageHeader } from "@/components/page-header";
+import { Switch } from "@/components/ui/switch";
 
 const PROVIDER_INFO: Record<
   string,
-  { label: string; className: string; bgClassName: string }
+  {
+    label: string;
+    className: string;
+    bgClassName: string;
+    borderClassName: string;
+  }
 > = {
   twitch: {
     label: "Twitch",
     className: "text-brand-twitch",
     bgClassName: "bg-brand-twitch/10",
+    borderClassName: "border-l-brand-twitch",
   },
   discord: {
     label: "Discord",
     className: "text-brand-discord",
     bgClassName: "bg-brand-discord/10",
+    borderClassName: "border-l-brand-discord",
   },
 };
 
 type Tab = "account" | "features" | "data";
+
+const TABS: { value: Tab; label: string }[] = [
+  { value: "account", label: "Account" },
+  { value: "features", label: "Features" },
+  { value: "data", label: "Data" },
+];
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("account");
@@ -41,40 +57,23 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-foreground">Settings</h1>
+      <PageHeader title="Settings" />
 
-      {/* Tab bar */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-muted p-1">
-        <button
-          onClick={() => setActiveTab("account")}
-          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === "account"
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Account
-        </button>
-        <button
-          onClick={() => setActiveTab("features")}
-          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === "features"
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Features
-        </button>
-        <button
-          onClick={() => setActiveTab("data")}
-          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-            activeTab === "data"
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Data
-        </button>
+      {/* Pill-style tab bar */}
+      <div className="mb-6 flex gap-1 rounded-full bg-muted p-1">
+        {TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setActiveTab(tab.value)}
+            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === tab.value
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {activeTab === "account" ? (
@@ -106,75 +105,89 @@ function AccountTab() {
   const roleInfo = getRoleDisplay(profile.role, profile.isChannelOwner);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Profile card */}
       <Card>
-        <CardContent className="flex items-center gap-4">
+        <CardContent className="flex items-center gap-5 py-6">
           {profile.image ? (
             <Image
               src={profile.image}
               alt={profile.name}
               width={64}
               height={64}
-              className="rounded-full"
+              className="size-16 rounded-full ring-2 ring-border"
               unoptimized
             />
           ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-overlay">
-              <User className="h-8 w-8 text-muted-foreground" />
+            <div className="flex size-16 items-center justify-center rounded-full bg-surface-overlay ring-2 ring-border">
+              <User className="size-8 text-muted-foreground" />
             </div>
           )}
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-foreground">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2.5">
+              <h2 className="truncate text-lg font-bold text-foreground">
                 {profile.name}
               </h2>
               <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${roleInfo.className}`}
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${roleInfo.className}`}
               >
                 {roleInfo.label}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground/70">
+            <p className="mt-0.5 text-sm text-muted-foreground">
               Member since{" "}
-              {new Date(profile.createdAt).toLocaleDateString()}
+              {new Date(profile.createdAt).toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
             </p>
           </div>
         </CardContent>
       </Card>
 
       {/* Connected accounts */}
-      <Card>
-        <CardContent>
-          <h3 className="mb-4 text-sm font-semibold text-foreground">
+      <div>
+        <div className="mb-3 flex items-center gap-2">
+          <LinkIcon className="size-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold text-foreground">
             Connected Accounts
           </h3>
-          {profile.connectedAccounts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+        </div>
+        {profile.connectedAccounts.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
               No connected accounts.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {profile.connectedAccounts.map((account) => {
-                const info = PROVIDER_INFO[account.provider] ?? {
-                  label: account.provider,
-                  className: "text-foreground",
-                  bgClassName: "bg-muted",
-                };
-                return (
-                  <div
-                    key={account.provider}
-                    className="flex items-center gap-3 rounded-lg border border-border p-3"
-                  >
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {profile.connectedAccounts.map((account) => {
+              const info = PROVIDER_INFO[account.provider] ?? {
+                label: account.provider,
+                className: "text-foreground",
+                bgClassName: "bg-muted",
+                borderClassName: "border-l-border",
+              };
+              return (
+                <Card
+                  key={account.provider}
+                  className={`border-l-4 ${info.borderClassName}`}
+                >
+                  <CardContent className="flex items-center gap-3 py-4">
                     <div
-                      className={`flex h-9 w-9 items-center justify-center rounded-lg ${info.bgClassName}`}
+                      className={`flex size-10 items-center justify-center rounded-lg ${info.bgClassName}`}
                     >
-                      <span className={`text-sm font-bold ${info.className}`}>
+                      <span
+                        className={`text-sm font-bold ${info.className}`}
+                      >
                         {info.label.charAt(0)}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className={`text-sm font-semibold ${info.className}`}>
+                      <p
+                        className={`text-sm font-semibold ${info.className}`}
+                      >
                         {info.label}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
@@ -184,13 +197,13 @@ function AccountTab() {
                     <span className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-medium text-green-500">
                       Connected
                     </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -226,43 +239,33 @@ function FeaturesTab({ canManage }: { canManage: boolean }) {
   const aiEnabled = botStatus?.botChannel?.aiShoutoutEnabled ?? false;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 animate-fade-in">
+      {/* AI-Enhanced Shoutouts */}
       <Card>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-main/10">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-main/10">
                 <Sparkles className="size-5 text-brand-main" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-foreground">
                   AI-Enhanced Shoutouts
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Generate personalized shoutout messages using AI when using
                   !so. Requires GEMINI_API_KEY to be configured.
                 </p>
               </div>
             </div>
             {canManage && botStatus?.botChannel?.enabled && (
-              <button
-                type="button"
-                role="switch"
-                aria-checked={aiEnabled}
+              <Switch
+                checked={aiEnabled}
                 disabled={toggleMutation.isPending}
-                onClick={() =>
-                  toggleMutation.mutate({ enabled: !aiEnabled })
+                onCheckedChange={(v) =>
+                  toggleMutation.mutate({ enabled: v })
                 }
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-main focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-                  aiEnabled ? "bg-brand-main" : "bg-muted"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
-                    aiEnabled ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
+              />
             )}
           </div>
         </CardContent>
@@ -349,18 +352,23 @@ function DataTab({ canImport }: { canImport: boolean }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 animate-fade-in">
       {/* Export */}
       <Card>
-        <CardContent>
-          <h3 className="mb-2 text-sm font-semibold text-foreground">
+        <CardContent className="py-5">
+          <h3 className="text-sm font-semibold text-foreground">
             Export Data
           </h3>
-          <p className="mb-4 text-sm text-muted-foreground">
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">
             Download all your data including profile, commands, and settings as a
             JSON file.
           </p>
-          <Button onClick={handleExport} disabled={isExporting} size="sm">
+          <Button
+            onClick={handleExport}
+            disabled={isExporting}
+            size="sm"
+            variant="outline"
+          >
             {isExporting ? (
               <Loader2 className="size-3.5 animate-spin" />
             ) : (
@@ -374,11 +382,11 @@ function DataTab({ canImport }: { canImport: boolean }) {
       {/* StreamElements Import */}
       {canImport && (
         <Card>
-          <CardContent>
-            <h3 className="mb-2 text-sm font-semibold text-foreground">
+          <CardContent className="py-5">
+            <h3 className="text-sm font-semibold text-foreground">
               Import from StreamElements
             </h3>
-            <p className="mb-4 text-sm text-muted-foreground">
+            <p className="mt-1 mb-4 text-sm text-muted-foreground">
               Import commands from a StreamElements JSON export. Commands that
               already exist will be skipped. Timers and spam filter import will be
               available when those features are added.

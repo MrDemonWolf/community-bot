@@ -21,7 +21,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 import { canManageCommands } from "@/utils/roles";
 import {
   AlertCircle,
@@ -45,9 +46,7 @@ export default function ReportsPage() {
   if (!canView) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 font-heading text-2xl font-bold text-foreground">
-          Reports <PlatformBadges platforms={["discord"]} />
-        </h1>
+        <PageHeader title="Reports" platforms={["discord"]} />
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
             You don't have permission to view reports.
@@ -59,9 +58,7 @@ export default function ReportsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 flex items-center gap-3 font-heading text-2xl font-bold text-foreground">
-        Reports <PlatformBadges platforms={["discord"]} />
-      </h1>
+      <PageHeader title="Reports" platforms={["discord"]} />
       <ReportList />
     </div>
   );
@@ -85,7 +82,7 @@ function ReportList() {
   );
 
   return (
-    <Card>
+    <Card className="glass">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-heading">
           <Flag className="size-5" />
@@ -137,9 +134,11 @@ function ReportList() {
             </Button>
           </div>
         ) : !data?.reports.length ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            No reports found.
-          </p>
+          <EmptyState
+            icon={Flag}
+            title="No reports found"
+            description="User reports submitted via /report user in Discord will appear here."
+          />
         ) : (
           <div className="divide-y divide-border">
             {data.reports.map((r) => (

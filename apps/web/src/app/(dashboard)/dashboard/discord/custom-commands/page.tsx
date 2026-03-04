@@ -14,7 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 import { canManageCommands, canControlBot } from "@/utils/roles";
 import {
   Plus,
@@ -37,9 +38,7 @@ export default function CustomCommandsPage() {
   if (!canView) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 font-heading text-2xl font-bold text-foreground">
-          Custom Commands <PlatformBadges platforms={["discord"]} />
-        </h1>
+        <PageHeader title="Custom Commands" platforms={["discord"]} />
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
             You don't have permission to view custom commands.
@@ -51,9 +50,7 @@ export default function CustomCommandsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 flex items-center gap-3 font-heading text-2xl font-bold text-foreground">
-        Custom Commands <PlatformBadges platforms={["discord"]} />
-      </h1>
+      <PageHeader title="Custom Commands" platforms={["discord"]} />
       <CommandList canEdit={canEdit} />
     </div>
   );
@@ -137,7 +134,7 @@ function CommandList({ canEdit }: { canEdit: boolean }) {
   };
 
   return (
-    <Card>
+    <Card className="glass">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -253,10 +250,11 @@ function CommandList({ canEdit }: { canEdit: boolean }) {
             </Button>
           </div>
         ) : !commands?.length ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            No custom commands yet.
-            {canEdit && " Click Create to add one."}
-          </p>
+          <EmptyState
+            icon={Terminal}
+            title="No custom commands yet"
+            description={canEdit ? "Click Create to add one." : undefined}
+          />
         ) : (
           <div className="divide-y divide-border">
             {commands.map((cmd) => (

@@ -68,7 +68,7 @@ export function SidebarContent({
   const discordDot = (
     <span
       className={`ml-auto h-2 w-2 rounded-full ${
-        botStatus?.hasDiscordLinked ? "bg-green-500" : "bg-muted"
+        botStatus?.hasDiscordLinked ? "bg-brand-discord" : "bg-muted-foreground/30"
       }`}
     />
   );
@@ -194,78 +194,80 @@ export function SidebarContent({
     isGroupActive(group) || !collapsed[group.key];
 
   return (
-    <div className="flex h-full flex-col gap-2 p-5">
+    <div className="flex h-full flex-col p-3">
       {/* Dashboard link (standalone) */}
-      <nav className="flex flex-col gap-0.5">
+      <nav className="mb-1 flex flex-col">
         <Link
           href={"/dashboard" as Route}
           onClick={onNavigate}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading transition-all duration-200 ${
+          className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
             isActive("/dashboard", true)
-              ? "bg-brand-main/10 font-medium text-brand-main"
+              ? "border-l-3 border-brand-main bg-brand-main/10 pl-2.5 font-medium text-brand-main"
               : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
           }`}
         >
-          <LayoutDashboard className="h-4 w-4" />
+          <LayoutDashboard className="size-4" />
           Dashboard
         </Link>
       </nav>
 
       {/* Grouped sections */}
-      {groups.map((group) => {
-        const expanded = isExpanded(group);
-        return (
-          <div key={group.key}>
-            <button
-              type="button"
-              onClick={() => toggleGroup(group.key)}
-              className="flex w-full cursor-pointer items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 transition-colors hover:text-muted-foreground"
-            >
-              <ChevronRight
-                className={`h-3 w-3 transition-transform duration-200 ${
-                  expanded ? "rotate-90" : ""
-                }`}
-              />
-              {group.label}
-            </button>
-            {expanded && (
-              <nav className="flex flex-col gap-0.5">
-                {group.links.map((link) => {
-                  const active = isActive(link.href, link.exact);
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href as Route}
-                      onClick={onNavigate}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading transition-all duration-200 ${
-                        active
-                          ? "bg-brand-main/10 font-medium text-brand-main"
-                          : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
-                      }`}
-                    >
-                      <link.icon className="h-4 w-4" />
-                      {link.label}
-                      {link.suffix}
-                    </Link>
-                  );
-                })}
-              </nav>
-            )}
-          </div>
-        );
-      })}
+      <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
+        {groups.map((group) => {
+          const expanded = isExpanded(group);
+          return (
+            <div key={group.key} className="mt-2">
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.key)}
+                className="flex w-full cursor-pointer items-center gap-1.5 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+              >
+                <ChevronRight
+                  className={`size-3 transition-transform duration-200 ${
+                    expanded ? "rotate-90" : ""
+                  }`}
+                />
+                {group.label}
+              </button>
+              {expanded && (
+                <nav className="mt-0.5 flex flex-col gap-0.5">
+                  {group.links.map((link) => {
+                    const active = isActive(link.href, link.exact);
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href as Route}
+                        onClick={onNavigate}
+                        className={`relative flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-all duration-200 ${
+                          active
+                            ? "border-l-3 border-brand-main bg-brand-main/10 pl-2.5 font-medium text-brand-main"
+                            : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
+                        }`}
+                      >
+                        <link.icon className="size-4" />
+                        {link.label}
+                        {link.suffix}
+                      </Link>
+                    );
+                  })}
+                </nav>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-      {/* Back to Home */}
-      <div className="mt-auto">
+      {/* Footer */}
+      <div className="mt-auto border-t border-border pt-3">
         <Link
           href="/"
           onClick={onNavigate}
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-heading text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground"
+          className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground"
         >
-          <Home className="h-4 w-4" />
+          <Home className="size-4" />
           Back to Home
         </Link>
-        <span className="block px-3 pt-1 text-[10px] text-muted-foreground/50">
+        <span className="mt-1 block px-3 text-[10px] text-muted-foreground/40">
           v{process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0"}
           {process.env.NEXT_PUBLIC_GIT_SHA
             ? ` · ${process.env.NEXT_PUBLIC_GIT_SHA}`
@@ -282,7 +284,7 @@ export default function DashboardSidebar({
   session: typeof authClient.$Infer.Session;
 }) {
   return (
-    <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-border bg-card lg:block">
+    <aside className="glass-subtle hidden w-64 shrink-0 overflow-y-auto border-r border-border lg:block">
       <SidebarContent session={session} />
     </aside>
   );

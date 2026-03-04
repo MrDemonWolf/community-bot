@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import { auth } from "@community-bot/auth";
 import { env } from "@community-bot/env/server";
+import { PageHeader } from "@/components/page-header";
 import DiscordSettings from "./discord-settings";
-import { PlatformBadges } from "@/components/platform-badges";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +15,7 @@ export default async function DiscordPage() {
 
   return (
     <div>
-      <h1 className="mb-6 flex items-center gap-3 font-heading text-2xl font-bold text-foreground">
-        Discord Settings <PlatformBadges platforms={["discord"]} />
-      </h1>
+      <PageHeader title="Discord Settings" platforms={["discord"]} />
       <DiscordSettings discordAppId={env.DISCORD_APPLICATION_ID} />
     </div>
   );

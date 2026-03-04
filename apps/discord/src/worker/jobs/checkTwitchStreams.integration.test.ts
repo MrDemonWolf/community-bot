@@ -10,7 +10,7 @@ vi.mock("@community-bot/db", async (importOriginal) => {
   return { ...original, prisma: testPrisma };
 });
 
-const mockGetStreams = vi.fn();
+const mockGetStreams = vi.hoisted(() => vi.fn());
 vi.mock("../../twitch/api.js", () => ({
   getStreams: mockGetStreams,
 }));

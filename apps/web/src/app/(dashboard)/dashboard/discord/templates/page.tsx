@@ -16,7 +16,8 @@ import {
   FileText,
 } from "lucide-react";
 import { canControlBot } from "@/utils/roles";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface TemplateFormState {
   name: string;
@@ -136,9 +137,7 @@ export default function TemplatesPage() {
   if (isStatusLoading) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">
-          Templates <PlatformBadges platforms={["discord"]} />
-        </h1>
+        <PageHeader title="Templates" platforms={["discord"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -149,9 +148,7 @@ export default function TemplatesPage() {
   if (!discordStatus) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">
-          Templates <PlatformBadges platforms={["discord"]} />
-        </h1>
+        <PageHeader title="Templates" platforms={["discord"]} />
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-destructive" />
@@ -167,9 +164,7 @@ export default function TemplatesPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">
-          Templates <PlatformBadges platforms={["discord"]} />
-        </h1>
+        <PageHeader title="Templates" platforms={["discord"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -179,10 +174,7 @@ export default function TemplatesPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="flex items-center gap-3 text-2xl font-bold text-foreground">
-          Templates <PlatformBadges platforms={["discord"]} />
-        </h1>
+      <PageHeader title="Templates" platforms={["discord"]}>
         {canManage && !showForm && (
           <Button
             size="sm"
@@ -196,7 +188,7 @@ export default function TemplatesPage() {
             New Template
           </Button>
         )}
-      </div>
+      </PageHeader>
 
       <div className="space-y-4">
         {showForm && canManage && (
@@ -269,15 +261,13 @@ export default function TemplatesPage() {
         )}
 
         {(templates?.length ?? 0) === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-            <FileText className="mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              No templates yet. Templates are reusable message blueprints for
-              Discord.
-            </p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="No templates yet"
+            description="Templates are reusable message blueprints for Discord."
+          />
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="glass overflow-hidden rounded-lg">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
