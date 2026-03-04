@@ -21,9 +21,11 @@ import {
   Search,
   Trash2,
   Link2,
+  Users,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 
 export default function RegularsPage() {
   const queryClient = useQueryClient();
@@ -101,7 +103,7 @@ export default function RegularsPage() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Regulars <PlatformBadges platforms={["twitch", "discord"]} /></h1>
+        <PageHeader title="Regulars" platforms={["twitch", "discord"]} />
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -117,7 +119,7 @@ export default function RegularsPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Regulars <PlatformBadges platforms={["twitch", "discord"]} /></h1>
+        <PageHeader title="Regulars" platforms={["twitch", "discord"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -138,18 +140,18 @@ export default function RegularsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Regulars <PlatformBadges platforms={["twitch", "discord"]} /></h1>
+      <PageHeader title="Regulars" platforms={["twitch", "discord"]} />
 
       <div className="space-y-4">
         {/* Search + Actions */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search regulars..."
-              className="pl-8"
+              placeholder="Search by username..."
+              className="pl-9"
             />
           </div>
           <Button
@@ -173,34 +175,33 @@ export default function RegularsPage() {
 
         {/* Regulars Table */}
         {filteredRegulars.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-            <p className="text-sm text-muted-foreground">
-              {search
-                ? "No regulars match your search."
-                : "No regulars added yet."}
-            </p>
+          <EmptyState
+            icon={Users}
+            title={search ? "No regulars match your search." : "No regulars added yet."}
+            description={
+              !search
+                ? "Regulars are trusted users who get extra permissions in your chat."
+                : undefined
+            }
+          >
             {!search && canManage && (
               <Button
                 onClick={() => setDialogOpen(true)}
                 variant="outline"
                 size="sm"
-                className="mt-3"
               >
                 <Plus className="size-3.5" />
                 Add your first regular
               </Button>
             )}
-          </div>
+          </EmptyState>
         ) : (
-          <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
+          <div className="glass overflow-x-auto rounded-lg border border-border">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
                   <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Twitch
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Discord
+                    Twitch Username
                   </th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Added By
@@ -223,34 +224,11 @@ export default function RegularsPage() {
                   >
                     <td className="px-4 py-3">
                       {regular.twitchUsername ? (
-                        <div>
-                          <span className="text-sm font-medium text-brand-main">
-                            {regular.twitchUsername}
-                          </span>
-                          <span className="ml-2 font-mono text-xs text-muted-foreground">
-                            {regular.twitchUserId}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {regular.discordUsername ? (
-                        <div>
-                          <span className="text-sm font-medium text-brand-discord">
-                            {regular.discordUsername}
-                          </span>
-                          <span className="ml-2 font-mono text-xs text-muted-foreground">
-                            {regular.discordUserId}
-                          </span>
-                        </div>
-                      ) : regular.discordUserId ? (
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {regular.discordUserId}
+                        <span className="text-sm font-medium text-brand-main">
+                          {regular.twitchUsername}
                         </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
+                        <span className="text-xs text-muted-foreground">--</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">

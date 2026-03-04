@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { canControlBot } from "@/utils/roles";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -103,7 +104,7 @@ export default function CommandToggles() {
     accessMutation.mutate({ commandName, accessLevel: accessLevel as typeof ACCESS_LEVELS[number] });
   };
 
-  const isPending = toggleMutation.isPending || accessMutation.isPending;
+  const pendingToggleCmd = toggleMutation.isPending ? "toggle" : accessMutation.isPending ? accessMutation.variables?.commandName : null;
 
   return (
     <div className="space-y-4">
@@ -116,7 +117,7 @@ export default function CommandToggles() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">
@@ -156,8 +157,10 @@ export default function CommandToggles() {
                     {cmd.description}
                   </td>
                   <td className="px-4 py-3">
-                    {canControl ? (
-                      <Select value={currentAccess} onValueChange={(v) => { if (v) handleAccessChange(cmd.name, v); }} disabled={isPending || isDisabled}>
+                    {(() => {
+                      const isRowPending = pendingToggleCmd === "toggle" || pendingToggleCmd === cmd.name;
+                      return canControl ? (
+                      <Select value={currentAccess} onValueChange={(v) => { if (v) handleAccessChange(cmd.name, v); }} disabled={isRowPending || isDisabled}>
                         <SelectTrigger size="sm">
                           <SelectValue />
                         </SelectTrigger>
@@ -174,41 +177,29 @@ export default function CommandToggles() {
                       <span className="text-xs text-muted-foreground">
                         {formatAccessLevel(currentAccess)}
                       </span>
-                    )}
+                    );
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {canControl ? (
-                      <button
-                        onClick={() => handleToggle(cmd.name)}
-                        disabled={isPending}
-                        className="inline-flex items-center justify-center"
-                        aria-label={`Toggle ${cmd.name}`}
-                      >
-                        {isPending ? (
-                          <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                        ) : (
-                          <div
-                            className={`relative h-6 w-11 rounded-full transition-colors ${
-                              !isDisabled
-                                ? "bg-brand-main"
-                                : "bg-muted"
-                            }`}
-                          >
-                            <div
-                              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                                !isDisabled
-                                  ? "translate-x-5"
-                                  : "translate-x-0.5"
-                              }`}
-                            />
-                          </div>
-                        )}
-                      </button>
+                    {(() => {
+                      const isRowPending = pendingToggleCmd === "toggle" || pendingToggleCmd === cmd.name;
+                      return canControl ? (
+                      isRowPending ? (
+                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Switch
+                          checked={!isDisabled}
+                          onCheckedChange={() => handleToggle(cmd.name)}
+                          disabled={isRowPending}
+                          aria-label={`Toggle ${cmd.name}`}
+                        />
+                      )
                     ) : (
                       <span className={`text-xs ${!isDisabled ? "text-green-500" : "text-muted-foreground"}`}>
                         {!isDisabled ? "On" : "Off"}
                       </span>
-                    )}
+                    );
+                    })()}
                   </td>
                 </tr>
               );

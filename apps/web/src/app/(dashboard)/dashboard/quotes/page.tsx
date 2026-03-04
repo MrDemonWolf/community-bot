@@ -14,9 +14,11 @@ import {
   Trash2,
   Search,
   Quote as QuoteIcon,
+  Copy,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 
 export default function QuotesPage() {
   const queryClient = useQueryClient();
@@ -62,10 +64,21 @@ export default function QuotesPage() {
     })
   );
 
+  function copyQuote(text: string, quoteNumber: number) {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        toast.success(`Quote #${quoteNumber} copied to clipboard.`);
+      },
+      () => {
+        toast.error("Failed to copy to clipboard.");
+      }
+    );
+  }
+
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Quotes <PlatformBadges platforms={["twitch", "discord"]} /></h1>
+        <PageHeader title="Quotes" platforms={["twitch", "discord"]} />
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -81,7 +94,7 @@ export default function QuotesPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Quotes <PlatformBadges platforms={["twitch", "discord"]} /></h1>
+        <PageHeader title="Quotes" platforms={["twitch", "discord"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -97,59 +110,66 @@ export default function QuotesPage() {
 
   return (
     <div>
-      <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Quotes <PlatformBadges platforms={["twitch", "discord"]} /></h1>
+      <PageHeader title="Quotes" platforms={["twitch", "discord"]} />
 
       <div className="space-y-4">
-        {/* Add + Search bar */}
-        <div className="flex flex-wrap items-end gap-3">
-          {canManage && (
-            <div className="flex flex-1 items-center gap-2">
-              <Input
-                placeholder="Add a new quote..."
-                value={newQuoteText}
-                onChange={(e) => setNewQuoteText(e.target.value)}
-                className="min-w-[200px]"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newQuoteText.trim()) {
-                    addMutation.mutate({ text: newQuoteText.trim() });
-                  }
-                }}
-              />
-              <Button
-                size="sm"
-                onClick={() => {
-                  if (newQuoteText.trim()) {
-                    addMutation.mutate({ text: newQuoteText.trim() });
-                  }
-                }}
-                disabled={!newQuoteText.trim() || addMutation.isPending}
-              >
-                <Plus className="size-3.5" />
-                Add
-              </Button>
-            </div>
-          )}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        {/* Add Quote */}
+        {canManage && (
+          <div className="flex items-center gap-2">
             <Input
-              placeholder="Search quotes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-48 pl-8"
+              placeholder="Add a new quote..."
+              value={newQuoteText}
+              onChange={(e) => setNewQuoteText(e.target.value)}
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newQuoteText.trim()) {
+                  addMutation.mutate({ text: newQuoteText.trim() });
+                }
+              }}
             />
+            <Button
+              size="sm"
+              onClick={() => {
+                if (newQuoteText.trim()) {
+                  addMutation.mutate({ text: newQuoteText.trim() });
+                }
+              }}
+              disabled={!newQuoteText.trim() || addMutation.isPending}
+            >
+              {addMutation.isPending ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Plus className="size-3.5" />
+              )}
+              Add
+            </Button>
           </div>
+        )}
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search quotes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
         </div>
 
         {/* Quotes Table */}
         {(filteredQuotes?.length ?? 0) === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-            <QuoteIcon className="mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              {searchQuery ? "No quotes match your search." : "No quotes yet. Add one above!"}
-            </p>
-          </div>
+          <EmptyState
+            icon={QuoteIcon}
+            title={searchQuery ? "No quotes match your search." : "No quotes yet."}
+            description={
+              !searchQuery
+                ? "Add memorable moments from your stream to look back on later."
+                : undefined
+            }
+          />
         ) : (
-          <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
+          <div className="glass overflow-x-auto rounded-lg border border-border">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
@@ -168,11 +188,9 @@ export default function QuotesPage() {
                   <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Date
                   </th>
-                  {canManage && (
-                    <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Actions
-                    </th>
-                  )}
+                  <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -181,14 +199,18 @@ export default function QuotesPage() {
                     key={q.id}
                     className="transition-colors hover:bg-surface-raised"
                   >
-                    <td className="px-4 py-3 text-sm font-medium text-muted-foreground">
-                      {q.quoteNumber}
+                    <td className="px-4 py-3">
+                      <span className="text-sm font-bold text-brand-main">
+                        {q.quoteNumber}
+                      </span>
                     </td>
                     <td className="max-w-md px-4 py-3 text-sm text-foreground">
-                      <span className="line-clamp-2">&ldquo;{q.text}&rdquo;</span>
+                      <span className="line-clamp-2 break-words">
+                        &ldquo;{q.text}&rdquo;
+                      </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {q.game || "—"}
+                    <td className="px-4 py-3 text-sm italic text-muted-foreground">
+                      {q.game || "--"}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {q.addedBy}
@@ -196,40 +218,52 @@ export default function QuotesPage() {
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {new Date(q.createdAt).toLocaleDateString()}
                     </td>
-                    {canManage && (
-                      <td className="px-4 py-3 text-right">
-                        {deleteConfirmId === q.id ? (
-                          <div className="flex items-center justify-end gap-1">
-                            <Button
-                              variant="destructive"
-                              size="xs"
-                              onClick={() =>
-                                removeMutation.mutate({ id: q.id })
-                              }
-                              disabled={removeMutation.isPending}
-                            >
-                              {removeMutation.isPending ? "..." : "Confirm"}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="xs"
-                              onClick={() => setDeleteConfirmId(null)}
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            onClick={() => setDeleteConfirmId(q.id)}
-                            aria-label={`Remove quote #${q.quoteNumber}`}
-                          >
-                            <Trash2 className="size-3.5 text-red-400" />
-                          </Button>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => copyQuote(q.text, q.quoteNumber)}
+                          aria-label={`Copy quote #${q.quoteNumber}`}
+                        >
+                          <Copy className="size-3.5 text-muted-foreground" />
+                        </Button>
+                        {canManage && (
+                          <>
+                            {deleteConfirmId === q.id ? (
+                              <>
+                                <Button
+                                  variant="destructive"
+                                  size="xs"
+                                  onClick={() =>
+                                    removeMutation.mutate({ id: q.id })
+                                  }
+                                  disabled={removeMutation.isPending}
+                                >
+                                  {removeMutation.isPending ? "..." : "Confirm"}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="xs"
+                                  onClick={() => setDeleteConfirmId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={() => setDeleteConfirmId(q.id)}
+                                aria-label={`Remove quote #${q.quoteNumber}`}
+                              >
+                                <Trash2 className="size-3.5 text-red-400" />
+                              </Button>
+                            )}
+                          </>
                         )}
-                      </td>
-                    )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -238,7 +272,8 @@ export default function QuotesPage() {
         )}
 
         <p className="text-xs text-muted-foreground">
-          {quotes?.length ?? 0} quote{(quotes?.length ?? 0) !== 1 ? "s" : ""} total
+          {quotes?.length ?? 0} quote{(quotes?.length ?? 0) !== 1 ? "s" : ""}{" "}
+          total
         </p>
       </div>
     </div>

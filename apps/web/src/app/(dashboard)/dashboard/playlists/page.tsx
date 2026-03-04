@@ -20,12 +20,14 @@ import {
   Check,
   Loader2,
   ListMusic,
+  Music,
   Plus,
   Play,
   Trash2,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -159,7 +161,7 @@ export default function PlaylistsPage() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Playlists <PlatformBadges platforms={["twitch"]} /></h1>
+        <PageHeader title="Playlists" platforms={["twitch"]} />
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -175,7 +177,7 @@ export default function PlaylistsPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Playlists <PlatformBadges platforms={["twitch"]} /></h1>
+        <PageHeader title="Playlists" platforms={["twitch"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -188,129 +190,134 @@ export default function PlaylistsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="flex items-center gap-3 text-2xl font-bold text-foreground">Playlists <PlatformBadges platforms={["twitch"]} /></h1>
-        {canManage && (
-          <Button onClick={() => setCreateDialogOpen(true)} size="sm">
-            <Plus className="size-3.5" />
-            Create Playlist
-          </Button>
-        )}
-      </div>
+      <PageHeader title="Playlists" platforms={["twitch"]} />
 
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         {/* Left Panel: Playlist List */}
-        <div className="space-y-2">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">Playlists</h2>
+            {canManage && (
+              <Button onClick={() => setCreateDialogOpen(true)} size="xs" variant="ghost">
+                <Plus className="size-3.5" />
+                Create
+              </Button>
+            )}
+          </div>
+
           {playlists.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-              <ListMusic className="mb-3 size-8 text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground">
-                No playlists yet.
-              </p>
-            </div>
+            <EmptyState
+              icon={ListMusic}
+              title="No playlists yet"
+              description="Create a playlist to get started."
+            />
           ) : (
-            playlists.map((playlist) => (
-              <Card
-                key={playlist.id}
-                className={`cursor-pointer transition-colors hover:bg-surface-raised ${
-                  selectedId === playlist.id ? "border-brand-main bg-brand-main/5" : ""
-                }`}
-                onClick={() => setSelectedId(playlist.id)}
-              >
-                <CardContent className="flex items-center justify-between py-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium text-foreground">
-                        {playlist.name}
-                      </span>
-                      {activePlaylistId === playlist.id && (
-                        <span className="shrink-0 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-500">
-                          Active
+            <div className="space-y-1.5">
+              {playlists.map((playlist) => (
+                <div
+                  key={playlist.id}
+                  className={`group relative cursor-pointer rounded-lg border border-border bg-card p-3 transition-colors hover:bg-surface-raised ${
+                    selectedId === playlist.id
+                      ? "border-l-2 border-l-brand-main bg-brand-main/5"
+                      : ""
+                  }`}
+                  onClick={() => setSelectedId(playlist.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {playlist.name}
                         </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {playlist.entryCount} song{playlist.entryCount !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  {canManage && (
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMutation.mutate({
-                            playlistId:
-                              activePlaylistId === playlist.id
-                                ? null
-                                : playlist.id,
-                          });
-                        }}
-                        aria-label={
-                          activePlaylistId === playlist.id
-                            ? "Deactivate playlist"
-                            : "Set as active"
-                        }
-                      >
-                        {activePlaylistId === playlist.id ? (
-                          <Check className="size-3.5 text-green-500" />
-                        ) : (
-                          <Play className="size-3.5 text-muted-foreground" />
+                        {activePlaylistId === playlist.id && (
+                          <span className="shrink-0 rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-500">
+                            Active
+                          </span>
                         )}
-                      </Button>
-                      {deleteConfirmId === playlist.id ? (
-                        <div
-                          className="flex items-center gap-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            variant="destructive"
-                            size="xs"
-                            onClick={() =>
-                              deleteMutation.mutate({ id: playlist.id })
-                            }
-                            disabled={deleteMutation.isPending}
-                          >
-                            {deleteMutation.isPending ? "..." : "Delete"}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="xs"
-                            onClick={() => setDeleteConfirmId(null)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {playlist.entryCount} song{playlist.entryCount !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    {canManage && (
+                      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                         <Button
                           variant="ghost"
                           size="icon-xs"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setDeleteConfirmId(playlist.id);
+                            setActiveMutation.mutate({
+                              playlistId:
+                                activePlaylistId === playlist.id
+                                  ? null
+                                  : playlist.id,
+                            });
                           }}
-                          aria-label={`Delete ${playlist.name}`}
+                          aria-label={
+                            activePlaylistId === playlist.id
+                              ? "Deactivate playlist"
+                              : "Set as active"
+                          }
                         >
-                          <Trash2 className="size-3.5 text-red-400" />
+                          {activePlaylistId === playlist.id ? (
+                            <Check className="size-3.5 text-green-500" />
+                          ) : (
+                            <Play className="size-3.5 text-muted-foreground" />
+                          )}
                         </Button>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+                        {deleteConfirmId === playlist.id ? (
+                          <div
+                            className="flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              variant="destructive"
+                              size="xs"
+                              onClick={() =>
+                                deleteMutation.mutate({ id: playlist.id })
+                              }
+                              disabled={deleteMutation.isPending}
+                            >
+                              {deleteMutation.isPending ? "..." : "Delete"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="xs"
+                              onClick={() => setDeleteConfirmId(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteConfirmId(playlist.id);
+                            }}
+                            aria-label={`Delete ${playlist.name}`}
+                          >
+                            <Trash2 className="size-3.5 text-red-400" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
         {/* Right Panel: Selected Playlist Entries */}
         <div>
           {!selectedId ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-              <p className="text-sm text-muted-foreground">
-                Select a playlist to view its songs.
-              </p>
-            </div>
+            <EmptyState
+              icon={Music}
+              title="Select a playlist"
+              description="Choose a playlist from the left to view its songs."
+            />
           ) : loadingPlaylist ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
@@ -333,107 +340,95 @@ export default function PlaylistsPage() {
               </div>
 
               {(selectedPlaylist?.entries.length ?? 0) === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-                  <p className="text-sm text-muted-foreground">
-                    No songs in this playlist yet.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={Music}
+                  title="No songs yet"
+                  description="Add songs to this playlist to get started."
+                />
               ) : (
-                <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          #
-                        </th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          Title
-                        </th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          Duration
-                        </th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          Channel
-                        </th>
-                        {canManage && (
-                          <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                            Actions
-                          </th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {selectedPlaylist?.entries.map((entry, index) => (
-                        <tr
-                          key={entry.id}
-                          className="transition-colors hover:bg-surface-raised"
-                        >
-                          <td className="px-4 py-3 text-sm font-medium text-foreground">
-                            {entry.position}
-                          </td>
-                          <td className="max-w-xs px-4 py-3 text-sm text-foreground">
-                            <div className="flex items-center gap-2">
-                              {entry.youtubeThumbnail && (
-                                <img
-                                  src={entry.youtubeThumbnail}
-                                  alt=""
-                                  className="h-8 w-14 shrink-0 rounded object-cover"
-                                />
-                              )}
-                              <span className="line-clamp-1">{entry.title}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
-                            {entry.youtubeDuration
-                              ? formatDuration(entry.youtubeDuration)
-                              : "—"}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
-                            {entry.youtubeChannel ?? "—"}
-                          </td>
-                          {canManage && (
-                            <td className="px-4 py-3 text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  disabled={index === 0 || reorderMutation.isPending}
-                                  onClick={() => handleMoveUp(index)}
-                                  aria-label="Move up"
-                                >
-                                  <ArrowUp className="size-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  disabled={
-                                    index ===
-                                      (selectedPlaylist?.entries.length ?? 1) - 1 ||
-                                    reorderMutation.isPending
-                                  }
-                                  onClick={() => handleMoveDown(index)}
-                                  aria-label="Move down"
-                                >
-                                  <ArrowDown className="size-3.5" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={() =>
-                                    removeEntryMutation.mutate({ id: entry.id })
-                                  }
-                                  disabled={removeEntryMutation.isPending}
-                                  aria-label={`Remove ${entry.title}`}
-                                >
-                                  <Trash2 className="size-3.5 text-red-400" />
-                                </Button>
-                              </div>
-                            </td>
+                <div className="space-y-2">
+                  {selectedPlaylist?.entries.map((entry, index) => (
+                    <div
+                      key={entry.id}
+                      className="glass flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-surface-raised"
+                    >
+                      {/* Position */}
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                        {entry.position}
+                      </span>
+
+                      {/* Thumbnail */}
+                      {entry.youtubeThumbnail && (
+                        <img
+                          src={entry.youtubeThumbnail}
+                          alt=""
+                          className="h-10 w-16 shrink-0 rounded object-cover"
+                        />
+                      )}
+
+                      {/* Info */}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {entry.title}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          {entry.youtubeChannel && <span>{entry.youtubeChannel}</span>}
+                          {entry.youtubeDuration && (
+                            <>
+                              {entry.youtubeChannel && <span>&middot;</span>}
+                              <span>{formatDuration(entry.youtubeDuration)}</span>
+                            </>
                           )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                        </div>
+                      </div>
+
+                      {/* Duration badge */}
+                      {entry.youtubeDuration && (
+                        <span className="hidden shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground sm:inline-flex">
+                          {formatDuration(entry.youtubeDuration)}
+                        </span>
+                      )}
+
+                      {/* Actions */}
+                      {canManage && (
+                        <div className="flex shrink-0 items-center gap-0.5">
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            disabled={index === 0 || reorderMutation.isPending}
+                            onClick={() => handleMoveUp(index)}
+                            aria-label="Move up"
+                          >
+                            <ArrowUp className="size-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            disabled={
+                              index ===
+                                (selectedPlaylist?.entries.length ?? 1) - 1 ||
+                              reorderMutation.isPending
+                            }
+                            onClick={() => handleMoveDown(index)}
+                            aria-label="Move down"
+                          >
+                            <ArrowDown className="size-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() =>
+                              removeEntryMutation.mutate({ id: entry.id })
+                            }
+                            disabled={removeEntryMutation.isPending}
+                            aria-label={`Remove ${entry.title}`}
+                          >
+                            <Trash2 className="size-3.5 text-red-400" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

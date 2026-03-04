@@ -2,18 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Terminal, Users, Radio, ListOrdered, BookOpen, Hash, Timer, Music, Gift } from "lucide-react";
+import { Terminal, Users, Radio, ListOrdered } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const REFETCH_INTERVAL = 30_000;
 
-export default function QuickStatsCard() {
+export default function QuickStatsStrip() {
   const { data: botStatus, isLoading: loadingBot } = useQuery({
     ...trpc.botChannel.getStatus.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
@@ -34,31 +28,9 @@ export default function QuickStatsCard() {
     ...trpc.queue.list.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
   });
-  const { data: stats, isLoading: loadingStats } = useQuery({
-    ...trpc.botChannel.stats.queryOptions(),
-    refetchInterval: REFETCH_INTERVAL,
-  });
 
   const isLoading =
-    loadingBot || loadingCmds || loadingRegs || loadingQState || loadingQEntries || loadingStats;
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-heading">Quick Stats</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-8" />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    );
-  }
+    loadingBot || loadingCmds || loadingRegs || loadingQState || loadingQEntries;
 
   const botChannel = botStatus?.botChannel;
   const statusLabel = !botChannel
@@ -66,116 +38,82 @@ export default function QuickStatsCard() {
     : botChannel.muted
       ? "Muted"
       : "Active";
+  const statusBorder = !botChannel
+    ? "border-l-muted-foreground/30"
+    : botChannel.muted
+      ? "border-l-brand-accent"
+      : "border-l-brand-main";
   const statusColor = !botChannel
     ? "text-muted-foreground"
     : botChannel.muted
-      ? "text-amber-500"
-      : "text-green-500";
+      ? "text-brand-accent"
+      : "text-brand-main";
+
+  const queueStatus = queueState?.status ?? "CLOSED";
+  const queueBorder =
+    queueStatus === "OPEN"
+      ? "border-l-brand-main"
+      : queueStatus === "PAUSED"
+        ? "border-l-brand-accent"
+        : "border-l-muted-foreground/30";
+
+  const stats = [
+    {
+      icon: Terminal,
+      label: "Commands",
+      value: commands?.length ?? 0,
+      borderClass: "border-l-brand-main",
+    },
+    {
+      icon: Users,
+      label: "Regulars",
+      value: regulars?.length ?? 0,
+      borderClass: "border-l-brand-main",
+    },
+    {
+      icon: ListOrdered,
+      label: "Queue",
+      value: `${queueStatus} (${queueEntries?.length ?? 0})`,
+      borderClass: queueBorder,
+    },
+    {
+      icon: Radio,
+      label: "Bot",
+      value: statusLabel,
+      valueClass: statusColor,
+      borderClass: statusBorder,
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="glass rounded-lg border-l-3 border-l-muted p-3">
+            <Skeleton className="mb-2 h-3 w-16" />
+            <Skeleton className="h-6 w-12" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-heading">Quick Stats</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Terminal className="size-4" />
-            Commands
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {stats.map((stat) => (
+        <div
+          key={stat.label}
+          className={`glass rounded-lg border-l-3 p-3 ${stat.borderClass}`}
+        >
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <stat.icon className="size-3.5" />
+            {stat.label}
           </div>
-          <span className="text-sm font-medium text-foreground">
-            {commands?.length ?? 0}
-          </span>
+          <p className={`mt-1 text-lg font-bold ${stat.valueClass ?? "text-foreground"}`}>
+            {stat.value}
+          </p>
         </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Users className="size-4" />
-            Regulars
-          </div>
-          <span className="text-sm font-medium text-foreground">
-            {regulars?.length ?? 0}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <ListOrdered className="size-4" />
-            Queue
-          </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-xs font-medium ${
-                queueState?.status === "OPEN"
-                  ? "text-green-500"
-                  : queueState?.status === "PAUSED"
-                    ? "text-amber-500"
-                    : "text-muted-foreground"
-              }`}
-            >
-              {queueState?.status ?? "CLOSED"}
-            </span>
-            <span className="text-sm font-medium text-foreground">
-              {queueEntries?.length ?? 0}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Radio className="size-4" />
-            Bot Status
-          </div>
-          <span className={`text-sm font-medium ${statusColor}`}>
-            {statusLabel}
-          </span>
-        </div>
-
-        {/* Extended stats */}
-        <div className="border-t border-border pt-3" />
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <BookOpen className="size-4" />
-            Quotes
-          </div>
-          <span className="text-sm font-medium text-foreground">
-            {stats?.quotes ?? 0}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Hash className="size-4" />
-            Counters
-          </div>
-          <span className="text-sm font-medium text-foreground">
-            {stats?.counters ?? 0}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Timer className="size-4" />
-            Active Timers
-          </div>
-          <span className="text-sm font-medium text-foreground">
-            {stats?.timers ?? 0}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Music className="size-4" />
-            Song Requests
-          </div>
-          <span className="text-sm font-medium text-foreground">
-            {stats?.songRequests ?? 0}
-          </span>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Gift className="size-4" />
-            Giveaways
-          </div>
-          <span className="text-sm font-medium text-foreground">
-            {stats?.giveaways ?? 0}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
+      ))}
+    </div>
   );
 }

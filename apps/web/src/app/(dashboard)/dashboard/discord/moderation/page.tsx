@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 import { canManageCommands, canControlBot } from "@/utils/roles";
 import {
   Search,
@@ -55,9 +56,7 @@ export default function ModerationPage() {
   if (!canView) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 font-heading text-2xl font-bold text-foreground">
-          Moderation <PlatformBadges platforms={["discord"]} />
-        </h1>
+        <PageHeader title="Moderation" platforms={["discord"]} />
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
             You don't have permission to view moderation cases.
@@ -69,9 +68,7 @@ export default function ModerationPage() {
 
   return (
     <div>
-      <h1 className="mb-6 flex items-center gap-3 font-heading text-2xl font-bold text-foreground">
-        Moderation <PlatformBadges platforms={["discord"]} />
-      </h1>
+      <PageHeader title="Moderation" platforms={["discord"]} />
       <div className="space-y-6">
         <CaseList />
         <ThresholdConfig canEdit={canEdit} />
@@ -111,7 +108,7 @@ function CaseList() {
   );
 
   return (
-    <Card>
+    <Card className="glass">
       <CardHeader>
         <CardTitle className="font-heading">Moderation Cases</CardTitle>
         <CardDescription>
@@ -185,9 +182,11 @@ function CaseList() {
             </Button>
           </div>
         ) : !data?.cases.length ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            No moderation cases found.
-          </p>
+          <EmptyState
+            icon={Shield}
+            title="No moderation cases found"
+            description="Moderation actions taken in your Discord server will appear here."
+          />
         ) : (
           <div className="divide-y divide-border">
             {data.cases.map((c) => (
@@ -414,7 +413,7 @@ function ThresholdConfig({ canEdit }: { canEdit: boolean }) {
   );
 
   return (
-    <Card>
+    <Card className="glass">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-heading">
           <Shield className="size-5" />
