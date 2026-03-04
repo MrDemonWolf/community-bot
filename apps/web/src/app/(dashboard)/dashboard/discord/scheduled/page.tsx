@@ -25,7 +25,8 @@ import {
   ToggleRight,
 } from "lucide-react";
 import { canControlBot } from "@/utils/roles";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface ScheduleFormState {
   name: string;
@@ -171,9 +172,7 @@ export default function ScheduledPage() {
   if (!discordStatus) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">
-          Scheduled Messages <PlatformBadges platforms={["discord"]} />
-        </h1>
+        <PageHeader title="Scheduled Messages" platforms={["discord"]} />
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -189,9 +188,7 @@ export default function ScheduledPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">
-          Scheduled Messages <PlatformBadges platforms={["discord"]} />
-        </h1>
+        <PageHeader title="Scheduled Messages" platforms={["discord"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -201,10 +198,7 @@ export default function ScheduledPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="flex items-center gap-3 text-2xl font-bold text-foreground">
-          Scheduled Messages <PlatformBadges platforms={["discord"]} />
-        </h1>
+      <PageHeader title="Scheduled Messages" platforms={["discord"]}>
         {canManage && !showForm && (
           <Button
             size="sm"
@@ -218,7 +212,7 @@ export default function ScheduledPage() {
             New Schedule
           </Button>
         )}
-      </div>
+      </PageHeader>
 
       <div className="space-y-4">
         {showForm && canManage && (
@@ -349,15 +343,13 @@ export default function ScheduledPage() {
         )}
 
         {(schedules?.length ?? 0) === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-            <Clock className="mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              No scheduled messages yet. Schedule recurring or one-time
-              messages for your Discord server.
-            </p>
-          </div>
+          <EmptyState
+            icon={Clock}
+            title="No scheduled messages yet"
+            description="Schedule recurring or one-time messages for your Discord server."
+          />
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="glass overflow-hidden rounded-lg">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">

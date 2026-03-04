@@ -26,7 +26,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { canControlBot } from "@/utils/roles";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 
 const STYLE_LABELS: Record<number, { label: string; className: string }> = {
   1: { label: "Primary", className: "bg-brand-discord/15 text-brand-discord" },
@@ -207,9 +208,7 @@ export default function RolePanelsPage() {
   if (!discordStatus) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">
-          Role Panels <PlatformBadges platforms={["discord"]} />
-        </h1>
+        <PageHeader title="Role Panels" platforms={["discord"]} />
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -225,9 +224,7 @@ export default function RolePanelsPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">
-          Role Panels <PlatformBadges platforms={["discord"]} />
-        </h1>
+        <PageHeader title="Role Panels" platforms={["discord"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -237,10 +234,7 @@ export default function RolePanelsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="flex items-center gap-3 text-2xl font-bold text-foreground">
-          Role Panels <PlatformBadges platforms={["discord"]} />
-        </h1>
+      <PageHeader title="Role Panels" platforms={["discord"]}>
         {canManage && !showPanelForm && (
           <Button
             size="sm"
@@ -254,7 +248,7 @@ export default function RolePanelsPage() {
             New Panel
           </Button>
         )}
-      </div>
+      </PageHeader>
 
       <div className="space-y-4">
         {/* Create/Edit Panel Form */}
@@ -356,13 +350,11 @@ export default function RolePanelsPage() {
 
         {/* Panels List */}
         {(panels?.length ?? 0) === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-            <ShieldCheck className="mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              No role panels yet. Create a panel and add roles to let members
-              self-assign roles via buttons or select menus.
-            </p>
-          </div>
+          <EmptyState
+            icon={ShieldCheck}
+            title="No role panels yet"
+            description="Create a panel and add roles to let members self-assign roles via buttons or select menus."
+          />
         ) : (
           <div className="space-y-3">
             {panels?.map((panel) => {

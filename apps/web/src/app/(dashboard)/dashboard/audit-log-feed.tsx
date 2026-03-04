@@ -4,15 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User } from "lucide-react";
+import { User, Activity } from "lucide-react";
 import { getRoleDisplay } from "@/utils/roles";
 
 function normalizeMetadataValue(value: unknown): string {
@@ -99,7 +94,6 @@ function getActionDescription(
     case "song-request.settings-update":
       return "updated song request settings";
     default: {
-      // Convert dot-separated actions to readable text (e.g., "playlist.create" → "created a playlist")
       const parts = action.split(".");
       if (parts.length === 2) return `${parts[1]} ${parts[0]}`;
       return action;
@@ -134,20 +128,21 @@ export default function AuditLogFeed() {
   const hasMore = items.length < total;
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle className="font-heading">Audit Log</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto" style={{ maxHeight: "600px" }}>
+    <Card>
+      <CardContent className="pt-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Activity className="size-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold text-foreground">Activity</h2>
+        </div>
+
         {isLoading && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-start gap-3">
+              <div key={i} className="flex items-start gap-3 pl-4">
                 <Skeleton className="size-8 shrink-0 rounded-full" />
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <Skeleton className="h-4 w-32" />
                   <Skeleton className="h-3 w-48" />
-                  <Skeleton className="h-2.5 w-12" />
                 </div>
               </div>
             ))}
@@ -155,57 +150,75 @@ export default function AuditLogFeed() {
         )}
 
         {!isLoading && items.length === 0 && (
-          <p className="text-sm text-muted-foreground">No activity yet.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            No activity yet.
+          </p>
         )}
 
-        <div className="space-y-3">
-          {items.map((item) => {
-            const role = getRoleDisplay(item.userRole, item.isChannelOwner);
-            return (
-              <div key={item.id} className="flex items-start gap-3">
-                {item.userImage ? (
-                  <Image
-                    src={item.userImage}
-                    alt={item.userName}
-                    width={32}
-                    height={32}
-                    className="rounded-full"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="flex size-8 items-center justify-center rounded-full bg-surface-overlay">
-                    <User className="size-4 text-muted-foreground" />
+        {/* Timeline */}
+        <div className="relative">
+          {/* Timeline line */}
+          {items.length > 0 && (
+            <div className="absolute bottom-0 left-4 top-0 w-px bg-border" />
+          )}
+
+          <div className="space-y-0">
+            {items.map((item) => {
+              const role = getRoleDisplay(item.userRole, item.isChannelOwner);
+              return (
+                <div
+                  key={item.id}
+                  className="group relative flex items-start gap-3 rounded-lg py-2.5 pl-4 transition-colors hover:bg-surface-raised"
+                >
+                  {/* Timeline dot */}
+                  <div className="relative z-10 shrink-0">
+                    {item.userImage ? (
+                      <Image
+                        src={item.userImage}
+                        alt={item.userName}
+                        width={32}
+                        height={32}
+                        className="rounded-full ring-2 ring-card"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex size-8 items-center justify-center rounded-full bg-surface-overlay ring-2 ring-card">
+                        <User className="size-4 text-muted-foreground" />
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm">
-                    <span className="font-medium text-foreground">
-                      {item.userName}
-                    </span>
-                    <span
-                      className={`ml-1.5 inline-block rounded px-1 py-0.5 text-[10px] font-medium ${role.className}`}
-                    >
-                      {role.label}
-                    </span>
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {getActionDescription(item.action, item.metadata)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground/60">
-                    {timeAgo(item.createdAt)}
-                  </p>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="text-sm">
+                        <span className="font-medium text-foreground">
+                          {item.userName}
+                        </span>
+                        <span
+                          className={`ml-1.5 inline-block rounded px-1 py-0.5 text-[10px] font-medium ${role.className}`}
+                        >
+                          {role.label}
+                        </span>
+                      </p>
+                      <span className="shrink-0 text-[10px] text-muted-foreground/50">
+                        {timeAgo(item.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {getActionDescription(item.action, item.metadata)}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {hasMore && (
-          <div className="mt-4">
+          <div className="mt-3 text-center">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="w-full"
               onClick={() => setTake((prev) => prev + PAGE_SIZE)}
             >
               Load More

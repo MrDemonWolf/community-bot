@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,15 @@ import { toast } from "sonner";
 import {
   AlertCircle,
   Loader2,
-  Shield,
   Save,
   Plus,
   X,
+  ChevronRight,
+  Undo2,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -44,35 +46,6 @@ interface FilterState {
   warningMessage: string;
 }
 
-function Toggle({
-  checked,
-  onChange,
-  disabled,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-main focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-        checked ? "bg-brand-main" : "bg-muted"
-      }`}
-    >
-      <span
-        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
-          checked ? "translate-x-5" : "translate-x-0"
-        }`}
-      />
-    </button>
-  );
-}
-
 const ACCESS_LEVELS = [
   "EVERYONE",
   "SUBSCRIBER",
@@ -82,6 +55,19 @@ const ACCESS_LEVELS = [
   "LEAD_MODERATOR",
   "BROADCASTER",
 ];
+
+type FilterSection =
+  | "caps"
+  | "links"
+  | "symbols"
+  | "emotes"
+  | "repetition"
+  | "bannedWords";
+
+function isFormDirty(form: FilterState | null, original: FilterState | null): boolean {
+  if (!form || !original) return false;
+  return JSON.stringify(form) !== JSON.stringify(original);
+}
 
 export default function ModerationPage() {
   const queryClient = useQueryClient();
@@ -98,11 +84,13 @@ export default function ModerationPage() {
   );
 
   const [form, setForm] = useState<FilterState | null>(null);
+  const [originalForm, setOriginalForm] = useState<FilterState | null>(null);
   const [newBannedWord, setNewBannedWord] = useState("");
+  const [expanded, setExpanded] = useState<Set<FilterSection>>(new Set());
 
   useEffect(() => {
     if (filterData && !form) {
-      setForm({
+      const initial: FilterState = {
         capsEnabled: filterData.capsEnabled,
         capsMinLength: filterData.capsMinLength,
         capsMaxPercent: filterData.capsMaxPercent,
@@ -119,15 +107,30 @@ export default function ModerationPage() {
         exemptLevel: filterData.exemptLevel,
         timeoutDuration: filterData.timeoutDuration,
         warningMessage: filterData.warningMessage,
-      });
+      };
+      setForm(initial);
+      setOriginalForm(initial);
+
+      // Default expand enabled sections
+      const enabledSections = new Set<FilterSection>();
+      if (filterData.capsEnabled) enabledSections.add("caps");
+      if (filterData.linksEnabled) enabledSections.add("links");
+      if (filterData.symbolsEnabled) enabledSections.add("symbols");
+      if (filterData.emotesEnabled) enabledSections.add("emotes");
+      if (filterData.repetitionEnabled) enabledSections.add("repetition");
+      if (filterData.bannedWordsEnabled) enabledSections.add("bannedWords");
+      setExpanded(enabledSections);
     }
   }, [filterData, form]);
+
+  const dirty = useMemo(() => isFormDirty(form, originalForm), [form, originalForm]);
 
   const updateMutation = useMutation(
     trpc.spamFilter.update.mutationOptions({
       onSuccess: () => {
         toast.success("Spam filter settings saved.");
         queryClient.invalidateQueries({ queryKey });
+        if (form) setOriginalForm({ ...form });
       },
       onError: (err) => toast.error(err.message),
     })
@@ -136,6 +139,24 @@ export default function ModerationPage() {
   function handleSave() {
     if (!form) return;
     updateMutation.mutate(form as any);
+  }
+
+  function handleDiscard() {
+    if (originalForm) {
+      setForm({ ...originalForm });
+    }
+  }
+
+  function toggleSection(section: FilterSection) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
   }
 
   function addBannedWord() {
@@ -162,7 +183,7 @@ export default function ModerationPage() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Moderation <PlatformBadges platforms={["twitch"]} /></h1>
+        <PageHeader title="Moderation" platforms={["twitch"]} />
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -178,7 +199,7 @@ export default function ModerationPage() {
   if (isLoading || !form) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Moderation <PlatformBadges platforms={["twitch"]} /></h1>
+        <PageHeader title="Moderation" platforms={["twitch"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -188,24 +209,12 @@ export default function ModerationPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="flex items-center gap-3 text-2xl font-bold text-foreground">Moderation <PlatformBadges platforms={["twitch"]} /></h1>
-        {canManage && (
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={updateMutation.isPending}
-          >
-            <Save className="size-3.5" />
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
-          </Button>
-        )}
-      </div>
+      <PageHeader title="Moderation" platforms={["twitch"]} />
 
-      <div className="space-y-4">
-        {/* Global Settings */}
-        <Card>
-          <CardContent className="space-y-3 pt-4">
+      <Card>
+        <CardContent className="divide-y divide-border p-0">
+          {/* Global Settings - always expanded */}
+          <div className="p-4 space-y-3">
             <h2 className="text-sm font-semibold text-foreground">
               Global Settings
             </h2>
@@ -214,7 +223,13 @@ export default function ModerationPage() {
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
                   Exempt Level
                 </label>
-                <Select value={form.exemptLevel} onValueChange={(v) => { if (v) setForm({ ...form, exemptLevel: v }); }} disabled={!canManage}>
+                <Select
+                  value={form.exemptLevel}
+                  onValueChange={(v) => {
+                    if (v) setForm({ ...form, exemptLevel: v });
+                  }}
+                  disabled={!canManage}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
@@ -258,55 +273,163 @@ export default function ModerationPage() {
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Caps Filter */}
-        <Card>
-          <CardContent className="space-y-3 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">
-                Caps Filter
-              </h2>
-              <Toggle
-                checked={form.capsEnabled}
-                onChange={(v) => setForm({ ...form, capsEnabled: v })}
-                disabled={!canManage}
-              />
+          {/* Caps Filter */}
+          <div>
+            <div
+              className="flex cursor-pointer items-center justify-between p-4"
+              onClick={() => toggleSection("caps")}
+            >
+              <div className="flex items-center gap-2">
+                <ChevronRight
+                  className={`size-4 text-muted-foreground transition-transform duration-200 ${
+                    expanded.has("caps") ? "rotate-90" : ""
+                  }`}
+                />
+                <h2 className="text-sm font-semibold text-foreground">
+                  Caps Filter
+                </h2>
+              </div>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Switch
+                  checked={form.capsEnabled}
+                  onCheckedChange={(v) =>
+                    setForm({ ...form, capsEnabled: v })
+                  }
+                  disabled={!canManage}
+                />
+              </div>
             </div>
-            {form.capsEnabled && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Min Message Length
+            {expanded.has("caps") && (
+              <div className="px-4 pb-4 pl-10">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Min Message Length
+                    </label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={form.capsMinLength}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          capsMinLength: parseInt(e.target.value) || 15,
+                        })
+                      }
+                      disabled={!canManage}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Max Uppercase %
+                    </label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={form.capsMaxPercent}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          capsMaxPercent: parseInt(e.target.value) || 70,
+                        })
+                      }
+                      disabled={!canManage}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Links Filter */}
+          <div>
+            <div
+              className="flex cursor-pointer items-center justify-between p-4"
+              onClick={() => toggleSection("links")}
+            >
+              <div className="flex items-center gap-2">
+                <ChevronRight
+                  className={`size-4 text-muted-foreground transition-transform duration-200 ${
+                    expanded.has("links") ? "rotate-90" : ""
+                  }`}
+                />
+                <h2 className="text-sm font-semibold text-foreground">
+                  Links Filter
+                </h2>
+              </div>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Switch
+                  checked={form.linksEnabled}
+                  onCheckedChange={(v) =>
+                    setForm({ ...form, linksEnabled: v })
+                  }
+                  disabled={!canManage}
+                />
+              </div>
+            </div>
+            {expanded.has("links") && (
+              <div className="px-4 pb-4 pl-10">
+                <div className="flex items-center gap-3">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Allow Subscribers
                   </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={500}
-                    value={form.capsMinLength}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        capsMinLength: parseInt(e.target.value) || 15,
-                      })
+                  <Switch
+                    checked={form.linksAllowSubs}
+                    onCheckedChange={(v) =>
+                      setForm({ ...form, linksAllowSubs: v })
                     }
                     disabled={!canManage}
                   />
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* Symbols Filter */}
+          <div>
+            <div
+              className="flex cursor-pointer items-center justify-between p-4"
+              onClick={() => toggleSection("symbols")}
+            >
+              <div className="flex items-center gap-2">
+                <ChevronRight
+                  className={`size-4 text-muted-foreground transition-transform duration-200 ${
+                    expanded.has("symbols") ? "rotate-90" : ""
+                  }`}
+                />
+                <h2 className="text-sm font-semibold text-foreground">
+                  Symbols Filter
+                </h2>
+              </div>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Switch
+                  checked={form.symbolsEnabled}
+                  onCheckedChange={(v) =>
+                    setForm({ ...form, symbolsEnabled: v })
+                  }
+                  disabled={!canManage}
+                />
+              </div>
+            </div>
+            {expanded.has("symbols") && (
+              <div className="px-4 pb-4 pl-10">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Max Uppercase %
+                    Max Symbols %
                   </label>
                   <Input
                     type="number"
                     min={1}
                     max={100}
-                    value={form.capsMaxPercent}
+                    value={form.symbolsMaxPercent}
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        capsMaxPercent: parseInt(e.target.value) || 70,
+                        symbolsMaxPercent: parseInt(e.target.value) || 50,
                       })
                     }
                     disabled={!canManage}
@@ -314,160 +437,136 @@ export default function ModerationPage() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Links Filter */}
-        <Card>
-          <CardContent className="space-y-3 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">
-                Links Filter
-              </h2>
-              <Toggle
-                checked={form.linksEnabled}
-                onChange={(v) => setForm({ ...form, linksEnabled: v })}
-                disabled={!canManage}
-              />
-            </div>
-            {form.linksEnabled && (
-              <div className="flex items-center gap-3">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Allow Subscribers
-                </label>
-                <Toggle
-                  checked={form.linksAllowSubs}
-                  onChange={(v) => setForm({ ...form, linksAllowSubs: v })}
-                  disabled={!canManage}
+          {/* Emotes Filter */}
+          <div>
+            <div
+              className="flex cursor-pointer items-center justify-between p-4"
+              onClick={() => toggleSection("emotes")}
+            >
+              <div className="flex items-center gap-2">
+                <ChevronRight
+                  className={`size-4 text-muted-foreground transition-transform duration-200 ${
+                    expanded.has("emotes") ? "rotate-90" : ""
+                  }`}
                 />
+                <h2 className="text-sm font-semibold text-foreground">
+                  Emotes Filter
+                </h2>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Symbols Filter */}
-        <Card>
-          <CardContent className="space-y-3 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">
-                Symbols Filter
-              </h2>
-              <Toggle
-                checked={form.symbolsEnabled}
-                onChange={(v) => setForm({ ...form, symbolsEnabled: v })}
-                disabled={!canManage}
-              />
-            </div>
-            {form.symbolsEnabled && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Max Symbols %
-                </label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={form.symbolsMaxPercent}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      symbolsMaxPercent: parseInt(e.target.value) || 50,
-                    })
+              <div onClick={(e) => e.stopPropagation()}>
+                <Switch
+                  checked={form.emotesEnabled}
+                  onCheckedChange={(v) =>
+                    setForm({ ...form, emotesEnabled: v })
                   }
                   disabled={!canManage}
                 />
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Emotes Filter */}
-        <Card>
-          <CardContent className="space-y-3 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">
-                Emotes Filter
-              </h2>
-              <Toggle
-                checked={form.emotesEnabled}
-                onChange={(v) => setForm({ ...form, emotesEnabled: v })}
-                disabled={!canManage}
-              />
             </div>
-            {form.emotesEnabled && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Max Emote Count
-                </label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={form.emotesMaxCount}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      emotesMaxCount: parseInt(e.target.value) || 15,
-                    })
+            {expanded.has("emotes") && (
+              <div className="px-4 pb-4 pl-10">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Max Emote Count
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={form.emotesMaxCount}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        emotesMaxCount: parseInt(e.target.value) || 15,
+                      })
+                    }
+                    disabled={!canManage}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Repetition Filter */}
+          <div>
+            <div
+              className="flex cursor-pointer items-center justify-between p-4"
+              onClick={() => toggleSection("repetition")}
+            >
+              <div className="flex items-center gap-2">
+                <ChevronRight
+                  className={`size-4 text-muted-foreground transition-transform duration-200 ${
+                    expanded.has("repetition") ? "rotate-90" : ""
+                  }`}
+                />
+                <h2 className="text-sm font-semibold text-foreground">
+                  Repetition Filter
+                </h2>
+              </div>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Switch
+                  checked={form.repetitionEnabled}
+                  onCheckedChange={(v) =>
+                    setForm({ ...form, repetitionEnabled: v })
                   }
                   disabled={!canManage}
                 />
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Repetition Filter */}
-        <Card>
-          <CardContent className="space-y-3 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">
-                Repetition Filter
-              </h2>
-              <Toggle
-                checked={form.repetitionEnabled}
-                onChange={(v) => setForm({ ...form, repetitionEnabled: v })}
-                disabled={!canManage}
-              />
             </div>
-            {form.repetitionEnabled && (
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Max Repeated Characters/Words
-                </label>
-                <Input
-                  type="number"
-                  min={2}
-                  max={100}
-                  value={form.repetitionMaxRepeat}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      repetitionMaxRepeat: parseInt(e.target.value) || 10,
-                    })
+            {expanded.has("repetition") && (
+              <div className="px-4 pb-4 pl-10">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Max Repeated Characters/Words
+                  </label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={100}
+                    value={form.repetitionMaxRepeat}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        repetitionMaxRepeat: parseInt(e.target.value) || 10,
+                      })
+                    }
+                    disabled={!canManage}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Banned Words Filter */}
+          <div>
+            <div
+              className="flex cursor-pointer items-center justify-between p-4"
+              onClick={() => toggleSection("bannedWords")}
+            >
+              <div className="flex items-center gap-2">
+                <ChevronRight
+                  className={`size-4 text-muted-foreground transition-transform duration-200 ${
+                    expanded.has("bannedWords") ? "rotate-90" : ""
+                  }`}
+                />
+                <h2 className="text-sm font-semibold text-foreground">
+                  Banned Words
+                </h2>
+              </div>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Switch
+                  checked={form.bannedWordsEnabled}
+                  onCheckedChange={(v) =>
+                    setForm({ ...form, bannedWordsEnabled: v })
                   }
                   disabled={!canManage}
                 />
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Banned Words Filter */}
-        <Card>
-          <CardContent className="space-y-3 pt-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">
-                Banned Words
-              </h2>
-              <Toggle
-                checked={form.bannedWordsEnabled}
-                onChange={(v) => setForm({ ...form, bannedWordsEnabled: v })}
-                disabled={!canManage}
-              />
             </div>
-            {form.bannedWordsEnabled && (
-              <div className="space-y-2">
+            {expanded.has("bannedWords") && (
+              <div className="px-4 pb-4 pl-10 space-y-2">
                 {canManage && (
                   <div className="flex items-center gap-2">
                     <Input
@@ -512,15 +611,38 @@ export default function ModerationPage() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
 
-        <p className="text-xs text-muted-foreground">
-          Spam filters protect your chat from unwanted content. Mods and
-          broadcasters are always exempt. Use !permit to temporarily allow a user
-          to bypass filters.
-        </p>
-      </div>
+          {/* Sticky Save/Discard bar */}
+          {canManage && dirty && (
+            <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-border bg-card p-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDiscard}
+                disabled={updateMutation.isPending}
+              >
+                <Undo2 className="size-3.5" />
+                Discard
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={updateMutation.isPending}
+              >
+                <Save className="size-3.5" />
+                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <p className="mt-4 text-xs text-muted-foreground">
+        Spam filters protect your chat from unwanted content. Mods and
+        broadcasters are always exempt. Use !permit to temporarily allow a user
+        to bypass filters.
+      </p>
     </div>
   );
 }

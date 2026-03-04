@@ -16,12 +16,15 @@ import {
   Loader2,
   Music,
   Play,
+  Settings,
   SkipForward,
   Trash2,
   Save,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { Switch } from "@/components/ui/switch";
+import { EmptyState } from "@/components/empty-state";
 import {
   Select,
   SelectContent,
@@ -76,6 +79,7 @@ export default function SongRequestsPage() {
   });
 
   const [showPlayer, setShowPlayer] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsForm, setSettingsForm] = useState<{
     enabled: boolean;
     maxQueueSize: number;
@@ -162,7 +166,7 @@ export default function SongRequestsPage() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Song Requests <PlatformBadges platforms={["twitch"]} /></h1>
+        <PageHeader title="Song Requests" platforms={["twitch"]} />
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -178,7 +182,7 @@ export default function SongRequestsPage() {
   if (loadingRequests || loadingSettings) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Song Requests <PlatformBadges platforms={["twitch"]} /></h1>
+        <PageHeader title="Song Requests" platforms={["twitch"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -188,22 +192,84 @@ export default function SongRequestsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Song Requests <PlatformBadges platforms={["twitch"]} /></h1>
+      <PageHeader title="Song Requests" platforms={["twitch"]}>
+        {canManage && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const url = `${window.location.origin}/overlay/song-requests`;
+              navigator.clipboard.writeText(url);
+              toast.success("Overlay URL copied! Add it as a Browser Source in OBS.");
+            }}
+          >
+            <Copy className="size-3.5" />
+            Copy Overlay URL
+          </Button>
+        )}
+      </PageHeader>
 
       <div className="space-y-6">
-        {/* Now Playing Card */}
-        <Card>
-          <CardContent className="pt-4">
+        {/* Now Playing Hero Card */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
             {currentSong ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-main/10">
-                      <Play className="size-4 text-brand-main" />
-                    </div>
-                    <h2 className="text-sm font-semibold text-foreground">Now Playing</h2>
+              <div className="flex flex-col sm:flex-row">
+                {/* Thumbnail */}
+                {currentSong.youtubeThumbnail && (
+                  <div className="relative shrink-0 sm:w-[200px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={currentSong.youtubeThumbnail}
+                      alt=""
+                      className="h-full w-full object-cover sm:aspect-video"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/50 hidden sm:block" />
                   </div>
-                  <div className="flex items-center gap-2">
+                )}
+                {/* Song Info */}
+                <div className="flex flex-1 items-center justify-between gap-4 p-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-center gap-2">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-main/10">
+                        <Play className="size-3 text-brand-main" />
+                      </div>
+                      <span className="text-xs font-medium uppercase tracking-wider text-brand-main">Now Playing</span>
+                      {currentSong.source === "playlist" && (
+                        <span className="rounded-full bg-brand-main/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-main">
+                          Playlist
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="truncate text-base font-semibold text-foreground">
+                        {currentSong.title}
+                      </h2>
+                      {currentSong.youtubeVideoId && (
+                        <a
+                          href={`https://youtu.be/${currentSong.youtubeVideoId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 text-muted-foreground hover:text-foreground"
+                        >
+                          <ExternalLink className="size-3.5" />
+                        </a>
+                      )}
+                    </div>
+                    {currentSong.youtubeChannel && (
+                      <p className="mt-0.5 text-sm text-muted-foreground">{currentSong.youtubeChannel}</p>
+                    )}
+                    <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>Requested by {currentSong.requestedBy}</span>
+                      {currentSong.youtubeDuration && (
+                        <>
+                          <span>&middot;</span>
+                          <span>{formatDuration(currentSong.youtubeDuration)}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
                     {canManage && (
                       <Button
                         variant="outline"
@@ -227,250 +293,215 @@ export default function SongRequestsPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {currentSong.youtubeThumbnail && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={currentSong.youtubeThumbnail}
-                      alt=""
-                      className="h-12 w-20 shrink-0 rounded object-cover"
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-medium text-foreground">{currentSong.title}</p>
-                      {currentSong.youtubeVideoId && (
-                        <a
-                          href={`https://youtu.be/${currentSong.youtubeVideoId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="shrink-0 text-muted-foreground hover:text-foreground"
-                        >
-                          <ExternalLink className="size-3.5" />
-                        </a>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>Requested by {currentSong.requestedBy}</span>
-                      {currentSong.youtubeDuration && (
-                        <>
-                          <span>&middot;</span>
-                          <span>{formatDuration(currentSong.youtubeDuration)}</span>
-                        </>
-                      )}
-                      {currentSong.source === "playlist" && (
-                        <span className="rounded-full bg-brand-main/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-main">
-                          Playlist
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                {showPlayer && currentSong.youtubeVideoId && (
-                  <div className="overflow-hidden rounded-lg">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${currentSong.youtubeVideoId}?autoplay=0`}
-                      title={currentSong.title}
-                      className="aspect-video w-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                )}
               </div>
             ) : (
-              <div className="flex items-center gap-3 text-muted-foreground">
+              <div className="flex items-center gap-3 p-6 text-muted-foreground">
                 <Music className="size-5" />
                 <span className="text-sm">No song currently playing.</span>
               </div>
             )}
           </CardContent>
+          {showPlayer && currentSong?.youtubeVideoId && (
+            <div className="border-t border-border">
+              <iframe
+                src={`https://www.youtube.com/embed/${currentSong.youtubeVideoId}?autoplay=0`}
+                title={currentSong.title}
+                className="aspect-video w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          )}
         </Card>
 
-        {/* Settings Card */}
+        {/* Collapsible Settings Card */}
         {canManage && currentSettings && (
           <Card>
-            <CardContent className="space-y-4 pt-4">
-              <h2 className="text-sm font-semibold text-foreground">Settings</h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Enabled
-                  </label>
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={currentSettings.enabled}
-                      onClick={() =>
-                        setSettingsForm({
-                          ...currentSettings,
-                          enabled: !currentSettings.enabled,
-                        })
-                      }
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-main focus-visible:ring-offset-2 ${
-                        currentSettings.enabled ? "bg-brand-main" : "bg-muted"
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
-                          currentSettings.enabled ? "translate-x-5" : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                    <span className="text-sm text-muted-foreground">
-                      {currentSettings.enabled ? "On" : "Off"}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Max Queue Size
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={500}
-                    value={currentSettings.maxQueueSize}
-                    onChange={(e) =>
-                      setSettingsForm({
-                        ...currentSettings,
-                        maxQueueSize: parseInt(e.target.value) || 50,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Max Per User
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={currentSettings.maxPerUser}
-                    onChange={(e) =>
-                      setSettingsForm({
-                        ...currentSettings,
-                        maxPerUser: parseInt(e.target.value) || 5,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Min Access Level
-                  </label>
-                  <Select value={currentSettings.minAccessLevel} onValueChange={(v) => { if (v) setSettingsForm({ ...currentSettings, minAccessLevel: v }); }}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ACCESS_LEVELS.map((level) => (
-                        <SelectItem key={level} value={level}>
-                          {level.split("_").map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w.charAt(0) + w.slice(1).toLowerCase())).join(" ")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* YouTube & Playlist Settings */}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Max Duration (seconds)
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={36000}
-                    value={currentSettings.maxDuration ?? ""}
-                    placeholder="No limit"
-                    onChange={(e) =>
-                      setSettingsForm({
-                        ...currentSettings,
-                        maxDuration: e.target.value ? parseInt(e.target.value) || null : null,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Auto-Play from Playlist
-                  </label>
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={currentSettings.autoPlayEnabled}
-                      onClick={() =>
-                        setSettingsForm({
-                          ...currentSettings,
-                          autoPlayEnabled: !currentSettings.autoPlayEnabled,
-                        })
-                      }
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-main focus-visible:ring-offset-2 ${
-                        currentSettings.autoPlayEnabled ? "bg-brand-main" : "bg-muted"
-                      }`}
-                    >
-                      <span
-                        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ${
-                          currentSettings.autoPlayEnabled ? "translate-x-5" : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                    <span className="text-sm text-muted-foreground">
-                      {currentSettings.autoPlayEnabled ? "On" : "Off"}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Active Playlist
-                  </label>
-                  <Select
-                    value={currentSettings.activePlaylistId ?? "none"}
-                    onValueChange={(v) =>
-                      setSettingsForm({
-                        ...currentSettings,
-                        activePlaylistId: v === "none" ? null : v,
-                      })
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="None" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {playlistData?.playlists?.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name} ({p.entryCount} songs)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {settingsForm && (
+            <CardContent className="p-0">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-surface-raised"
+                onClick={() => setSettingsOpen(!settingsOpen)}
+              >
                 <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleSaveSettings}
-                    disabled={updateSettingsMutation.isPending}
-                  >
-                    <Save className="size-3.5" />
-                    Save Settings
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setSettingsForm(null)}
-                  >
-                    Cancel
-                  </Button>
+                  <Settings className="size-4 text-muted-foreground" />
+                  <h2 className="text-sm font-semibold text-foreground">Settings</h2>
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                    currentSettings.enabled
+                      ? "bg-green-500/10 text-green-500"
+                      : "bg-muted text-muted-foreground"
+                  }`}>
+                    {currentSettings.enabled ? "Enabled" : "Disabled"}
+                  </span>
+                </div>
+                {settingsOpen ? (
+                  <ChevronUp className="size-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="size-4 text-muted-foreground" />
+                )}
+              </button>
+
+              {settingsOpen && (
+                <div className="space-y-4 border-t border-border px-4 pb-4 pt-4">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        Enabled
+                      </label>
+                      <div className="flex items-center gap-2 pt-1">
+                        <Switch
+                          checked={currentSettings.enabled}
+                          onCheckedChange={(v) =>
+                            setSettingsForm({
+                              ...currentSettings,
+                              enabled: v,
+                            })
+                          }
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {currentSettings.enabled ? "On" : "Off"}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        Max Queue Size
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={500}
+                        value={currentSettings.maxQueueSize}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...currentSettings,
+                            maxQueueSize: parseInt(e.target.value) || 50,
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        Max Per User
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={currentSettings.maxPerUser}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...currentSettings,
+                            maxPerUser: parseInt(e.target.value) || 5,
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        Min Access Level
+                      </label>
+                      <Select value={currentSettings.minAccessLevel} onValueChange={(v) => { if (v) setSettingsForm({ ...currentSettings, minAccessLevel: v }); }}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ACCESS_LEVELS.map((level) => (
+                            <SelectItem key={level} value={level}>
+                              {level.split("_").map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w.charAt(0) + w.slice(1).toLowerCase())).join(" ")}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* YouTube & Playlist Settings */}
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        Max Duration (seconds)
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={36000}
+                        value={currentSettings.maxDuration ?? ""}
+                        placeholder="No limit"
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...currentSettings,
+                            maxDuration: e.target.value ? parseInt(e.target.value) || null : null,
+                          })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        Auto-Play from Playlist
+                      </label>
+                      <div className="flex items-center gap-2 pt-1">
+                        <Switch
+                          checked={currentSettings.autoPlayEnabled}
+                          onCheckedChange={(v) =>
+                            setSettingsForm({
+                              ...currentSettings,
+                              autoPlayEnabled: v,
+                            })
+                          }
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          {currentSettings.autoPlayEnabled ? "On" : "Off"}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                        Active Playlist
+                      </label>
+                      <Select
+                        value={currentSettings.activePlaylistId ?? "none"}
+                        onValueChange={(v) =>
+                          setSettingsForm({
+                            ...currentSettings,
+                            activePlaylistId: v === "none" ? null : v,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {playlistData?.playlists?.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name} ({p.entryCount} songs)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {settingsForm && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleSaveSettings}
+                        disabled={updateSettingsMutation.isPending}
+                      >
+                        <Save className="size-3.5" />
+                        Save Settings
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSettingsForm(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -503,14 +534,11 @@ export default function SongRequestsPage() {
 
         {/* Queue Table */}
         {(requests?.length ?? 0) === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-            <Music className="mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              No song requests yet. Viewers can request songs with{" "}
-              <code className="rounded bg-muted px-1 py-0.5 text-xs">!sr &lt;song title&gt;</code>{" "}
-              in chat.
-            </p>
-          </div>
+          <EmptyState
+            icon={Music}
+            title="No song requests yet"
+            description="Viewers can request songs with !sr <song title> in chat."
+          />
         ) : (
           <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
             <table className="w-full">
@@ -614,26 +642,9 @@ export default function SongRequestsPage() {
           </div>
         )}
 
-        <div className="flex items-center gap-4">
-          <p className="text-xs text-muted-foreground">
-            Song requests are managed via chat commands (!sr) or this dashboard. Enable song requests in settings above.
-          </p>
-          {canManage && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={() => {
-                const url = `${window.location.origin}/overlay/song-requests`;
-                navigator.clipboard.writeText(url);
-                toast.success("Overlay URL copied! Add it as a Browser Source in OBS.");
-              }}
-            >
-              <Copy className="size-3.5" />
-              Copy Overlay URL
-            </Button>
-          )}
-        </div>
+        <p className="text-xs text-muted-foreground">
+          Song requests are managed via chat commands (!sr) or this dashboard. Enable song requests in settings above.
+        </p>
       </div>
     </div>
   );

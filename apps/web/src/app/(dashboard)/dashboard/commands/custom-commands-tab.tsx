@@ -13,10 +13,13 @@ import {
   Pencil,
   Plus,
   Search,
+  Terminal,
   Trash2,
 } from "lucide-react";
 import CommandDialog from "./command-dialog";
 import { canManageCommands } from "@/utils/roles";
+import { Switch } from "@/components/ui/switch";
+import { EmptyState } from "@/components/empty-state";
 
 function formatAccessLevel(level: string): string {
   return level
@@ -24,6 +27,16 @@ function formatAccessLevel(level: string): string {
     .map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w.charAt(0) + w.slice(1).toLowerCase()))
     .join(" ");
 }
+
+const ACCESS_LEVEL_COLORS: Record<string, string> = {
+  EVERYONE: "bg-green-500/10 text-green-500",
+  SUBSCRIBER: "bg-blue-500/10 text-blue-500",
+  REGULAR: "bg-cyan-500/10 text-cyan-500",
+  VIP: "bg-amber-500/10 text-amber-500",
+  MODERATOR: "bg-purple-500/10 text-purple-500",
+  LEAD_MODERATOR: "bg-purple-600/10 text-purple-600",
+  BROADCASTER: "bg-red-500/10 text-red-500",
+};
 
 export default function CustomCommandsTab() {
   const queryClient = useQueryClient();
@@ -129,24 +142,26 @@ export default function CustomCommandsTab() {
 
       {/* Commands Table */}
       {filteredCommands.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-          <p className="text-sm text-muted-foreground">
-            {search
-              ? "No commands match your search."
-              : "No custom commands yet."}
-          </p>
+        <EmptyState
+          icon={Terminal}
+          title={search ? "No commands match your search." : "No custom commands yet."}
+          description={
+            search
+              ? undefined
+              : "Create custom chat commands for your Twitch channel."
+          }
+        >
           {!search && canManage && (
             <Button
               onClick={handleCreate}
               variant="outline"
               size="sm"
-              className="mt-3"
             >
               <Plus className="size-3.5" data-icon="inline-start" />
               Create your first command
             </Button>
           )}
-        </div>
+        </EmptyState>
       ) : (
         <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
           <table className="w-full">
@@ -190,37 +205,27 @@ export default function CustomCommandsTab() {
                   <td className="max-w-[200px] truncate px-4 py-3 text-sm text-muted-foreground">
                     {cmd.response}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {formatAccessLevel(cmd.accessLevel)}
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        ACCESS_LEVEL_COLORS[cmd.accessLevel] ?? "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {formatAccessLevel(cmd.accessLevel)}
+                    </span>
                   </td>
                   {canManage && (
                     <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => toggleMutation.mutate({ id: cmd.id })}
-                        disabled={toggleMutation.isPending}
-                        className="inline-flex items-center justify-center"
-                        aria-label={`Toggle ${cmd.name}`}
-                      >
-                        {toggleMutation.isPending ? (
-                          <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                        ) : (
-                          <div
-                            className={`relative h-6 w-11 rounded-full transition-colors ${
-                              cmd.enabled
-                                ? "bg-brand-main"
-                                : "bg-muted"
-                            }`}
-                          >
-                            <div
-                              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                                cmd.enabled
-                                  ? "translate-x-5"
-                                  : "translate-x-0.5"
-                              }`}
-                            />
-                          </div>
-                        )}
-                      </button>
+                      {toggleMutation.isPending ? (
+                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Switch
+                          checked={cmd.enabled}
+                          onCheckedChange={() => toggleMutation.mutate({ id: cmd.id })}
+                          disabled={toggleMutation.isPending}
+                          aria-label={`Toggle ${cmd.name}`}
+                        />
+                      )}
                     </td>
                   )}
                   {canManage && (

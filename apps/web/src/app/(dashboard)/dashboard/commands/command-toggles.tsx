@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { canControlBot } from "@/utils/roles";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -116,7 +117,7 @@ export default function CommandToggles() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">
@@ -178,32 +179,16 @@ export default function CommandToggles() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     {canControl ? (
-                      <button
-                        onClick={() => handleToggle(cmd.name)}
-                        disabled={isPending}
-                        className="inline-flex items-center justify-center"
-                        aria-label={`Toggle ${cmd.name}`}
-                      >
-                        {isPending ? (
-                          <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                        ) : (
-                          <div
-                            className={`relative h-6 w-11 rounded-full transition-colors ${
-                              !isDisabled
-                                ? "bg-brand-main"
-                                : "bg-muted"
-                            }`}
-                          >
-                            <div
-                              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                                !isDisabled
-                                  ? "translate-x-5"
-                                  : "translate-x-0.5"
-                              }`}
-                            />
-                          </div>
-                        )}
-                      </button>
+                      isPending ? (
+                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Switch
+                          checked={!isDisabled}
+                          onCheckedChange={() => handleToggle(cmd.name)}
+                          disabled={isPending}
+                          aria-label={`Toggle ${cmd.name}`}
+                        />
+                      )
                     ) : (
                       <span className={`text-xs ${!isDisabled ? "text-green-500" : "text-muted-foreground"}`}>
                         {!isDisabled ? "On" : "Off"}

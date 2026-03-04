@@ -3,7 +3,20 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { BarChart3, Plus, StopCircle } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/empty-state";
+import {
+  BarChart3,
+  Plus,
+  StopCircle,
+  Trash2,
+  Loader2,
+  Trophy,
+  Clock,
+} from "lucide-react";
 
 export default function PollsPage() {
   const queryClient = useQueryClient();
@@ -38,201 +51,291 @@ export default function PollsPage() {
     (p: any) => p.status === "ACTIVE"
   ) as any;
 
+  const pastPolls = polls?.filter((p: any) => p.status !== "ACTIVE") ?? [];
+
   const addChoice = () => {
-    if (choices.length < 5) setChoices([...choices, ""]);
+    if (choices.length < 4) setChoices([...choices, ""]);
   };
 
   const removeChoice = (index: number) => {
     if (choices.length > 2) setChoices(choices.filter((_, i) => i !== index));
   };
 
-  return (
-    <div className="flex flex-col gap-6">
+  const canCreate =
+    title.trim().length > 0 &&
+    choices.filter(Boolean).length >= 2 &&
+    !createMutation.isPending;
+
+  if (isLoading) {
+    return (
       <div>
-        <h1 className="text-2xl font-bold font-heading text-foreground">
-          Polls
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Create and manage Twitch polls.
-        </p>
-      </div>
-
-      {/* Create Form */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 font-semibold text-foreground">New Poll</h2>
-        <div className="flex flex-col gap-3">
-          <input
-            type="text"
-            placeholder="Question"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={60}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand-main focus:outline-none"
-          />
-          {choices.map((choice, i) => (
-            <div key={i} className="flex gap-2">
-              <input
-                type="text"
-                placeholder={`Option ${i + 1}`}
-                value={choice}
-                onChange={(e) => {
-                  const next = [...choices];
-                  next[i] = e.target.value;
-                  setChoices(next);
-                }}
-                maxLength={25}
-                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand-main focus:outline-none"
-              />
-              {choices.length > 2 && (
-                <button
-                  onClick={() => removeChoice(i)}
-                  className="rounded-lg border border-border px-2 text-muted-foreground hover:text-foreground"
-                >
-                  ×
-                </button>
-              )}
-            </div>
-          ))}
-          <div className="flex items-center gap-3">
-            {choices.length < 5 && (
-              <button
-                onClick={addChoice}
-                className="text-sm text-brand-main hover:text-brand-main/80"
-              >
-                + Add option
-              </button>
-            )}
-            <div className="ml-auto flex items-center gap-2">
-              <label className="text-sm text-muted-foreground">Duration:</label>
-              <input
-                type="number"
-                min={15}
-                max={1800}
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                className="w-20 rounded-lg border border-border bg-background px-2 py-1 text-sm text-foreground focus:border-brand-main focus:outline-none"
-              />
-              <span className="text-xs text-muted-foreground">sec</span>
-            </div>
-          </div>
-          <button
-            onClick={() =>
-              createMutation.mutate({
-                title,
-                choices: choices.filter(Boolean),
-                duration,
-              })
-            }
-            disabled={
-              !title ||
-              choices.filter(Boolean).length < 2 ||
-              createMutation.isPending
-            }
-            className="inline-flex w-fit items-center gap-2 rounded-lg bg-brand-main px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-main/80 disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4" />
-            Create Poll
-          </button>
+        <PageHeader
+          title="Polls"
+          platforms={["twitch"]}
+          subtitle="Create and manage Twitch polls."
+        />
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
       </div>
+    );
+  }
 
-      {/* Active Poll */}
-      {activePoll && (
-        <div className="rounded-xl border-2 border-brand-main/30 bg-card p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <BarChart3 className="h-5 w-5 text-brand-main" />
-              <h2 className="font-semibold text-foreground">
-                {activePoll.title}
-              </h2>
-              <span className="rounded-md bg-green-500/20 px-2 py-0.5 text-xs font-bold uppercase text-green-600 dark:text-green-400">
-                Active
-              </span>
-            </div>
-            <button
-              onClick={() =>
-                endMutation.mutate({ id: activePoll.id })
-              }
-              disabled={endMutation.isPending}
-              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised disabled:opacity-50"
-            >
-              <StopCircle className="h-4 w-4" />
-              End Poll
-            </button>
-          </div>
-          <div className="space-y-2">
-            {activePoll.choices?.map((choice: any) => {
-              const totalVotes = activePoll.choices.reduce(
-                (sum: number, c: any) => sum + (c.votes ?? 0),
-                0
-              );
-              const pct =
-                totalVotes > 0
-                  ? Math.round(((choice.votes ?? 0) / totalVotes) * 100)
-                  : 0;
-              return (
-                <div key={choice.id} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-foreground">{choice.title}</span>
-                    <span className="text-muted-foreground">
-                      {choice.votes ?? 0} ({pct}%)
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-surface-raised">
-                    <div
-                      className="h-full rounded-full bg-brand-main transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+  return (
+    <div>
+      <PageHeader
+        title="Polls"
+        platforms={["twitch"]}
+        subtitle="Create and manage Twitch polls."
+      />
 
-      {/* Poll History */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-4 font-semibold text-foreground">History</h2>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        ) : !polls?.length ? (
-          <p className="text-sm text-muted-foreground">No polls yet.</p>
-        ) : (
-          <div className="divide-y divide-border">
-            {polls
-              .filter((p: any) => p.status !== "ACTIVE")
-              .map((p: any) => (
-                <div key={p.id} className="py-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-foreground">
-                      {p.title}
-                    </p>
-                    <span
-                      className={`rounded-md px-2 py-0.5 text-xs font-bold uppercase ${
-                        p.status === "COMPLETED"
-                          ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                          : "bg-surface-raised text-muted-foreground"
-                      }`}
+      <div className="space-y-6">
+        {/* Create Poll Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle>New Poll</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              placeholder="Poll question..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              maxLength={60}
+            />
+
+            <div className="space-y-2">
+              {choices.map((choice, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Input
+                    placeholder={`Option ${i + 1}`}
+                    value={choice}
+                    onChange={(e) => {
+                      const next = [...choices];
+                      next[i] = e.target.value;
+                      setChoices(next);
+                    }}
+                    maxLength={25}
+                  />
+                  {choices.length > 2 && (
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => removeChoice(i)}
+                      aria-label={`Remove option ${i + 1}`}
                     >
-                      {p.status}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex gap-3">
-                    {p.choices?.map((c: any) => (
-                      <span
-                        key={c.id}
-                        className="text-xs text-muted-foreground"
-                      >
-                        {c.title}: {c.votes ?? 0}
-                      </span>
-                    ))}
-                  </div>
+                      <Trash2 className="size-3.5 text-muted-foreground" />
+                    </Button>
+                  )}
                 </div>
               ))}
-          </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {choices.length < 4 && (
+                <Button variant="ghost" size="sm" onClick={addChoice}>
+                  <Plus className="size-3.5" />
+                  Add option
+                </Button>
+              )}
+
+              <div className="ml-auto flex items-center gap-2">
+                <Clock className="size-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Duration:</span>
+                <Input
+                  type="number"
+                  min={15}
+                  max={1800}
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  className="w-20"
+                />
+                <span className="text-xs text-muted-foreground">sec</span>
+              </div>
+            </div>
+
+            <Button
+              className="bg-brand-main text-white hover:bg-brand-main/80"
+              onClick={() =>
+                createMutation.mutate({
+                  title,
+                  choices: choices.filter(Boolean),
+                  duration,
+                })
+              }
+              disabled={!canCreate}
+            >
+              {createMutation.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Plus className="size-4" />
+              )}
+              Create Poll
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Active Poll */}
+        {activePoll && (
+          <ActivePollCard poll={activePoll} onEnd={endMutation} />
         )}
+
+        {/* Past Polls */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-medium text-muted-foreground">
+            Past Polls
+          </h2>
+
+          {pastPolls.length === 0 ? (
+            <EmptyState
+              icon={BarChart3}
+              title="No past polls"
+              description="Completed polls will appear here."
+            />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {pastPolls.map((poll: any) => (
+                <PastPollCard key={poll.id} poll={poll} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
+  );
+}
+
+function ActivePollCard({
+  poll,
+  onEnd,
+}: {
+  poll: any;
+  onEnd: { mutate: (args: { id: string }) => void; isPending: boolean };
+}) {
+  const totalVotes = poll.choices?.reduce(
+    (sum: number, c: any) => sum + (c.votes ?? 0),
+    0
+  ) ?? 0;
+
+  return (
+    <Card className="border-brand-main/30">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <BarChart3 className="size-5 text-brand-main" />
+            <CardTitle className="text-base">{poll.title}</CardTitle>
+            <span className="rounded-md bg-green-500/20 px-2 py-0.5 text-xs font-bold uppercase text-green-600 dark:text-green-400">
+              Active
+            </span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEnd.mutate({ id: poll.id })}
+            disabled={onEnd.isPending}
+          >
+            {onEnd.isPending ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <StopCircle className="size-3.5" />
+            )}
+            End Poll
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {poll.choices?.map((choice: any) => {
+          const pct =
+            totalVotes > 0
+              ? Math.round(((choice.votes ?? 0) / totalVotes) * 100)
+              : 0;
+          return (
+            <div key={choice.title} className="space-y-1.5">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium text-foreground">
+                  {choice.title}
+                </span>
+                <span className="text-muted-foreground">
+                  {choice.votes ?? 0} vote{(choice.votes ?? 0) !== 1 ? "s" : ""}{" "}
+                  ({pct}%)
+                </span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-surface-raised">
+                <div
+                  className="h-full rounded-full bg-brand-main transition-all duration-500 ease-out"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+        {totalVotes > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {totalVotes} total vote{totalVotes !== 1 ? "s" : ""}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function PastPollCard({ poll }: { poll: any }) {
+  const totalVotes =
+    poll.choices?.reduce(
+      (sum: number, c: any) => sum + (c.votes ?? 0),
+      0
+    ) ?? 0;
+
+  const winner = poll.choices?.reduce(
+    (best: any, c: any) =>
+      (c.votes ?? 0) > (best?.votes ?? 0) ? c : best,
+    null
+  );
+
+  return (
+    <Card size="sm">
+      <CardContent className="space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-medium text-foreground">{poll.title}</p>
+          <span
+            className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-bold uppercase ${
+              poll.status === "COMPLETED"
+                ? "bg-green-500/20 text-green-600 dark:text-green-400"
+                : "bg-surface-raised text-muted-foreground"
+            }`}
+          >
+            {poll.status === "COMPLETED" ? "Completed" : poll.status}
+          </span>
+        </div>
+
+        {winner && totalVotes > 0 && (
+          <div className="flex items-center gap-1.5 text-xs text-brand-main">
+            <Trophy className="size-3" />
+            <span className="font-medium">{winner.title}</span>
+            <span className="text-muted-foreground">
+              ({winner.votes ?? 0} vote{(winner.votes ?? 0) !== 1 ? "s" : ""})
+            </span>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {poll.choices?.map((c: any) => (
+            <span
+              key={c.title}
+              className={`text-xs ${
+                c.title === winner?.title && totalVotes > 0
+                  ? "font-medium text-foreground"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {c.title}: {c.votes ?? 0}
+            </span>
+          ))}
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          {totalVotes} total vote{totalVotes !== 1 ? "s" : ""}
+        </p>
+      </CardContent>
+    </Card>
   );
 }

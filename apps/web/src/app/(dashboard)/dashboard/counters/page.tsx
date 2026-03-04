@@ -10,13 +10,14 @@ import { toast } from "sonner";
 import {
   AlertCircle,
   Loader2,
-  Plus,
   Trash2,
   Minus,
+  Plus,
   Hash,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 
 export default function CountersPage() {
   const queryClient = useQueryClient();
@@ -73,7 +74,7 @@ export default function CountersPage() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Counters <PlatformBadges platforms={["twitch"]} /></h1>
+        <PageHeader title="Counters" platforms={["twitch"]} />
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -89,7 +90,7 @@ export default function CountersPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Counters <PlatformBadges platforms={["twitch"]} /></h1>
+        <PageHeader title="Counters" platforms={["twitch"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -99,9 +100,17 @@ export default function CountersPage() {
 
   return (
     <div>
-      <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Counters <PlatformBadges platforms={["twitch"]} /></h1>
+      <PageHeader title="Counters" platforms={["twitch"]} />
 
-      <div className="space-y-4">
+      <p className="mb-4 text-sm text-muted-foreground">
+        Use{" "}
+        <code className="rounded bg-surface-raised px-1.5 py-0.5">
+          {"{counter_name}"}
+        </code>{" "}
+        in command responses
+      </p>
+
+      <div className="space-y-6">
         {/* Create new counter */}
         {canManage && (
           <div className="flex items-center gap-2">
@@ -125,35 +134,36 @@ export default function CountersPage() {
               }}
               disabled={!newCounterName.trim() || createMutation.isPending}
             >
-              <Plus className="size-3.5" />
               Create
             </Button>
           </div>
         )}
 
-        {/* Counters list */}
+        {/* Counters grid */}
         {(counters?.length ?? 0) === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-            <Hash className="mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              No counters yet. Create one above!
-            </p>
-          </div>
+          <EmptyState
+            icon={Hash}
+            title="No counters yet"
+            description="Create one above to start tracking."
+          />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {counters?.map((c) => (
-              <Card key={c.id}>
-                <CardContent className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {c.name}
-                    </p>
-                    <p className="text-2xl font-bold text-brand-main">
-                      {c.value}
-                    </p>
-                  </div>
+              <Card key={c.id} className="glass group relative">
+                <CardContent className="flex flex-col items-center gap-3 py-6">
+                  {/* Counter name */}
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {c.name}
+                  </p>
+
+                  {/* Counter value */}
+                  <p className="text-3xl font-bold text-brand-main">
+                    {c.value}
+                  </p>
+
+                  {/* Increment / Decrement buttons */}
                   {canManage && (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="icon-xs"
@@ -182,6 +192,12 @@ export default function CountersPage() {
                       >
                         <Plus className="size-3" />
                       </Button>
+                    </div>
+                  )}
+
+                  {/* Delete button — top-right, visible on hover */}
+                  {canManage && (
+                    <div className="absolute right-2 top-2">
                       {deleteConfirmId === c.id ? (
                         <div className="flex items-center gap-1">
                           <Button
@@ -206,10 +222,11 @@ export default function CountersPage() {
                         <Button
                           variant="ghost"
                           size="icon-xs"
+                          className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
                           onClick={() => setDeleteConfirmId(c.id)}
                           aria-label={`Delete ${c.name}`}
                         >
-                          <Trash2 className="size-3.5 text-red-400" />
+                          <Trash2 className="size-3.5" />
                         </Button>
                       )}
                     </div>
@@ -219,10 +236,6 @@ export default function CountersPage() {
             ))}
           </div>
         )}
-
-        <p className="text-xs text-muted-foreground">
-          Use <code className="rounded bg-surface-raised px-1">{"{counter <name>"}</code> in custom commands to display a counter value.
-        </p>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -14,11 +15,11 @@ import {
   Trash2,
   Pencil,
   Timer,
-  ToggleLeft,
-  ToggleRight,
+  Info,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
-import { PlatformBadges } from "@/components/platform-badges";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 
 interface TimerFormState {
   name: string;
@@ -143,7 +144,7 @@ export default function TimersPage() {
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Timers <PlatformBadges platforms={["twitch"]} /></h1>
+        <PageHeader title="Timers" platforms={["twitch"]} />
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="flex items-center gap-3">
             <AlertCircle className="size-5 text-amber-500" />
@@ -159,7 +160,7 @@ export default function TimersPage() {
   if (isLoading) {
     return (
       <div>
-        <h1 className="mb-6 flex items-center gap-3 text-2xl font-bold text-foreground">Timers <PlatformBadges platforms={["twitch"]} /></h1>
+        <PageHeader title="Timers" platforms={["twitch"]} />
         <div className="flex items-center justify-center py-12">
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
@@ -169,14 +170,21 @@ export default function TimersPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="flex items-center gap-3 text-2xl font-bold text-foreground">Timers <PlatformBadges platforms={["twitch"]} /></h1>
+      <PageHeader title="Timers" platforms={["twitch"]}>
         {canManage && !showForm && (
           <Button size="sm" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); }}>
             <Plus className="size-3.5" />
             New Timer
           </Button>
         )}
+      </PageHeader>
+
+      {/* Hint text */}
+      <div className="mb-4 flex items-center gap-2 rounded-lg border border-brand-main/20 bg-brand-main/5 px-3 py-2">
+        <Info className="size-4 shrink-0 text-brand-main" />
+        <p className="text-xs text-muted-foreground">
+          Timers only fire when stream is live. Chat lines threshold requires a minimum number of chat messages between posts.
+        </p>
       </div>
 
       <div className="space-y-4">
@@ -273,12 +281,11 @@ export default function TimersPage() {
 
         {/* Timers Table */}
         {(timers?.length ?? 0) === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
-            <Timer className="mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              No timers yet. Timers post recurring messages to chat at set intervals.
-            </p>
-          </div>
+          <EmptyState
+            icon={Timer}
+            title="No timers yet"
+            description="Timers post recurring messages to chat at set intervals."
+          />
         ) : (
           <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
             <table className="w-full">
@@ -294,10 +301,10 @@ export default function TimersPage() {
                     Interval
                   </th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Chat Lines
+                    Min Chat Lines
                   </th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Status
+                    Enabled
                   </th>
                   {canManage && (
                     <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -312,47 +319,35 @@ export default function TimersPage() {
                     key={t.id}
                     className="transition-colors hover:bg-surface-raised"
                   >
-                    <td className="px-4 py-3 text-sm font-medium text-foreground">
+                    <td className="px-4 py-3 text-sm font-semibold text-foreground">
                       {t.name}
                     </td>
                     <td className="max-w-xs px-4 py-3 text-sm text-muted-foreground">
                       <span className="line-clamp-1">{t.message}</span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {t.intervalMinutes}m
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {t.chatLines || "—"}
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center rounded-full bg-brand-main/10 px-2 py-0.5 text-xs font-medium text-brand-main">
+                        {t.intervalMinutes}m
+                      </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          t.enabled
-                            ? "bg-green-500/15 text-green-500"
-                            : "bg-muted-foreground/15 text-muted-foreground"
-                        }`}
-                      >
-                        {t.enabled ? "Enabled" : "Disabled"}
+                      <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                        {t.chatLines || "0"}
                       </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Switch
+                        checked={t.enabled}
+                        onCheckedChange={() => {
+                          if (canManage) toggleMutation.mutate({ id: t.id });
+                        }}
+                        disabled={!canManage || toggleMutation.isPending}
+                        aria-label={t.enabled ? "Disable timer" : "Enable timer"}
+                      />
                     </td>
                     {canManage && (
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            onClick={() => toggleMutation.mutate({ id: t.id })}
-                            disabled={toggleMutation.isPending}
-                            aria-label={
-                              t.enabled ? "Disable timer" : "Enable timer"
-                            }
-                          >
-                            {t.enabled ? (
-                              <ToggleRight className="size-4 text-green-500" />
-                            ) : (
-                              <ToggleLeft className="size-4 text-muted-foreground" />
-                            )}
-                          </Button>
                           <Button
                             variant="ghost"
                             size="icon-xs"
@@ -400,10 +395,6 @@ export default function TimersPage() {
             </table>
           </div>
         )}
-
-        <p className="text-xs text-muted-foreground">
-          Timers only fire when the stream is live. Chat lines threshold requires a minimum number of chat messages between posts.
-        </p>
       </div>
     </div>
   );
