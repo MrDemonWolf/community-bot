@@ -156,7 +156,7 @@ export default function SongRequestsPage() {
       enabled: currentSettings.enabled,
       maxQueueSize: currentSettings.maxQueueSize,
       maxPerUser: currentSettings.maxPerUser,
-      minAccessLevel: currentSettings.minAccessLevel as any,
+      minAccessLevel: currentSettings.minAccessLevel as typeof ACCESS_LEVELS[number],
       maxDuration: currentSettings.maxDuration,
       autoPlayEnabled: currentSettings.autoPlayEnabled,
       activePlaylistId: currentSettings.activePlaylistId,

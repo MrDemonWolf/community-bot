@@ -180,7 +180,7 @@ export default function TimersPage() {
       </PageHeader>
 
       {/* Hint text */}
-      <div className="mb-4 flex items-center gap-2 rounded-lg border border-brand-main/20 bg-brand-main/5 px-3 py-2">
+      <div className="glass-subtle mb-4 flex items-center gap-2 rounded-lg px-3 py-2">
         <Info className="size-4 shrink-0 text-brand-main" />
         <p className="text-xs text-muted-foreground">
           Timers only fire when stream is live. Chat lines threshold requires a minimum number of chat messages between posts.

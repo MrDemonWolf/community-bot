@@ -222,7 +222,7 @@ export default function CountersPage() {
                         <Button
                           variant="ghost"
                           size="icon-xs"
-                          className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                          className="text-muted-foreground transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                           onClick={() => setDeleteConfirmId(c.id)}
                           aria-label={`Delete ${c.name}`}
                         >

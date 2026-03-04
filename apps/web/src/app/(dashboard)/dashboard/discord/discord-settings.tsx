@@ -630,9 +630,10 @@ function NotificationConfigCard({
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  {channels?.find((c) => c.id === channelId)
-                    ? `# ${channels.find((c) => c.id === channelId)!.name}`
-                    : "Not set"}
+                  {(() => {
+                    const selected = channels?.find((c) => c.id === channelId);
+                    return selected ? `# ${selected.name}` : "Not set";
+                  })()}
                 </p>
               )}
             </div>
@@ -685,11 +686,11 @@ function NotificationConfigCard({
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  {roleId === "everyone"
-                    ? "@everyone"
-                    : roles?.find((r) => r.id === roleId)
-                      ? `@${roles.find((r) => r.id === roleId)!.name}`
-                      : "Not set"}
+                  {(() => {
+                    if (roleId === "everyone") return "@everyone";
+                    const matchedRole = roles?.find((r) => r.id === roleId);
+                    return matchedRole ? `@${matchedRole.name}` : "Not set";
+                  })()}
                 </p>
               )}
             </div>

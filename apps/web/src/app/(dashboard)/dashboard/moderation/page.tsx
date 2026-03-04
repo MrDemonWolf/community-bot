@@ -277,9 +277,12 @@ export default function ModerationPage() {
 
           {/* Caps Filter */}
           <div>
-            <div
-              className="flex cursor-pointer items-center justify-between p-4"
+            <button
+              type="button"
+              className="flex w-full cursor-pointer items-center justify-between p-4"
               onClick={() => toggleSection("caps")}
+              aria-expanded={expanded.has("caps")}
+              aria-controls="panel-caps"
             >
               <div className="flex items-center gap-2">
                 <ChevronRight
@@ -300,9 +303,9 @@ export default function ModerationPage() {
                   disabled={!canManage}
                 />
               </div>
-            </div>
+            </button>
             {expanded.has("caps") && (
-              <div className="px-4 pb-4 pl-10">
+              <div id="panel-caps" className="px-4 pb-4 pl-10">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
@@ -347,9 +350,12 @@ export default function ModerationPage() {
 
           {/* Links Filter */}
           <div>
-            <div
-              className="flex cursor-pointer items-center justify-between p-4"
+            <button
+              type="button"
+              className="flex w-full cursor-pointer items-center justify-between p-4"
               onClick={() => toggleSection("links")}
+              aria-expanded={expanded.has("links")}
+              aria-controls="panel-links"
             >
               <div className="flex items-center gap-2">
                 <ChevronRight
@@ -370,9 +376,9 @@ export default function ModerationPage() {
                   disabled={!canManage}
                 />
               </div>
-            </div>
+            </button>
             {expanded.has("links") && (
-              <div className="px-4 pb-4 pl-10">
+              <div id="panel-links" className="px-4 pb-4 pl-10">
                 <div className="flex items-center gap-3">
                   <label className="text-xs font-medium text-muted-foreground">
                     Allow Subscribers
@@ -391,9 +397,12 @@ export default function ModerationPage() {
 
           {/* Symbols Filter */}
           <div>
-            <div
-              className="flex cursor-pointer items-center justify-between p-4"
+            <button
+              type="button"
+              className="flex w-full cursor-pointer items-center justify-between p-4"
               onClick={() => toggleSection("symbols")}
+              aria-expanded={expanded.has("symbols")}
+              aria-controls="panel-symbols"
             >
               <div className="flex items-center gap-2">
                 <ChevronRight
@@ -414,9 +423,9 @@ export default function ModerationPage() {
                   disabled={!canManage}
                 />
               </div>
-            </div>
+            </button>
             {expanded.has("symbols") && (
-              <div className="px-4 pb-4 pl-10">
+              <div id="panel-symbols" className="px-4 pb-4 pl-10">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
                     Max Symbols %
@@ -441,9 +450,12 @@ export default function ModerationPage() {
 
           {/* Emotes Filter */}
           <div>
-            <div
-              className="flex cursor-pointer items-center justify-between p-4"
+            <button
+              type="button"
+              className="flex w-full cursor-pointer items-center justify-between p-4"
               onClick={() => toggleSection("emotes")}
+              aria-expanded={expanded.has("emotes")}
+              aria-controls="panel-emotes"
             >
               <div className="flex items-center gap-2">
                 <ChevronRight
@@ -464,9 +476,9 @@ export default function ModerationPage() {
                   disabled={!canManage}
                 />
               </div>
-            </div>
+            </button>
             {expanded.has("emotes") && (
-              <div className="px-4 pb-4 pl-10">
+              <div id="panel-emotes" className="px-4 pb-4 pl-10">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
                     Max Emote Count
@@ -491,9 +503,12 @@ export default function ModerationPage() {
 
           {/* Repetition Filter */}
           <div>
-            <div
-              className="flex cursor-pointer items-center justify-between p-4"
+            <button
+              type="button"
+              className="flex w-full cursor-pointer items-center justify-between p-4"
               onClick={() => toggleSection("repetition")}
+              aria-expanded={expanded.has("repetition")}
+              aria-controls="panel-repetition"
             >
               <div className="flex items-center gap-2">
                 <ChevronRight
@@ -514,9 +529,9 @@ export default function ModerationPage() {
                   disabled={!canManage}
                 />
               </div>
-            </div>
+            </button>
             {expanded.has("repetition") && (
-              <div className="px-4 pb-4 pl-10">
+              <div id="panel-repetition" className="px-4 pb-4 pl-10">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">
                     Max Repeated Characters/Words
@@ -541,9 +556,12 @@ export default function ModerationPage() {
 
           {/* Banned Words Filter */}
           <div>
-            <div
-              className="flex cursor-pointer items-center justify-between p-4"
+            <button
+              type="button"
+              className="flex w-full cursor-pointer items-center justify-between p-4"
               onClick={() => toggleSection("bannedWords")}
+              aria-expanded={expanded.has("bannedWords")}
+              aria-controls="panel-bannedWords"
             >
               <div className="flex items-center gap-2">
                 <ChevronRight
@@ -564,9 +582,9 @@ export default function ModerationPage() {
                   disabled={!canManage}
                 />
               </div>
-            </div>
+            </button>
             {expanded.has("bannedWords") && (
-              <div className="px-4 pb-4 pl-10 space-y-2">
+              <div id="panel-bannedWords" className="px-4 pb-4 pl-10 space-y-2">
                 {canManage && (
                   <div className="flex items-center gap-2">
                     <Input
@@ -615,7 +633,7 @@ export default function ModerationPage() {
 
           {/* Sticky Save/Discard bar */}
           {canManage && dirty && (
-            <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-border bg-card p-4">
+            <div className="glass-subtle sticky bottom-0 flex items-center justify-end gap-2 border-t border-border p-4">
               <Button
                 variant="outline"
                 size="sm"

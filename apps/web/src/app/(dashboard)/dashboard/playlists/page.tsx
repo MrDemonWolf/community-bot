@@ -350,7 +350,7 @@ export default function PlaylistsPage() {
                   {selectedPlaylist?.entries.map((entry, index) => (
                     <div
                       key={entry.id}
-                      className="glass flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-surface-raised"
+                      className="glass flex items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-surface-raised"
                     >
                       {/* Position */}
                       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">

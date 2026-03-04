@@ -138,7 +138,7 @@ export default function GiveawaysPage() {
 
         {/* Active Giveaway */}
         {activeGiveaway && (
-          <Card className="border-l-3 border-l-brand-main">
+          <Card className="border-l-4 border-l-brand-main">
             <CardContent>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">

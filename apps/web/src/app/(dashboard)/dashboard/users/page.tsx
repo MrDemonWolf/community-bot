@@ -290,6 +290,7 @@ export default function UsersPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
+                                aria-label={`Change role for ${user.name}`}
                                 onClick={() => {
                                   setRoleDialogUser({
                                     id: user.id,
@@ -306,6 +307,7 @@ export default function UsersPage() {
                                 <Button
                                   size="sm"
                                   variant="outline"
+                                  aria-label={`Unban ${user.name}`}
                                   onClick={() =>
                                     unbanMutation.mutate({ userId: user.id })
                                   }
@@ -321,6 +323,7 @@ export default function UsersPage() {
                                   size="sm"
                                   variant="outline"
                                   className="text-destructive hover:bg-destructive/10"
+                                  aria-label={`Ban ${user.name}`}
                                   onClick={() =>
                                     setBanDialogUser({
                                       id: user.id,

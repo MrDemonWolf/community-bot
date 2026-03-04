@@ -48,10 +48,10 @@ export default function PollsPage() {
   );
 
   const activePoll = polls?.find(
-    (p: any) => p.status === "ACTIVE"
-  ) as any;
+    (p) => p.status === "ACTIVE"
+  );
 
-  const pastPolls = polls?.filter((p: any) => p.status !== "ACTIVE") ?? [];
+  const pastPolls = polls?.filter((p) => p.status !== "ACTIVE") ?? [];
 
   const addChoice = () => {
     if (choices.length < 4) setChoices([...choices, ""]);
@@ -193,7 +193,7 @@ export default function PollsPage() {
             />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
-              {pastPolls.map((poll: any) => (
+              {pastPolls.map((poll) => (
                 <PastPollCard key={poll.id} poll={poll} />
               ))}
             </div>
@@ -208,6 +208,7 @@ function ActivePollCard({
   poll,
   onEnd,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   poll: any;
   onEnd: { mutate: (args: { id: string }) => void; isPending: boolean };
 }) {
@@ -278,6 +279,7 @@ function ActivePollCard({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function PastPollCard({ poll }: { poll: any }) {
   const totalVotes =
     poll.choices?.reduce(

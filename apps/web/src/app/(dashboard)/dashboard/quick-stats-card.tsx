@@ -41,20 +41,20 @@ export default function QuickStatsStrip() {
   const statusBorder = !botChannel
     ? "border-l-muted-foreground/30"
     : botChannel.muted
-      ? "border-l-amber-500"
-      : "border-l-green-500";
+      ? "border-l-brand-accent"
+      : "border-l-brand-main";
   const statusColor = !botChannel
     ? "text-muted-foreground"
     : botChannel.muted
-      ? "text-amber-500"
-      : "text-green-500";
+      ? "text-brand-accent"
+      : "text-brand-main";
 
   const queueStatus = queueState?.status ?? "CLOSED";
   const queueBorder =
     queueStatus === "OPEN"
-      ? "border-l-green-500"
+      ? "border-l-brand-main"
       : queueStatus === "PAUSED"
-        ? "border-l-amber-500"
+        ? "border-l-brand-accent"
         : "border-l-muted-foreground/30";
 
   const stats = [

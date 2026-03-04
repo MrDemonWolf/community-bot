@@ -128,9 +128,9 @@ export default function AuditLogFeed() {
   const hasMore = items.length < total;
 
   return (
-    <Card>
+    <Card className="glass">
       <CardContent className="pt-5">
-        <div className="mb-4 flex items-center gap-2">
+        <div className="glass-subtle mb-4 flex items-center gap-2">
           <Activity className="size-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold text-foreground">Activity</h2>
         </div>

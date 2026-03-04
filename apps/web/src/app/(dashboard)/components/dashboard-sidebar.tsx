@@ -68,7 +68,7 @@ export function SidebarContent({
   const discordDot = (
     <span
       className={`ml-auto h-2 w-2 rounded-full ${
-        botStatus?.hasDiscordLinked ? "bg-green-500" : "bg-muted-foreground/30"
+        botStatus?.hasDiscordLinked ? "bg-brand-discord" : "bg-muted-foreground/30"
       }`}
     />
   );
@@ -284,7 +284,7 @@ export default function DashboardSidebar({
   session: typeof authClient.$Infer.Session;
 }) {
   return (
-    <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-border bg-card/80 lg:block">
+    <aside className="glass-subtle hidden w-64 shrink-0 overflow-y-auto border-r border-border lg:block">
       <SidebarContent session={session} />
     </aside>
   );

@@ -65,9 +65,14 @@ export default function QuotesPage() {
   );
 
   function copyQuote(text: string, quoteNumber: number) {
-    navigator.clipboard.writeText(text).then(() => {
-      toast.success(`Quote #${quoteNumber} copied to clipboard.`);
-    });
+    navigator.clipboard.writeText(text).then(
+      () => {
+        toast.success(`Quote #${quoteNumber} copied to clipboard.`);
+      },
+      () => {
+        toast.error("Failed to copy to clipboard.");
+      }
+    );
   }
 
   if (!botStatus?.botChannel?.enabled) {

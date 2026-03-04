@@ -216,7 +216,7 @@ export default function CustomCommandsTab() {
                   </td>
                   {canManage && (
                     <td className="px-4 py-3 text-center">
-                      {toggleMutation.isPending ? (
+                      {toggleMutation.isPending && toggleMutation.variables?.id === cmd.id ? (
                         <Loader2 className="size-4 animate-spin text-muted-foreground" />
                       ) : (
                         <Switch
