@@ -9,10 +9,14 @@ import {
 // Mock EventBus and external deps — keep DB real
 vi.mock("../events", () => ({ eventBus: { publish: vi.fn() } }));
 vi.mock("../utils/audit", () => ({ logAudit: vi.fn() }));
-vi.mock("@community-bot/db", () => ({
-  prisma: testPrisma,
-  QueueStatus: { OPEN: "OPEN", CLOSED: "CLOSED", PAUSED: "PAUSED" },
-}));
+vi.mock("@community-bot/db", async (importOriginal) => {
+  const original = await importOriginal<Record<string, unknown>>();
+  return {
+    ...original,
+    prisma: testPrisma,
+    QueueStatus: { OPEN: "OPEN", CLOSED: "CLOSED", PAUSED: "PAUSED" },
+  };
+});
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
 vi.mock("@community-bot/env/server", () => ({
   env: { REDIS_URL: "redis://localhost" },
