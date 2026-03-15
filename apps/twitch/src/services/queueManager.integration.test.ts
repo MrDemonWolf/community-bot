@@ -7,11 +7,10 @@ import {
 
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma, db: testPrisma };
 });
 vi.mock("./eventBusAccessor.js", () => ({
-  getEventBus: () => ({ publish: vi.fn() }),
-}));
+  getEventBus: () => ({ publish: vi.fn() }) }));
 
 import {
   join,
@@ -33,7 +32,7 @@ describe("queueManager (integration)", () => {
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   describe("getQueueStatus / setQueueStatus", () => {
@@ -68,8 +67,7 @@ describe("queueManager (integration)", () => {
       expect(r2).toEqual({ ok: true, position: 2 });
 
       const entries = await testPrisma.queueEntry.findMany({
-        orderBy: { position: "asc" },
-      });
+        orderBy: { position: "asc" } });
       expect(entries).toHaveLength(2);
       expect(entries[0].twitchUsername).toBe("Viewer1");
       expect(entries[1].twitchUsername).toBe("Viewer2");
@@ -108,8 +106,7 @@ describe("queueManager (integration)", () => {
       expect(left).toBe(true);
 
       const entries = await testPrisma.queueEntry.findMany({
-        orderBy: { position: "asc" },
-      });
+        orderBy: { position: "asc" } });
       expect(entries).toHaveLength(2);
       expect(entries[0].twitchUsername).toBe("V1");
       expect(entries[0].position).toBe(1);
@@ -149,8 +146,7 @@ describe("queueManager (integration)", () => {
       expect(picked!.twitchUsername).toBe("V1");
 
       const entries = await testPrisma.queueEntry.findMany({
-        orderBy: { position: "asc" },
-      });
+        orderBy: { position: "asc" } });
       expect(entries).toHaveLength(2);
       expect(entries[0].position).toBe(1);
       expect(entries[0].twitchUsername).toBe("V2");
@@ -195,8 +191,7 @@ describe("queueManager (integration)", () => {
       expect(removed).toBe(true);
 
       const entries = await testPrisma.queueEntry.findMany({
-        orderBy: { position: "asc" },
-      });
+        orderBy: { position: "asc" } });
       expect(entries).toHaveLength(2);
       expect(entries[0].position).toBe(1);
       expect(entries[1].position).toBe(2);
@@ -226,13 +221,11 @@ describe("queueManager (integration)", () => {
       await seedQueueEntry(testPrisma, {
         twitchUserId: "u2",
         twitchUsername: "V2",
-        position: 2,
-      });
+        position: 2 });
       await seedQueueEntry(testPrisma, {
         twitchUserId: "u1",
         twitchUsername: "V1",
-        position: 1,
-      });
+        position: 1 });
 
       const entries = await listEntries();
       expect(entries[0].twitchUsername).toBe("V1");

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import prisma from "@community-bot/db";
+import { db, eq, asc, users, botChannels, quotes } from "@community-bot/db";
 import { getBroadcasterUserId } from "@/lib/setup";
 import Link from "next/link";
 import type { Route } from "next";
@@ -12,9 +12,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return {};
 
-  const user = await prisma.user.findUnique({
-    where: { id: broadcasterId },
-    select: { name: true },
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, broadcasterId),
+    columns: { name: true },
   });
 
   if (!user) return {};
@@ -29,17 +29,17 @@ async function getQuotesData() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;
 
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId: broadcasterId },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.userId, broadcasterId),
+    columns: { id: true },
   });
 
   if (!botChannel) return null;
 
-  const quotes = await prisma.quote.findMany({
-    where: { botChannelId: botChannel.id },
-    orderBy: { quoteNumber: "asc" },
-    select: {
+  const quoteList = await db.query.quotes.findMany({
+    where: eq(quotes.botChannelId, botChannel.id),
+    orderBy: asc(quotes.quoteNumber),
+    columns: {
       id: true,
       quoteNumber: true,
       text: true,
@@ -48,7 +48,7 @@ async function getQuotesData() {
     },
   });
 
-  return { quotes };
+  return { quotes: quoteList };
 }
 
 export default async function QuotesPage() {

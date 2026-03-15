@@ -1,6 +1,6 @@
 import type { Guild } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, discordGuilds } from "@community-bot/db";
 import logger from "../utils/logger.js";
 
 export async function guildCreateEvent(guild: Guild): Promise<void> {
@@ -14,13 +14,11 @@ export async function guildCreateEvent(guild: Guild): Promise<void> {
     /**
      * Add the guild to the database.
      */
-    const guildData = await prisma.discordGuild.create({
-      data: {
+    const [guildData] = await db.insert(discordGuilds).values({
         guildId: guild.id,
         name: guild.name,
         icon: guild.icon,
-      },
-    });
+      }).returning();
 
     logger.database.operation("Guild added to database", {
       guildId: guildData.guildId,

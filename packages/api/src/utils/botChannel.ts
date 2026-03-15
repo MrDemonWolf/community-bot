@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, botChannels } from "@community-bot/db";
 import { TRPCError } from "@trpc/server";
 
 /**
@@ -6,8 +6,8 @@ import { TRPCError } from "@trpc/server";
  * Shared across all tRPC routers that operate on per-channel resources.
  */
 export async function getUserBotChannel(userId: string) {
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.userId, userId),
   });
 
   if (!botChannel || !botChannel.enabled) {

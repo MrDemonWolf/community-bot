@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { auth } from "@community-bot/auth";
-import { prisma } from "@community-bot/db";
+import { db, eq, users } from "@community-bot/db";
 import { isSetupComplete } from "@/lib/setup";
 import DashboardHeader from "@/components/dashboard-header";
 import DashboardSidebar from "./components/dashboard-sidebar";
@@ -32,9 +32,9 @@ export default async function DashboardLayout({
   }
 
   // Guard: check if the user is banned
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { banned: true, banReason: true },
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+    columns: { banned: true, banReason: true },
   });
 
   if (user?.banned) {

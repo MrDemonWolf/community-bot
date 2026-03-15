@@ -1,4 +1,5 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, count, asc, desc, sql } from "@community-bot/db";
+import { queueEntries, queueStates } from "@community-bot/db";
 import { QueueStatus } from "@community-bot/db";
 import { getEventBus } from "./eventBusAccessor.js";
 
@@ -12,18 +13,20 @@ async function publishQueueUpdated(): Promise<void> {
 }
 
 export async function getQueueStatus(): Promise<QueueStatus> {
-  const state = await prisma.queueState.findUnique({
-    where: { id: "singleton" },
+  const state = await db.query.queueStates.findFirst({
+    where: eq(queueStates.id, "singleton"),
   });
-  return state?.status ?? QueueStatus.CLOSED;
+  return (state?.status as typeof QueueStatus[keyof typeof QueueStatus]) ?? QueueStatus.CLOSED;
 }
 
 export async function setQueueStatus(status: QueueStatus): Promise<void> {
-  await prisma.queueState.upsert({
-    where: { id: "singleton" },
-    update: { status },
-    create: { id: "singleton", status },
-  });
+  await db
+    .insert(queueStates)
+    .values({ id: "singleton", status })
+    .onConflictDoUpdate({
+      target: queueStates.id,
+      set: { status },
+    });
   await publishQueueUpdated();
 }
 
@@ -36,38 +39,35 @@ export async function join(
     return { ok: false, reason: "The queue is not open." };
   }
 
-  const existing = await prisma.queueEntry.findUnique({
-    where: { twitchUserId: userId },
+  const existing = await db.query.queueEntries.findFirst({
+    where: eq(queueEntries.twitchUserId, userId),
   });
   if (existing) {
     return { ok: false, reason: `You are already in the queue at position ${existing.position}.` };
   }
 
-  const last = await prisma.queueEntry.findFirst({
-    orderBy: { position: "desc" },
+  const last = await db.query.queueEntries.findFirst({
+    orderBy: desc(queueEntries.position),
   });
   const position = (last?.position ?? 0) + 1;
 
-  await prisma.queueEntry.create({
-    data: { twitchUserId: userId, twitchUsername: username, position },
-  });
+  await db.insert(queueEntries).values({ twitchUserId: userId, twitchUsername: username, position });
 
   await publishQueueUpdated();
   return { ok: true, position };
 }
 
 export async function leave(userId: string): Promise<boolean> {
-  const entry = await prisma.queueEntry.findUnique({
-    where: { twitchUserId: userId },
+  const entry = await db.query.queueEntries.findFirst({
+    where: eq(queueEntries.twitchUserId, userId),
   });
   if (!entry) return false;
 
-  await prisma.queueEntry.delete({ where: { id: entry.id } });
+  await db.delete(queueEntries).where(eq(queueEntries.id, entry.id));
 
   // Reorder positions for entries after the removed one
-  await prisma.$executeRawUnsafe(
-    `UPDATE "QueueEntry" SET position = position - 1 WHERE position > $1`,
-    entry.position
+  await db.execute(
+    sql`UPDATE "QueueEntry" SET position = position - 1 WHERE position > ${entry.position}`
   );
 
   await publishQueueUpdated();
@@ -75,15 +75,15 @@ export async function leave(userId: string): Promise<boolean> {
 }
 
 export async function getPosition(userId: string): Promise<number | null> {
-  const entry = await prisma.queueEntry.findUnique({
-    where: { twitchUserId: userId },
+  const entry = await db.query.queueEntries.findFirst({
+    where: eq(queueEntries.twitchUserId, userId),
   });
   return entry?.position ?? null;
 }
 
 export async function listEntries() {
-  return prisma.queueEntry.findMany({
-    orderBy: { position: "asc" },
+  return db.query.queueEntries.findMany({
+    orderBy: asc(queueEntries.position),
   });
 }
 
@@ -93,32 +93,33 @@ export async function pick(
   let entry;
 
   if (mode === "next") {
-    entry = await prisma.queueEntry.findFirst({
-      orderBy: { position: "asc" },
+    entry = await db.query.queueEntries.findFirst({
+      orderBy: asc(queueEntries.position),
     });
   } else if (mode === "random") {
-    const count = await prisma.queueEntry.count();
-    if (count === 0) return null;
-    const skip = Math.floor(Math.random() * count);
-    entry = await prisma.queueEntry.findFirst({
-      orderBy: { position: "asc" },
-      skip,
+    const [{ value: totalCount }] = await db
+      .select({ value: count() })
+      .from(queueEntries);
+    if (totalCount === 0) return null;
+    const skip = Math.floor(Math.random() * totalCount);
+    entry = await db.query.queueEntries.findFirst({
+      orderBy: asc(queueEntries.position),
+      offset: skip,
     });
   } else {
     // Pick by username
-    entry = await prisma.queueEntry.findFirst({
-      where: { twitchUsername: { equals: mode, mode: "insensitive" } },
+    entry = await db.query.queueEntries.findFirst({
+      where: sql`lower(${queueEntries.twitchUsername}) = lower(${mode})`,
     });
   }
 
   if (!entry) return null;
 
-  await prisma.queueEntry.delete({ where: { id: entry.id } });
+  await db.delete(queueEntries).where(eq(queueEntries.id, entry.id));
 
   // Reorder positions
-  await prisma.$executeRawUnsafe(
-    `UPDATE "QueueEntry" SET position = position - 1 WHERE position > $1`,
-    entry.position
+  await db.execute(
+    sql`UPDATE "QueueEntry" SET position = position - 1 WHERE position > ${entry.position}`
   );
 
   await publishQueueUpdated();
@@ -126,16 +127,15 @@ export async function pick(
 }
 
 export async function remove(username: string): Promise<boolean> {
-  const entry = await prisma.queueEntry.findFirst({
-    where: { twitchUsername: { equals: username, mode: "insensitive" } },
+  const entry = await db.query.queueEntries.findFirst({
+    where: sql`lower(${queueEntries.twitchUsername}) = lower(${username})`,
   });
   if (!entry) return false;
 
-  await prisma.queueEntry.delete({ where: { id: entry.id } });
+  await db.delete(queueEntries).where(eq(queueEntries.id, entry.id));
 
-  await prisma.$executeRawUnsafe(
-    `UPDATE "QueueEntry" SET position = position - 1 WHERE position > $1`,
-    entry.position
+  await db.execute(
+    sql`UPDATE "QueueEntry" SET position = position - 1 WHERE position > ${entry.position}`
   );
 
   await publishQueueUpdated();
@@ -143,6 +143,6 @@ export async function remove(username: string): Promise<boolean> {
 }
 
 export async function clear(): Promise<void> {
-  await prisma.queueEntry.deleteMany();
+  await db.delete(queueEntries);
   await publishQueueUpdated();
 }

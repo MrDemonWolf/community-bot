@@ -1,6 +1,6 @@
 import type { Guild } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, discordGuilds } from "@community-bot/db";
 import logger from "../utils/logger.js";
 
 export async function guildDeleteEvent(guild: Guild): Promise<void> {
@@ -8,11 +8,7 @@ export async function guildDeleteEvent(guild: Guild): Promise<void> {
     /**
      * Delete the guild from the database.
      */
-    await prisma.discordGuild.delete({
-      where: {
-        guildId: guild.id,
-      },
-    });
+    await db.delete(discordGuilds).where(eq(discordGuilds.guildId, guild.id));
 
     /**
      * Show the bot has left a guild in the console.

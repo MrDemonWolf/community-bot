@@ -6,38 +6,33 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
   return {
-    prisma: new Proxy(mp, handler),
+    db: new Proxy(mp, handler),
     isLive: vi.fn(),
     getMessageCount: vi.fn(),
     resetMessageCount: vi.fn(),
   };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("./streamStatusManager.js", () => ({
-  isLive: mocks.isLive,
-}));
+  isLive: mocks.isLive }));
 vi.mock("./chatterTracker.js", () => ({
   getMessageCount: mocks.getMessageCount,
-  resetMessageCount: mocks.resetMessageCount,
-}));
+  resetMessageCount: mocks.resetMessageCount }));
 vi.mock("./commandExecutor.js", () => ({
-  substituteVariables: vi.fn(async (msg: string) => msg),
-}));
+  substituteVariables: vi.fn(async (msg: string) => msg) }));
 vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     debug: vi.fn(),
     warn: vi.fn(),
-  },
-}));
+  } }));
 
 import {
   loadTimers,
@@ -47,7 +42,7 @@ import {
   setChatClient,
 } from "./timerManager.js";
 
-const p = mocks.prisma;
+const p = mocks.db;
 
 describe("timerManager", () => {
   beforeEach(() => {
@@ -62,8 +57,8 @@ describe("timerManager", () => {
   });
 
   it("loads enabled timers for a channel", async () => {
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.twitchTimer.findMany.mockResolvedValue([
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.twitchTimers.findMany.mockResolvedValue([
       { id: "t1", name: "promo", message: "Follow me!", intervalMinutes: 5, chatLines: 0, enabled: true },
       { id: "t2", name: "social", message: "Join Discord!", intervalMinutes: 10, chatLines: 0, enabled: true },
     ]);
@@ -73,8 +68,8 @@ describe("timerManager", () => {
   });
 
   it("stops timers for a channel", async () => {
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.twitchTimer.findMany.mockResolvedValue([
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.twitchTimers.findMany.mockResolvedValue([
       { id: "t1", name: "promo", message: "Follow me!", intervalMinutes: 5, chatLines: 0, enabled: true },
     ]);
 
@@ -86,21 +81,21 @@ describe("timerManager", () => {
   });
 
   it("does nothing when no bot channel found", async () => {
-    p.botChannel.findFirst.mockResolvedValue(null);
+    p.query.botChannels.findFirst.mockResolvedValue(null);
     await loadTimers("unknown");
     expect(getActiveTimerCount("unknown")).toBe(0);
   });
 
   it("does nothing when no timers configured", async () => {
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.twitchTimer.findMany.mockResolvedValue([]);
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.twitchTimers.findMany.mockResolvedValue([]);
     await loadTimers("testchannel");
     expect(getActiveTimerCount("testchannel")).toBe(0);
   });
 
   it("reloads timers (stops old, loads new)", async () => {
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.twitchTimer.findMany.mockResolvedValue([
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.twitchTimers.findMany.mockResolvedValue([
       { id: "t1", name: "promo", message: "Follow!", intervalMinutes: 5, chatLines: 0, enabled: true },
     ]);
 
@@ -108,7 +103,7 @@ describe("timerManager", () => {
     expect(getActiveTimerCount("testchannel")).toBe(1);
 
     // Reload with different timers
-    p.twitchTimer.findMany.mockResolvedValue([
+    p.query.twitchTimers.findMany.mockResolvedValue([
       { id: "t2", name: "social", message: "Discord!", intervalMinutes: 10, chatLines: 0, enabled: true },
       { id: "t3", name: "youtube", message: "Subscribe!", intervalMinutes: 15, chatLines: 0, enabled: true },
     ]);
@@ -121,8 +116,8 @@ describe("timerManager", () => {
     const say = vi.fn().mockResolvedValue(undefined);
     setChatClient({ say } as any);
 
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.twitchTimer.findMany.mockResolvedValue([
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.twitchTimers.findMany.mockResolvedValue([
       { id: "t1", name: "promo", message: "Follow me!", intervalMinutes: 1, chatLines: 5, enabled: true },
     ]);
 
@@ -144,8 +139,8 @@ describe("timerManager", () => {
     const say = vi.fn().mockResolvedValue(undefined);
     setChatClient({ say } as any);
 
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.twitchTimer.findMany.mockResolvedValue([
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.twitchTimers.findMany.mockResolvedValue([
       { id: "t1", name: "promo", message: "Follow me!", intervalMinutes: 1, chatLines: 0, enabled: true },
     ]);
 
@@ -162,8 +157,8 @@ describe("timerManager", () => {
     const say = vi.fn().mockResolvedValue(undefined);
     setChatClient({ say } as any);
 
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.twitchTimer.findMany.mockResolvedValue([
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.twitchTimers.findMany.mockResolvedValue([
       { id: "t1", name: "promo", message: "Follow me!", intervalMinutes: 1, chatLines: 50, enabled: true },
     ]);
 
@@ -178,8 +173,8 @@ describe("timerManager", () => {
   });
 
   it("normalizes channel names with # prefix", async () => {
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.twitchTimer.findMany.mockResolvedValue([
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.twitchTimers.findMany.mockResolvedValue([
       { id: "t1", name: "promo", message: "Hi!", intervalMinutes: 5, chatLines: 0, enabled: true },
     ]);
 
@@ -188,14 +183,14 @@ describe("timerManager", () => {
   });
 
   it("stopAll clears all channels", async () => {
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.twitchTimer.findMany.mockResolvedValue([
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.twitchTimers.findMany.mockResolvedValue([
       { id: "t1", name: "promo", message: "Hi!", intervalMinutes: 5, chatLines: 0, enabled: true },
     ]);
 
     await loadTimers("channel1");
 
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-2" });
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-2" });
     await loadTimers("channel2");
 
     expect(getActiveTimerCount("channel1")).toBe(1);

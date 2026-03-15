@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 import type { ChatInputCommandInteraction, GuildMember } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, inArray, count as countFn, desc, discordCases, discordWarnThresholds } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 import { hasPermission } from "../../utils/permissions.js";
 import { dispatchLog } from "../../utils/eventLogger.js";
@@ -138,8 +138,8 @@ export const modCommand = new SlashCommandBuilder()
   ) as SlashCommandBuilder;
 
 async function nextCaseNumber(guildId: string): Promise<number> {
-  const count = await prisma.discordCase.count({ where: { guildId } });
-  return count + 1;
+  const [{ value }] = await db.select({ value: countFn() }).from(discordCases).where(eq(discordCases.guildId, guildId));
+  return Number(value) + 1;
 }
 
 function modEmbed(
@@ -160,17 +160,11 @@ async function checkEscalation(
   targetId: string,
   targetTag: string
 ): Promise<void> {
-  const activeWarnings = await prisma.discordCase.count({
-    where: {
-      guildId,
-      targetId,
-      type: "WARN",
-      resolved: false,
-    },
-  });
+  const [{ value: activeWarningsValue }] = await db.select({ value: countFn() }).from(discordCases).where(and(eq(discordCases.guildId, guildId), eq(discordCases.targetId, targetId), eq(discordCases.type, "WARN"), eq(discordCases.resolved, false)));
+  const activeWarnings = Number(activeWarningsValue);
 
-  const threshold = await prisma.discordWarnThreshold.findFirst({
-    where: { guildId, count: activeWarnings },
+  const threshold = await db.query.discordWarnThresholds.findFirst({
+    where: and(eq(discordWarnThresholds.guildId, guildId), eq(discordWarnThresholds.count, activeWarnings)),
   });
 
   if (!threshold) return;
@@ -185,8 +179,7 @@ async function checkEscalation(
   if (threshold.action === "BAN") {
     try {
       await guild.members.ban(targetId, { reason });
-      await prisma.discordCase.create({
-        data: {
+      await db.insert(discordCases).values({
           guildId,
           caseNumber: caseNum,
           type: "BAN",
@@ -195,8 +188,7 @@ async function checkEscalation(
           moderatorId: interaction.client.user?.id ?? "system",
           moderatorTag,
           reason,
-        },
-      });
+        });
       await interaction.followUp({
         content: `Auto-escalation: **${targetTag}** has been banned (${activeWarnings} warnings). Case #${caseNum}`,
         flags: MessageFlags.Ephemeral,
@@ -209,8 +201,7 @@ async function checkEscalation(
       const member = await guild.members.fetch(targetId).catch(() => null);
       if (member) {
         await member.kick(reason);
-        await prisma.discordCase.create({
-          data: {
+        await db.insert(discordCases).values({
             guildId,
             caseNumber: caseNum,
             type: "KICK",
@@ -219,8 +210,7 @@ async function checkEscalation(
             moderatorId: interaction.client.user?.id ?? "system",
             moderatorTag,
             reason,
-          },
-        });
+          });
         await interaction.followUp({
           content: `Auto-escalation: **${targetTag}** has been kicked (${activeWarnings} warnings). Case #${caseNum}`,
           flags: MessageFlags.Ephemeral,
@@ -237,8 +227,7 @@ async function checkEscalation(
         const expiresAt = new Date(
           Date.now() + threshold.duration * 60_000
         );
-        await prisma.discordCase.create({
-          data: {
+        await db.insert(discordCases).values({
             guildId,
             caseNumber: caseNum,
             type: "MUTE",
@@ -249,8 +238,7 @@ async function checkEscalation(
             reason,
             duration: threshold.duration,
             expiresAt,
-          },
-        });
+          });
         await interaction.followUp({
           content: `Auto-escalation: **${targetTag}** has been muted for ${threshold.duration}m (${activeWarnings} warnings). Case #${caseNum}`,
           flags: MessageFlags.Ephemeral,
@@ -338,8 +326,7 @@ async function handleBan(
   });
 
   const caseNum = await nextCaseNumber(guildId);
-  const modCase = await prisma.discordCase.create({
-    data: {
+  const [modCase] = await db.insert(discordCases).values({
       guildId,
       caseNumber: caseNum,
       type: "BAN",
@@ -348,8 +335,7 @@ async function handleBan(
       moderatorId: interaction.user.id,
       moderatorTag: interaction.user.tag,
       reason,
-    },
-  });
+    }).returning();
 
   const embed = modEmbed("User Banned", COLOR_BAN, [
     { name: "User", value: `${target.tag} (${target.id})`, inline: true },
@@ -380,8 +366,7 @@ async function handleTempban(
   await guild.members.ban(target.id, { reason });
 
   const caseNum = await nextCaseNumber(guildId);
-  await prisma.discordCase.create({
-    data: {
+  await db.insert(discordCases).values({
       guildId,
       caseNumber: caseNum,
       type: "TEMPBAN",
@@ -392,8 +377,7 @@ async function handleTempban(
       reason,
       duration,
       expiresAt,
-    },
-  });
+    });
 
   const embed = modEmbed("User Temp-Banned", COLOR_BAN, [
     { name: "User", value: `${target.tag} (${target.id})`, inline: true },
@@ -429,8 +413,7 @@ async function handleKick(
   await member.kick(reason);
 
   const caseNum = await nextCaseNumber(guildId);
-  await prisma.discordCase.create({
-    data: {
+  await db.insert(discordCases).values({
       guildId,
       caseNumber: caseNum,
       type: "KICK",
@@ -439,8 +422,7 @@ async function handleKick(
       moderatorId: interaction.user.id,
       moderatorTag: interaction.user.tag,
       reason,
-    },
-  });
+    });
 
   const embed = modEmbed("User Kicked", COLOR_KICK, [
     { name: "User", value: `${target.tag} (${target.id})`, inline: true },
@@ -466,8 +448,7 @@ async function handleWarn(
   const reason = interaction.options.getString("reason", true);
 
   const caseNum = await nextCaseNumber(guildId);
-  await prisma.discordCase.create({
-    data: {
+  await db.insert(discordCases).values({
       guildId,
       caseNumber: caseNum,
       type: "WARN",
@@ -476,17 +457,10 @@ async function handleWarn(
       moderatorId: interaction.user.id,
       moderatorTag: interaction.user.tag,
       reason,
-    },
-  });
+    });
 
-  const activeWarnings = await prisma.discordCase.count({
-    where: {
-      guildId,
-      targetId: target.id,
-      type: "WARN",
-      resolved: false,
-    },
-  });
+  const [{ value: activeWarningsValue }] = await db.select({ value: countFn() }).from(discordCases).where(and(eq(discordCases.guildId, guildId), eq(discordCases.targetId, target.id), eq(discordCases.type, "WARN"), eq(discordCases.resolved, false)));
+  const activeWarnings = Number(activeWarningsValue);
 
   const embed = modEmbed("User Warned", COLOR_WARN, [
     { name: "User", value: `${target.tag} (${target.id})`, inline: true },
@@ -531,8 +505,7 @@ async function handleMute(
   await member.timeout(duration * 60_000, reason);
 
   const caseNum = await nextCaseNumber(guildId);
-  await prisma.discordCase.create({
-    data: {
+  await db.insert(discordCases).values({
       guildId,
       caseNumber: caseNum,
       type: "MUTE",
@@ -543,8 +516,7 @@ async function handleMute(
       reason,
       duration,
       expiresAt,
-    },
-  });
+    });
 
   const embed = modEmbed("User Muted", COLOR_MUTE, [
     { name: "User", value: `${target.tag} (${target.id})`, inline: true },
@@ -580,23 +552,14 @@ async function handleUnban(
   await guild.members.unban(targetId, reason);
 
   // Resolve any open ban/tempban cases for this user
-  await prisma.discordCase.updateMany({
-    where: {
-      guildId,
-      targetId,
-      type: { in: ["BAN", "TEMPBAN"] },
-      resolved: false,
-    },
-    data: {
+  await db.update(discordCases).set({
       resolved: true,
       resolvedBy: interaction.user.id,
       resolvedAt: new Date(),
-    },
-  });
+    }).where(and(eq(discordCases.guildId, guildId), eq(discordCases.targetId, targetId), inArray(discordCases.type, ["BAN", "TEMPBAN"]), eq(discordCases.resolved, false)));
 
   const caseNum = await nextCaseNumber(guildId);
-  await prisma.discordCase.create({
-    data: {
+  await db.insert(discordCases).values({
       guildId,
       caseNumber: caseNum,
       type: "UNBAN",
@@ -605,8 +568,7 @@ async function handleUnban(
       moderatorId: interaction.user.id,
       moderatorTag: interaction.user.tag,
       reason,
-    },
-  });
+    });
 
   const embed = modEmbed("User Unbanned", COLOR_RESOLVE, [
     { name: "User", value: `${ban.user.tag} (${targetId})`, inline: true },
@@ -640,23 +602,14 @@ async function handleUnmute(
 
   await member.timeout(null, reason);
 
-  await prisma.discordCase.updateMany({
-    where: {
-      guildId,
-      targetId: target.id,
-      type: "MUTE",
-      resolved: false,
-    },
-    data: {
+  await db.update(discordCases).set({
       resolved: true,
       resolvedBy: interaction.user.id,
       resolvedAt: new Date(),
-    },
-  });
+    }).where(and(eq(discordCases.guildId, guildId), eq(discordCases.targetId, target.id), eq(discordCases.type, "MUTE"), eq(discordCases.resolved, false)));
 
   const caseNum = await nextCaseNumber(guildId);
-  await prisma.discordCase.create({
-    data: {
+  await db.insert(discordCases).values({
       guildId,
       caseNumber: caseNum,
       type: "UNMUTE",
@@ -665,8 +618,7 @@ async function handleUnmute(
       moderatorId: interaction.user.id,
       moderatorTag: interaction.user.tag,
       reason,
-    },
-  });
+    });
 
   const embed = modEmbed("User Unmuted", COLOR_RESOLVE, [
     { name: "User", value: `${target.tag} (${target.id})`, inline: true },
@@ -691,14 +643,9 @@ async function handleUnwarn(
   const target = interaction.options.getUser("user", true);
   const reason = interaction.options.getString("reason") ?? undefined;
 
-  const latestWarning = await prisma.discordCase.findFirst({
-    where: {
-      guildId,
-      targetId: target.id,
-      type: "WARN",
-      resolved: false,
-    },
-    orderBy: { createdAt: "desc" },
+  const latestWarning = await db.query.discordCases.findFirst({
+    where: and(eq(discordCases.guildId, guildId), eq(discordCases.targetId, target.id), eq(discordCases.type, "WARN"), eq(discordCases.resolved, false)),
+    orderBy: desc(discordCases.createdAt),
   });
 
   if (!latestWarning) {
@@ -708,18 +655,14 @@ async function handleUnwarn(
     return;
   }
 
-  await prisma.discordCase.update({
-    where: { id: latestWarning.id },
-    data: {
+  await db.update(discordCases).set({
       resolved: true,
       resolvedBy: interaction.user.id,
       resolvedAt: new Date(),
-    },
-  });
+    }).where(eq(discordCases.id, latestWarning.id));
 
   const caseNum = await nextCaseNumber(guildId);
-  await prisma.discordCase.create({
-    data: {
+  await db.insert(discordCases).values({
       guildId,
       caseNumber: caseNum,
       type: "UNWARN",
@@ -728,17 +671,10 @@ async function handleUnwarn(
       moderatorId: interaction.user.id,
       moderatorTag: interaction.user.tag,
       reason: reason ?? `Resolved warning case #${latestWarning.caseNumber}`,
-    },
-  });
+    });
 
-  const remaining = await prisma.discordCase.count({
-    where: {
-      guildId,
-      targetId: target.id,
-      type: "WARN",
-      resolved: false,
-    },
-  });
+  const [{ value: remainingValue }] = await db.select({ value: countFn() }).from(discordCases).where(and(eq(discordCases.guildId, guildId), eq(discordCases.targetId, target.id), eq(discordCases.type, "WARN"), eq(discordCases.resolved, false)));
+  const remaining = Number(remainingValue);
 
   const embed = modEmbed("Warning Removed", COLOR_RESOLVE, [
     { name: "User", value: `${target.tag} (${target.id})`, inline: true },

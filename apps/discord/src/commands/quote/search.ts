@@ -1,7 +1,7 @@
 import { MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, ilike, asc, quotes } from "@community-bot/db";
 import { resolveBotChannelId } from "./resolve.js";
 import logger from "../../utils/logger.js";
 
@@ -30,23 +30,20 @@ export async function handleQuoteSearch(
 
     const query = interaction.options.getString("text", true);
 
-    const quotes = await prisma.quote.findMany({
-      where: {
-        botChannelId,
-        text: { contains: query, mode: "insensitive" },
-      },
-      orderBy: { quoteNumber: "asc" },
-      take: 10,
+    const results = await db.query.quotes.findMany({
+      where: and(eq(quotes.botChannelId, botChannelId), ilike(quotes.text, `%${query}%`)),
+      orderBy: asc(quotes.quoteNumber),
+      limit: 10,
     });
 
-    if (quotes.length === 0) {
+    if (results.length === 0) {
       await interaction.editReply({
         content: `No quotes found matching "${query}".`,
       });
       return;
     }
 
-    const lines = quotes.map((q) => `**#${q.quoteNumber}:** "${q.text}"`);
+    const lines = results.map((q) => `**#${q.quoteNumber}:** "${q.text}"`);
     await interaction.editReply({
       content: lines.join("\n"),
     });

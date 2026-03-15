@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, desc, discordReports } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 import { hasPermission } from "../../utils/permissions.js";
 import { dispatchLog } from "../../utils/eventLogger.js";
@@ -149,16 +149,14 @@ async function handleReportUser(
     return;
   }
 
-  const report = await prisma.discordReport.create({
-    data: {
+  const [report] = await db.insert(discordReports).values({
       guildId,
       reporterId: interaction.user.id,
       reporterTag: interaction.user.tag,
       targetId: target.id,
       targetTag: target.tag,
       reason,
-    },
-  });
+    }).returning();
 
   // Notify mod log channel
   const embed = new EmbedBuilder()
@@ -204,11 +202,11 @@ async function handleReportStatus(
   const resolution = interaction.options.getString("resolution");
 
   // Get the nth report (ordered by creation)
-  const reports = await prisma.discordReport.findMany({
-    where: { guildId },
-    orderBy: { createdAt: "asc" },
-    skip: reportIndex - 1,
-    take: 1,
+  const reports = await db.query.discordReports.findMany({
+    where: eq(discordReports.guildId, guildId),
+    orderBy: asc(discordReports.createdAt),
+    offset: reportIndex - 1,
+    limit: 1,
   });
 
   const report = reports[0];
@@ -221,9 +219,7 @@ async function handleReportStatus(
 
   const isResolving = newStatus === "RESOLVED" || newStatus === "DISMISSED";
 
-  await prisma.discordReport.update({
-    where: { id: report.id },
-    data: {
+  await db.update(discordReports).set({
       status: newStatus,
       ...(isResolving
         ? {
@@ -232,8 +228,7 @@ async function handleReportStatus(
             resolution: resolution ?? undefined,
           }
         : {}),
-    },
-  });
+    }).where(eq(discordReports.id, report.id));
 
   const embed = new EmbedBuilder()
     .setTitle("Report Updated")
@@ -273,14 +268,14 @@ async function handleReportList(
   const status = interaction.options.getString("status");
   const target = interaction.options.getUser("target");
 
-  const where: Record<string, unknown> = { guildId };
-  if (status) where.status = status;
-  if (target) where.targetId = target.id;
+  const conditions = [eq(discordReports.guildId, guildId)];
+  if (status) conditions.push(eq(discordReports.status, status as any));
+  if (target) conditions.push(eq(discordReports.targetId, target.id));
 
-  const reports = await prisma.discordReport.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    take: 50,
+  const reports = await db.query.discordReports.findMany({
+    where: and(...conditions),
+    orderBy: desc(discordReports.createdAt),
+    limit: 50,
   });
 
   if (reports.length === 0) {

@@ -1,4 +1,4 @@
-import { prisma, QueueStatus, Prisma } from "@community-bot/db";
+import { db, eq, asc, count, sql, QueueStatus, queueEntries, queueStates } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -11,28 +11,32 @@ async function publishQueueUpdated() {
 
 export const queueRouter = router({
   getState: protectedProcedure.query(async () => {
-    const state = await prisma.queueState.upsert({
-      where: { id: "singleton" },
-      update: {},
-      create: { id: "singleton", status: QueueStatus.CLOSED },
-    });
+    const [state] = await db.insert(queueStates).values({
+      id: "singleton",
+      status: QueueStatus.CLOSED,
+    }).onConflictDoUpdate({
+      target: queueStates.id,
+      set: {},
+    }).returning();
     return state;
   }),
 
   list: protectedProcedure.query(async () => {
-    return prisma.queueEntry.findMany({
-      orderBy: { position: "asc" },
+    return db.query.queueEntries.findMany({
+      orderBy: asc(queueEntries.position),
     });
   }),
 
   setStatus: moderatorProcedure
     .input(z.object({ status: z.enum(["OPEN", "CLOSED", "PAUSED"]) }))
     .mutation(async ({ ctx, input }) => {
-      const state = await prisma.queueState.upsert({
-        where: { id: "singleton" },
-        update: { status: input.status },
-        create: { id: "singleton", status: input.status },
-      });
+      const [state] = await db.insert(queueStates).values({
+        id: "singleton",
+        status: input.status,
+      }).onConflictDoUpdate({
+        target: queueStates.id,
+        set: { status: input.status },
+      }).returning();
 
       const actionMap = {
         OPEN: "queue.open",
@@ -58,8 +62,8 @@ export const queueRouter = router({
   removeEntry: moderatorProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const entry = await prisma.queueEntry.findUnique({
-        where: { id: input.id },
+      const entry = await db.query.queueEntries.findFirst({
+        where: eq(queueEntries.id, input.id),
       });
 
       if (!entry) {
@@ -69,10 +73,10 @@ export const queueRouter = router({
         });
       }
 
-      await prisma.$transaction([
-        prisma.queueEntry.delete({ where: { id: input.id } }),
-        prisma.$executeRaw(Prisma.sql`UPDATE "QueueEntry" SET position = position - 1 WHERE position > ${entry.position}`),
-      ]);
+      await db.transaction(async (tx) => {
+        await tx.delete(queueEntries).where(eq(queueEntries.id, input.id));
+        await tx.execute(sql`UPDATE "QueueEntry" SET position = position - 1 WHERE position > ${entry.position}`);
+      });
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -95,21 +99,22 @@ export const queueRouter = router({
       let entry;
 
       if (input.mode === "next") {
-        entry = await prisma.queueEntry.findFirst({
-          orderBy: { position: "asc" },
+        entry = await db.query.queueEntries.findFirst({
+          orderBy: asc(queueEntries.position),
         });
       } else {
-        const count = await prisma.queueEntry.count();
-        if (count === 0) {
+        const totalResult = await db.select({ value: count() }).from(queueEntries);
+        const totalCount = totalResult[0]?.value ?? 0;
+        if (totalCount === 0) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Queue is empty.",
           });
         }
-        const skip = Math.floor(Math.random() * count);
-        entry = await prisma.queueEntry.findFirst({
-          orderBy: { position: "asc" },
-          skip,
+        const skip = Math.floor(Math.random() * totalCount);
+        entry = await db.query.queueEntries.findFirst({
+          orderBy: asc(queueEntries.position),
+          offset: skip,
         });
       }
 
@@ -120,10 +125,10 @@ export const queueRouter = router({
         });
       }
 
-      await prisma.$transaction([
-        prisma.queueEntry.delete({ where: { id: entry.id } }),
-        prisma.$executeRaw(Prisma.sql`UPDATE "QueueEntry" SET position = position - 1 WHERE position > ${entry.position}`),
-      ]);
+      await db.transaction(async (tx) => {
+        await tx.delete(queueEntries).where(eq(queueEntries.id, entry.id));
+        await tx.execute(sql`UPDATE "QueueEntry" SET position = position - 1 WHERE position > ${entry.position}`);
+      });
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -145,9 +150,10 @@ export const queueRouter = router({
     }),
 
   clear: moderatorProcedure.mutation(async ({ ctx }) => {
-    const count = await prisma.queueEntry.count();
+    const clearResult = await db.select({ value: count() }).from(queueEntries);
+    const totalCount = clearResult[0]?.value ?? 0;
 
-    await prisma.queueEntry.deleteMany();
+    await db.delete(queueEntries);
 
     await logAudit({
       userId: ctx.session.user.id,
@@ -156,11 +162,11 @@ export const queueRouter = router({
       action: "queue.clear",
       resourceType: "QueueEntry",
       resourceId: "all",
-      metadata: { entriesCleared: count },
+      metadata: { entriesCleared: totalCount },
     });
 
     await publishQueueUpdated();
 
-    return { success: true, cleared: count };
+    return { success: true, cleared: totalCount };
   }),
 });

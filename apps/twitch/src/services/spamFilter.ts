@@ -8,7 +8,8 @@
 import type { ChatClient } from "@twurple/chat";
 import type { ChatMessage } from "@twurple/chat";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, gt } from "@community-bot/db";
+import { botChannels, spamFilters, spamPermits } from "@community-bot/db";
 import { TwitchAccessLevel } from "@community-bot/db";
 import { getUserAccessLevel, meetsAccessLevel } from "./accessControl.js";
 import { logger } from "../utils/logger.js";
@@ -42,15 +43,15 @@ function normalize(channel: string): string {
 export async function loadSpamFilter(channel: string): Promise<void> {
   const channelKey = normalize(channel);
 
-  const botChannel = await prisma.botChannel.findFirst({
-    where: { twitchUsername: channelKey },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.twitchUsername, channelKey),
+    columns: { id: true },
   });
 
   if (!botChannel) return;
 
-  const filter = await prisma.spamFilter.findUnique({
-    where: { botChannelId: botChannel.id },
+  const filter = await db.query.spamFilters.findFirst({
+    where: eq(spamFilters.botChannelId, botChannel.id),
   });
 
   if (!filter) {
@@ -91,18 +92,18 @@ export function getFilterConfig(channel: string): SpamFilterConfig | undefined {
 /** Check if user has an active spam permit. */
 async function hasActivePermit(username: string, channel: string): Promise<boolean> {
   const channelKey = normalize(channel);
-  const botChannel = await prisma.botChannel.findFirst({
-    where: { twitchUsername: channelKey },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.twitchUsername, channelKey),
+    columns: { id: true },
   });
   if (!botChannel) return false;
 
-  const permit = await prisma.spamPermit.findFirst({
-    where: {
-      username: username.toLowerCase(),
-      botChannelId: botChannel.id,
-      expiresAt: { gt: new Date() },
-    },
+  const permit = await db.query.spamPermits.findFirst({
+    where: and(
+      eq(spamPermits.username, username.toLowerCase()),
+      eq(spamPermits.botChannelId, botChannel.id),
+      gt(spamPermits.expiresAt, new Date())
+    ),
   });
 
   return !!permit;

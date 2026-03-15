@@ -1,11 +1,11 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, or, asc, desc, ilike, count, discordGuilds, discordCases, discordCaseNotes, discordWarnThresholds } from "@community-bot/db";
 import { moderatorProcedure, leadModProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
 
 async function requireGuild(userId: string) {
-  const guild = await prisma.discordGuild.findFirst({ where: { userId } });
+  const guild = await db.query.discordGuilds.findFirst({ where: eq(discordGuilds.userId, userId) });
   if (!guild) {
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -43,31 +43,43 @@ export const discordModerationRouter = router({
     .query(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const where: Record<string, unknown> = { guildId: guild.guildId };
-      if (input.targetId) where.targetId = input.targetId;
-      if (input.moderatorId) where.moderatorId = input.moderatorId;
-      if (input.type) where.type = input.type;
-      if (input.resolved !== undefined) where.resolved = input.resolved;
+      const conditions = [eq(discordCases.guildId, guild.guildId)];
+      if (input.targetId) conditions.push(eq(discordCases.targetId, input.targetId));
+      if (input.moderatorId) conditions.push(eq(discordCases.moderatorId, input.moderatorId));
+      if (input.type) conditions.push(eq(discordCases.type, input.type));
+      if (input.resolved !== undefined) conditions.push(eq(discordCases.resolved, input.resolved));
       if (input.search) {
-        where.OR = [
-          { reason: { contains: input.search, mode: "insensitive" } },
-          { targetTag: { contains: input.search, mode: "insensitive" } },
-          { moderatorTag: { contains: input.search, mode: "insensitive" } },
-        ];
+        conditions.push(
+          or(
+            ilike(discordCases.reason, `%${input.search}%`),
+            ilike(discordCases.targetTag, `%${input.search}%`),
+            ilike(discordCases.moderatorTag, `%${input.search}%`),
+          )!
+        );
       }
 
-      const cases = await prisma.discordCase.findMany({
-        where,
-        orderBy: { caseNumber: "desc" },
-        take: input.limit + 1,
-        ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
-        include: { _count: { select: { notes: true } } },
+      const whereClause = and(...conditions);
+
+      const cases = await db.query.discordCases.findMany({
+        where: whereClause,
+        orderBy: desc(discordCases.caseNumber),
+        limit: input.limit + 1,
       });
 
       let nextCursor: string | undefined;
       if (cases.length > input.limit) {
         const next = cases.pop()!;
         nextCursor = next.id;
+      }
+
+      // Get note counts for all cases
+      const caseIds = cases.map((c) => c.id);
+      const noteCounts: Record<string, number> = {};
+      if (caseIds.length > 0) {
+        for (const c of cases) {
+          const noteResult = await db.select({ value: count() }).from(discordCaseNotes).where(eq(discordCaseNotes.caseId, c.id));
+          noteCounts[c.id] = noteResult[0]?.value ?? 0;
+        }
       }
 
       return {
@@ -86,7 +98,7 @@ export const discordModerationRouter = router({
           resolvedBy: c.resolvedBy,
           resolvedAt: c.resolvedAt?.toISOString() ?? null,
           createdAt: c.createdAt.toISOString(),
-          noteCount: c._count.notes,
+          noteCount: noteCounts[c.id] ?? 0,
         })),
         nextCursor,
       };
@@ -97,15 +109,13 @@ export const discordModerationRouter = router({
     .query(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const modCase = await prisma.discordCase.findUnique({
-        where: {
-          guildId_caseNumber: {
-            guildId: guild.guildId,
-            caseNumber: input.caseNumber,
-          },
-        },
-        include: {
-          notes: { orderBy: { createdAt: "asc" } },
+      const modCase = await db.query.discordCases.findFirst({
+        where: and(
+          eq(discordCases.guildId, guild.guildId),
+          eq(discordCases.caseNumber, input.caseNumber),
+        ),
+        with: {
+          notes: true,
         },
       });
 
@@ -115,6 +125,9 @@ export const discordModerationRouter = router({
           message: `Case #${input.caseNumber} not found.`,
         });
       }
+
+      // Sort notes by createdAt ascending
+      const sortedNotes = [...modCase.notes].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
       return {
         id: modCase.id,
@@ -131,7 +144,7 @@ export const discordModerationRouter = router({
         resolvedBy: modCase.resolvedBy,
         resolvedAt: modCase.resolvedAt?.toISOString() ?? null,
         createdAt: modCase.createdAt.toISOString(),
-        notes: modCase.notes.map((n) => ({
+        notes: sortedNotes.map((n) => ({
           id: n.id,
           authorId: n.authorId,
           authorTag: n.authorTag,
@@ -151,13 +164,11 @@ export const discordModerationRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const modCase = await prisma.discordCase.findUnique({
-        where: {
-          guildId_caseNumber: {
-            guildId: guild.guildId,
-            caseNumber: input.caseNumber,
-          },
-        },
+      const modCase = await db.query.discordCases.findFirst({
+        where: and(
+          eq(discordCases.guildId, guild.guildId),
+          eq(discordCases.caseNumber, input.caseNumber),
+        ),
       });
 
       if (!modCase) {
@@ -167,13 +178,11 @@ export const discordModerationRouter = router({
         });
       }
 
-      await prisma.discordCaseNote.create({
-        data: {
-          caseId: modCase.id,
-          authorId: ctx.session.user.id,
-          authorTag: ctx.session.user.name,
-          content: input.content,
-        },
+      await db.insert(discordCaseNotes).values({
+        caseId: modCase.id,
+        authorId: ctx.session.user.id,
+        authorTag: ctx.session.user.name,
+        content: input.content,
       });
 
       await logAudit({
@@ -192,9 +201,9 @@ export const discordModerationRouter = router({
   listThresholds: moderatorProcedure.query(async ({ ctx }) => {
     const guild = await requireGuild(ctx.session.user.id);
 
-    const thresholds = await prisma.discordWarnThreshold.findMany({
-      where: { guildId: guild.guildId },
-      orderBy: { count: "asc" },
+    const thresholds = await db.query.discordWarnThresholds.findMany({
+      where: eq(discordWarnThresholds.guildId, guild.guildId),
+      orderBy: asc(discordWarnThresholds.count),
     });
 
     return thresholds.map((t) => ({
@@ -223,17 +232,14 @@ export const discordModerationRouter = router({
         });
       }
 
-      await prisma.discordWarnThreshold.upsert({
-        where: {
-          guildId_count: { guildId: guild.guildId, count: input.count },
-        },
-        create: {
-          guildId: guild.guildId,
-          count: input.count,
-          action: input.action,
-          duration: input.action === "MUTE" ? input.duration : null,
-        },
-        update: {
+      await db.insert(discordWarnThresholds).values({
+        guildId: guild.guildId,
+        count: input.count,
+        action: input.action,
+        duration: input.action === "MUTE" ? input.duration : null,
+      }).onConflictDoUpdate({
+        target: [discordWarnThresholds.guildId, discordWarnThresholds.count],
+        set: {
           action: input.action,
           duration: input.action === "MUTE" ? input.duration : null,
         },
@@ -257,11 +263,14 @@ export const discordModerationRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const deleted = await prisma.discordWarnThreshold.deleteMany({
-        where: { guildId: guild.guildId, count: input.count },
-      });
+      const result = await db.delete(discordWarnThresholds).where(
+        and(
+          eq(discordWarnThresholds.guildId, guild.guildId),
+          eq(discordWarnThresholds.count, input.count),
+        )
+      ).returning();
 
-      if (deleted.count === 0) {
+      if (result.length === 0) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: `No threshold at ${input.count} warnings.`,

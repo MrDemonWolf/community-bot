@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, desc, not, isNull, regulars } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -7,10 +7,10 @@ import { logAudit } from "../utils/audit";
 
 export const regularRouter = router({
   list: protectedProcedure.query(async () => {
-    const regulars = await prisma.regular.findMany({
-      orderBy: { createdAt: "desc" },
+    const regularList = await db.query.regulars.findMany({
+      orderBy: desc(regulars.createdAt),
     });
-    return regulars;
+    return regularList;
   }),
 
   add: moderatorProcedure
@@ -34,8 +34,8 @@ export const regularRouter = router({
       }
 
       // Check if already a regular
-      const existing = await prisma.regular.findUnique({
-        where: { twitchUserId: twitchUser.id },
+      const existing = await db.query.regulars.findFirst({
+        where: eq(regulars.twitchUserId, twitchUser.id),
       });
 
       if (existing) {
@@ -47,8 +47,8 @@ export const regularRouter = router({
 
       // Check Discord ID uniqueness if provided
       if (input.discordUserId) {
-        const discordExisting = await prisma.regular.findUnique({
-          where: { discordUserId: input.discordUserId },
+        const discordExisting = await db.query.regulars.findFirst({
+          where: eq(regulars.discordUserId, input.discordUserId),
         });
         if (discordExisting) {
           throw new TRPCError({
@@ -58,15 +58,13 @@ export const regularRouter = router({
         }
       }
 
-      const regular = await prisma.regular.create({
-        data: {
-          twitchUserId: twitchUser.id,
-          twitchUsername: twitchUser.display_name,
-          discordUserId: input.discordUserId ?? null,
-          discordUsername: input.discordUsername ?? null,
-          addedBy: ctx.session.user.name,
-        },
-      });
+      const [regular] = await db.insert(regulars).values({
+        twitchUserId: twitchUser.id,
+        twitchUsername: twitchUser.display_name,
+        discordUserId: input.discordUserId ?? null,
+        discordUsername: input.discordUsername ?? null,
+        addedBy: ctx.session.user.name,
+      }).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("regular:created", {
@@ -80,14 +78,14 @@ export const regularRouter = router({
         userImage: ctx.session.user.image,
         action: "regular.add",
         resourceType: "Regular",
-        resourceId: regular.id,
+        resourceId: regular!.id,
         metadata: {
           twitchUsername: twitchUser.display_name,
           discordUserId: input.discordUserId,
         },
       });
 
-      return regular;
+      return regular!;
     }),
 
   linkDiscord: moderatorProcedure
@@ -99,8 +97,8 @@ export const regularRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const regular = await prisma.regular.findUnique({
-        where: { id: input.id },
+      const regular = await db.query.regulars.findFirst({
+        where: eq(regulars.id, input.id),
       });
 
       if (!regular) {
@@ -111,8 +109,8 @@ export const regularRouter = router({
       }
 
       // Check Discord ID uniqueness
-      const discordExisting = await prisma.regular.findUnique({
-        where: { discordUserId: input.discordUserId },
+      const discordExisting = await db.query.regulars.findFirst({
+        where: eq(regulars.discordUserId, input.discordUserId),
       });
       if (discordExisting && discordExisting.id !== input.id) {
         throw new TRPCError({
@@ -121,13 +119,10 @@ export const regularRouter = router({
         });
       }
 
-      const updated = await prisma.regular.update({
-        where: { id: input.id },
-        data: {
-          discordUserId: input.discordUserId,
-          discordUsername: input.discordUsername ?? null,
-        },
-      });
+      const [updated] = await db.update(regulars).set({
+        discordUserId: input.discordUserId,
+        discordUsername: input.discordUsername ?? null,
+      }).where(eq(regulars.id, input.id)).returning();
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -148,8 +143,8 @@ export const regularRouter = router({
   remove: moderatorProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const regular = await prisma.regular.findUnique({
-        where: { id: input.id },
+      const regular = await db.query.regulars.findFirst({
+        where: eq(regulars.id, input.id),
       });
 
       if (!regular) {
@@ -159,7 +154,7 @@ export const regularRouter = router({
         });
       }
 
-      await prisma.regular.delete({ where: { id: input.id } });
+      await db.delete(regulars).where(eq(regulars.id, input.id));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("regular:deleted", {
@@ -181,23 +176,20 @@ export const regularRouter = router({
     }),
 
   refreshUsernames: protectedProcedure.mutation(async () => {
-    const regulars = await prisma.regular.findMany({
-      where: { twitchUserId: { not: null } },
+    const regularList = await db.query.regulars.findMany({
+      where: not(isNull(regulars.twitchUserId)),
     });
     let updated = 0;
 
-    for (const regular of regulars) {
+    for (const regular of regularList) {
       if (!regular.twitchUserId) continue;
       const twitchUser = await getTwitchUserById(regular.twitchUserId);
       if (twitchUser && twitchUser.display_name !== regular.twitchUsername) {
-        await prisma.regular.update({
-          where: { id: regular.id },
-          data: { twitchUsername: twitchUser.display_name },
-        });
+        await db.update(regulars).set({ twitchUsername: twitchUser.display_name }).where(eq(regulars.id, regular.id));
         updated++;
       }
     }
 
-    return { updated, total: regulars.length };
+    return { updated, total: regularList.length };
   }),
 });

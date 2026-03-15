@@ -1,4 +1,5 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, count } from "@community-bot/db";
+import { giveaways, giveawayEntries } from "@community-bot/db";
 
 export async function startGiveaway(
   botChannelId: string,
@@ -6,21 +7,23 @@ export async function startGiveaway(
   title: string
 ) {
   // End any existing active giveaway
-  await prisma.giveaway.updateMany({
-    where: { botChannelId, isActive: true },
-    data: { isActive: false },
-  });
+  await db
+    .update(giveaways)
+    .set({ isActive: false })
+    .where(and(eq(giveaways.botChannelId, botChannelId), eq(giveaways.isActive, true)));
 
-  return prisma.giveaway.create({
-    data: { botChannelId, keyword: keyword.toLowerCase(), title },
-  });
+  const [created] = await db
+    .insert(giveaways)
+    .values({ botChannelId, keyword: keyword.toLowerCase(), title })
+    .returning();
+  return created;
 }
 
 export async function getActiveGiveaway(botChannelId: string) {
-  return prisma.giveaway.findFirst({
-    where: { botChannelId, isActive: true },
-    include: { entries: true },
-  });
+  return db.query.giveaways.findFirst({
+    where: and(eq(giveaways.botChannelId, botChannelId), eq(giveaways.isActive, true)),
+    with: { entries: true },
+  }) ?? null;
 }
 
 export async function addEntry(
@@ -29,8 +32,8 @@ export async function addEntry(
   twitchUserId: string,
   message?: string
 ) {
-  const giveaway = await prisma.giveaway.findFirst({
-    where: { botChannelId, isActive: true },
+  const giveaway = await db.query.giveaways.findFirst({
+    where: and(eq(giveaways.botChannelId, botChannelId), eq(giveaways.isActive, true)),
   });
   if (!giveaway) return null;
 
@@ -40,13 +43,15 @@ export async function addEntry(
   }
 
   try {
-    return await prisma.giveawayEntry.create({
-      data: {
+    const [created] = await db
+      .insert(giveawayEntries)
+      .values({
         giveawayId: giveaway.id,
         twitchUsername,
         twitchUserId,
-      },
-    });
+      })
+      .returning();
+    return created;
   } catch {
     // Unique constraint violation means already entered
     return null;
@@ -54,37 +59,41 @@ export async function addEntry(
 }
 
 export async function drawWinner(botChannelId: string) {
-  const giveaway = await prisma.giveaway.findFirst({
-    where: { botChannelId, isActive: true },
-    include: { entries: true },
+  const giveaway = await db.query.giveaways.findFirst({
+    where: and(eq(giveaways.botChannelId, botChannelId), eq(giveaways.isActive, true)),
+    with: { entries: true },
   });
   if (!giveaway || giveaway.entries.length === 0) return null;
 
   const randomIndex = Math.floor(Math.random() * giveaway.entries.length);
   const winner = giveaway.entries[randomIndex];
 
-  await prisma.giveaway.update({
-    where: { id: giveaway.id },
-    data: { winnerName: winner.twitchUsername },
-  });
+  await db
+    .update(giveaways)
+    .set({ winnerName: winner.twitchUsername })
+    .where(eq(giveaways.id, giveaway.id));
 
   return winner.twitchUsername;
 }
 
 export async function endGiveaway(botChannelId: string): Promise<{ count: number }> {
-  return prisma.giveaway.updateMany({
-    where: { botChannelId, isActive: true },
-    data: { isActive: false },
-  });
+  const result = await db
+    .update(giveaways)
+    .set({ isActive: false })
+    .where(and(eq(giveaways.botChannelId, botChannelId), eq(giveaways.isActive, true)))
+    .returning();
+  return { count: result.length };
 }
 
 export async function getEntryCount(botChannelId: string) {
-  const giveaway = await prisma.giveaway.findFirst({
-    where: { botChannelId, isActive: true },
+  const giveaway = await db.query.giveaways.findFirst({
+    where: and(eq(giveaways.botChannelId, botChannelId), eq(giveaways.isActive, true)),
   });
   if (!giveaway) return 0;
 
-  return prisma.giveawayEntry.count({
-    where: { giveawayId: giveaway.id },
-  });
+  const [{ value }] = await db
+    .select({ value: count() })
+    .from(giveawayEntries)
+    .where(eq(giveawayEntries.giveawayId, giveaway.id));
+  return value;
 }

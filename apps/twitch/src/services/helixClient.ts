@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db } from "@community-bot/db";
 import { env } from "../utils/env.js";
 
 export interface HelixResponse<T = unknown> {
@@ -10,7 +10,7 @@ export async function helixFetch<T = unknown>(
   endpoint: string,
   params: Record<string, string>
 ): Promise<HelixResponse<T>> {
-  const cred = await prisma.twitchCredential.findFirst();
+  const cred = await db.query.twitchCredentials.findFirst();
   const accessToken = cred?.accessToken ?? "";
 
   const url = new URL(`https://api.twitch.tv/helix/${endpoint}`);
@@ -33,7 +33,7 @@ export async function helixFetch<T = unknown>(
 }
 
 async function getAuthHeaders() {
-  const cred = await prisma.twitchCredential.findFirst();
+  const cred = await db.query.twitchCredentials.findFirst();
   const accessToken = cred?.accessToken ?? "";
   return {
     Authorization: `Bearer ${accessToken}`,

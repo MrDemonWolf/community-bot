@@ -1,12 +1,12 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, discordGuilds, discordRolePanels, discordRoleButtons } from "@community-bot/db";
 import { leadModProcedure, protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
 
 async function requireGuild(userId: string) {
-  const guild = await prisma.discordGuild.findFirst({
-    where: { userId },
+  const guild = await db.query.discordGuilds.findFirst({
+    where: eq(discordGuilds.userId, userId),
   });
 
   if (!guild) {
@@ -23,10 +23,10 @@ export const discordRolesRouter = router({
   listPanels: protectedProcedure.query(async ({ ctx }) => {
     const guild = await requireGuild(ctx.session.user.id);
 
-    return prisma.discordRolePanel.findMany({
-      where: { guildId: guild.guildId },
-      include: { buttons: { orderBy: { position: "asc" } } },
-      orderBy: { name: "asc" },
+    return db.query.discordRolePanels.findMany({
+      where: eq(discordRolePanels.guildId, guild.guildId),
+      with: { buttons: true },
+      orderBy: asc(discordRolePanels.name),
     });
   }),
 
@@ -35,9 +35,9 @@ export const discordRolesRouter = router({
     .query(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const panel = await prisma.discordRolePanel.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
-        include: { buttons: { orderBy: { position: "asc" } } },
+      const panel = await db.query.discordRolePanels.findFirst({
+        where: and(eq(discordRolePanels.id, input.id), eq(discordRolePanels.guildId, guild.guildId)),
+        with: { buttons: true },
       });
 
       if (!panel) {
@@ -46,6 +46,9 @@ export const discordRolesRouter = router({
           message: "Panel not found.",
         });
       }
+
+      // Sort buttons by position
+      panel.buttons.sort((a, b) => a.position - b.position);
 
       return panel;
     }),
@@ -70,8 +73,8 @@ export const discordRolesRouter = router({
       const guild = await requireGuild(ctx.session.user.id);
       const name = input.name.toLowerCase();
 
-      const existing = await prisma.discordRolePanel.findUnique({
-        where: { guildId_name: { guildId: guild.guildId, name } },
+      const existing = await db.query.discordRolePanels.findFirst({
+        where: and(eq(discordRolePanels.guildId, guild.guildId), eq(discordRolePanels.name, name)),
       });
 
       if (existing) {
@@ -81,19 +84,16 @@ export const discordRolesRouter = router({
         });
       }
 
-      const panel = await prisma.discordRolePanel.create({
-        data: {
-          guildId: guild.guildId,
-          name,
-          title: input.title ?? "Role Selection",
-          description:
-            input.description ??
-            "Click a button or select an option to toggle a role.",
-          useMenu: input.useMenu,
-          createdBy: ctx.session.user.id,
-        },
-        include: { buttons: true },
-      });
+      const [panel] = await db.insert(discordRolePanels).values({
+        guildId: guild.guildId,
+        name,
+        title: input.title ?? "Role Selection",
+        description:
+          input.description ??
+          "Click a button or select an option to toggle a role.",
+        useMenu: input.useMenu,
+        createdBy: ctx.session.user.id,
+      }).returning();
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -101,11 +101,12 @@ export const discordRolesRouter = router({
         userImage: ctx.session.user.image,
         action: "discord.role-panel.create",
         resourceType: "DiscordRolePanel",
-        resourceId: panel.id,
+        resourceId: panel!.id,
         metadata: { name, useMenu: input.useMenu },
       });
 
-      return panel;
+      // Return panel with empty buttons array for consistency
+      return { ...panel!, buttons: [] };
     }),
 
   updatePanel: leadModProcedure
@@ -120,8 +121,8 @@ export const discordRolesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const panel = await prisma.discordRolePanel.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const panel = await db.query.discordRolePanels.findFirst({
+        where: and(eq(discordRolePanels.id, input.id), eq(discordRolePanels.guildId, guild.guildId)),
       });
 
       if (!panel) {
@@ -131,16 +132,17 @@ export const discordRolesRouter = router({
         });
       }
 
-      const updated = await prisma.discordRolePanel.update({
-        where: { id: input.id },
-        data: {
-          ...(input.title !== undefined && { title: input.title }),
-          ...(input.description !== undefined && {
-            description: input.description,
-          }),
-          ...(input.useMenu !== undefined && { useMenu: input.useMenu }),
-        },
-        include: { buttons: { orderBy: { position: "asc" } } },
+      const [updated] = await db.update(discordRolePanels).set({
+        ...(input.title !== undefined && { title: input.title }),
+        ...(input.description !== undefined && {
+          description: input.description,
+        }),
+        ...(input.useMenu !== undefined && { useMenu: input.useMenu }),
+      }).where(eq(discordRolePanels.id, input.id)).returning();
+
+      const buttons = await db.query.discordRoleButtons.findMany({
+        where: eq(discordRoleButtons.panelId, input.id),
+        orderBy: asc(discordRoleButtons.position),
       });
 
       await logAudit({
@@ -153,7 +155,7 @@ export const discordRolesRouter = router({
         metadata: { name: panel.name },
       });
 
-      return updated;
+      return { ...updated, buttons };
     }),
 
   deletePanel: leadModProcedure
@@ -161,8 +163,8 @@ export const discordRolesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const panel = await prisma.discordRolePanel.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const panel = await db.query.discordRolePanels.findFirst({
+        where: and(eq(discordRolePanels.id, input.id), eq(discordRolePanels.guildId, guild.guildId)),
       });
 
       if (!panel) {
@@ -172,9 +174,7 @@ export const discordRolesRouter = router({
         });
       }
 
-      await prisma.discordRolePanel.delete({
-        where: { id: input.id },
-      });
+      await db.delete(discordRolePanels).where(eq(discordRolePanels.id, input.id));
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -202,9 +202,9 @@ export const discordRolesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const panel = await prisma.discordRolePanel.findFirst({
-        where: { id: input.panelId, guildId: guild.guildId },
-        include: { buttons: true },
+      const panel = await db.query.discordRolePanels.findFirst({
+        where: and(eq(discordRolePanels.id, input.panelId), eq(discordRolePanels.guildId, guild.guildId)),
+        with: { buttons: true },
       });
 
       if (!panel) {
@@ -229,16 +229,14 @@ export const discordRolesRouter = router({
         });
       }
 
-      const button = await prisma.discordRoleButton.create({
-        data: {
-          panelId: input.panelId,
-          roleId: input.roleId,
-          label: input.label,
-          emoji: input.emoji,
-          style: input.style,
-          position: panel.buttons.length,
-        },
-      });
+      const [button] = await db.insert(discordRoleButtons).values({
+        panelId: input.panelId,
+        roleId: input.roleId,
+        label: input.label,
+        emoji: input.emoji,
+        style: input.style,
+        position: panel.buttons.length,
+      }).returning();
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -246,7 +244,7 @@ export const discordRolesRouter = router({
         userImage: ctx.session.user.image,
         action: "discord.role-button.add",
         resourceType: "DiscordRoleButton",
-        resourceId: button.id,
+        resourceId: button!.id,
         metadata: { panelName: panel.name, roleId: input.roleId },
       });
 
@@ -258,9 +256,9 @@ export const discordRolesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const button = await prisma.discordRoleButton.findFirst({
-        where: { id: input.id },
-        include: { panel: true },
+      const button = await db.query.discordRoleButtons.findFirst({
+        where: eq(discordRoleButtons.id, input.id),
+        with: { panel: true },
       });
 
       if (!button || button.panel.guildId !== guild.guildId) {
@@ -270,9 +268,7 @@ export const discordRolesRouter = router({
         });
       }
 
-      await prisma.discordRoleButton.delete({
-        where: { id: input.id },
-      });
+      await db.delete(discordRoleButtons).where(eq(discordRoleButtons.id, input.id));
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -297,8 +293,8 @@ export const discordRolesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const panel = await prisma.discordRolePanel.findFirst({
-        where: { id: input.panelId, guildId: guild.guildId },
+      const panel = await db.query.discordRolePanels.findFirst({
+        where: and(eq(discordRolePanels.id, input.panelId), eq(discordRolePanels.guildId, guild.guildId)),
       });
 
       if (!panel) {
@@ -310,10 +306,7 @@ export const discordRolesRouter = router({
 
       await Promise.all(
         input.buttonIds.map((id, index) =>
-          prisma.discordRoleButton.update({
-            where: { id },
-            data: { position: index },
-          })
+          db.update(discordRoleButtons).set({ position: index }).where(eq(discordRoleButtons.id, id))
         )
       );
 

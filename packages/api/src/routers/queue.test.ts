@@ -6,19 +6,18 @@ const mocks = vi.hoisted(() => {
   const handler: ProxyHandler<Record<string, any>> = {
     get(target, prop: string) {
       if (!target[prop]) {
-        if (prop === "$transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
-        else if (prop === "$executeRawUnsafe" || prop === "$executeRaw") target[prop] = vi.fn();
+        if (prop === "transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
+        else if (prop === "execute" || prop === "$executeRaw") target[prop] = vi.fn();
         else target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
+  return { db: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma, QueueStatus: { OPEN: "OPEN", CLOSED: "CLOSED", PAUSED: "PAUSED" }, Prisma: { sql: (strings: TemplateStringsArray, ...values: any[]) => ({ strings, values }) } }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db, QueueStatus: { OPEN: "OPEN", CLOSED: "CLOSED", PAUSED: "PAUSED" }, Prisma: { sql: (strings: TemplateStringsArray, ...values: any[]) => ({ strings, values }) } }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
@@ -29,10 +28,10 @@ import { t } from "../index";
 import { queueRouter } from "./queue";
 
 const createCaller = t.createCallerFactory(queueRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 function authedCaller(role = "MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
@@ -42,7 +41,7 @@ describe("queueRouter", () => {
   describe("getState", () => {
     it("upserts and returns singleton queue state", async () => {
       const caller = createCaller(mockSession());
-      p.queueState.upsert.mockResolvedValue({ id: "singleton", status: "CLOSED" });
+      p.query.queueStates.upsert.mockResolvedValue({ id: "singleton", status: "CLOSED" });
       const result = await caller.getState();
       expect(result.status).toBe("CLOSED");
     });
@@ -51,7 +50,7 @@ describe("queueRouter", () => {
   describe("list", () => {
     it("returns queue entries ordered by position", async () => {
       const caller = createCaller(mockSession());
-      p.queueEntry.findMany.mockResolvedValue([{ id: "e1", position: 1 }, { id: "e2", position: 2 }]);
+      p.query.queueEntries.findMany.mockResolvedValue([{ id: "e1", position: 1 }, { id: "e2", position: 2 }]);
       const result = await caller.list();
       expect(result).toHaveLength(2);
     });
@@ -60,7 +59,7 @@ describe("queueRouter", () => {
   describe("setStatus", () => {
     it("sets status to OPEN and publishes event", async () => {
       const caller = authedCaller();
-      p.queueState.upsert.mockResolvedValue({ id: "singleton", status: "OPEN" });
+      p.query.queueStates.upsert.mockResolvedValue({ id: "singleton", status: "OPEN" });
       const result = await caller.setStatus({ status: "OPEN" });
       expect(result.status).toBe("OPEN");
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "queue.open" }));
@@ -69,14 +68,14 @@ describe("queueRouter", () => {
 
     it("maps CLOSED to queue.close", async () => {
       const caller = authedCaller();
-      p.queueState.upsert.mockResolvedValue({ id: "singleton", status: "CLOSED" });
+      p.query.queueStates.upsert.mockResolvedValue({ id: "singleton", status: "CLOSED" });
       await caller.setStatus({ status: "CLOSED" });
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "queue.close" }));
     });
 
     it("maps PAUSED to queue.pause", async () => {
       const caller = authedCaller();
-      p.queueState.upsert.mockResolvedValue({ id: "singleton", status: "PAUSED" });
+      p.query.queueStates.upsert.mockResolvedValue({ id: "singleton", status: "PAUSED" });
       await caller.setStatus({ status: "PAUSED" });
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "queue.pause" }));
     });
@@ -92,8 +91,8 @@ describe("queueRouter", () => {
 
     it("removes entry and reorders positions", async () => {
       const caller = authedCaller();
-      p.queueEntry.findUnique.mockResolvedValue({ id: "e1", position: 2, twitchUsername: "v1" });
-      p.queueEntry.delete.mockResolvedValue({});
+      p.query.queueEntries.findFirst.mockResolvedValue({ id: "e1", position: 2, twitchUsername: "v1" });
+      p.query.queueEntries.delete.mockResolvedValue({});
       const result = await caller.removeEntry({ id: UUID });
       expect(result.success).toBe(true);
       expect(p.$executeRaw).toHaveBeenCalled();
@@ -102,7 +101,7 @@ describe("queueRouter", () => {
 
     it("throws NOT_FOUND for missing entry", async () => {
       const caller = authedCaller();
-      p.queueEntry.findUnique.mockResolvedValue(null);
+      p.query.queueEntries.findFirst.mockResolvedValue(null);
       await expect(caller.removeEntry({ id: UUID })).rejects.toThrow("Queue entry not found");
     });
   });
@@ -110,8 +109,8 @@ describe("queueRouter", () => {
   describe("pickEntry", () => {
     it("picks next entry", async () => {
       const caller = authedCaller();
-      p.queueEntry.findFirst.mockResolvedValue({ id: "e1", position: 1, twitchUsername: "v1" });
-      p.queueEntry.delete.mockResolvedValue({});
+      p.query.queueEntries.findFirst.mockResolvedValue({ id: "e1", position: 1, twitchUsername: "v1" });
+      p.query.queueEntries.delete.mockResolvedValue({});
       const result = await caller.pickEntry({ mode: "next" });
       expect(result.id).toBe("e1");
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "queue.pick", metadata: expect.objectContaining({ mode: "next" }) }));
@@ -119,13 +118,13 @@ describe("queueRouter", () => {
 
     it("throws NOT_FOUND for empty queue (next)", async () => {
       const caller = authedCaller();
-      p.queueEntry.findFirst.mockResolvedValue(null);
+      p.query.queueEntries.findFirst.mockResolvedValue(null);
       await expect(caller.pickEntry({ mode: "next" })).rejects.toThrow("Queue is empty");
     });
 
     it("throws NOT_FOUND for empty queue (random)", async () => {
       const caller = authedCaller();
-      p.queueEntry.count.mockResolvedValue(0);
+      p.query.queueEntries.count.mockResolvedValue(0);
       await expect(caller.pickEntry({ mode: "random" })).rejects.toThrow("Queue is empty");
     });
   });
@@ -133,8 +132,8 @@ describe("queueRouter", () => {
   describe("clear", () => {
     it("clears all entries and publishes event", async () => {
       const caller = authedCaller();
-      p.queueEntry.count.mockResolvedValue(5);
-      p.queueEntry.deleteMany.mockResolvedValue({ count: 5 });
+      p.query.queueEntries.count.mockResolvedValue(5);
+      p.query.queueEntries.deleteMany.mockResolvedValue({ count: 5 });
       const result = await caller.clear();
       expect(result.success).toBe(true);
       expect(result.cleared).toBe(5);

@@ -1,11 +1,12 @@
-import { prisma } from "@community-bot/db";
+import { db } from "@community-bot/db";
+import { botChannels } from "@community-bot/db";
 import { logger } from "../utils/logger.js";
 
 const broadcasterIds = new Map<string, string>();
 
 export async function loadBroadcasterIds(): Promise<void> {
-  const channels = await prisma.botChannel.findMany({
-    select: { twitchUsername: true, twitchUserId: true },
+  const channels = await db.query.botChannels.findMany({
+    columns: { twitchUsername: true, twitchUserId: true },
   });
   broadcasterIds.clear();
   for (const ch of channels) {
@@ -22,8 +23,8 @@ export function getBroadcasterId(channel: string): string | undefined {
 const botChannelIds = new Map<string, string>();
 
 export async function loadBotChannelIds(): Promise<void> {
-  const channels = await prisma.botChannel.findMany({
-    select: { id: true, twitchUsername: true },
+  const channels = await db.query.botChannels.findMany({
+    columns: { id: true, twitchUsername: true },
   });
   botChannelIds.clear();
   for (const ch of channels) {

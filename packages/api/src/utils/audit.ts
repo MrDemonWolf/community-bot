@@ -7,7 +7,7 @@
  * LEAD_MODERATOR < BROADCASTER). Metadata captures action-specific details
  * like old/new values or resource names.
  */
-import { prisma } from "@community-bot/db";
+import { db, eq, users, auditLogs } from "@community-bot/db";
 
 export interface AuditLogInput {
   userId: string;
@@ -24,24 +24,19 @@ export interface AuditLogInput {
 export async function logAudit(input: AuditLogInput): Promise<void> {
   // Fetch the user's role at write time so the dashboard can filter by
   // role hierarchy without needing a join at read time.
-  const user = await prisma.user.findUnique({
-    where: { id: input.userId },
-    select: { role: true },
-  });
+  const user = await db.query.users.findFirst({ where: eq(users.id, input.userId) });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: input.userId,
-      userName: input.userName,
-      userImage: input.userImage ?? undefined,
-      userRole: user?.role ?? "USER",
-      action: input.action,
-      resourceType: input.resourceType,
-      resourceId: input.resourceId,
-      metadata: (input.metadata ?? undefined) as
-        | Record<string, string | number | boolean | null>
-        | undefined,
-      ipAddress: input.ipAddress ?? undefined,
-    },
+  await db.insert(auditLogs).values({
+    userId: input.userId,
+    userName: input.userName,
+    userImage: input.userImage ?? undefined,
+    userRole: user?.role ?? "USER",
+    action: input.action,
+    resourceType: input.resourceType,
+    resourceId: input.resourceId,
+    metadata: (input.metadata ?? undefined) as
+      | Record<string, string | number | boolean | null>
+      | undefined,
+    ipAddress: input.ipAddress ?? undefined,
   });
 }

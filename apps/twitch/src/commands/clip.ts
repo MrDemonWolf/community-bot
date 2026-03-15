@@ -1,6 +1,6 @@
 import { TwitchCommand } from "../types/command.js";
 import { getBroadcasterId } from "../services/broadcasterCache.js";
-import { prisma } from "@community-bot/db";
+import { db } from "@community-bot/db";
 import { env } from "../utils/env.js";
 
 export const clip: TwitchCommand = {
@@ -16,7 +16,7 @@ export const clip: TwitchCommand = {
     }
 
     try {
-      const cred = await prisma.twitchCredential.findFirst();
+      const cred = await db.query.twitchCredentials.findFirst();
       const accessToken = cred?.accessToken ?? "";
 
       const res = await fetch("https://api.twitch.tv/helix/clips?broadcaster_id=" + broadcasterId, {

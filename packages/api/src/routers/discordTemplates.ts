@@ -1,12 +1,12 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, discordGuilds, discordMessageTemplates } from "@community-bot/db";
 import { leadModProcedure, protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
 
 async function requireGuild(userId: string) {
-  const guild = await prisma.discordGuild.findFirst({
-    where: { userId },
+  const guild = await db.query.discordGuilds.findFirst({
+    where: eq(discordGuilds.userId, userId),
   });
 
   if (!guild) {
@@ -23,9 +23,9 @@ export const discordTemplatesRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const guild = await requireGuild(ctx.session.user.id);
 
-    return prisma.discordMessageTemplate.findMany({
-      where: { guildId: guild.guildId },
-      orderBy: { name: "asc" },
+    return db.query.discordMessageTemplates.findMany({
+      where: eq(discordMessageTemplates.guildId, guild.guildId),
+      orderBy: asc(discordMessageTemplates.name),
     });
   }),
 
@@ -34,8 +34,8 @@ export const discordTemplatesRouter = router({
     .query(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const template = await prisma.discordMessageTemplate.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const template = await db.query.discordMessageTemplates.findFirst({
+        where: and(eq(discordMessageTemplates.id, input.id), eq(discordMessageTemplates.guildId, guild.guildId)),
       });
 
       if (!template) {
@@ -85,8 +85,8 @@ export const discordTemplatesRouter = router({
         }
       }
 
-      const existing = await prisma.discordMessageTemplate.findUnique({
-        where: { guildId_name: { guildId: guild.guildId, name } },
+      const existing = await db.query.discordMessageTemplates.findFirst({
+        where: and(eq(discordMessageTemplates.guildId, guild.guildId), eq(discordMessageTemplates.name, name)),
       });
 
       if (existing) {
@@ -96,15 +96,13 @@ export const discordTemplatesRouter = router({
         });
       }
 
-      const template = await prisma.discordMessageTemplate.create({
-        data: {
-          guildId: guild.guildId,
-          name,
-          content: input.content,
-          embedJson: input.embedJson,
-          createdBy: ctx.session.user.id,
-        },
-      });
+      const [template] = await db.insert(discordMessageTemplates).values({
+        guildId: guild.guildId,
+        name,
+        content: input.content,
+        embedJson: input.embedJson,
+        createdBy: ctx.session.user.id,
+      }).returning();
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -112,11 +110,11 @@ export const discordTemplatesRouter = router({
         userImage: ctx.session.user.image,
         action: "discord.template.create",
         resourceType: "DiscordMessageTemplate",
-        resourceId: template.id,
+        resourceId: template!.id,
         metadata: { name },
       });
 
-      return template;
+      return template!;
     }),
 
   update: leadModProcedure
@@ -130,8 +128,8 @@ export const discordTemplatesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const template = await prisma.discordMessageTemplate.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const template = await db.query.discordMessageTemplates.findFirst({
+        where: and(eq(discordMessageTemplates.id, input.id), eq(discordMessageTemplates.guildId, guild.guildId)),
       });
 
       if (!template) {
@@ -152,13 +150,10 @@ export const discordTemplatesRouter = router({
         }
       }
 
-      const updated = await prisma.discordMessageTemplate.update({
-        where: { id: input.id },
-        data: {
-          ...(input.content !== undefined && { content: input.content }),
-          ...(input.embedJson !== undefined && { embedJson: input.embedJson }),
-        },
-      });
+      const [updated] = await db.update(discordMessageTemplates).set({
+        ...(input.content !== undefined && { content: input.content }),
+        ...(input.embedJson !== undefined && { embedJson: input.embedJson }),
+      }).where(eq(discordMessageTemplates.id, input.id)).returning();
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -178,8 +173,8 @@ export const discordTemplatesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const template = await prisma.discordMessageTemplate.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const template = await db.query.discordMessageTemplates.findFirst({
+        where: and(eq(discordMessageTemplates.id, input.id), eq(discordMessageTemplates.guildId, guild.guildId)),
       });
 
       if (!template) {
@@ -189,9 +184,7 @@ export const discordTemplatesRouter = router({
         });
       }
 
-      await prisma.discordMessageTemplate.delete({
-        where: { id: input.id },
-      });
+      await db.delete(discordMessageTemplates).where(eq(discordMessageTemplates.id, input.id));
 
       await logAudit({
         userId: ctx.session.user.id,

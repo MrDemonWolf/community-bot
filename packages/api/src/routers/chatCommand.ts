@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, twitchChatCommands } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
@@ -12,9 +12,9 @@ export const chatCommandRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    const commands = await prisma.twitchChatCommand.findMany({
-      where: { botChannelId: botChannel.id },
-      orderBy: { name: "asc" },
+    const commands = await db.query.twitchChatCommands.findMany({
+      where: eq(twitchChatCommands.botChannelId, botChannel.id),
+      orderBy: asc(twitchChatCommands.name),
     });
 
     return commands;
@@ -61,8 +61,8 @@ export const chatCommandRouter = router({
       }
 
       // Check for conflicts with existing commands in this channel
-      const existing = await prisma.twitchChatCommand.findUnique({
-        where: { name_botChannelId: { name, botChannelId: botChannel.id } },
+      const existing = await db.query.twitchChatCommands.findFirst({
+        where: and(eq(twitchChatCommands.name, name), eq(twitchChatCommands.botChannelId, botChannel.id)),
       });
 
       if (existing) {
@@ -72,24 +72,22 @@ export const chatCommandRouter = router({
         });
       }
 
-      const command = await prisma.twitchChatCommand.create({
-        data: {
-          name,
-          response: input.response,
-          responseType: input.responseType,
-          accessLevel: input.accessLevel,
-          globalCooldown: input.globalCooldown,
-          userCooldown: input.userCooldown,
-          streamStatus: input.streamStatus,
-          aliases: input.aliases.map((a) => a.toLowerCase()),
-          hidden: input.hidden,
-          expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
-          botChannelId: botChannel.id,
-        },
-      });
+      const [command] = await db.insert(twitchChatCommands).values({
+        name,
+        response: input.response,
+        responseType: input.responseType,
+        accessLevel: input.accessLevel,
+        globalCooldown: input.globalCooldown,
+        userCooldown: input.userCooldown,
+        streamStatus: input.streamStatus,
+        aliases: input.aliases.map((a) => a.toLowerCase()),
+        hidden: input.hidden,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+        botChannelId: botChannel.id,
+      }).returning();
 
       const { eventBus } = await import("../events");
-      await eventBus.publish("command:created", { commandId: command.id });
+      await eventBus.publish("command:created", { commandId: command!.id });
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -97,11 +95,11 @@ export const chatCommandRouter = router({
         userImage: ctx.session.user.image,
         action: "command.create",
         resourceType: "TwitchChatCommand",
-        resourceId: command.id,
+        resourceId: command!.id,
         metadata: { name },
       });
 
-      return command;
+      return command!;
     }),
 
   update: moderatorProcedure
@@ -138,8 +136,8 @@ export const chatCommandRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const command = await prisma.twitchChatCommand.findUnique({
-        where: { id: input.id },
+      const command = await db.query.twitchChatCommands.findFirst({
+        where: eq(twitchChatCommands.id, input.id),
       });
 
       if (!command || command.botChannelId !== botChannel.id) {
@@ -151,19 +149,16 @@ export const chatCommandRouter = router({
 
       const { id, expiresAt, aliases, name, ...rest } = input;
 
-      const command_updated = await prisma.twitchChatCommand.update({
-        where: { id },
-        data: {
-          ...rest,
-          ...(name !== undefined ? { name: name.toLowerCase() } : {}),
-          ...(aliases !== undefined
-            ? { aliases: aliases.map((a) => a.toLowerCase()) }
-            : {}),
-          ...(expiresAt !== undefined
-            ? { expiresAt: expiresAt ? new Date(expiresAt) : null }
-            : {}),
-        },
-      });
+      const [command_updated] = await db.update(twitchChatCommands).set({
+        ...rest,
+        ...(name !== undefined ? { name: name.toLowerCase() } : {}),
+        ...(aliases !== undefined
+          ? { aliases: aliases.map((a) => a.toLowerCase()) }
+          : {}),
+        ...(expiresAt !== undefined
+          ? { expiresAt: expiresAt ? new Date(expiresAt) : null }
+          : {}),
+      }).where(eq(twitchChatCommands.id, id)).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("command:updated", { commandId: id });
@@ -175,10 +170,10 @@ export const chatCommandRouter = router({
         action: "command.update",
         resourceType: "TwitchChatCommand",
         resourceId: id,
-        metadata: { name: command_updated.name },
+        metadata: { name: command_updated!.name },
       });
 
-      return command_updated;
+      return command_updated!;
     }),
 
   delete: moderatorProcedure
@@ -186,8 +181,8 @@ export const chatCommandRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const command = await prisma.twitchChatCommand.findUnique({
-        where: { id: input.id },
+      const command = await db.query.twitchChatCommands.findFirst({
+        where: eq(twitchChatCommands.id, input.id),
       });
 
       if (!command || command.botChannelId !== botChannel.id) {
@@ -197,7 +192,7 @@ export const chatCommandRouter = router({
         });
       }
 
-      await prisma.twitchChatCommand.delete({ where: { id: input.id } });
+      await db.delete(twitchChatCommands).where(eq(twitchChatCommands.id, input.id));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("command:deleted", { commandId: input.id });
@@ -220,8 +215,8 @@ export const chatCommandRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const command = await prisma.twitchChatCommand.findUnique({
-        where: { id: input.id },
+      const command = await db.query.twitchChatCommands.findFirst({
+        where: eq(twitchChatCommands.id, input.id),
       });
 
       if (!command || command.botChannelId !== botChannel.id) {
@@ -231,10 +226,7 @@ export const chatCommandRouter = router({
         });
       }
 
-      const updated = await prisma.twitchChatCommand.update({
-        where: { id: input.id },
-        data: { enabled: !command.enabled },
-      });
+      const [updated] = await db.update(twitchChatCommands).set({ enabled: !command.enabled }).where(eq(twitchChatCommands.id, input.id)).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("command:updated", { commandId: input.id });
@@ -246,9 +238,9 @@ export const chatCommandRouter = router({
         action: "command.toggle",
         resourceType: "TwitchChatCommand",
         resourceId: input.id,
-        metadata: { name: command.name, enabled: updated.enabled },
+        metadata: { name: command.name, enabled: updated!.enabled },
       });
 
-      return updated;
+      return updated!;
     }),
 });

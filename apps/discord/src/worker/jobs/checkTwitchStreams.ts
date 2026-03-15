@@ -1,7 +1,7 @@
 import type { Client, TextChannel, NewsChannel } from "discord.js";
 import { ChannelType } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, not, isNull, twitchChannels, twitchNotifications } from "@community-bot/db";
 import { getStreams } from "../../twitch/api.js";
 import {
   buildLiveEmbed,
@@ -39,14 +39,14 @@ export function resolveRoleMention(
 export default async function checkTwitchStreams(client: Client): Promise<void> {
   try {
     // 1. Get all monitored channels with their guild config
-    const channels = await prisma.twitchChannel.findMany({
-      where: { guildId: { not: null } },
-      include: {
-        DiscordGuild: true,
-        TwitchNotification: {
-          where: { isLive: true },
-          take: 1,
-          orderBy: { createdAt: "desc" },
+    const channels = await db.query.twitchChannels.findMany({
+      where: not(isNull(twitchChannels.guildId)),
+      with: {
+        discordGuild: true,
+        twitchNotifications: {
+          where: eq(twitchNotifications.isLive, true),
+          limit: 1,
+          orderBy: (tn: any, { desc }: any) => [desc(tn.createdAt)],
         },
       },
     });
@@ -60,7 +60,7 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
 
     // 3. Process each channel
     for (const channel of channels) {
-      const guild = channel.DiscordGuild;
+      const guild = channel.discordGuild;
       if (!guild) continue;
       if (guild.enabled === false) continue;
       if (guild.muted === true) continue;
@@ -71,20 +71,17 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
       const stream = streamMap.get(channel.twitchChannelId);
       const wasLive = channel.isLive;
       const isNowLive = !!stream;
-      const activeNotification = channel.TwitchNotification[0];
+      const activeNotification = channel.twitchNotifications[0];
 
       try {
         if (!wasLive && isNowLive && stream) {
           // --- Offline → Live ---
-          await prisma.twitchChannel.update({
-            where: { id: channel.id },
-            data: {
+          await db.update(twitchChannels).set({
               isLive: true,
               lastStreamTitle: stream.title,
               lastGameName: stream.game_name,
               lastStartedAt: new Date(stream.started_at),
-            },
-          });
+            }).where(eq(twitchChannels.id, channel.id));
 
           const discordChannel = (await client.channels.fetch(
             notifChannelId
@@ -139,16 +136,14 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
             }
           }
 
-          await prisma.twitchNotification.create({
-            data: {
+          await db.insert(twitchNotifications).values({
               messageId: message.id,
               channelId: notifChannelId,
               guildId: guild.guildId,
               twitchChannelId: channel.id,
               isLive: true,
               streamStartedAt: startedAt,
-            },
-          });
+            });
 
           logger.info(
             "Twitch Streams",
@@ -158,13 +153,10 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
           // --- Still Live (update embed) ---
           if (!channel.updateMessageLive) continue;
 
-          await prisma.twitchChannel.update({
-            where: { id: channel.id },
-            data: {
+          await db.update(twitchChannels).set({
               lastStreamTitle: stream.title,
               lastGameName: stream.game_name,
-            },
-          });
+            }).where(eq(twitchChannels.id, channel.id));
 
           try {
             const discordChannel = (await client.channels.fetch(
@@ -221,16 +213,10 @@ export default async function checkTwitchStreams(client: Client): Promise<void> 
           // --- Live → Offline ---
           const offlineAt = new Date();
 
-          await prisma.twitchChannel.update({
-            where: { id: channel.id },
-            data: { isLive: false },
-          });
+          await db.update(twitchChannels).set({ isLive: false }).where(eq(twitchChannels.id, channel.id));
 
           if (activeNotification) {
-            await prisma.twitchNotification.update({
-              where: { id: activeNotification.id },
-              data: { isLive: false },
-            });
+            await db.update(twitchNotifications).set({ isLive: false }).where(eq(twitchNotifications.id, activeNotification.id));
 
             try {
               const discordChannel = (await client.channels.fetch(

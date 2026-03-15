@@ -8,12 +8,11 @@ import {
 
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma };
 });
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
 vi.mock("@community-bot/env/server", () => ({
-  env: { REDIS_URL: "redis://localhost" },
-}));
+  env: { REDIS_URL: "redis://localhost" } }));
 vi.mock("next/server", () => ({}));
 
 import { t } from "../index";
@@ -35,18 +34,16 @@ describe("auditLogRouter (integration)", () => {
     await cleanDatabase(testPrisma);
     broadcaster = await seedUser(testPrisma, {
       id: "bc-1",
-      role: "BROADCASTER",
-    });
+      role: "BROADCASTER" });
     moderator = await seedUser(testPrisma, {
       id: "mod-1",
       name: "ModUser",
-      role: "MODERATOR",
-    });
+      role: "MODERATOR" });
   });
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   async function seedAuditEntries() {
@@ -76,8 +73,7 @@ describe("auditLogRouter (integration)", () => {
           resourceType: "QueueState",
           resourceId: "singleton",
         },
-      ],
-    });
+      ] });
   }
 
   describe("list", () => {

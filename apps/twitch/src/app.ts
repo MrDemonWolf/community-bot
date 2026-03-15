@@ -13,7 +13,8 @@ import { listenWithFallback } from "@community-bot/server";
 import { EventBus } from "@community-bot/events";
 import { env } from "./utils/env.js";
 import { logger } from "./utils/logger.js";
-import { prisma } from "@community-bot/db";
+import { db, eq } from "@community-bot/db";
+import { users, botChannels, twitchCredentials } from "@community-bot/db";
 import api from "./api/index.js";
 import { createAuthProvider, createChatClient } from "./twitch/index.js";
 import { registerConnectionEvents } from "./events/connected.js";
@@ -47,8 +48,8 @@ listenWithFallback(api, {
 
 async function main() {
   // Verify database connection on startup
-  await prisma.user.findFirst();
-  logger.database.connected("Prisma");
+  await db.query.users.findFirst();
+  logger.database.connected("Drizzle");
 
   const eventBus = new EventBus(env.REDIS_URL);
   setEventBus(eventBus);
@@ -114,9 +115,9 @@ async function main() {
   await eventBus.on("timer:updated", async (payload) => {
     logger.info("EventBus", `Timer updated for channel: ${payload.channelId}`);
     // payload.channelId is the botChannel.id; we need to look up the username
-    const botChannel = await prisma.botChannel.findUnique({
-      where: { id: payload.channelId },
-      select: { twitchUsername: true },
+    const botChannel = await db.query.botChannels.findFirst({
+      where: eq(botChannels.id, payload.channelId),
+      columns: { twitchUsername: true },
     });
     if (botChannel) {
       await timerManager.reloadTimers(botChannel.twitchUsername);
@@ -126,9 +127,9 @@ async function main() {
   // Spam filter updated via web dashboard — reload for that channel
   await eventBus.on("spam-filter:updated", async (payload) => {
     logger.info("EventBus", `Spam filter updated for channel: ${payload.channelId}`);
-    const botChannel = await prisma.botChannel.findUnique({
-      where: { id: payload.channelId },
-      select: { twitchUsername: true },
+    const botChannel = await db.query.botChannels.findFirst({
+      where: eq(botChannels.id, payload.channelId),
+      columns: { twitchUsername: true },
     });
     if (botChannel) {
       await spamFilter.reloadSpamFilter(botChannel.twitchUsername);
@@ -138,9 +139,9 @@ async function main() {
   // Song request settings updated via web dashboard — reload for that channel
   await eventBus.on("song-request:settings-updated", async (payload) => {
     logger.info("EventBus", `Song request settings updated for channel: ${payload.channelId}`);
-    const botChannel = await prisma.botChannel.findUnique({
-      where: { id: payload.channelId },
-      select: { twitchUsername: true },
+    const botChannel = await db.query.botChannels.findFirst({
+      where: eq(botChannels.id, payload.channelId),
+      columns: { twitchUsername: true },
     });
     if (botChannel) {
       await songRequestManager.reloadSettings(botChannel.twitchUsername);
@@ -150,9 +151,9 @@ async function main() {
   // Playlist activated via web dashboard — reload song request settings
   await eventBus.on("playlist:activated", async (payload) => {
     logger.info("EventBus", `Playlist activated for channel: ${payload.channelId}`);
-    const botChannel = await prisma.botChannel.findUnique({
-      where: { id: payload.channelId },
-      select: { twitchUsername: true },
+    const botChannel = await db.query.botChannels.findFirst({
+      where: eq(botChannels.id, payload.channelId),
+      columns: { twitchUsername: true },
     });
     if (botChannel) {
       await songRequestManager.reloadSettings(botChannel.twitchUsername);
@@ -179,15 +180,15 @@ async function main() {
 
   // Load enabled channels from DB. Use a Set to deduplicate — the bot's
   // own channel is always included so it can receive commands there too.
-  const botChannels = await prisma.botChannel.findMany({
-    where: { enabled: true },
+  const enabledChannels = await db.query.botChannels.findMany({
+    where: eq(botChannels.enabled, true),
   });
   const channels = [
-    ...new Set([botUsername, ...botChannels.map((c) => c.twitchUsername)]),
+    ...new Set([botUsername, ...enabledChannels.map((c) => c.twitchUsername)]),
   ];
 
   const getAccessToken = async () => {
-    const cred = await prisma.twitchCredential.findFirst();
+    const cred = await db.query.twitchCredentials.findFirst();
     return cred?.accessToken ?? "";
   };
 

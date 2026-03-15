@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, desc, count, giveaways, giveawayEntries } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -9,21 +9,29 @@ export const giveawayRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    const giveaways = await prisma.giveaway.findMany({
-      where: { botChannelId: botChannel.id },
-      orderBy: { createdAt: "desc" },
-      include: { _count: { select: { entries: true } } },
+    const giveawayList = await db.query.giveaways.findMany({
+      where: eq(giveaways.botChannelId, botChannel.id),
+      orderBy: desc(giveaways.createdAt),
     });
 
-    return giveaways.map((g) => ({
-      id: g.id,
-      title: g.title,
-      keyword: g.keyword,
-      isActive: g.isActive,
-      winnerName: g.winnerName,
-      entryCount: g._count.entries,
-      createdAt: g.createdAt.toISOString(),
-    }));
+    // Get entry counts for each giveaway
+    const results = await Promise.all(
+      giveawayList.map(async (g) => {
+        const entryResult = await db.select({ value: count() }).from(giveawayEntries).where(eq(giveawayEntries.giveawayId, g.id));
+        const entryCount = entryResult[0]?.value ?? 0;
+        return {
+          id: g.id,
+          title: g.title,
+          keyword: g.keyword,
+          isActive: g.isActive,
+          winnerName: g.winnerName,
+          entryCount,
+          createdAt: g.createdAt.toISOString(),
+        };
+      })
+    );
+
+    return results;
   }),
 
   get: protectedProcedure
@@ -31,14 +39,17 @@ export const giveawayRouter = router({
     .query(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const giveaway = await prisma.giveaway.findUnique({
-        where: { id: input.id },
-        include: { entries: { orderBy: { createdAt: "asc" } } },
+      const giveaway = await db.query.giveaways.findFirst({
+        where: eq(giveaways.id, input.id),
+        with: { entries: true },
       });
 
       if (!giveaway || giveaway.botChannelId !== botChannel.id) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Giveaway not found" });
       }
+
+      // Sort entries by createdAt ascending
+      giveaway.entries.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
       return giveaway;
     }),
@@ -49,22 +60,17 @@ export const giveawayRouter = router({
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
       // End any active giveaway first
-      await prisma.giveaway.updateMany({
-        where: { botChannelId: botChannel.id, isActive: true },
-        data: { isActive: false },
-      });
+      await db.update(giveaways).set({ isActive: false }).where(and(eq(giveaways.botChannelId, botChannel.id), eq(giveaways.isActive, true)));
 
-      const giveaway = await prisma.giveaway.create({
-        data: {
-          botChannelId: botChannel.id,
-          title: input.title,
-          keyword: input.keyword.toLowerCase(),
-        },
-      });
+      const [giveaway] = await db.insert(giveaways).values({
+        botChannelId: botChannel.id,
+        title: input.title,
+        keyword: input.keyword.toLowerCase(),
+      }).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("giveaway:started", {
-        giveawayId: giveaway.id,
+        giveawayId: giveaway!.id,
         channelId: botChannel.twitchUserId,
       });
 
@@ -74,19 +80,19 @@ export const giveawayRouter = router({
         userImage: ctx.session.user.image,
         action: "giveaway.create",
         resourceType: "Giveaway",
-        resourceId: giveaway.id,
+        resourceId: giveaway!.id,
         metadata: { title: input.title, keyword: input.keyword },
       });
 
-      return giveaway;
+      return giveaway!;
     }),
 
   draw: moderatorProcedure.mutation(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    const giveaway = await prisma.giveaway.findFirst({
-      where: { botChannelId: botChannel.id, isActive: true },
-      include: { entries: true },
+    const giveaway = await db.query.giveaways.findFirst({
+      where: and(eq(giveaways.botChannelId, botChannel.id), eq(giveaways.isActive, true)),
+      with: { entries: true },
     });
 
     if (!giveaway || giveaway.entries.length === 0) {
@@ -99,10 +105,7 @@ export const giveawayRouter = router({
     const randomIndex = Math.floor(Math.random() * giveaway.entries.length);
     const winner = giveaway.entries[randomIndex];
 
-    await prisma.giveaway.update({
-      where: { id: giveaway.id },
-      data: { winnerName: winner.twitchUsername },
-    });
+    await db.update(giveaways).set({ winnerName: winner!.twitchUsername }).where(eq(giveaways.id, giveaway.id));
 
     const { eventBus } = await import("../events");
     await eventBus.publish("giveaway:winner", {
@@ -117,17 +120,17 @@ export const giveawayRouter = router({
       action: "giveaway.draw",
       resourceType: "Giveaway",
       resourceId: giveaway.id,
-      metadata: { winner: winner.twitchUsername },
+      metadata: { winner: winner!.twitchUsername },
     });
 
-    return { winner: winner.twitchUsername };
+    return { winner: winner!.twitchUsername };
   }),
 
   end: moderatorProcedure.mutation(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    const giveaway = await prisma.giveaway.findFirst({
-      where: { botChannelId: botChannel.id, isActive: true },
+    const giveaway = await db.query.giveaways.findFirst({
+      where: and(eq(giveaways.botChannelId, botChannel.id), eq(giveaways.isActive, true)),
     });
 
     if (!giveaway) {
@@ -137,10 +140,7 @@ export const giveawayRouter = router({
       });
     }
 
-    await prisma.giveaway.update({
-      where: { id: giveaway.id },
-      data: { isActive: false },
-    });
+    await db.update(giveaways).set({ isActive: false }).where(eq(giveaways.id, giveaway.id));
 
     const { eventBus } = await import("../events");
     await eventBus.publish("giveaway:ended", {

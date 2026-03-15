@@ -1,7 +1,7 @@
 import { MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, quotes } from "@community-bot/db";
 import { resolveBotChannelId } from "./resolve.js";
 import logger from "../../utils/logger.js";
 import { hasPermission } from "../../utils/permissions.js";
@@ -40,14 +40,8 @@ export async function handleQuoteRemove(
     const number = interaction.options.getInteger("number", true);
 
     try {
-      await prisma.quote.delete({
-        where: {
-          quoteNumber_botChannelId: {
-            quoteNumber: number,
-            botChannelId,
-          },
-        },
-      });
+      const deleted = await db.delete(quotes).where(and(eq(quotes.quoteNumber, number), eq(quotes.botChannelId, botChannelId))).returning();
+      if (deleted.length === 0) throw new Error("Not found");
 
       logger.commands.success(
         "quote remove",

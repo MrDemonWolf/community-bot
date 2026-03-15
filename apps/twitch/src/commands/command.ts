@@ -1,11 +1,13 @@
 import {
-  Prisma,
   TwitchAccessLevel,
   TwitchResponseType,
   TwitchStreamStatus,
+  db,
+  eq,
+  and,
 } from "@community-bot/db";
+import { botChannels, twitchChatCommands } from "@community-bot/db";
 import { TwitchCommand } from "../types/command.js";
-import { prisma } from "@community-bot/db";
 import { commandCache } from "../services/commandCache.js";
 import { commands } from "./index.js";
 
@@ -24,8 +26,8 @@ function stripHash(channel: string): string {
 
 async function getBotChannelId(channel: string): Promise<string | null> {
   const username = stripHash(channel).toLowerCase();
-  const botChannel = await prisma.botChannel.findFirst({
-    where: { twitchUsername: username },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.twitchUsername, username),
   });
   return botChannel?.id ?? null;
 }
@@ -73,13 +75,11 @@ async function handleAdd(
   }
 
   try {
-    await prisma.twitchChatCommand.create({
-      data: { name, response, botChannelId },
-    });
+    await db.insert(twitchChatCommands).values({ name, response, botChannelId });
     await commandCache.reload();
     await say(`@${user} Command !${name} has been added.`);
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+  } catch (err: any) {
+    if (err?.code === "23505") {
       await say(`@${user} Command !${name} already exists.`);
     } else {
       throw err;
@@ -101,20 +101,22 @@ async function handleEdit(
   const name = stripBang(args[0]).toLowerCase();
   const response = args.slice(1).join(" ");
 
-  try {
-    await prisma.twitchChatCommand.update({
-      where: { name_botChannelId: { name, botChannelId } },
-      data: { response },
-    });
-    await commandCache.reload();
-    await say(`@${user} Command !${name} has been updated.`);
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
-      await say(`@${user} Command !${name} does not exist.`);
-    } else {
-      throw err;
-    }
+  const [updated] = await db
+    .update(twitchChatCommands)
+    .set({ response })
+    .where(
+      and(
+        eq(twitchChatCommands.name, name),
+        eq(twitchChatCommands.botChannelId, botChannelId)
+      )
+    )
+    .returning();
+  if (!updated) {
+    await say(`@${user} Command !${name} does not exist.`);
+    return;
   }
+  await commandCache.reload();
+  await say(`@${user} Command !${name} has been updated.`);
 }
 
 async function handleRemove(
@@ -130,19 +132,21 @@ async function handleRemove(
 
   const name = stripBang(args[0]).toLowerCase();
 
-  try {
-    await prisma.twitchChatCommand.delete({
-      where: { name_botChannelId: { name, botChannelId } },
-    });
-    await commandCache.reload();
-    await say(`@${user} Command !${name} has been removed.`);
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
-      await say(`@${user} Command !${name} does not exist.`);
-    } else {
-      throw err;
-    }
+  const deleted = await db
+    .delete(twitchChatCommands)
+    .where(
+      and(
+        eq(twitchChatCommands.name, name),
+        eq(twitchChatCommands.botChannelId, botChannelId)
+      )
+    )
+    .returning();
+  if (deleted.length === 0) {
+    await say(`@${user} Command !${name} does not exist.`);
+    return;
   }
+  await commandCache.reload();
+  await say(`@${user} Command !${name} has been removed.`);
 }
 
 async function handleShow(
@@ -158,8 +162,11 @@ async function handleShow(
 
   const name = stripBang(args[0]).toLowerCase();
 
-  const cmd = await prisma.twitchChatCommand.findUnique({
-    where: { name_botChannelId: { name, botChannelId } },
+  const cmd = await db.query.twitchChatCommands.findFirst({
+    where: and(
+      eq(twitchChatCommands.name, name),
+      eq(twitchChatCommands.botChannelId, botChannelId)
+    ),
   });
   if (!cmd) {
     await say(`@${user} Command !${name} does not exist.`);
@@ -209,15 +216,18 @@ async function handleOptions(
   const name = stripBang(args[0]).toLowerCase();
 
   // Check command exists
-  const existing = await prisma.twitchChatCommand.findUnique({
-    where: { name_botChannelId: { name, botChannelId } },
+  const existing = await db.query.twitchChatCommands.findFirst({
+    where: and(
+      eq(twitchChatCommands.name, name),
+      eq(twitchChatCommands.botChannelId, botChannelId)
+    ),
   });
   if (!existing) {
     await say(`@${user} Command !${name} does not exist.`);
     return;
   }
 
-  const data: Prisma.TwitchChatCommandUpdateInput = {};
+  const data: Record<string, unknown> = {};
   const errors: string[] = [];
   let i = 1;
 
@@ -357,10 +367,15 @@ async function handleOptions(
     return;
   }
 
-  await prisma.twitchChatCommand.update({
-    where: { name_botChannelId: { name, botChannelId } },
-    data,
-  });
+  await db
+    .update(twitchChatCommands)
+    .set(data)
+    .where(
+      and(
+        eq(twitchChatCommands.name, name),
+        eq(twitchChatCommands.botChannelId, botChannelId)
+      )
+    );
   await commandCache.reload();
   await say(`@${user} Options for !${name} have been updated.`);
 }

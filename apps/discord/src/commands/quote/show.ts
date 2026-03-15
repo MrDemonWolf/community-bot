@@ -1,7 +1,7 @@
 import { MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, count as countFn, quotes } from "@community-bot/db";
 import { resolveBotChannelId } from "./resolve.js";
 import logger from "../../utils/logger.js";
 
@@ -32,13 +32,8 @@ export async function handleQuoteShow(
 
     if (number !== null) {
       // Show specific quote
-      const quote = await prisma.quote.findUnique({
-        where: {
-          quoteNumber_botChannelId: {
-            quoteNumber: number,
-            botChannelId,
-          },
-        },
+      const quote = await db.query.quotes.findFirst({
+        where: and(eq(quotes.quoteNumber, number), eq(quotes.botChannelId, botChannelId)),
       });
 
       if (!quote) {
@@ -54,18 +49,20 @@ export async function handleQuoteShow(
     }
 
     // Random quote
-    const count = await prisma.quote.count({ where: { botChannelId } });
+    const [{ value: quoteCount }] = await db.select({ value: countFn() }).from(quotes).where(eq(quotes.botChannelId, botChannelId));
+    const count = Number(quoteCount);
     if (count === 0) {
       await interaction.editReply({ content: "No quotes yet." });
       return;
     }
 
     const skip = Math.floor(Math.random() * count);
-    const [quote] = await prisma.quote.findMany({
-      where: { botChannelId },
-      skip,
-      take: 1,
+    const randomQuotes = await db.query.quotes.findMany({
+      where: eq(quotes.botChannelId, botChannelId),
+      offset: skip,
+      limit: 1,
     });
+    const quote = randomQuotes[0];
 
     if (quote) {
       const gamePart = quote.game ? ` [${quote.game}]` : "";

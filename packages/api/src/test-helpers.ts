@@ -7,7 +7,6 @@
  * import { vi } from "vitest";
  *
  * const mocks = vi.hoisted(() => {
- *   // Import dynamically won't work here — define inline
  *   return {
  *     mockEventBus: { publish: vi.fn() },
  *     mockLogAudit: vi.fn(),
@@ -49,11 +48,65 @@ export function mockUser(overrides: Record<string, unknown> = {}) {
 }
 
 /**
- * Creates a deeply-stubbed Prisma client as a Proxy.
- * Every model access returns an object whose methods are vi.fn().
+ * Creates a self-chaining proxy for mocking Drizzle write operations.
+ * Every property returns a vi.fn() that returns another chainable proxy.
+ * Mock terminal methods (returning, where, etc.) to control return values.
+ */
+export function createChainProxy(vi: { fn: (...args: any[]) => any }): any {
+  const fns: Record<string, any> = {};
+  return new Proxy({} as any, {
+    get(_, prop: string) {
+      if (prop === "then") return undefined; // Not a thenable
+      if (!fns[prop]) {
+        fns[prop] = vi.fn().mockReturnValue(createChainProxy(vi));
+      }
+      return fns[prop];
+    },
+  });
+}
+
+/**
+ * Creates a deeply-stubbed Drizzle DB client as a Proxy.
+ *
+ * - `db.query.<model>.<method>()` — auto-creates vi.fn() for each model method
+ * - `db.insert/update/delete/select()` — returns self-chaining proxies
+ * - `db.transaction(fn)` — calls fn with the mock db
+ * - `db.execute()` — vi.fn()
+ *
  * Must be called after vitest setup (not inside vi.hoisted).
  */
-export function createMockPrisma(vi: { fn: () => any }) {
+export function createMockDb(vi: { fn: (...args: any[]) => any }) {
+  const queryProxy = new Proxy({} as Record<string, any>, {
+    get(target, model: string) {
+      if (!target[model]) {
+        target[model] = new Proxy({} as Record<string, any>, {
+          get(m, method: string) {
+            if (!m[method]) m[method] = vi.fn();
+            return m[method];
+          },
+        });
+      }
+      return target[model];
+    },
+  });
+
+  const db: any = {
+    query: queryProxy,
+    insert: vi.fn(() => createChainProxy(vi)),
+    update: vi.fn(() => createChainProxy(vi)),
+    delete: vi.fn(() => createChainProxy(vi)),
+    select: vi.fn(() => createChainProxy(vi)),
+    transaction: vi.fn(async (fn: any) => fn(db)),
+    execute: vi.fn(),
+  };
+
+  return db;
+}
+
+/**
+ * @deprecated Use createMockDb instead. Kept for backwards compatibility.
+ */
+export function createMockPrisma(vi: { fn: (...args: any[]) => any }) {
   const handler: ProxyHandler<Record<string, any>> = {
     get(target, prop: string) {
       if (!target[prop]) {

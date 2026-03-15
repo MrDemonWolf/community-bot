@@ -1,5 +1,5 @@
 import express from "express";
-import { prisma } from "@community-bot/db";
+import { db, sql } from "@community-bot/db";
 
 import logger from "../../utils/logger.js";
 import client from "../../app.js";
@@ -17,7 +17,7 @@ interface CheckResult {
 async function checkDatabase(): Promise<CheckResult> {
   const start = performance.now();
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await db.execute(sql`SELECT 1`);
     return { status: "up", latency: Math.round(performance.now() - start) };
   } catch {
     return { status: "down", latency: null };

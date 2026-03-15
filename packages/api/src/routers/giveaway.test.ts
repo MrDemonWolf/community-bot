@@ -7,16 +7,15 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
+  return { db: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
@@ -27,10 +26,10 @@ import { t } from "../index";
 import { giveawayRouter } from "./giveaway";
 
 const createCaller = t.createCallerFactory(giveawayRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 function authedCaller(role = "MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
@@ -40,8 +39,8 @@ describe("giveawayRouter", () => {
   describe("list", () => {
     it("returns giveaways with entry counts", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
-      p.giveaway.findMany.mockResolvedValue([
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
+      p.query.giveaways.findMany.mockResolvedValue([
         {
           id: "ga-1",
           title: "Big Giveaway",
@@ -72,14 +71,13 @@ describe("giveawayRouter", () => {
         isActive: true,
         winnerName: null,
         entryCount: 10,
-        createdAt: "2025-01-01T00:00:00.000Z",
-      });
+        createdAt: "2025-01-01T00:00:00.000Z" });
       expect(result[1].entryCount).toBe(25);
     });
 
     it("throws when bot not enabled", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(null);
       await expect(caller.list()).rejects.toThrow("Bot is not enabled");
     });
   });
@@ -87,34 +85,30 @@ describe("giveawayRouter", () => {
   describe("create", () => {
     it("creates a giveaway and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
-      p.giveaway.updateMany.mockResolvedValue({ count: 0 });
-      p.giveaway.create.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
+      p.query.giveaways.updateMany.mockResolvedValue({ count: 0 });
+      p.query.giveaways.create.mockResolvedValue({
         id: "ga-new",
         botChannelId: "bc-1",
         title: "New Giveaway",
         keyword: "enter",
-        isActive: true,
-      });
+        isActive: true });
 
       const result = await caller.create({ title: "New Giveaway", keyword: "ENTER" });
 
       expect(result.id).toBe("ga-new");
-      expect(p.giveaway.updateMany).toHaveBeenCalledWith({
+      expect(p.query.giveaways.updateMany).toHaveBeenCalledWith({
         where: { botChannelId: "bc-1", isActive: true },
-        data: { isActive: false },
-      });
-      expect(p.giveaway.create).toHaveBeenCalledWith({
+        data: { isActive: false } });
+      expect(p.query.giveaways.create).toHaveBeenCalledWith({
         data: {
           botChannelId: "bc-1",
           title: "New Giveaway",
           keyword: "enter",
-        },
-      });
+        } });
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("giveaway:started", {
         giveawayId: "ga-new",
-        channelId: "tw-1",
-      });
+        channelId: "tw-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "giveaway.create" })
       );
@@ -129,23 +123,21 @@ describe("giveawayRouter", () => {
   describe("draw", () => {
     it("draws a winner and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
-      p.giveaway.findFirst.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
+      p.query.giveaways.findFirst.mockResolvedValue({
         id: "ga-1",
         entries: [
           { twitchUsername: "viewer1", twitchUserId: "uid-1" },
           { twitchUsername: "viewer2", twitchUserId: "uid-2" },
-        ],
-      });
-      p.giveaway.update.mockResolvedValue({});
+        ] });
+      p.query.giveaways.update.mockResolvedValue({});
 
       const result = await caller.draw();
 
       expect(["viewer1", "viewer2"]).toContain(result.winner);
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("giveaway:winner", {
         giveawayId: "ga-1",
-        channelId: "tw-1",
-      });
+        channelId: "tw-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "giveaway.draw" })
       );
@@ -153,8 +145,8 @@ describe("giveawayRouter", () => {
 
     it("throws when no entries", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
-      p.giveaway.findFirst.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
+      p.query.giveaways.findFirst.mockResolvedValue(null);
 
       await expect(caller.draw()).rejects.toThrow("No active giveaway or no entries");
     });
@@ -168,21 +160,19 @@ describe("giveawayRouter", () => {
   describe("end", () => {
     it("ends giveaway and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
-      p.giveaway.findFirst.mockResolvedValue({ id: "ga-1", isActive: true });
-      p.giveaway.update.mockResolvedValue({});
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
+      p.query.giveaways.findFirst.mockResolvedValue({ id: "ga-1", isActive: true });
+      p.query.giveaways.update.mockResolvedValue({});
 
       const result = await caller.end();
 
       expect(result.success).toBe(true);
-      expect(p.giveaway.update).toHaveBeenCalledWith({
+      expect(p.query.giveaways.update).toHaveBeenCalledWith({
         where: { id: "ga-1" },
-        data: { isActive: false },
-      });
+        data: { isActive: false } });
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("giveaway:ended", {
         giveawayId: "ga-1",
-        channelId: "tw-1",
-      });
+        channelId: "tw-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "giveaway.end" })
       );
@@ -190,8 +180,8 @@ describe("giveawayRouter", () => {
 
     it("throws when no active giveaway", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
-      p.giveaway.findFirst.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true, twitchUserId: "tw-1" });
+      p.query.giveaways.findFirst.mockResolvedValue(null);
 
       await expect(caller.end()).rejects.toThrow("No active giveaway");
     });

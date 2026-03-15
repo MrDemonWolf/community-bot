@@ -1,4 +1,5 @@
-import { prisma } from "@community-bot/db";
+import { db, eq } from "@community-bot/db";
+import { twitchChatCommands } from "@community-bot/db";
 import { logger } from "../utils/logger.js";
 import type { TwitchChatCommand } from "@community-bot/db";
 
@@ -20,9 +21,9 @@ class CommandCache {
   private globalRegexCommands: CachedCommand[] = [];
 
   async load(): Promise<void> {
-    const commands = await prisma.twitchChatCommand.findMany({
-      where: { enabled: true },
-      include: { botChannel: true },
+    const commands = await db.query.twitchChatCommands.findMany({
+      where: eq(twitchChatCommands.enabled, true),
+      with: { botChannel: true },
     });
 
     const newChannelPrefixMaps = new Map<string, Map<string, CachedCommand>>();

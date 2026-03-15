@@ -6,27 +6,24 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
   return {
-    prisma: new Proxy(mp, handler),
+    db: new Proxy(mp, handler),
     getUserAccessLevel: vi.fn(),
     meetsAccessLevel: vi.fn(),
   };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma, TwitchAccessLevel: { EVERYONE: "EVERYONE", SUBSCRIBER: "SUBSCRIBER", REGULAR: "REGULAR", VIP: "VIP", MODERATOR: "MODERATOR", LEAD_MODERATOR: "LEAD_MODERATOR", BROADCASTER: "BROADCASTER" } }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db, TwitchAccessLevel: { EVERYONE: "EVERYONE", SUBSCRIBER: "SUBSCRIBER", REGULAR: "REGULAR", VIP: "VIP", MODERATOR: "MODERATOR", LEAD_MODERATOR: "LEAD_MODERATOR", BROADCASTER: "BROADCASTER" } }));
 vi.mock("./accessControl.js", () => ({
   getUserAccessLevel: mocks.getUserAccessLevel,
-  meetsAccessLevel: mocks.meetsAccessLevel,
-}));
+  meetsAccessLevel: mocks.meetsAccessLevel }));
 vi.mock("../utils/logger.js", () => ({
-  logger: { info: vi.fn(), debug: vi.fn(), warn: vi.fn() },
-}));
+  logger: { info: vi.fn(), debug: vi.fn(), warn: vi.fn() } }));
 
 import {
   checkCaps,
@@ -40,7 +37,7 @@ import {
   getFilterConfig,
 } from "./spamFilter.js";
 
-const p = mocks.prisma;
+const p = mocks.db;
 
 describe("spamFilter", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -124,8 +121,8 @@ describe("spamFilter", () => {
 
   describe("loadSpamFilter", () => {
     it("loads filter config from database", async () => {
-      p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-      p.spamFilter.findUnique.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+      p.query.spamFilters.findFirst.mockResolvedValue({
         capsEnabled: true,
         capsMinLength: 15,
         capsMaxPercent: 70,
@@ -141,8 +138,7 @@ describe("spamFilter", () => {
         bannedWords: [],
         exemptLevel: "SUBSCRIBER",
         timeoutDuration: 5,
-        warningMessage: "Don't spam.",
-      });
+        warningMessage: "Don't spam." });
 
       await loadSpamFilter("testchannel");
       const config = getFilterConfig("testchannel");
@@ -151,15 +147,15 @@ describe("spamFilter", () => {
     });
 
     it("clears config when no filter exists", async () => {
-      p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-      p.spamFilter.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+      p.query.spamFilters.findFirst.mockResolvedValue(null);
 
       await loadSpamFilter("testchannel");
       expect(getFilterConfig("testchannel")).toBeUndefined();
     });
 
     it("does nothing when no bot channel found", async () => {
-      p.botChannel.findFirst.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(null);
       await loadSpamFilter("unknown");
       expect(getFilterConfig("unknown")).toBeUndefined();
     });
@@ -179,8 +175,8 @@ describe("spamFilter", () => {
 
     beforeEach(async () => {
       // Load a filter config first
-      p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-      p.spamFilter.findUnique.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+      p.query.spamFilters.findFirst.mockResolvedValue({
         capsEnabled: true,
         capsMinLength: 10,
         capsMaxPercent: 70,
@@ -196,14 +192,13 @@ describe("spamFilter", () => {
         bannedWords: ["badword"],
         exemptLevel: "SUBSCRIBER",
         timeoutDuration: 5,
-        warningMessage: "Don't spam.",
-      });
+        warningMessage: "Don't spam." });
       await loadSpamFilter("testchannel");
 
       mocks.getUserAccessLevel.mockReturnValue("EVERYONE");
       mocks.meetsAccessLevel.mockReturnValue(false);
       // No active permit
-      p.spamPermit.findFirst.mockResolvedValue(null);
+      p.query.spamPermits.findFirst.mockResolvedValue(null);
     });
 
     it("returns null for mods", async () => {
@@ -226,7 +221,7 @@ describe("spamFilter", () => {
     });
 
     it("returns null for users with active permit", async () => {
-      p.spamPermit.findFirst.mockResolvedValue({ id: "p1", expiresAt: new Date(Date.now() + 60000) });
+      p.query.spamPermits.findFirst.mockResolvedValue({ id: "p1", expiresAt: new Date(Date.now() + 60000) });
       const result = await checkMessage("#testchannel", "permitted", "https://example.com", mockMsg);
       expect(result).toBeNull();
     });

@@ -1,12 +1,12 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, discordGuilds, discordScheduledMessages, discordMessageTemplates } from "@community-bot/db";
 import { leadModProcedure, protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
 
 async function requireGuild(userId: string) {
-  const guild = await prisma.discordGuild.findFirst({
-    where: { userId },
+  const guild = await db.query.discordGuilds.findFirst({
+    where: eq(discordGuilds.userId, userId),
   });
 
   if (!guild) {
@@ -23,9 +23,9 @@ export const discordScheduledRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const guild = await requireGuild(ctx.session.user.id);
 
-    return prisma.discordScheduledMessage.findMany({
-      where: { guildId: guild.guildId },
-      orderBy: { name: "asc" },
+    return db.query.discordScheduledMessages.findMany({
+      where: eq(discordScheduledMessages.guildId, guild.guildId),
+      orderBy: asc(discordScheduledMessages.name),
     });
   }),
 
@@ -34,8 +34,8 @@ export const discordScheduledRouter = router({
     .query(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const schedule = await prisma.discordScheduledMessage.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const schedule = await db.query.discordScheduledMessages.findFirst({
+        where: and(eq(discordScheduledMessages.id, input.id), eq(discordScheduledMessages.guildId, guild.guildId)),
       });
 
       if (!schedule) {
@@ -97,8 +97,8 @@ export const discordScheduledRouter = router({
       }
 
       if (input.templateId) {
-        const template = await prisma.discordMessageTemplate.findFirst({
-          where: { id: input.templateId, guildId: guild.guildId },
+        const template = await db.query.discordMessageTemplates.findFirst({
+          where: and(eq(discordMessageTemplates.id, input.templateId), eq(discordMessageTemplates.guildId, guild.guildId)),
         });
         if (!template) {
           throw new TRPCError({
@@ -108,8 +108,8 @@ export const discordScheduledRouter = router({
         }
       }
 
-      const existing = await prisma.discordScheduledMessage.findUnique({
-        where: { guildId_name: { guildId: guild.guildId, name } },
+      const existing = await db.query.discordScheduledMessages.findFirst({
+        where: and(eq(discordScheduledMessages.guildId, guild.guildId), eq(discordScheduledMessages.name, name)),
       });
 
       if (existing) {
@@ -119,23 +119,21 @@ export const discordScheduledRouter = router({
         });
       }
 
-      const schedule = await prisma.discordScheduledMessage.create({
-        data: {
-          guildId: guild.guildId,
-          name,
-          channelId: input.channelId,
-          type: input.type,
-          content: input.content,
-          embedJson: input.embedJson,
-          cronExpression: input.cronExpression,
-          templateId: input.templateId,
-          createdBy: ctx.session.user.id,
-        },
-      });
+      const [schedule] = await db.insert(discordScheduledMessages).values({
+        guildId: guild.guildId,
+        name,
+        channelId: input.channelId,
+        type: input.type,
+        content: input.content,
+        embedJson: input.embedJson,
+        cronExpression: input.cronExpression,
+        templateId: input.templateId,
+        createdBy: ctx.session.user.id,
+      }).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("discord:scheduled-send", {
-        scheduledMessageId: schedule.id,
+        scheduledMessageId: schedule!.id,
         guildId: guild.guildId,
       });
 
@@ -145,11 +143,11 @@ export const discordScheduledRouter = router({
         userImage: ctx.session.user.image,
         action: "discord.schedule.create",
         resourceType: "DiscordScheduledMessage",
-        resourceId: schedule.id,
+        resourceId: schedule!.id,
         metadata: { name, type: input.type },
       });
 
-      return schedule;
+      return schedule!;
     }),
 
   update: leadModProcedure
@@ -166,8 +164,8 @@ export const discordScheduledRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const schedule = await prisma.discordScheduledMessage.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const schedule = await db.query.discordScheduledMessages.findFirst({
+        where: and(eq(discordScheduledMessages.id, input.id), eq(discordScheduledMessages.guildId, guild.guildId)),
       });
 
       if (!schedule) {
@@ -189,8 +187,8 @@ export const discordScheduledRouter = router({
       }
 
       if (input.templateId) {
-        const template = await prisma.discordMessageTemplate.findFirst({
-          where: { id: input.templateId, guildId: guild.guildId },
+        const template = await db.query.discordMessageTemplates.findFirst({
+          where: and(eq(discordMessageTemplates.id, input.templateId), eq(discordMessageTemplates.guildId, guild.guildId)),
         });
         if (!template) {
           throw new TRPCError({
@@ -200,20 +198,17 @@ export const discordScheduledRouter = router({
         }
       }
 
-      const updated = await prisma.discordScheduledMessage.update({
-        where: { id: input.id },
-        data: {
-          ...(input.content !== undefined && { content: input.content }),
-          ...(input.embedJson !== undefined && { embedJson: input.embedJson }),
-          ...(input.cronExpression !== undefined && {
-            cronExpression: input.cronExpression,
-          }),
-          ...(input.channelId !== undefined && { channelId: input.channelId }),
-          ...(input.templateId !== undefined && {
-            templateId: input.templateId,
-          }),
-        },
-      });
+      const [updated] = await db.update(discordScheduledMessages).set({
+        ...(input.content !== undefined && { content: input.content }),
+        ...(input.embedJson !== undefined && { embedJson: input.embedJson }),
+        ...(input.cronExpression !== undefined && {
+          cronExpression: input.cronExpression,
+        }),
+        ...(input.channelId !== undefined && { channelId: input.channelId }),
+        ...(input.templateId !== undefined && {
+          templateId: input.templateId,
+        }),
+      }).where(eq(discordScheduledMessages.id, input.id)).returning();
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -238,8 +233,8 @@ export const discordScheduledRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const schedule = await prisma.discordScheduledMessage.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const schedule = await db.query.discordScheduledMessages.findFirst({
+        where: and(eq(discordScheduledMessages.id, input.id), eq(discordScheduledMessages.guildId, guild.guildId)),
       });
 
       if (!schedule) {
@@ -249,10 +244,7 @@ export const discordScheduledRouter = router({
         });
       }
 
-      const updated = await prisma.discordScheduledMessage.update({
-        where: { id: input.id },
-        data: { enabled: input.enabled },
-      });
+      const [updated] = await db.update(discordScheduledMessages).set({ enabled: input.enabled }).where(eq(discordScheduledMessages.id, input.id)).returning();
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -274,8 +266,8 @@ export const discordScheduledRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const schedule = await prisma.discordScheduledMessage.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const schedule = await db.query.discordScheduledMessages.findFirst({
+        where: and(eq(discordScheduledMessages.id, input.id), eq(discordScheduledMessages.guildId, guild.guildId)),
       });
 
       if (!schedule) {
@@ -285,9 +277,7 @@ export const discordScheduledRouter = router({
         });
       }
 
-      await prisma.discordScheduledMessage.delete({
-        where: { id: input.id },
-      });
+      await db.delete(discordScheduledMessages).where(eq(discordScheduledMessages.id, input.id));
 
       await logAudit({
         userId: ctx.session.user.id,

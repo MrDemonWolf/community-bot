@@ -9,15 +9,14 @@ import {
 
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma };
 });
 vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+  } }));
 
 import { commandCache } from "./commandCache.js";
 
@@ -31,15 +30,14 @@ describe("commandCache (integration)", () => {
     const user = await seedUser(testPrisma, { id: "user-1", role: "BROADCASTER" });
     const bc = await seedBotChannel(testPrisma, {
       userId: user.id,
-      twitchUsername: "teststreamer",
-    });
+      twitchUsername: "teststreamer" });
     botChannelId = bc.id;
     channelUsername = bc.twitchUsername;
   });
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   describe("load", () => {
@@ -47,13 +45,11 @@ describe("commandCache (integration)", () => {
       await seedCommand(testPrisma, {
         botChannelId,
         name: "hello",
-        response: "Hi!",
-      });
+        response: "Hi!" });
       await seedCommand(testPrisma, {
         botChannelId,
         name: "bye",
-        response: "Goodbye!",
-      });
+        response: "Goodbye!" });
 
       await commandCache.load();
 
@@ -67,14 +63,12 @@ describe("commandCache (integration)", () => {
         botChannelId,
         name: "active",
         response: "yes",
-        enabled: true,
-      });
+        enabled: true });
       await seedCommand(testPrisma, {
         botChannelId,
         name: "inactive",
         response: "no",
-        enabled: false,
-      });
+        enabled: false });
 
       await commandCache.load();
 
@@ -92,8 +86,7 @@ describe("commandCache (integration)", () => {
       await seedCommand(testPrisma, {
         botChannelId,
         name: "greet",
-        response: "Hello!",
-      });
+        response: "Hello!" });
       await commandCache.load();
 
       expect(
@@ -109,8 +102,7 @@ describe("commandCache (integration)", () => {
         botChannelId,
         name: "greeting",
         response: "Hi!",
-        aliases: ["hi", "hey"],
-      });
+        aliases: ["hi", "hey"] });
       await commandCache.load();
 
       const cmd = commandCache.getByNameOrAlias("hi", channelUsername);
@@ -136,13 +128,11 @@ describe("commandCache (integration)", () => {
         botChannelId,
         name: "link_filter",
         response: "No links!",
-        regex: "https?://",
-      });
+        regex: "https?://" });
       await seedCommand(testPrisma, {
         botChannelId,
         name: "normal",
-        response: "normal cmd",
-      });
+        response: "normal cmd" });
 
       await commandCache.load();
 
@@ -158,8 +148,7 @@ describe("commandCache (integration)", () => {
       await seedCommand(testPrisma, {
         botChannelId,
         name: "original",
-        response: "v1",
-      });
+        response: "v1" });
       await commandCache.load();
 
       expect(
@@ -170,8 +159,7 @@ describe("commandCache (integration)", () => {
       await seedCommand(testPrisma, {
         botChannelId,
         name: "newcmd",
-        response: "v2",
-      });
+        response: "v2" });
 
       // Not visible yet
       expect(
@@ -192,19 +180,16 @@ describe("commandCache (integration)", () => {
       const user2 = await seedUser(testPrisma, { id: "user-2", role: "BROADCASTER" });
       const bc2 = await seedBotChannel(testPrisma, {
         userId: user2.id,
-        twitchUsername: "otherstreamer",
-      });
+        twitchUsername: "otherstreamer" });
 
       await seedCommand(testPrisma, {
         botChannelId,
         name: "sharedname",
-        response: "channel 1 response",
-      });
+        response: "channel 1 response" });
       await seedCommand(testPrisma, {
         botChannelId: bc2.id,
         name: "sharedname",
-        response: "channel 2 response",
-      });
+        response: "channel 2 response" });
 
       await commandCache.load();
 

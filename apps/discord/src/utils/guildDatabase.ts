@@ -1,12 +1,12 @@
 import type { Client } from "discord.js";
 import type { DiscordGuild } from "@community-bot/db";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, discordGuilds } from "@community-bot/db";
 import logger from "./logger.js";
 
 export async function pruneGuilds(client: Client) {
   try {
-    const guildsInDb = await prisma.discordGuild.findMany({});
+    const guildsInDb = await db.query.discordGuilds.findMany();
 
     const guildsInCache = client.guilds.cache.map((guild) => guild.id);
 
@@ -48,11 +48,7 @@ export async function pruneGuilds(client: Client) {
 
     for (const guild of guildsToRemove) {
       try {
-        await prisma.discordGuild.delete({
-          where: {
-            guildId: guild.guildId,
-          },
-        });
+        await db.delete(discordGuilds).where(eq(discordGuilds.guildId, guild.guildId));
 
         logger.success(
           "Discord - Guild Database",
@@ -90,7 +86,7 @@ export async function pruneGuilds(client: Client) {
 
 export async function ensureGuildExists(client: Client) {
   try {
-    const currentGuilds = await prisma.discordGuild.findMany({});
+    const currentGuilds = await db.query.discordGuilds.findMany();
     const guildsToAdd = client.guilds.cache.filter(
       (guild) =>
         !currentGuilds.some((currentGuild: DiscordGuild) => currentGuild.guildId === guild.id)
@@ -110,13 +106,11 @@ export async function ensureGuildExists(client: Client) {
 
     for (const guild of guildsToAdd.values()) {
       try {
-        await prisma.discordGuild.create({
-          data: {
+        await db.insert(discordGuilds).values({
             guildId: guild.id,
             name: guild.name,
             icon: guild.icon,
-          },
-        });
+          });
 
         logger.success(
           "Discord - Guild Database",
@@ -160,16 +154,13 @@ export async function ensureGuildExists(client: Client) {
  * Returns true if the guild already existed, false if it was just created.
  */
 export async function ensureGuild(guildId: string) {
-  const { count } = await prisma.discordGuild.createMany({
-    data: [{ guildId }],
-    skipDuplicates: true,
-  });
-  return count === 0; // true if already existed
+  const result = await db.insert(discordGuilds).values({ guildId }).onConflictDoNothing({ target: discordGuilds.guildId }).returning();
+  return result.length === 0; // true if already existed
 }
 
 export async function syncGuildMetadata(client: Client) {
   try {
-    const guildsInDb = await prisma.discordGuild.findMany({});
+    const guildsInDb = await db.query.discordGuilds.findMany();
 
     let updated = 0;
     for (const dbGuild of guildsInDb) {
@@ -177,13 +168,10 @@ export async function syncGuildMetadata(client: Client) {
       if (!cachedGuild) continue;
 
       if (dbGuild.name !== cachedGuild.name || dbGuild.icon !== cachedGuild.icon) {
-        await prisma.discordGuild.update({
-          where: { guildId: dbGuild.guildId },
-          data: {
+        await db.update(discordGuilds).set({
             name: cachedGuild.name,
             icon: cachedGuild.icon,
-          },
-        });
+          }).where(eq(discordGuilds.guildId, dbGuild.guildId));
         updated++;
       }
     }

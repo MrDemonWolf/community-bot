@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, or, and, desc, count, ilike, users } from "@community-bot/db";
 import { broadcasterProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -20,40 +20,44 @@ export const userManagementRouter = router({
         .default({ skip: 0, take: 25 })
     )
     .query(async ({ input }) => {
-      const where: Record<string, unknown> = {};
+      const conditions = [];
 
       if (input.search) {
-        where.OR = [
-          { name: { contains: input.search, mode: "insensitive" } },
-          { email: { contains: input.search, mode: "insensitive" } },
-        ];
+        conditions.push(
+          or(
+            ilike(users.name, `%${input.search}%`),
+            ilike(users.email, `%${input.search}%`),
+          )
+        );
       }
 
       if (input.role) {
-        where.role = input.role;
+        conditions.push(eq(users.role, input.role));
       }
 
       if (input.banned !== undefined) {
-        where.banned = input.banned;
+        conditions.push(eq(users.banned, input.banned));
       }
 
-      const [users, total] = await Promise.all([
-        prisma.user.findMany({
-          where,
-          orderBy: { createdAt: "desc" },
-          skip: input.skip,
-          take: input.take,
-          include: {
-            accounts: {
-              select: { providerId: true, accountId: true },
-            },
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const [userList, totalResult] = await Promise.all([
+        db.query.users.findMany({
+          where: whereClause,
+          orderBy: desc(users.createdAt),
+          offset: input.skip,
+          limit: input.take,
+          with: {
+            accounts: true,
           },
         }),
-        prisma.user.count({ where }),
+        db.select({ value: count() }).from(users).where(whereClause),
       ]);
 
+      const total = totalResult[0]?.value ?? 0;
+
       return {
-        users: users.map((u) => ({
+        users: userList.map((u) => ({
           id: u.id,
           name: u.name,
           email: u.email,
@@ -75,12 +79,10 @@ export const userManagementRouter = router({
   getUser: broadcasterProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ input }) => {
-      const user = await prisma.user.findUnique({
-        where: { id: input.userId },
-        include: {
-          accounts: {
-            select: { providerId: true, accountId: true },
-          },
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, input.userId),
+        with: {
+          accounts: true,
         },
       });
 
@@ -120,8 +122,8 @@ export const userManagementRouter = router({
         });
       }
 
-      const target = await prisma.user.findUnique({
-        where: { id: input.userId },
+      const target = await db.query.users.findFirst({
+        where: eq(users.id, input.userId),
       });
 
       if (!target) {
@@ -137,10 +139,7 @@ export const userManagementRouter = router({
 
       const previousRole = target.role;
 
-      await prisma.user.update({
-        where: { id: input.userId },
-        data: { role: input.role },
-      });
+      await db.update(users).set({ role: input.role }).where(eq(users.id, input.userId));
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -174,8 +173,8 @@ export const userManagementRouter = router({
         });
       }
 
-      const target = await prisma.user.findUnique({
-        where: { id: input.userId },
+      const target = await db.query.users.findFirst({
+        where: eq(users.id, input.userId),
       });
 
       if (!target) {
@@ -189,14 +188,11 @@ export const userManagementRouter = router({
         });
       }
 
-      await prisma.user.update({
-        where: { id: input.userId },
-        data: {
-          banned: true,
-          bannedAt: new Date(),
-          banReason: input.reason ?? null,
-        },
-      });
+      await db.update(users).set({
+        banned: true,
+        bannedAt: new Date(),
+        banReason: input.reason ?? null,
+      }).where(eq(users.id, input.userId));
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -217,22 +213,19 @@ export const userManagementRouter = router({
   unban: broadcasterProcedure
     .input(z.object({ userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const target = await prisma.user.findUnique({
-        where: { id: input.userId },
+      const target = await db.query.users.findFirst({
+        where: eq(users.id, input.userId),
       });
 
       if (!target) {
         throw new TRPCError({ code: "NOT_FOUND", message: "User not found." });
       }
 
-      await prisma.user.update({
-        where: { id: input.userId },
-        data: {
-          banned: false,
-          bannedAt: null,
-          banReason: null,
-        },
-      });
+      await db.update(users).set({
+        banned: false,
+        bannedAt: null,
+        banReason: null,
+      }).where(eq(users.id, input.userId));
 
       await logAudit({
         userId: ctx.session.user.id,
