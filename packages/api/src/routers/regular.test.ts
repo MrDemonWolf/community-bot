@@ -7,14 +7,13 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
   return {
-    prisma: new Proxy(mp, handler),
+    db: new Proxy(mp, handler),
     eventBus: { publish: vi.fn() },
     logAudit: vi.fn(),
     getTwitchUserByLogin: vi.fn(),
@@ -22,7 +21,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("../utils/twitch", () => ({ getTwitchUserByLogin: mocks.getTwitchUserByLogin, getTwitchUserById: mocks.getTwitchUserById }));
@@ -34,10 +33,10 @@ import { t } from "../index";
 import { regularRouter } from "./regular";
 
 const createCaller = t.createCallerFactory(regularRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 function authedCaller(role = "MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
@@ -47,7 +46,7 @@ describe("regularRouter", () => {
   describe("list", () => {
     it("returns all regulars", async () => {
       const caller = createCaller(mockSession());
-      p.regular.findMany.mockResolvedValue([{ id: "r1", twitchUsername: "viewer1" }]);
+      p.query.regulars.findMany.mockResolvedValue([{ id: "r1", twitchUsername: "viewer1" }]);
       const result = await caller.list();
       expect(result).toHaveLength(1);
     });
@@ -57,8 +56,8 @@ describe("regularRouter", () => {
     it("adds a regular and publishes event", async () => {
       const caller = authedCaller();
       mocks.getTwitchUserByLogin.mockResolvedValue({ id: "twitch-1", display_name: "Viewer1" });
-      p.regular.findUnique.mockResolvedValue(null);
-      p.regular.create.mockResolvedValue({ id: "r1", twitchUserId: "twitch-1", twitchUsername: "Viewer1" });
+      p.query.regulars.findFirst.mockResolvedValue(null);
+      p.query.regulars.create.mockResolvedValue({ id: "r1", twitchUserId: "twitch-1", twitchUsername: "Viewer1" });
       const result = await caller.add({ username: "Viewer1" });
       expect(result.twitchUsername).toBe("Viewer1");
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("regular:created", { twitchUserId: "twitch-1", discordUserId: undefined });
@@ -69,8 +68,8 @@ describe("regularRouter", () => {
       const caller = authedCaller();
       mocks.getTwitchUserByLogin.mockResolvedValue({ id: "twitch-1", display_name: "Viewer1" });
       // First findUnique for twitchUserId check, second for discordUserId check
-      p.regular.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
-      p.regular.create.mockResolvedValue({ id: "r1", twitchUserId: "twitch-1", twitchUsername: "Viewer1", discordUserId: "discord-1" });
+      p.query.regulars.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+      p.query.regulars.create.mockResolvedValue({ id: "r1", twitchUserId: "twitch-1", twitchUsername: "Viewer1", discordUserId: "discord-1" });
       const result = await caller.add({ username: "Viewer1", discordUserId: "discord-1", discordUsername: "viewer#1234" });
       expect(result.discordUserId).toBe("discord-1");
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("regular:created", { twitchUserId: "twitch-1", discordUserId: "discord-1" });
@@ -85,7 +84,7 @@ describe("regularRouter", () => {
     it("throws CONFLICT when already a regular", async () => {
       const caller = authedCaller();
       mocks.getTwitchUserByLogin.mockResolvedValue({ id: "twitch-1", display_name: "V1" });
-      p.regular.findUnique.mockResolvedValue({ id: "existing" });
+      p.query.regulars.findFirst.mockResolvedValue({ id: "existing" });
       await expect(caller.add({ username: "v1" })).rejects.toThrow("already a regular");
     });
 
@@ -100,10 +99,10 @@ describe("regularRouter", () => {
 
     it("links Discord to an existing regular", async () => {
       const caller = authedCaller();
-      p.regular.findUnique
+      p.query.regulars.findFirst
         .mockResolvedValueOnce({ id: UUID, twitchUsername: "V1" })
         .mockResolvedValueOnce(null); // no existing Discord link
-      p.regular.update.mockResolvedValue({ id: UUID, discordUserId: "discord-1" });
+      p.query.regulars.update.mockResolvedValue({ id: UUID, discordUserId: "discord-1" });
       const result = await caller.linkDiscord({ id: UUID, discordUserId: "discord-1", discordUsername: "test#1234" });
       expect(result.discordUserId).toBe("discord-1");
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "regular.link-discord" }));
@@ -111,13 +110,13 @@ describe("regularRouter", () => {
 
     it("throws NOT_FOUND for missing regular", async () => {
       const caller = authedCaller();
-      p.regular.findUnique.mockResolvedValue(null);
+      p.query.regulars.findFirst.mockResolvedValue(null);
       await expect(caller.linkDiscord({ id: UUID, discordUserId: "discord-1" })).rejects.toThrow("Regular not found");
     });
 
     it("throws CONFLICT when Discord ID is already linked", async () => {
       const caller = authedCaller();
-      p.regular.findUnique
+      p.query.regulars.findFirst
         .mockResolvedValueOnce({ id: UUID, twitchUsername: "V1" })
         .mockResolvedValueOnce({ id: "other-id", discordUserId: "discord-1" }); // already linked to another regular
       await expect(caller.linkDiscord({ id: UUID, discordUserId: "discord-1" })).rejects.toThrow("already linked");
@@ -129,8 +128,8 @@ describe("regularRouter", () => {
 
     it("removes regular and publishes event", async () => {
       const caller = authedCaller();
-      p.regular.findUnique.mockResolvedValue({ id: "r1", twitchUserId: "twitch-1", twitchUsername: "V1", discordUserId: null });
-      p.regular.delete.mockResolvedValue({});
+      p.query.regulars.findFirst.mockResolvedValue({ id: "r1", twitchUserId: "twitch-1", twitchUsername: "V1", discordUserId: null });
+      p.query.regulars.delete.mockResolvedValue({});
       const result = await caller.remove({ id: UUID });
       expect(result.success).toBe(true);
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("regular:deleted", { twitchUserId: "twitch-1", discordUserId: undefined });
@@ -138,7 +137,7 @@ describe("regularRouter", () => {
 
     it("throws NOT_FOUND for missing regular", async () => {
       const caller = authedCaller();
-      p.regular.findUnique.mockResolvedValue(null);
+      p.query.regulars.findFirst.mockResolvedValue(null);
       await expect(caller.remove({ id: UUID })).rejects.toThrow("Regular not found");
     });
   });
@@ -146,12 +145,12 @@ describe("regularRouter", () => {
   describe("refreshUsernames", () => {
     it("updates display names from Twitch", async () => {
       const caller = createCaller(mockSession());
-      p.regular.findMany.mockResolvedValue([
+      p.query.regulars.findMany.mockResolvedValue([
         { id: "r1", twitchUserId: "t1", twitchUsername: "old_name" },
         { id: "r2", twitchUserId: "t2", twitchUsername: "same" },
       ]);
       mocks.getTwitchUserById.mockResolvedValueOnce({ display_name: "NewName" }).mockResolvedValueOnce({ display_name: "same" });
-      p.regular.update.mockResolvedValue({});
+      p.query.regulars.update.mockResolvedValue({});
       const result = await caller.refreshUsernames();
       expect(result.updated).toBe(1);
       expect(result.total).toBe(2);

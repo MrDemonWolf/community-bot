@@ -6,29 +6,22 @@ const mocks = vi.hoisted(() => ({
   endGiveaway: vi.fn(),
   getEntryCount: vi.fn(),
   getActiveGiveaway: vi.fn(),
-  getBotChannelId: vi.fn(),
-}));
+  getBotChannelId: vi.fn() }));
 
-vi.mock("@community-bot/db", () => ({
-  prisma: {},
-  TwitchAccessLevel: { BROADCASTER: "BROADCASTER", MODERATOR: "MODERATOR", VIP: "VIP", REGULAR: "REGULAR", SUBSCRIBER: "SUBSCRIBER", EVERYONE: "EVERYONE" },
-}));
+vi.mock("@community-bot/db", () => ({ db: {},
+  TwitchAccessLevel: { BROADCASTER: "BROADCASTER", MODERATOR: "MODERATOR", VIP: "VIP", REGULAR: "REGULAR", SUBSCRIBER: "SUBSCRIBER", EVERYONE: "EVERYONE" } }));
 vi.mock("../utils/logger.js", () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-}));
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("../services/giveawayManager.js", () => ({
   startGiveaway: mocks.startGiveaway,
   drawWinner: mocks.drawWinner,
   endGiveaway: mocks.endGiveaway,
   getEntryCount: mocks.getEntryCount,
-  getActiveGiveaway: mocks.getActiveGiveaway,
-}));
+  getActiveGiveaway: mocks.getActiveGiveaway }));
 vi.mock("../services/broadcasterCache.js", () => ({
-  getBotChannelId: mocks.getBotChannelId,
-}));
+  getBotChannelId: mocks.getBotChannelId }));
 vi.mock("@community-bot/events", () => ({
-  EventBus: vi.fn(),
-}));
+  EventBus: vi.fn() }));
 
 import { giveaway } from "./giveaway.js";
 

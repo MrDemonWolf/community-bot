@@ -1,12 +1,12 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, accounts, twitchCredentials } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 async function getHelixHeaders(userId: string) {
   // Get the broadcaster's Twitch credential
-  const account = await prisma.account.findFirst({
-    where: { userId, providerId: "twitch" },
+  const account = await db.query.accounts.findFirst({
+    where: and(eq(accounts.userId, userId), eq(accounts.providerId, "twitch")),
   });
 
   if (!account) {
@@ -16,8 +16,8 @@ async function getHelixHeaders(userId: string) {
     });
   }
 
-  const credential = await prisma.twitchCredential.findFirst({
-    where: { userId: account.accountId },
+  const credential = await db.query.twitchCredentials.findFirst({
+    where: eq(twitchCredentials.userId, account.accountId),
   });
 
   if (!credential) {
@@ -53,7 +53,7 @@ export const pollRouter = router({
       });
     }
 
-    const data = await res.json();
+    const data = await res.json() as any;
     return data.data ?? [];
   }),
 
@@ -87,7 +87,7 @@ export const pollRouter = router({
         });
       }
 
-      const data = await res.json();
+      const data = await res.json() as any;
       return data.data?.[0] ?? null;
     }),
 
@@ -113,7 +113,7 @@ export const pollRouter = router({
         });
       }
 
-      const data = await res.json();
+      const data = await res.json() as any;
       return data.data?.[0] ?? null;
     }),
 });

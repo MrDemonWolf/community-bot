@@ -9,19 +9,18 @@ const mocks = vi.hoisted(() => {
   const handler: ProxyHandler<Record<string, any>> = {
     get(target, prop: string) {
       if (!target[prop]) {
-        if (prop === "$transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
-        else if (prop === "$executeRawUnsafe") target[prop] = vi.fn();
+        if (prop === "transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
+        else if (prop === "execute") target[prop] = vi.fn();
         else target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
+  return { db: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
@@ -32,12 +31,12 @@ import { t } from "../index";
 import { playlistRouter } from "./playlist";
 
 const createCaller = t.createCallerFactory(playlistRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 const BC = { id: "bc-1", userId: "user-1", enabled: true };
 
 function authedCaller(role = "MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
@@ -48,13 +47,13 @@ describe("playlistRouter", () => {
   describe("list", () => {
     it("returns playlists with entry counts and active ID", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue(BC);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
 
       const now = new Date();
-      p.playlist.findMany.mockResolvedValue([
+      p.query.playlists.findMany.mockResolvedValue([
         { id: UUID, name: "Chill", _count: { entries: 3 }, createdAt: now, updatedAt: now },
       ]);
-      p.songRequestSettings.findUnique.mockResolvedValue({ activePlaylistId: UUID });
+      p.query.songRequestSettings.findFirst.mockResolvedValue({ activePlaylistId: UUID });
 
       const result = await caller.list();
       expect(result.playlists).toHaveLength(1);
@@ -63,16 +62,15 @@ describe("playlistRouter", () => {
         name: "Chill",
         entryCount: 3,
         createdAt: now,
-        updatedAt: now,
-      });
+        updatedAt: now });
       expect(result.activePlaylistId).toBe(UUID);
     });
 
     it("returns null activePlaylistId when no settings exist", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findMany.mockResolvedValue([]);
-      p.songRequestSettings.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findMany.mockResolvedValue([]);
+      p.query.songRequestSettings.findFirst.mockResolvedValue(null);
 
       const result = await caller.list();
       expect(result.activePlaylistId).toBeNull();
@@ -80,7 +78,7 @@ describe("playlistRouter", () => {
 
     it("throws PRECONDITION_FAILED when bot not enabled", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(null);
       await expect(caller.list()).rejects.toThrow("Bot is not enabled");
     });
 
@@ -94,14 +92,14 @@ describe("playlistRouter", () => {
   describe("get", () => {
     it("returns playlist with entries", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue(BC);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
       const playlist = {
         id: UUID,
         name: "Chill",
         botChannelId: "bc-1",
         entries: [{ id: "e1", title: "Song 1", position: 1 }],
       };
-      p.playlist.findUnique.mockResolvedValue(playlist);
+      p.query.playlists.findFirst.mockResolvedValue(playlist);
 
       const result = await caller.get({ id: UUID });
       expect(result).toEqual(playlist);
@@ -109,19 +107,18 @@ describe("playlistRouter", () => {
 
     it("throws NOT_FOUND when playlist belongs to another channel", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue({
         id: UUID,
-        botChannelId: "other-bc",
-      });
+        botChannelId: "other-bc" });
 
       await expect(caller.get({ id: UUID })).rejects.toThrow("Playlist not found");
     });
 
     it("throws NOT_FOUND when playlist does not exist", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue(null);
 
       await expect(caller.get({ id: UUID })).rejects.toThrow("Playlist not found");
     });
@@ -131,16 +128,15 @@ describe("playlistRouter", () => {
   describe("create", () => {
     it("creates a playlist, publishes event, and audits", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue(null); // no duplicate
-      p.playlist.create.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue(null); // no duplicate
+      p.query.playlists.create.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
 
       const result = await caller.create({ name: "Chill" });
       expect(result.id).toBe(UUID);
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("playlist:created", {
         playlistId: UUID,
-        channelId: "bc-1",
-      });
+        channelId: "bc-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "playlist.create" })
       );
@@ -148,8 +144,8 @@ describe("playlistRouter", () => {
 
     it("throws CONFLICT for duplicate name", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue({ id: UUID, name: "Chill" });
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue({ id: UUID, name: "Chill" });
 
       await expect(caller.create({ name: "Chill" })).rejects.toThrow("already exists");
     });
@@ -159,20 +155,19 @@ describe("playlistRouter", () => {
   describe("rename", () => {
     it("renames a playlist", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
       // First findUnique (by id) returns the playlist
-      p.playlist.findUnique
+      p.query.playlists.findFirst
         .mockResolvedValueOnce({ id: UUID, name: "OldName", botChannelId: "bc-1" })
         // Second findUnique (name uniqueness check) returns null
         .mockResolvedValueOnce(null);
-      p.playlist.update.mockResolvedValue({ id: UUID, name: "NewName" });
+      p.query.playlists.update.mockResolvedValue({ id: UUID, name: "NewName" });
 
       const result = await caller.rename({ id: UUID, name: "NewName" });
       expect(result.name).toBe("NewName");
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("playlist:updated", {
         playlistId: UUID,
-        channelId: "bc-1",
-      });
+        channelId: "bc-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "playlist.update" })
       );
@@ -180,16 +175,16 @@ describe("playlistRouter", () => {
 
     it("throws NOT_FOUND when playlist does not exist", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue(null);
 
       await expect(caller.rename({ id: UUID, name: "X" })).rejects.toThrow("Playlist not found");
     });
 
     it("throws CONFLICT when new name already taken by another playlist", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst
         .mockResolvedValueOnce({ id: UUID, name: "OldName", botChannelId: "bc-1" })
         .mockResolvedValueOnce({ id: UUID2, name: "Taken" }); // different ID
 
@@ -201,17 +196,16 @@ describe("playlistRouter", () => {
   describe("delete", () => {
     it("deletes a playlist and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
-      p.songRequestSettings.findUnique.mockResolvedValue({ activePlaylistId: null });
-      p.playlist.delete.mockResolvedValue({});
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
+      p.query.songRequestSettings.findFirst.mockResolvedValue({ activePlaylistId: null });
+      p.query.playlists.delete.mockResolvedValue({});
 
       const result = await caller.delete({ id: UUID });
       expect(result.success).toBe(true);
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("playlist:deleted", {
         playlistId: UUID,
-        channelId: "bc-1",
-      });
+        channelId: "bc-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "playlist.delete" })
       );
@@ -219,23 +213,22 @@ describe("playlistRouter", () => {
 
     it("clears activePlaylistId if deleted playlist is active", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
-      p.songRequestSettings.findUnique.mockResolvedValue({ activePlaylistId: UUID, botChannelId: "bc-1" });
-      p.songRequestSettings.update.mockResolvedValue({});
-      p.playlist.delete.mockResolvedValue({});
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
+      p.query.songRequestSettings.findFirst.mockResolvedValue({ activePlaylistId: UUID, botChannelId: "bc-1" });
+      p.query.songRequestSettings.update.mockResolvedValue({});
+      p.query.playlists.delete.mockResolvedValue({});
 
       await caller.delete({ id: UUID });
-      expect(p.songRequestSettings.update).toHaveBeenCalledWith({
+      expect(p.query.songRequestSettings.update).toHaveBeenCalledWith({
         where: { botChannelId: "bc-1" },
-        data: { activePlaylistId: null },
-      });
+        data: { activePlaylistId: null } });
     });
 
     it("throws NOT_FOUND when playlist does not exist", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue(null);
 
       await expect(caller.delete({ id: UUID })).rejects.toThrow("Playlist not found");
     });
@@ -245,31 +238,27 @@ describe("playlistRouter", () => {
   describe("addEntry", () => {
     it("adds entry at next position", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
-      p.playlistEntry.findFirst.mockResolvedValue({ position: 5 });
-      p.playlistEntry.create.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
+      p.query.playlistEntries.findFirst.mockResolvedValue({ position: 5 });
+      p.query.playlistEntries.create.mockResolvedValue({
         id: "e1",
         title: "Song A",
         position: 6,
-        playlistId: UUID,
-      });
+        playlistId: UUID });
 
       const result = await caller.addEntry({
         playlistId: UUID,
         title: "Song A",
-        youtubeVideoId: "abc123",
-      });
+        youtubeVideoId: "abc123" });
       expect(result.position).toBe(6);
-      expect(p.playlistEntry.create).toHaveBeenCalledWith(
+      expect(p.query.playlistEntries.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ position: 6, title: "Song A" }),
-        })
+          data: expect.objectContaining({ position: 6, title: "Song A" }) })
       );
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("playlist:updated", {
         playlistId: UUID,
-        channelId: "bc-1",
-      });
+        channelId: "bc-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "playlist.add-entry" })
       );
@@ -277,27 +266,25 @@ describe("playlistRouter", () => {
 
     it("starts at position 1 when playlist is empty", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
-      p.playlistEntry.findFirst.mockResolvedValue(null);
-      p.playlistEntry.create.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
+      p.query.playlistEntries.findFirst.mockResolvedValue(null);
+      p.query.playlistEntries.create.mockResolvedValue({
         id: "e1",
         title: "First Song",
-        position: 1,
-      });
+        position: 1 });
 
       await caller.addEntry({ playlistId: UUID, title: "First Song" });
-      expect(p.playlistEntry.create).toHaveBeenCalledWith(
+      expect(p.query.playlistEntries.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ position: 1 }),
-        })
+          data: expect.objectContaining({ position: 1 }) })
       );
     });
 
     it("throws NOT_FOUND when playlist does not exist", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue(null);
 
       await expect(
         caller.addEntry({ playlistId: UUID, title: "Song" })
@@ -309,29 +296,27 @@ describe("playlistRouter", () => {
   describe("removeEntry", () => {
     it("removes entry and reorders positions", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlistEntry.findUnique.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlistEntries.findFirst.mockResolvedValue({
         id: UUID,
         title: "Song B",
         position: 2,
         playlistId: "pl-1",
-        playlist: { botChannelId: "bc-1" },
-      });
-      p.playlistEntry.delete.mockResolvedValue({});
-      p.$executeRawUnsafe.mockResolvedValue(undefined);
+        playlist: { botChannelId: "bc-1" } });
+      p.query.playlistEntries.delete.mockResolvedValue({});
+      p.execute.mockResolvedValue(undefined);
 
       const result = await caller.removeEntry({ id: UUID });
       expect(result.success).toBe(true);
-      expect(p.playlistEntry.delete).toHaveBeenCalledWith({ where: { id: UUID } });
-      expect(p.$executeRawUnsafe).toHaveBeenCalledWith(
+      expect(p.query.playlistEntries.delete).toHaveBeenCalledWith({ where: { id: UUID } });
+      expect(p.execute).toHaveBeenCalledWith(
         expect.stringContaining("position = position - 1"),
         "pl-1",
         2
       );
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("playlist:updated", {
         playlistId: "pl-1",
-        channelId: "bc-1",
-      });
+        channelId: "bc-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "playlist.remove-entry" })
       );
@@ -339,19 +324,18 @@ describe("playlistRouter", () => {
 
     it("throws NOT_FOUND when entry does not exist", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlistEntry.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlistEntries.findFirst.mockResolvedValue(null);
 
       await expect(caller.removeEntry({ id: UUID })).rejects.toThrow("Playlist entry not found");
     });
 
     it("throws NOT_FOUND when entry belongs to another channel", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlistEntry.findUnique.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlistEntries.findFirst.mockResolvedValue({
         id: UUID,
-        playlist: { botChannelId: "other-bc" },
-      });
+        playlist: { botChannelId: "other-bc" } });
 
       await expect(caller.removeEntry({ id: UUID })).rejects.toThrow("Playlist entry not found");
     });
@@ -361,19 +345,18 @@ describe("playlistRouter", () => {
   describe("reorderEntries", () => {
     it("updates positions via transaction", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
-      // $transaction receives array of promises from playlistEntry.update calls
-      p.playlistEntry.update.mockResolvedValue({});
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
+      // transaction receives array of promises from playlistEntry.update calls
+      p.query.playlistEntries.update.mockResolvedValue({});
 
       const entryIds = [UUID2, UUID];
       const result = await caller.reorderEntries({ playlistId: UUID, entryIds });
       expect(result.success).toBe(true);
-      expect(p.$transaction).toHaveBeenCalled();
+      expect(p.transaction).toHaveBeenCalled();
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("playlist:updated", {
         playlistId: UUID,
-        channelId: "bc-1",
-      });
+        channelId: "bc-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "playlist.reorder" })
       );
@@ -381,8 +364,8 @@ describe("playlistRouter", () => {
 
     it("throws NOT_FOUND when playlist does not exist", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue(null);
 
       await expect(
         caller.reorderEntries({ playlistId: UUID, entryIds: [UUID] })
@@ -394,21 +377,19 @@ describe("playlistRouter", () => {
   describe("setActive", () => {
     it("sets activePlaylistId on settings", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
-      p.songRequestSettings.upsert.mockResolvedValue({});
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue({ id: UUID, name: "Chill", botChannelId: "bc-1" });
+      p.query.songRequestSettings.upsert.mockResolvedValue({});
 
       const result = await caller.setActive({ playlistId: UUID });
       expect(result.success).toBe(true);
-      expect(p.songRequestSettings.upsert).toHaveBeenCalledWith({
+      expect(p.query.songRequestSettings.upsert).toHaveBeenCalledWith({
         where: { botChannelId: "bc-1" },
         update: { activePlaylistId: UUID },
-        create: { botChannelId: "bc-1", activePlaylistId: UUID },
-      });
+        create: { botChannelId: "bc-1", activePlaylistId: UUID } });
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("playlist:activated", {
         playlistId: UUID,
-        channelId: "bc-1",
-      });
+        channelId: "bc-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "playlist.activate" })
       );
@@ -416,22 +397,21 @@ describe("playlistRouter", () => {
 
     it("allows setting playlistId to null (deactivate)", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.songRequestSettings.upsert.mockResolvedValue({});
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.songRequestSettings.upsert.mockResolvedValue({});
 
       const result = await caller.setActive({ playlistId: null });
       expect(result.success).toBe(true);
-      expect(p.songRequestSettings.upsert).toHaveBeenCalledWith(
+      expect(p.query.songRequestSettings.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          update: { activePlaylistId: null },
-        })
+          update: { activePlaylistId: null } })
       );
     });
 
     it("throws NOT_FOUND when playlist does not exist", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.playlist.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.playlists.findFirst.mockResolvedValue(null);
 
       await expect(caller.setActive({ playlistId: UUID })).rejects.toThrow("Playlist not found");
     });

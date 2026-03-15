@@ -1,7 +1,7 @@
 import { MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, discordGuilds, twitchChannels } from "@community-bot/db";
 import { getTwitchUser } from "../../twitch/api.js";
 import logger from "../../utils/logger.js";
 
@@ -35,8 +35,8 @@ export async function handleAdd(
     }
 
     // Find the guild record
-    const guild = await prisma.discordGuild.findUnique({
-      where: { guildId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.guildId, guildId),
     });
 
     if (!guild) {
@@ -47,13 +47,8 @@ export async function handleAdd(
     }
 
     // Check if already monitoring
-    const existing = await prisma.twitchChannel.findUnique({
-      where: {
-        twitchChannelId_guildId: {
-          twitchChannelId: twitchUser.id,
-          guildId: guild.id,
-        },
-      },
+    const existing = await db.query.twitchChannels.findFirst({
+      where: and(eq(twitchChannels.twitchChannelId, twitchUser.id), eq(twitchChannels.guildId, guild.id)),
     });
 
     if (existing) {
@@ -63,15 +58,13 @@ export async function handleAdd(
       return;
     }
 
-    await prisma.twitchChannel.create({
-      data: {
+    await db.insert(twitchChannels).values({
         twitchChannelId: twitchUser.id,
         username: twitchUser.login,
         displayName: twitchUser.display_name,
         profileImageUrl: twitchUser.profile_image_url,
         guildId: guild.id,
-      },
-    });
+      });
 
     logger.commands.success(
       "twitch add",

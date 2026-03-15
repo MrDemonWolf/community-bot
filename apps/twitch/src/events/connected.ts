@@ -1,6 +1,7 @@
 import { ChatClient } from "@twurple/chat";
 
-import { prisma } from "@community-bot/db";
+import { db, and, eq, isNull } from "@community-bot/db";
+import { twitchChannels } from "@community-bot/db";
 import { botStatus } from "../app.js";
 import { logger } from "../utils/logger.js";
 
@@ -12,15 +13,16 @@ export function registerConnectionEvents(chatClient: ChatClient, channels: strin
 
     // Sync joined channels to the database
     for (const channel of channels) {
-      prisma.twitchChannel
+      db.query.twitchChannels
         .findFirst({
-          where: { twitchChannelId: channel, guildId: null },
+          where: and(
+            eq(twitchChannels.twitchChannelId, channel),
+            isNull(twitchChannels.guildId)
+          ),
         })
         .then(async (existing) => {
           if (!existing) {
-            await prisma.twitchChannel.create({
-              data: { twitchChannelId: channel },
-            });
+            await db.insert(twitchChannels).values({ twitchChannelId: channel });
           }
           logger.info("Twitch", `Synced channel ${channel} to database`);
         })

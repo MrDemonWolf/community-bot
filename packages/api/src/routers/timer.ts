@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, twitchTimers } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -9,9 +9,9 @@ export const timerRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    return prisma.twitchTimer.findMany({
-      where: { botChannelId: botChannel.id },
-      orderBy: { name: "asc" },
+    return db.query.twitchTimers.findMany({
+      where: eq(twitchTimers.botChannelId, botChannel.id),
+      orderBy: asc(twitchTimers.name),
     });
   }),
 
@@ -32,8 +32,8 @@ export const timerRouter = router({
       const botChannel = await getUserBotChannel(ctx.session.user.id);
       const name = input.name.toLowerCase();
 
-      const existing = await prisma.twitchTimer.findUnique({
-        where: { name_botChannelId: { name, botChannelId: botChannel.id } },
+      const existing = await db.query.twitchTimers.findFirst({
+        where: and(eq(twitchTimers.name, name), eq(twitchTimers.botChannelId, botChannel.id)),
       });
 
       if (existing) {
@@ -43,15 +43,13 @@ export const timerRouter = router({
         });
       }
 
-      const timer = await prisma.twitchTimer.create({
-        data: {
-          name,
-          message: input.message,
-          intervalMinutes: input.intervalMinutes,
-          chatLines: input.chatLines,
-          botChannelId: botChannel.id,
-        },
-      });
+      const [timer] = await db.insert(twitchTimers).values({
+        name,
+        message: input.message,
+        intervalMinutes: input.intervalMinutes,
+        chatLines: input.chatLines,
+        botChannelId: botChannel.id,
+      }).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("timer:updated", { channelId: botChannel.id });
@@ -62,11 +60,11 @@ export const timerRouter = router({
         userImage: ctx.session.user.image,
         action: "timer.create",
         resourceType: "TwitchTimer",
-        resourceId: timer.id,
+        resourceId: timer!.id,
         metadata: { name },
       });
 
-      return timer;
+      return timer!;
     }),
 
   update: moderatorProcedure
@@ -87,8 +85,8 @@ export const timerRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const timer = await prisma.twitchTimer.findUnique({
-        where: { id: input.id },
+      const timer = await db.query.twitchTimers.findFirst({
+        where: eq(twitchTimers.id, input.id),
       });
 
       if (!timer || timer.botChannelId !== botChannel.id) {
@@ -100,13 +98,10 @@ export const timerRouter = router({
 
       const { id, name, ...rest } = input;
 
-      const updated = await prisma.twitchTimer.update({
-        where: { id },
-        data: {
-          ...rest,
-          ...(name !== undefined ? { name: name.toLowerCase() } : {}),
-        },
-      });
+      const [updated] = await db.update(twitchTimers).set({
+        ...rest,
+        ...(name !== undefined ? { name: name.toLowerCase() } : {}),
+      }).where(eq(twitchTimers.id, id)).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("timer:updated", { channelId: botChannel.id });
@@ -118,10 +113,10 @@ export const timerRouter = router({
         action: "timer.update",
         resourceType: "TwitchTimer",
         resourceId: id,
-        metadata: { name: updated.name },
+        metadata: { name: updated!.name },
       });
 
-      return updated;
+      return updated!;
     }),
 
   delete: moderatorProcedure
@@ -129,8 +124,8 @@ export const timerRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const timer = await prisma.twitchTimer.findUnique({
-        where: { id: input.id },
+      const timer = await db.query.twitchTimers.findFirst({
+        where: eq(twitchTimers.id, input.id),
       });
 
       if (!timer || timer.botChannelId !== botChannel.id) {
@@ -140,7 +135,7 @@ export const timerRouter = router({
         });
       }
 
-      await prisma.twitchTimer.delete({ where: { id: input.id } });
+      await db.delete(twitchTimers).where(eq(twitchTimers.id, input.id));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("timer:updated", { channelId: botChannel.id });
@@ -163,8 +158,8 @@ export const timerRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const timer = await prisma.twitchTimer.findUnique({
-        where: { id: input.id },
+      const timer = await db.query.twitchTimers.findFirst({
+        where: eq(twitchTimers.id, input.id),
       });
 
       if (!timer || timer.botChannelId !== botChannel.id) {
@@ -174,10 +169,7 @@ export const timerRouter = router({
         });
       }
 
-      const updated = await prisma.twitchTimer.update({
-        where: { id: input.id },
-        data: { enabled: !timer.enabled },
-      });
+      const [updated] = await db.update(twitchTimers).set({ enabled: !timer.enabled }).where(eq(twitchTimers.id, input.id)).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("timer:updated", { channelId: botChannel.id });
@@ -189,9 +181,9 @@ export const timerRouter = router({
         action: "timer.toggle",
         resourceType: "TwitchTimer",
         resourceId: input.id,
-        metadata: { name: timer.name, enabled: updated.enabled },
+        metadata: { name: timer.name, enabled: updated!.enabled },
       });
 
-      return updated;
+      return updated!;
     }),
 });

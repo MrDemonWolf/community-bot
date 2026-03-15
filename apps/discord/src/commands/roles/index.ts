@@ -13,7 +13,7 @@ import type {
   TextChannel,
 } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, discordRolePanels, discordRoleButtons } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 import { hasPermission } from "../../utils/permissions.js";
 import { sendPaginatedEmbed } from "../../utils/pagination.js";
@@ -249,8 +249,8 @@ async function handlePanelCreate(
       "Click a button or select an option to toggle a role.";
     const useMenu = interaction.options.getBoolean("use-menu") ?? false;
 
-    const existing = await prisma.discordRolePanel.findUnique({
-      where: { guildId_name: { guildId, name } },
+    const existing = await db.query.discordRolePanels.findFirst({
+      where: and(eq(discordRolePanels.guildId, guildId), eq(discordRolePanels.name, name)),
     });
 
     if (existing) {
@@ -260,16 +260,14 @@ async function handlePanelCreate(
       return;
     }
 
-    await prisma.discordRolePanel.create({
-      data: {
+    await db.insert(discordRolePanels).values({
         guildId,
         name,
         title,
         description,
         useMenu,
         createdBy: interaction.user.id,
-      },
-    });
+      });
 
     await interaction.editReply({
       content: `Panel **${name}** created (${useMenu ? "select menu" : "buttons"}). Add roles with \`/roles button add\`, then post with \`/roles post\`.`,
@@ -302,11 +300,9 @@ async function handlePanelDelete(
     const name = interaction.options.getString("panel", false)
       ?? interaction.options.getString("name", true);
 
-    const deleted = await prisma.discordRolePanel.deleteMany({
-      where: { guildId, name: name.toLowerCase() },
-    });
+    const deleted = await db.delete(discordRolePanels).where(and(eq(discordRolePanels.guildId, guildId), eq(discordRolePanels.name, name.toLowerCase()))).returning();
 
-    if (deleted.count === 0) {
+    if (deleted.length === 0) {
       await interaction.editReply({
         content: `Panel **${name}** not found.`,
       });
@@ -341,10 +337,10 @@ async function handlePanelList(
   try {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const panels = await prisma.discordRolePanel.findMany({
-      where: { guildId },
-      include: { buttons: { orderBy: { position: "asc" } } },
-      orderBy: { name: "asc" },
+    const panels = await db.query.discordRolePanels.findMany({
+      where: eq(discordRolePanels.guildId, guildId),
+      with: { buttons: { orderBy: asc(discordRoleButtons.position) } },
+      orderBy: asc(discordRolePanels.name),
     });
 
     if (panels.length === 0) {
@@ -416,9 +412,9 @@ async function handleButtonAdd(
     const styleKey = interaction.options.getString("style") ?? "primary";
     const style = BUTTON_STYLES[styleKey] ?? ButtonStyle.Primary;
 
-    const panel = await prisma.discordRolePanel.findUnique({
-      where: { guildId_name: { guildId, name: panelName } },
-      include: { buttons: true },
+    const panel = await db.query.discordRolePanels.findFirst({
+      where: and(eq(discordRolePanels.guildId, guildId), eq(discordRolePanels.name, panelName)),
+      with: { buttons: true },
     });
 
     if (!panel) {
@@ -435,24 +431,22 @@ async function handleButtonAdd(
       return;
     }
 
-    const existing = panel.buttons.find((b) => b.roleId === role.id);
-    if (existing) {
+    const existingBtn = panel.buttons.find((b) => b.roleId === role.id);
+    if (existingBtn) {
       await interaction.editReply({
         content: `Role <@&${role.id}> is already on this panel.`,
       });
       return;
     }
 
-    await prisma.discordRoleButton.create({
-      data: {
+    await db.insert(discordRoleButtons).values({
         panelId: panel.id,
         roleId: role.id,
         label,
         emoji,
         style,
         position: panel.buttons.length,
-      },
-    });
+      });
 
     await interaction.editReply({
       content: `Added <@&${role.id}> to panel **${panelName}**.`,
@@ -487,8 +481,8 @@ async function handleButtonRemove(
       .toLowerCase();
     const role = interaction.options.getRole("role", true);
 
-    const panel = await prisma.discordRolePanel.findUnique({
-      where: { guildId_name: { guildId, name: panelName } },
+    const panel = await db.query.discordRolePanels.findFirst({
+      where: and(eq(discordRolePanels.guildId, guildId), eq(discordRolePanels.name, panelName)),
     });
 
     if (!panel) {
@@ -498,11 +492,9 @@ async function handleButtonRemove(
       return;
     }
 
-    const deleted = await prisma.discordRoleButton.deleteMany({
-      where: { panelId: panel.id, roleId: role.id },
-    });
+    const deleted = await db.delete(discordRoleButtons).where(and(eq(discordRoleButtons.panelId, panel.id), eq(discordRoleButtons.roleId, role.id))).returning();
 
-    if (deleted.count === 0) {
+    if (deleted.length === 0) {
       await interaction.editReply({
         content: `Role <@&${role.id}> is not on panel **${panelName}**.`,
       });
@@ -603,9 +595,9 @@ async function handlePost(
       return;
     }
 
-    const panel = await prisma.discordRolePanel.findUnique({
-      where: { guildId_name: { guildId, name: panelName } },
-      include: { buttons: { orderBy: { position: "asc" } } },
+    const panel = await db.query.discordRolePanels.findFirst({
+      where: and(eq(discordRolePanels.guildId, guildId), eq(discordRolePanels.name, panelName)),
+      with: { buttons: { orderBy: asc(discordRoleButtons.position) } },
     });
 
     if (!panel) {
@@ -637,10 +629,7 @@ async function handlePost(
       components,
     });
 
-    await prisma.discordRolePanel.update({
-      where: { id: panel.id },
-      data: { channelId: targetChannel.id, messageId: message.id },
-    });
+    await db.update(discordRolePanels).set({ channelId: targetChannel.id, messageId: message.id }).where(eq(discordRolePanels.id, panel.id));
 
     await interaction.editReply({
       content: `Panel **${panelName}** posted to <#${targetChannel.id}>.`,
@@ -668,9 +657,9 @@ async function handleRefresh(
       .getString("panel", true)
       .toLowerCase();
 
-    const panel = await prisma.discordRolePanel.findUnique({
-      where: { guildId_name: { guildId, name: panelName } },
-      include: { buttons: { orderBy: { position: "asc" } } },
+    const panel = await db.query.discordRolePanels.findFirst({
+      where: and(eq(discordRolePanels.guildId, guildId), eq(discordRolePanels.name, panelName)),
+      with: { buttons: { orderBy: asc(discordRoleButtons.position) } },
     });
 
     if (!panel) {

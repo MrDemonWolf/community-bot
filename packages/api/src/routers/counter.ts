@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, twitchCounters } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -9,9 +9,9 @@ export const counterRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    return prisma.twitchCounter.findMany({
-      where: { botChannelId: botChannel.id },
-      orderBy: { name: "asc" },
+    return db.query.twitchCounters.findMany({
+      where: eq(twitchCounters.botChannelId, botChannel.id),
+      orderBy: asc(twitchCounters.name),
     });
   }),
 
@@ -29,8 +29,8 @@ export const counterRouter = router({
       const botChannel = await getUserBotChannel(ctx.session.user.id);
       const name = input.name.toLowerCase();
 
-      const existing = await prisma.twitchCounter.findUnique({
-        where: { name_botChannelId: { name, botChannelId: botChannel.id } },
+      const existing = await db.query.twitchCounters.findFirst({
+        where: and(eq(twitchCounters.name, name), eq(twitchCounters.botChannelId, botChannel.id)),
       });
 
       if (existing) {
@@ -40,9 +40,10 @@ export const counterRouter = router({
         });
       }
 
-      const counter = await prisma.twitchCounter.create({
-        data: { name, botChannelId: botChannel.id },
-      });
+      const [counter] = await db.insert(twitchCounters).values({
+        name,
+        botChannelId: botChannel.id,
+      }).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("counter:updated", {
@@ -56,11 +57,11 @@ export const counterRouter = router({
         userImage: ctx.session.user.image,
         action: "counter.create",
         resourceType: "TwitchCounter",
-        resourceId: counter.id,
+        resourceId: counter!.id,
         metadata: { name },
       });
 
-      return counter;
+      return counter!;
     }),
 
   update: moderatorProcedure
@@ -73,8 +74,8 @@ export const counterRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const counter = await prisma.twitchCounter.findUnique({
-        where: { id: input.id },
+      const counter = await db.query.twitchCounters.findFirst({
+        where: eq(twitchCounters.id, input.id),
       });
 
       if (!counter || counter.botChannelId !== botChannel.id) {
@@ -84,10 +85,7 @@ export const counterRouter = router({
         });
       }
 
-      const updated = await prisma.twitchCounter.update({
-        where: { id: input.id },
-        data: { value: input.value },
-      });
+      const [updated] = await db.update(twitchCounters).set({ value: input.value }).where(eq(twitchCounters.id, input.id)).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("counter:updated", {
@@ -113,8 +111,8 @@ export const counterRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const counter = await prisma.twitchCounter.findUnique({
-        where: { id: input.id },
+      const counter = await db.query.twitchCounters.findFirst({
+        where: eq(twitchCounters.id, input.id),
       });
 
       if (!counter || counter.botChannelId !== botChannel.id) {
@@ -124,7 +122,7 @@ export const counterRouter = router({
         });
       }
 
-      await prisma.twitchCounter.delete({ where: { id: input.id } });
+      await db.delete(twitchCounters).where(eq(twitchCounters.id, input.id));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("counter:updated", {

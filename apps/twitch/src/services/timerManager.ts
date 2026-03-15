@@ -10,7 +10,8 @@
  */
 import type { ChatClient } from "@twurple/chat";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and } from "@community-bot/db";
+import { botChannels, twitchTimers } from "@community-bot/db";
 import { isLive } from "./streamStatusManager.js";
 import { getMessageCount, resetMessageCount } from "./chatterTracker.js";
 import { substituteVariables } from "./commandExecutor.js";
@@ -87,15 +88,18 @@ export async function loadTimers(channel: string): Promise<void> {
   // Stop any existing timers for this channel
   stopTimers(channelKey);
 
-  const botChannel = await prisma.botChannel.findFirst({
-    where: { twitchUsername: channelKey },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.twitchUsername, channelKey),
+    columns: { id: true },
   });
 
   if (!botChannel) return;
 
-  const timers = await prisma.twitchTimer.findMany({
-    where: { botChannelId: botChannel.id, enabled: true },
+  const timers = await db.query.twitchTimers.findMany({
+    where: and(
+      eq(twitchTimers.botChannelId, botChannel.id),
+      eq(twitchTimers.enabled, true)
+    ),
   });
 
   if (timers.length === 0) return;

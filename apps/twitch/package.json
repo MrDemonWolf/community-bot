@@ -5,12 +5,11 @@
   "main": "app.js",
   "type": "module",
   "scripts": {
-    "start": "node dist/app.js",
-    "dev": "tsx watch src/app.ts",
-    "build": "rm -rf dist/ && tsc -p . --outDir dist",
+    "start": "bun src/app.ts",
+    "dev": "bun --watch src/app.ts",
     "lint": "eslint . --ext .js --fix",
     "format": "prettier-eslint --write $PWD/'**/*.{js,json}'",
-    "db:import": "tsx src/scripts/importCommands.ts",
+    "db:import": "bun src/scripts/importCommands.ts",
     "test": "vitest run",
     "check-types": "tsc --noEmit"
   },
@@ -39,8 +38,6 @@
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-promise": "^7.2.1",
     "prettier-eslint-cli": "^8.0.1",
-    "tslib": "^2.8.1",
-    "tsx": "^4.21.0",
     "typescript": "^5.8.3"
   }
 }

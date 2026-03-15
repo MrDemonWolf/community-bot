@@ -1,14 +1,14 @@
 /**
  * @community-bot/auth — Shared authentication configuration.
  *
- * Uses better-auth with Prisma adapter for session management and
+ * Uses better-auth with Drizzle adapter for session management and
  * Discord/Twitch OAuth social login. Consumed by the web dashboard.
  */
 import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { lastLoginMethod } from "better-auth/plugins";
 import { env } from "@community-bot/env/server";
-import prisma from "@community-bot/db";
+import { db, eq, and, accounts } from "@community-bot/db";
 import { nextCookies } from "better-auth/next-js";
 
 /**
@@ -18,15 +18,15 @@ import { nextCookies } from "better-auth/next-js";
  */
 async function autoLinkTwitchFromDiscord(userId: string) {
 	try {
-		const discordAccount = await prisma.account.findFirst({
-			where: { userId, providerId: "discord" },
+		const discordAccount = await db.query.accounts.findFirst({
+			where: and(eq(accounts.userId, userId), eq(accounts.providerId, "discord")),
 		});
 
 		if (!discordAccount?.accessToken) return;
 
 		// Check if user already has a Twitch account linked
-		const existingTwitch = await prisma.account.findFirst({
-			where: { userId, providerId: "twitch" },
+		const existingTwitch = await db.query.accounts.findFirst({
+			where: and(eq(accounts.userId, userId), eq(accounts.providerId, "twitch")),
 		});
 
 		if (existingTwitch) return;
@@ -53,15 +53,13 @@ async function autoLinkTwitchFromDiscord(userId: string) {
 
 		// Create a Twitch account entry linked to this user
 		const id = crypto.randomUUID();
-		await prisma.account.create({
-			data: {
-				id,
-				userId,
-				providerId: "twitch",
-				accountId: twitchConnection.id,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			},
+		await db.insert(accounts).values({
+			id,
+			userId,
+			providerId: "twitch",
+			accountId: twitchConnection.id,
+			createdAt: new Date(),
+			updatedAt: new Date(),
 		});
 	} catch {
 		// Silently fail — auto-linking is best-effort
@@ -69,8 +67,8 @@ async function autoLinkTwitchFromDiscord(userId: string) {
 }
 
 export const auth = betterAuth({
-	database: prismaAdapter(prisma, {
-		provider: "postgresql",
+	database: drizzleAdapter(db, {
+		provider: "pg",
 	}),
 	trustedOrigins: [env.CORS_ORIGIN],
 	socialProviders: {

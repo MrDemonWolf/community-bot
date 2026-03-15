@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, desc, ilike, quotes } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -9,9 +9,9 @@ export const quoteRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    return prisma.quote.findMany({
-      where: { botChannelId: botChannel.id },
-      orderBy: { quoteNumber: "asc" },
+    return db.query.quotes.findMany({
+      where: eq(quotes.botChannelId, botChannel.id),
+      orderBy: asc(quotes.quoteNumber),
     });
   }),
 
@@ -20,13 +20,11 @@ export const quoteRouter = router({
     .query(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const quote = await prisma.quote.findUnique({
-        where: {
-          quoteNumber_botChannelId: {
-            quoteNumber: input.quoteNumber,
-            botChannelId: botChannel.id,
-          },
-        },
+      const quote = await db.query.quotes.findFirst({
+        where: and(
+          eq(quotes.quoteNumber, input.quoteNumber),
+          eq(quotes.botChannelId, botChannel.id),
+        ),
       });
 
       if (!quote) {
@@ -41,12 +39,12 @@ export const quoteRouter = router({
     .query(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      return prisma.quote.findMany({
-        where: {
-          botChannelId: botChannel.id,
-          text: { contains: input.query, mode: "insensitive" },
-        },
-        orderBy: { quoteNumber: "asc" },
+      return db.query.quotes.findMany({
+        where: and(
+          eq(quotes.botChannelId, botChannel.id),
+          ilike(quotes.text, `%${input.query}%`),
+        ),
+        orderBy: asc(quotes.quoteNumber),
       });
     }),
 
@@ -61,26 +59,23 @@ export const quoteRouter = router({
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
       // Get next quote number
-      const last = await prisma.quote.findFirst({
-        where: { botChannelId: botChannel.id },
-        orderBy: { quoteNumber: "desc" },
-        select: { quoteNumber: true },
+      const last = await db.query.quotes.findFirst({
+        where: eq(quotes.botChannelId, botChannel.id),
+        orderBy: desc(quotes.quoteNumber),
       });
       const quoteNumber = (last?.quoteNumber ?? 0) + 1;
 
-      const quote = await prisma.quote.create({
-        data: {
-          quoteNumber,
-          text: input.text,
-          game: input.game ?? null,
-          addedBy: ctx.session.user.name,
-          source: "web",
-          botChannelId: botChannel.id,
-        },
-      });
+      const [quote] = await db.insert(quotes).values({
+        quoteNumber,
+        text: input.text,
+        game: input.game ?? null,
+        addedBy: ctx.session.user.name,
+        source: "web",
+        botChannelId: botChannel.id,
+      }).returning();
 
       const { eventBus } = await import("../events");
-      await eventBus.publish("quote:created", { quoteId: quote.id });
+      await eventBus.publish("quote:created", { quoteId: quote!.id });
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -88,11 +83,11 @@ export const quoteRouter = router({
         userImage: ctx.session.user.image,
         action: "quote.add",
         resourceType: "Quote",
-        resourceId: quote.id,
+        resourceId: quote!.id,
         metadata: { quoteNumber, text: input.text },
       });
 
-      return quote;
+      return quote!;
     }),
 
   remove: moderatorProcedure
@@ -100,15 +95,15 @@ export const quoteRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const quote = await prisma.quote.findUnique({
-        where: { id: input.id },
+      const quote = await db.query.quotes.findFirst({
+        where: eq(quotes.id, input.id),
       });
 
       if (!quote || quote.botChannelId !== botChannel.id) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Quote not found." });
       }
 
-      await prisma.quote.delete({ where: { id: input.id } });
+      await db.delete(quotes).where(eq(quotes.id, input.id));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("quote:deleted", { quoteId: input.id });

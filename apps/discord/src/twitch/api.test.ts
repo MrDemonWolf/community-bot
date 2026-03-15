@@ -1,16 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("@community-bot/db", () => ({
-  prisma: { twitchCredential: { findFirst: vi.fn() } },
-}));
+vi.mock("@community-bot/db", () => ({ db: { twitchCredential: { findFirst: vi.fn() } } }));
 
 vi.mock("../utils/env.js", () => ({
-  default: { TWITCH_APPLICATION_CLIENT_ID: "test" },
-}));
+  default: { TWITCH_APPLICATION_CLIENT_ID: "test" } }));
 
 vi.mock("../utils/logger.js", () => ({
-  default: { warn: vi.fn(), error: vi.fn(), info: vi.fn() },
-}));
+  default: { warn: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 import { getStreamThumbnailUrl } from "./api.js";
 

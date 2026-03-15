@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import prisma from "@community-bot/db";
+import { db, eq, asc, desc, users, twitchChannels, botChannels, twitchChatCommands, queueStates, queueEntries, songRequestSettings, songRequests, quotes } from "@community-bot/db";
 import { getBroadcasterUserId } from "@/lib/setup";
 import Link from "next/link";
 import type { Route } from "next";
@@ -13,9 +13,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return {};
 
-  const user = await prisma.user.findUnique({
-    where: { id: broadcasterId },
-    select: { name: true },
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, broadcasterId),
+    columns: { name: true },
   });
 
   if (!user) return {};
@@ -30,11 +30,11 @@ async function getProfileData() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { id: broadcasterId },
-    include: {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, broadcasterId),
+    with: {
       accounts: {
-        select: { providerId: true, accountId: true },
+        columns: { providerId: true, accountId: true },
       },
     },
   });
@@ -45,59 +45,60 @@ async function getProfileData() {
 
   let twitchChannel = null;
   if (twitchAccount) {
-    twitchChannel = await prisma.twitchChannel.findFirst({
-      where: { twitchChannelId: twitchAccount.accountId },
+    twitchChannel = await db.query.twitchChannels.findFirst({
+      where: eq(twitchChannels.twitchChannelId, twitchAccount.accountId),
     });
   }
 
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId: user.id },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.userId, user.id),
+    columns: { id: true },
   });
 
   const commands = botChannel
-    ? await prisma.twitchChatCommand.findMany({
-        where: { hidden: false, enabled: true, botChannelId: botChannel.id },
-        select: { name: true },
-        orderBy: { name: "asc" },
+    ? await db.query.twitchChatCommands.findMany({
+        where: (t, { and: a, eq: e }) =>
+          a(e(t.hidden, false), e(t.enabled, true), e(t.botChannelId, botChannel.id)),
+        columns: { name: true },
+        orderBy: asc(twitchChatCommands.name),
       })
     : [];
 
-  const queueState = await prisma.queueState.findFirst({
-    where: { id: "singleton" },
+  const queueState = await db.query.queueStates.findFirst({
+    where: eq(queueStates.id, "singleton"),
   });
 
-  const queueEntries =
+  const queueEntryList =
     queueState?.status === "OPEN"
-      ? await prisma.queueEntry.findMany({
-          orderBy: { position: "asc" },
-          select: { twitchUsername: true, position: true },
+      ? await db.query.queueEntries.findMany({
+          orderBy: asc(queueEntries.position),
+          columns: { twitchUsername: true, position: true },
         })
       : [];
 
-  const songRequestSettings = botChannel
-    ? await prisma.songRequestSettings.findUnique({
-        where: { botChannelId: botChannel.id },
-        select: { enabled: true },
+  const srSettings = botChannel
+    ? await db.query.songRequestSettings.findFirst({
+        where: eq(songRequestSettings.botChannelId, botChannel.id),
+        columns: { enabled: true },
       })
     : null;
 
-  const songRequests =
-    songRequestSettings?.enabled && botChannel
-      ? await prisma.songRequest.findMany({
-          where: { botChannelId: botChannel.id },
-          orderBy: { position: "asc" },
-          select: { id: true, position: true, title: true, requestedBy: true },
-          take: 5,
+  const songRequestList =
+    srSettings?.enabled && botChannel
+      ? await db.query.songRequests.findMany({
+          where: eq(songRequests.botChannelId, botChannel.id),
+          orderBy: asc(songRequests.position),
+          columns: { id: true, position: true, title: true, requestedBy: true },
+          limit: 5,
         })
       : [];
 
-  const quotes = botChannel
-    ? await prisma.quote.findMany({
-        where: { botChannelId: botChannel.id },
-        orderBy: { quoteNumber: "desc" },
-        select: { id: true, quoteNumber: true, text: true },
-        take: 5,
+  const quoteList = botChannel
+    ? await db.query.quotes.findMany({
+        where: eq(quotes.botChannelId, botChannel.id),
+        orderBy: desc(quotes.quoteNumber),
+        columns: { id: true, quoteNumber: true, text: true },
+        limit: 5,
       })
     : [];
 
@@ -106,10 +107,10 @@ async function getProfileData() {
     twitchChannel,
     commands,
     queueState,
-    queueEntries,
-    songRequestsEnabled: songRequestSettings?.enabled ?? false,
-    songRequests,
-    quotes,
+    queueEntries: queueEntryList,
+    songRequestsEnabled: srSettings?.enabled ?? false,
+    songRequests: songRequestList,
+    quotes: quoteList,
   };
 }
 

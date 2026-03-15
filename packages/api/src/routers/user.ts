@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, users, botChannels, twitchChatCommands } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -15,15 +15,10 @@ const SE_ACCESS_LEVEL_MAP: Record<number, string> = {
 
 export const userRouter = router({
   getProfile: protectedProcedure.query(async ({ ctx }) => {
-    const user = await prisma.user.findUnique({
-      where: { id: ctx.session.user.id },
-      include: {
-        accounts: {
-          select: {
-            providerId: true,
-            accountId: true,
-          },
-        },
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, ctx.session.user.id),
+      with: {
+        accounts: true,
       },
     });
 
@@ -31,9 +26,8 @@ export const userRouter = router({
       throw new TRPCError({ code: "NOT_FOUND", message: "User not found." });
     }
 
-    const botChannel = await prisma.botChannel.findUnique({
-      where: { userId: user.id },
-      select: { id: true },
+    const botChannel = await db.query.botChannels.findFirst({
+      where: eq(botChannels.userId, user.id),
     });
 
     return {
@@ -54,18 +48,12 @@ export const userRouter = router({
   exportData: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        accounts: {
-          select: {
-            providerId: true,
-            accountId: true,
-            scope: true,
-          },
-        },
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      with: {
+        accounts: true,
         botChannel: {
-          include: {
+          with: {
             customCommands: true,
             commandOverrides: true,
           },
@@ -142,8 +130,8 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const botChannel = await prisma.botChannel.findUnique({
-        where: { userId },
+      const botChannel = await db.query.botChannels.findFirst({
+        where: eq(botChannels.userId, userId),
       });
 
       if (!botChannel || !botChannel.enabled) {
@@ -168,8 +156,8 @@ export const userRouter = router({
         }
 
         // Skip if command already exists
-        const existing = await prisma.twitchChatCommand.findUnique({
-          where: { name_botChannelId: { name, botChannelId: botChannel.id } },
+        const existing = await db.query.twitchChatCommands.findFirst({
+          where: and(eq(twitchChatCommands.name, name), eq(twitchChatCommands.botChannelId, botChannel.id)),
         });
 
         if (existing) {
@@ -181,22 +169,20 @@ export const userRouter = router({
         const accessLevel =
           SE_ACCESS_LEVEL_MAP[cmd.accessLevel ?? 100] ?? "EVERYONE";
 
-        const command = await prisma.twitchChatCommand.create({
-          data: {
-            name,
-            response: cmd.response.slice(0, 500),
-            accessLevel: accessLevel as any,
-            globalCooldown: cmd.cooldown?.global ?? 0,
-            userCooldown: cmd.cooldown?.user ?? 0,
-            enabled: cmd.enabled ?? true,
-            aliases: (cmd.aliases ?? [])
-              .map((a) => a.replace(/^!/, "").toLowerCase().trim())
-              .filter((a) => a.length > 0),
-            botChannelId: botChannel.id,
-          },
-        });
+        const [command] = await db.insert(twitchChatCommands).values({
+          name,
+          response: cmd.response.slice(0, 500),
+          accessLevel: accessLevel as any,
+          globalCooldown: cmd.cooldown?.global ?? 0,
+          userCooldown: cmd.cooldown?.user ?? 0,
+          enabled: cmd.enabled ?? true,
+          aliases: (cmd.aliases ?? [])
+            .map((a) => a.replace(/^!/, "").toLowerCase().trim())
+            .filter((a) => a.length > 0),
+          botChannelId: botChannel.id,
+        }).returning();
 
-        createdIds.push(command.id);
+        createdIds.push(command!.id);
         imported++;
       }
 

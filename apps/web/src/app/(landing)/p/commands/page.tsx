@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import prisma from "@community-bot/db";
+import { db, eq, asc, users, botChannels, twitchChatCommands } from "@community-bot/db";
 import { getBroadcasterUserId } from "@/lib/setup";
 import Link from "next/link";
 import type { Route } from "next";
@@ -14,9 +14,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return {};
 
-  const user = await prisma.user.findUnique({
-    where: { id: broadcasterId },
-    select: { name: true },
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, broadcasterId),
+    columns: { name: true },
   });
 
   if (!user) return {};
@@ -31,25 +31,24 @@ async function getCommandsData() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { id: broadcasterId },
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, broadcasterId),
   });
 
   if (!user) return null;
 
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId: user.id },
-    include: { commandOverrides: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.userId, user.id),
+    with: { commandOverrides: true },
   });
 
-  const commands = await prisma.twitchChatCommand.findMany({
-    where: {
-      hidden: false,
-      enabled: true,
-      botChannelId: botChannel?.id ?? undefined,
-    },
-    orderBy: { name: "asc" },
-  });
+  const commands = botChannel
+    ? await db.query.twitchChatCommands.findMany({
+        where: (t, { and: a, eq: e }) =>
+          a(e(t.hidden, false), e(t.enabled, true), e(t.botChannelId, botChannel.id)),
+        orderBy: asc(twitchChatCommands.name),
+      })
+    : [];
 
   const disabledCommands = new Set(botChannel?.disabledCommands ?? []);
   const overrides = new Map(

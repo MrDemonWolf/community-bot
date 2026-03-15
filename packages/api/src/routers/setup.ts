@@ -5,7 +5,7 @@
  * progress, authorizing the bot's Twitch account via Device Code Flow,
  * and finalizing setup (promoting the user to BROADCASTER, setting broadcaster).
  */
-import { prisma } from "@community-bot/db";
+import { db, eq, and, systemConfigs, users, accounts, botChannels, twitchCredentials } from "@community-bot/db";
 import { env } from "@community-bot/env/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -20,15 +20,15 @@ const BOT_SCOPES = "chat:read chat:edit moderator:read:followers channel:read:su
 export const setupRouter = router({
   /** Public — returns whether first-time setup has been completed. */
   status: publicProcedure.query(async () => {
-    const setupComplete = await prisma.systemConfig.findUnique({
-      where: { key: "setupComplete" },
+    const setupComplete = await db.query.systemConfigs.findFirst({
+      where: eq(systemConfigs.key, "setupComplete"),
     });
     return { setupComplete: setupComplete?.value === "true" };
   }),
 
   getStep: protectedProcedure.query(async () => {
-    const config = await prisma.systemConfig.findUnique({
-      where: { key: "setupStep" },
+    const config = await db.query.systemConfigs.findFirst({
+      where: eq(systemConfigs.key, "setupStep"),
     });
     return { step: config?.value ?? null };
   }),
@@ -36,10 +36,12 @@ export const setupRouter = router({
   saveStep: protectedProcedure
     .input(z.object({ step: z.string() }))
     .mutation(async ({ input }) => {
-      await prisma.systemConfig.upsert({
-        where: { key: "setupStep" },
-        create: { key: "setupStep", value: input.step },
-        update: { value: input.step },
+      await db.insert(systemConfigs).values({
+        key: "setupStep",
+        value: input.step,
+      }).onConflictDoUpdate({
+        target: systemConfigs.key,
+        set: { value: input.step },
       });
       return { success: true };
     }),
@@ -51,8 +53,8 @@ export const setupRouter = router({
   complete: protectedProcedure
     .input(z.object({ token: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const storedToken = await prisma.systemConfig.findUnique({
-        where: { key: "setupToken" },
+      const storedToken = await db.query.systemConfigs.findFirst({
+        where: eq(systemConfigs.key, "setupToken"),
       });
       if (!storedToken || storedToken.value !== input.token) {
         throw new TRPCError({
@@ -63,46 +65,54 @@ export const setupRouter = router({
 
       const userId = ctx.session.user.id;
 
-      await prisma.$transaction([
-        prisma.systemConfig.upsert({
-          where: { key: "broadcasterUserId" },
-          create: { key: "broadcasterUserId", value: userId },
-          update: { value: userId },
-        }),
-        prisma.systemConfig.upsert({
-          where: { key: "setupComplete" },
-          create: { key: "setupComplete", value: "true" },
-          update: { value: "true" },
-        }),
-        prisma.systemConfig.delete({ where: { key: "setupToken" } }),
-        prisma.systemConfig.deleteMany({ where: { key: "setupStep" } }),
-        prisma.user.update({
-          where: { id: userId },
-          data: { role: "BROADCASTER" },
-        }),
-      ]);
+      await db.transaction(async (tx) => {
+        await tx.insert(systemConfigs).values({
+          key: "broadcasterUserId",
+          value: userId,
+        }).onConflictDoUpdate({
+          target: systemConfigs.key,
+          set: { value: userId },
+        });
+
+        await tx.insert(systemConfigs).values({
+          key: "setupComplete",
+          value: "true",
+        }).onConflictDoUpdate({
+          target: systemConfigs.key,
+          set: { value: "true" },
+        });
+
+        await tx.delete(systemConfigs).where(eq(systemConfigs.key, "setupToken"));
+        await tx.delete(systemConfigs).where(eq(systemConfigs.key, "setupStep"));
+
+        await tx.update(users).set({ role: "BROADCASTER" }).where(eq(users.id, userId));
+      });
 
       // Auto-enable the bot if the user has a linked Twitch account
-      const twitchAccount = await prisma.account.findFirst({
-        where: { userId, providerId: "twitch" },
+      const twitchAccount = await db.query.accounts.findFirst({
+        where: and(eq(accounts.userId, userId), eq(accounts.providerId, "twitch")),
       });
 
       if (twitchAccount) {
-        const user = await prisma.user.findUnique({ where: { id: userId } });
+        const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
         const twitchUserId = twitchAccount.accountId;
         const twitchUsername = user?.name?.toLowerCase() ?? twitchUserId;
 
-        const botChannel = await prisma.botChannel.upsert({
-          where: { userId },
-          create: { userId, twitchUsername, twitchUserId, enabled: true },
-          update: { enabled: true, twitchUsername, twitchUserId },
-        });
+        const [botChannel] = await db.insert(botChannels).values({
+          userId,
+          twitchUsername,
+          twitchUserId,
+          enabled: true,
+        }).onConflictDoUpdate({
+          target: botChannels.userId,
+          set: { enabled: true, twitchUsername, twitchUserId },
+        }).returning();
 
         try {
           const { eventBus } = await import("../events");
           await eventBus.publish("channel:join", {
-            channelId: botChannel.twitchUserId,
-            username: botChannel.twitchUsername,
+            channelId: botChannel!.twitchUserId,
+            username: botChannel!.twitchUsername,
           });
         } catch {
           // EventBus may not be connected during setup — not critical
@@ -208,17 +218,16 @@ export const setupRouter = router({
 
       const now = Date.now();
 
-      await prisma.twitchCredential.upsert({
-        where: { userId: validateData.user_id },
-        update: {
-          accessToken: body.access_token!,
-          refreshToken: body.refresh_token!,
-          expiresIn: body.expires_in ?? 0,
-          obtainmentTimestamp: BigInt(now),
-          scope: body.scope ?? [],
-        },
-        create: {
-          userId: validateData.user_id,
+      await db.insert(twitchCredentials).values({
+        userId: validateData.user_id,
+        accessToken: body.access_token!,
+        refreshToken: body.refresh_token!,
+        expiresIn: body.expires_in ?? 0,
+        obtainmentTimestamp: BigInt(now),
+        scope: body.scope ?? [],
+      }).onConflictDoUpdate({
+        target: twitchCredentials.userId,
+        set: {
           accessToken: body.access_token!,
           refreshToken: body.refresh_token!,
           expiresIn: body.expires_in ?? 0,

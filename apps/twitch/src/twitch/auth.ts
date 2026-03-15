@@ -2,7 +2,8 @@ import { RefreshingAuthProvider } from "@twurple/auth";
 
 import { env } from "../utils/env.js";
 import { logger } from "../utils/logger.js";
-import { prisma } from "@community-bot/db";
+import { db, eq } from "@community-bot/db";
+import { twitchCredentials } from "@community-bot/db";
 
 const VALIDATE_URL = "https://id.twitch.tv/oauth2/validate";
 const TOKEN_URL = "https://id.twitch.tv/oauth2/token";
@@ -17,25 +18,29 @@ interface ValidateResult {
   user_id: string;
 }
 
-function tokenToDb(userId: string, token: { accessToken: string; refreshToken: string; expiresIn: number; obtainmentTimestamp: number; scope: string[] }) {
-  return prisma.twitchCredential.upsert({
-    where: { userId },
-    update: {
-      accessToken: token.accessToken,
-      refreshToken: token.refreshToken,
-      expiresIn: token.expiresIn,
-      obtainmentTimestamp: BigInt(token.obtainmentTimestamp),
-      scope: token.scope,
-    },
-    create: {
+async function tokenToDb(userId: string, token: { accessToken: string; refreshToken: string; expiresIn: number; obtainmentTimestamp: number; scope: string[] }) {
+  const [result] = await db
+    .insert(twitchCredentials)
+    .values({
       userId,
       accessToken: token.accessToken,
       refreshToken: token.refreshToken,
       expiresIn: token.expiresIn,
       obtainmentTimestamp: BigInt(token.obtainmentTimestamp),
       scope: token.scope,
-    },
-  });
+    })
+    .onConflictDoUpdate({
+      target: twitchCredentials.userId,
+      set: {
+        accessToken: token.accessToken,
+        refreshToken: token.refreshToken,
+        expiresIn: token.expiresIn,
+        obtainmentTimestamp: BigInt(token.obtainmentTimestamp),
+        scope: token.scope,
+      },
+    })
+    .returning();
+  return result;
 }
 
 async function validateToken(accessToken: string): Promise<ValidateResult | null> {
@@ -91,7 +96,7 @@ export async function createAuthProvider(): Promise<AuthResult> {
   });
 
   // 1. Try stored credentials from DB
-  const stored = await prisma.twitchCredential.findFirst();
+  const stored = await db.query.twitchCredentials.findFirst();
 
   if (stored) {
     // Validate the stored access token
@@ -140,7 +145,7 @@ export async function createAuthProvider(): Promise<AuthResult> {
 
     // Refresh failed — token is dead, delete it
     logger.warn("Twitch Auth", "Refresh failed, removing stale credentials");
-    await prisma.twitchCredential.delete({ where: { id: stored.id } });
+    await db.delete(twitchCredentials).where(eq(twitchCredentials.id, stored.id));
   }
 
   // 2. No valid credentials — setup wizard must be completed first

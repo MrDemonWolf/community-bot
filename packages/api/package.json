@@ -11,18 +11,18 @@
   "type": "module",
   "scripts": {},
   "devDependencies": {
-    "typescript": "catalog:",
+    "typescript": "^5",
     "@community-bot/config": "workspace:*"
   },
   "dependencies": {
-    "dotenv": "catalog:",
-    "zod": "catalog:",
+    "dotenv": "^17.2.2",
+    "zod": "^4.1.13",
     "@community-bot/env": "workspace:*",
     "@community-bot/events": "workspace:*",
     "@community-bot/auth": "workspace:*",
     "@community-bot/db": "workspace:*",
-    "@trpc/server": "catalog:",
-    "@trpc/client": "catalog:",
-    "next": "catalog:"
+    "@trpc/server": "^11.7.2",
+    "@trpc/client": "^11.7.2",
+    "next": "^16.1.1"
   }
 }

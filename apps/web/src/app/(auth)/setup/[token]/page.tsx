@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, systemConfigs } from "@community-bot/db";
 import SetupWizard from "./setup-wizard";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +11,8 @@ export default async function SetupPage({
   const { token } = await params;
 
   // Check if setup is already complete
-  const setupComplete = await prisma.systemConfig.findUnique({
-    where: { key: "setupComplete" },
+  const setupComplete = await db.query.systemConfigs.findFirst({
+    where: eq(systemConfigs.key, "setupComplete"),
   });
   if (setupComplete?.value === "true") {
     return (
@@ -34,8 +34,8 @@ export default async function SetupPage({
   }
 
   // Validate the token
-  const storedToken = await prisma.systemConfig.findUnique({
-    where: { key: "setupToken" },
+  const storedToken = await db.query.systemConfigs.findFirst({
+    where: eq(systemConfigs.key, "setupToken"),
   });
 
   if (!storedToken || storedToken.value !== token) {

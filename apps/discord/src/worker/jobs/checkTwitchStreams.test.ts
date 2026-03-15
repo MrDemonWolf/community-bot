@@ -1,19 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("@community-bot/db", () => ({
-  prisma: {},
-}));
+vi.mock("@community-bot/db", () => ({ db: {} }));
 
 vi.mock("../../twitch/api.js", () => ({
-  getStreams: vi.fn(),
-}));
+  getStreams: vi.fn() }));
 
 vi.mock("../../twitch/embeds.js", () => ({
   buildLiveEmbed: vi.fn(),
   buildOfflineEmbed: vi.fn(),
   buildCustomEmbed: vi.fn(),
-  formatDuration: vi.fn(),
-}));
+  formatDuration: vi.fn() }));
 
 vi.mock("../../utils/logger.js", () => ({
   default: {
@@ -21,8 +17,7 @@ vi.mock("../../utils/logger.js", () => ({
     error: vi.fn(),
     debug: vi.fn(),
     success: vi.fn(),
-  },
-}));
+  } }));
 
 import {
   resolveNotificationChannelId,

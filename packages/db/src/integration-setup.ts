@@ -1,6 +1,6 @@
 /**
  * Global setup for integration tests.
- * Runs `prisma migrate deploy` against the test database before tests start.
+ * Runs `drizzle-kit push` against the test database before tests start.
  */
 import { execSync } from "node:child_process";
 import path from "node:path";
@@ -10,18 +10,11 @@ const testDatabaseUrl =
   "postgresql://postgres:postgres@localhost:5432/community_bot_test";
 
 export async function setup() {
-  const schemaDir = path.resolve(
-    import.meta.dirname,
-    "..",
-    "prisma",
-    "schema"
-  );
-
-  console.log("[integration-setup] Running prisma migrate deploy…");
-  execSync(`npx prisma migrate deploy --schema="${schemaDir}"`, {
+  console.log("[integration-setup] Running drizzle-kit push…");
+  execSync(`npx drizzle-kit push`, {
     env: { ...process.env, DATABASE_URL: testDatabaseUrl },
     stdio: "pipe",
     cwd: path.resolve(import.meta.dirname, ".."),
   });
-  console.log("[integration-setup] Migrations applied.");
+  console.log("[integration-setup] Schema pushed.");
 }

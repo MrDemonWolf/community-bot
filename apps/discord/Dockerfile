@@ -1,12 +1,12 @@
-FROM node:24-alpine AS base
+FROM oven/bun:1-alpine AS base
 
 WORKDIR /usr/src/app
 
-RUN apk add --no-cache openssl git && corepack enable
+RUN apk add --no-cache openssl git
 
 FROM base AS deps
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json bun.lock ./
 COPY packages/db/package.json packages/db/
 COPY packages/config/package.json packages/config/
 COPY packages/env/package.json packages/env/
@@ -14,10 +14,13 @@ COPY packages/events/package.json packages/events/
 COPY packages/server/package.json packages/server/
 COPY apps/discord/package.json apps/discord/
 
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
-FROM base AS build
+FROM base AS production
+
+WORKDIR /usr/src/app
+
+RUN apk add --no-cache curl
 
 COPY --from=deps /usr/src/app/ ./
 
@@ -29,25 +32,6 @@ COPY packages/server ./packages/server
 COPY apps/discord ./apps/discord
 COPY turbo.json tsconfig.json ./
 
-RUN pnpm --filter @community-bot/db db:generate && \
-    pnpm --filter discord-bot build
-
-FROM node:24-alpine AS production
-
-WORKDIR /usr/src/app
-
-RUN apk add --no-cache openssl curl && npm install -g tsx
-
-COPY --from=build /usr/src/app/apps/discord/dist ./apps/discord/dist
-COPY --from=build /usr/src/app/apps/discord/node_modules ./apps/discord/node_modules
-COPY --from=build /usr/src/app/apps/discord/package.json ./apps/discord/
-COPY --from=build /usr/src/app/packages/db ./packages/db
-COPY --from=build /usr/src/app/packages/env ./packages/env
-COPY --from=build /usr/src/app/packages/events ./packages/events
-COPY --from=build /usr/src/app/packages/server ./packages/server
-COPY --from=build /usr/src/app/node_modules ./node_modules
-COPY --from=build /usr/src/app/package.json ./
-
 COPY apps/discord/entrypoint.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh
 
@@ -56,4 +40,4 @@ ENV NODE_ENV=production
 EXPOSE 3141
 
 ENTRYPOINT ["./entrypoint.sh"]
-CMD ["tsx", "apps/discord/dist/app.js"]
+CMD ["bun", "apps/discord/src/app.ts"]

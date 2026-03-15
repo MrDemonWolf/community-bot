@@ -1,5 +1,5 @@
 import type { Client, EmbedBuilder, TextChannel } from "discord.js";
-import { prisma } from "@community-bot/db";
+import { db, eq, discordLogConfigs } from "@community-bot/db";
 import logger from "./logger.js";
 
 type LogCategory = "moderation" | "server" | "voice";
@@ -20,8 +20,8 @@ async function getLogConfig(guildId: string): Promise<LogConfigCache> {
     return cached;
   }
 
-  const config = await prisma.discordLogConfig.findUnique({
-    where: { guildId },
+  const config = await db.query.discordLogConfigs.findFirst({
+    where: eq(discordLogConfigs.guildId, guildId),
   });
 
   const entry: LogConfigCache = {

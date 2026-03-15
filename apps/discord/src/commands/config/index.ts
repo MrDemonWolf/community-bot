@@ -6,7 +6,7 @@ import {
 } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, discordLogConfigs, discordWarnThresholds } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 import { hasPermission } from "../../utils/permissions.js";
 
@@ -180,11 +180,7 @@ async function handleSetLogChannel(
 
     const channel = interaction.options.getChannel("channel", true);
 
-    await prisma.discordLogConfig.upsert({
-      where: { guildId },
-      create: { guildId, [field]: channel.id },
-      update: { [field]: channel.id },
-    });
+    await db.insert(discordLogConfigs).values({ guildId, [field]: channel.id }).onConflictDoUpdate({ target: discordLogConfigs.guildId, set: { [field]: channel.id } });
 
     const labelMap: Record<string, string> = {
       moderationChannelId: "Moderation",
@@ -214,8 +210,8 @@ async function handleViewLogConfig(
   try {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const config = await prisma.discordLogConfig.findUnique({
-      where: { guildId },
+    const config = await db.query.discordLogConfigs.findFirst({
+      where: eq(discordLogConfigs.guildId, guildId),
     });
 
     const fmt = (id: string | null | undefined) =>
@@ -277,19 +273,15 @@ async function handleSetThreshold(
       return;
     }
 
-    await prisma.discordWarnThreshold.upsert({
-      where: { guildId_count: { guildId, count } },
-      create: {
+    await db.insert(discordWarnThresholds).values({
         guildId,
         count,
         action,
         duration: action === "MUTE" ? duration : null,
-      },
-      update: {
+      }).onConflictDoUpdate({ target: [discordWarnThresholds.guildId, discordWarnThresholds.count], set: {
         action,
         duration: action === "MUTE" ? duration : null,
-      },
-    });
+      } });
 
     const actionLabel =
       action === "MUTE" ? `Mute (${duration}m)` : action === "BAN" ? "Ban" : "Kick";
@@ -318,11 +310,9 @@ async function handleClearThreshold(
 
     const count = interaction.options.getInteger("count", true);
 
-    const deleted = await prisma.discordWarnThreshold.deleteMany({
-      where: { guildId, count },
-    });
+    const deleted = await db.delete(discordWarnThresholds).where(and(eq(discordWarnThresholds.guildId, guildId), eq(discordWarnThresholds.count, count))).returning();
 
-    if (deleted.count === 0) {
+    if (deleted.length === 0) {
       await interaction.editReply({
         content: `No threshold configured for ${count} warnings.`,
       });
@@ -351,9 +341,9 @@ async function handleListThresholds(
   try {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const thresholds = await prisma.discordWarnThreshold.findMany({
-      where: { guildId },
-      orderBy: { count: "asc" },
+    const thresholds = await db.query.discordWarnThresholds.findMany({
+      where: eq(discordWarnThresholds.guildId, guildId),
+      orderBy: asc(discordWarnThresholds.count),
     });
 
     if (thresholds.length === 0) {

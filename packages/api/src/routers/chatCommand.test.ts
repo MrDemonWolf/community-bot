@@ -6,22 +6,20 @@ const mocks = vi.hoisted(() => {
   const handler: ProxyHandler<Record<string, any>> = {
     get(target, prop: string) {
       if (!target[prop]) {
-        if (prop === "$transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
-        else if (prop === "$executeRawUnsafe") target[prop] = vi.fn();
+        if (prop === "transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
+        else if (prop === "execute") target[prop] = vi.fn();
         else target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
+  return { db: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("@community-bot/db/defaultCommands", () => ({
-  DEFAULT_COMMANDS: [{ name: "ping", accessLevel: "EVERYONE" }],
-}));
+  DEFAULT_COMMANDS: [{ name: "ping", accessLevel: "EVERYONE" }] }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
@@ -32,12 +30,12 @@ import { t } from "../index";
 import { chatCommandRouter } from "./chatCommand";
 
 const createCaller = t.createCallerFactory(chatCommandRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 const BC = { id: "bc-1", userId: "user-1", enabled: true, twitchUserId: "tid" };
 
 function authedCaller(role = "MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
@@ -47,15 +45,15 @@ describe("chatCommandRouter", () => {
   describe("list", () => {
     it("returns commands for the user's bot channel", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findMany.mockResolvedValue([{ id: "cmd-1", name: "hello" }]);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findMany.mockResolvedValue([{ id: "cmd-1", name: "hello" }]);
       const result = await caller.list();
       expect(result).toHaveLength(1);
     });
 
     it("throws PRECONDITION_FAILED when bot not enabled", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(null);
       await expect(caller.list()).rejects.toThrow("Bot is not enabled");
     });
 
@@ -68,9 +66,9 @@ describe("chatCommandRouter", () => {
   describe("create", () => {
     it("creates a command and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findUnique.mockResolvedValue(null);
-      p.twitchChatCommand.create.mockResolvedValue({ id: "cmd-1", name: "hello" });
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findFirst.mockResolvedValue(null);
+      p.query.twitchChatCommands.create.mockResolvedValue({ id: "cmd-1", name: "hello" });
 
       const result = await caller.create({ name: "hello", response: "Hello!" });
       expect(result.id).toBe("cmd-1");
@@ -80,31 +78,30 @@ describe("chatCommandRouter", () => {
 
     it("lowercases the command name", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findUnique.mockResolvedValue(null);
-      p.twitchChatCommand.create.mockResolvedValue({ id: "cmd-1", name: "hello" });
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findFirst.mockResolvedValue(null);
+      p.query.twitchChatCommands.create.mockResolvedValue({ id: "cmd-1", name: "hello" });
       await caller.create({ name: "HELLO", response: "Hi!" });
-      expect(p.twitchChatCommand.findUnique).toHaveBeenCalledWith({
-        where: { name_botChannelId: { name: "hello", botChannelId: "bc-1" } },
-      });
+      expect(p.query.twitchChatCommands.findFirst).toHaveBeenCalledWith({
+        where: { name_botChannelId: { name: "hello", botChannelId: "bc-1" } } });
     });
 
     it("rejects built-in command names", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
       await expect(caller.create({ name: "ping", response: "Pong!" })).rejects.toThrow("built-in command");
     });
 
     it("rejects duplicate command names", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findUnique.mockResolvedValue({ id: "existing" });
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findFirst.mockResolvedValue({ id: "existing" });
       await expect(caller.create({ name: "hello", response: "Hi!" })).rejects.toThrow("already exists");
     });
 
     it("rejects invalid name characters via zod", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
       await expect(caller.create({ name: "hello world", response: "Hi!" })).rejects.toThrow();
     });
 
@@ -119,9 +116,9 @@ describe("chatCommandRouter", () => {
 
     it("updates a command and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findUnique.mockResolvedValue({ id: "cmd-1", botChannelId: "bc-1" });
-      p.twitchChatCommand.update.mockResolvedValue({ id: "cmd-1", name: "hello", response: "Updated!" });
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findFirst.mockResolvedValue({ id: "cmd-1", botChannelId: "bc-1" });
+      p.query.twitchChatCommands.update.mockResolvedValue({ id: "cmd-1", name: "hello", response: "Updated!" });
       const result = await caller.update({ id: UUID, response: "Updated!" });
       expect(result.response).toBe("Updated!");
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("command:updated", { commandId: UUID });
@@ -129,15 +126,15 @@ describe("chatCommandRouter", () => {
 
     it("throws NOT_FOUND for nonexistent command", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findFirst.mockResolvedValue(null);
       await expect(caller.update({ id: UUID, response: "test" })).rejects.toThrow("Command not found");
     });
 
     it("throws NOT_FOUND for command in different channel", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findUnique.mockResolvedValue({ id: "cmd-1", botChannelId: "other-bc" });
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findFirst.mockResolvedValue({ id: "cmd-1", botChannelId: "other-bc" });
       await expect(caller.update({ id: UUID, response: "test" })).rejects.toThrow("Command not found");
     });
   });
@@ -147,9 +144,9 @@ describe("chatCommandRouter", () => {
 
     it("deletes command and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findUnique.mockResolvedValue({ id: "cmd-1", name: "hello", botChannelId: "bc-1" });
-      p.twitchChatCommand.delete.mockResolvedValue({});
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findFirst.mockResolvedValue({ id: "cmd-1", name: "hello", botChannelId: "bc-1" });
+      p.query.twitchChatCommands.delete.mockResolvedValue({});
       const result = await caller.delete({ id: UUID });
       expect(result.success).toBe(true);
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("command:deleted", { commandId: UUID });
@@ -157,8 +154,8 @@ describe("chatCommandRouter", () => {
 
     it("throws NOT_FOUND for nonexistent command", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findFirst.mockResolvedValue(null);
       await expect(caller.delete({ id: UUID })).rejects.toThrow("Command not found");
     });
   });
@@ -168,9 +165,9 @@ describe("chatCommandRouter", () => {
 
     it("toggles enabled state and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findUnique.mockResolvedValue({ id: "cmd-1", name: "hello", botChannelId: "bc-1", enabled: true });
-      p.twitchChatCommand.update.mockResolvedValue({ id: "cmd-1", enabled: false });
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findFirst.mockResolvedValue({ id: "cmd-1", name: "hello", botChannelId: "bc-1", enabled: true });
+      p.query.twitchChatCommands.update.mockResolvedValue({ id: "cmd-1", enabled: false });
       const result = await caller.toggleEnabled({ id: UUID });
       expect(result.enabled).toBe(false);
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "command.toggle" }));
@@ -178,8 +175,8 @@ describe("chatCommandRouter", () => {
 
     it("throws NOT_FOUND for nonexistent command", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(BC);
-      p.twitchChatCommand.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(BC);
+      p.query.twitchChatCommands.findFirst.mockResolvedValue(null);
       await expect(caller.toggleEnabled({ id: UUID })).rejects.toThrow("Command not found");
     });
   });

@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, sql, systemConfigs, botChannels, songRequests, songRequestSettings } from "@community-bot/db";
 import { publicProcedure, protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -6,14 +6,13 @@ import { logAudit } from "../utils/audit";
 import { getUserBotChannel } from "../utils/botChannel";
 
 async function getBroadcasterBotChannelId(): Promise<string | null> {
-  const config = await prisma.systemConfig.findUnique({
-    where: { key: "broadcasterUserId" },
+  const config = await db.query.systemConfigs.findFirst({
+    where: eq(systemConfigs.key, "broadcasterUserId"),
   });
   if (!config) return null;
 
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId: config.value },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.userId, config.value),
   });
 
   return botChannel?.id ?? null;
@@ -24,44 +23,45 @@ export const songRequestRouter = router({
     const botChannelId = await getBroadcasterBotChannelId();
     if (!botChannelId) return null;
 
-    const song = await prisma.songRequest.findFirst({
-      where: { botChannelId, position: 1 },
-      select: {
-        id: true,
-        title: true,
-        requestedBy: true,
-        youtubeVideoId: true,
-        youtubeThumbnail: true,
-        youtubeDuration: true,
-        source: true,
-      },
+    const song = await db.query.songRequests.findFirst({
+      where: and(eq(songRequests.botChannelId, botChannelId), eq(songRequests.position, 1)),
     });
 
-    return song;
+    if (!song) return null;
+
+    return {
+      id: song.id,
+      title: song.title,
+      requestedBy: song.requestedBy,
+      youtubeVideoId: song.youtubeVideoId,
+      youtubeThumbnail: song.youtubeThumbnail,
+      youtubeDuration: song.youtubeDuration,
+      source: song.source,
+    };
   }),
 
   list: protectedProcedure.query(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    return prisma.songRequest.findMany({
-      where: { botChannelId: botChannel.id },
-      orderBy: { position: "asc" },
+    return db.query.songRequests.findMany({
+      where: eq(songRequests.botChannelId, botChannel.id),
+      orderBy: asc(songRequests.position),
     });
   }),
 
   current: protectedProcedure.query(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    return prisma.songRequest.findFirst({
-      where: { botChannelId: botChannel.id, position: 1 },
+    return db.query.songRequests.findFirst({
+      where: and(eq(songRequests.botChannelId, botChannel.id), eq(songRequests.position, 1)),
     });
   }),
 
   skip: moderatorProcedure.mutation(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    const entry = await prisma.songRequest.findFirst({
-      where: { botChannelId: botChannel.id, position: 1 },
+    const entry = await db.query.songRequests.findFirst({
+      where: and(eq(songRequests.botChannelId, botChannel.id), eq(songRequests.position, 1)),
     });
 
     if (!entry) {
@@ -71,13 +71,12 @@ export const songRequestRouter = router({
       });
     }
 
-    await prisma.$transaction([
-      prisma.songRequest.delete({ where: { id: entry.id } }),
-      prisma.$executeRawUnsafe(
-        `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > 1`,
-        botChannel.id
-      ),
-    ]);
+    await db.transaction(async (tx) => {
+      await tx.delete(songRequests).where(eq(songRequests.id, entry.id));
+      await tx.execute(
+        sql`UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = ${botChannel.id} AND position > 1`
+      );
+    });
 
     const { eventBus } = await import("../events");
     await eventBus.publish("song-request:updated", { channelId: botChannel.id });
@@ -100,8 +99,8 @@ export const songRequestRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const entry = await prisma.songRequest.findUnique({
-        where: { id: input.id },
+      const entry = await db.query.songRequests.findFirst({
+        where: eq(songRequests.id, input.id),
       });
 
       if (!entry || entry.botChannelId !== botChannel.id) {
@@ -111,14 +110,12 @@ export const songRequestRouter = router({
         });
       }
 
-      await prisma.$transaction([
-        prisma.songRequest.delete({ where: { id: input.id } }),
-        prisma.$executeRawUnsafe(
-          `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > $2`,
-          botChannel.id,
-          entry.position
-        ),
-      ]);
+      await db.transaction(async (tx) => {
+        await tx.delete(songRequests).where(eq(songRequests.id, input.id));
+        await tx.execute(
+          sql`UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = ${botChannel.id} AND position > ${entry.position}`
+        );
+      });
 
       const { eventBus } = await import("../events");
       await eventBus.publish("song-request:updated", { channelId: botChannel.id });
@@ -139,9 +136,7 @@ export const songRequestRouter = router({
   clear: moderatorProcedure.mutation(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    await prisma.songRequest.deleteMany({
-      where: { botChannelId: botChannel.id },
-    });
+    await db.delete(songRequests).where(eq(songRequests.botChannelId, botChannel.id));
 
     const { eventBus } = await import("../events");
     await eventBus.publish("song-request:updated", { channelId: botChannel.id });
@@ -161,8 +156,8 @@ export const songRequestRouter = router({
   getSettings: protectedProcedure.query(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    const settings = await prisma.songRequestSettings.findUnique({
-      where: { botChannelId: botChannel.id },
+    const settings = await db.query.songRequestSettings.findFirst({
+      where: eq(songRequestSettings.botChannelId, botChannel.id),
     });
 
     return (
@@ -205,14 +200,13 @@ export const songRequestRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const settings = await prisma.songRequestSettings.upsert({
-        where: { botChannelId: botChannel.id },
-        update: input,
-        create: {
-          botChannelId: botChannel.id,
-          ...input,
-        },
-      });
+      const [settings] = await db.insert(songRequestSettings).values({
+        botChannelId: botChannel.id,
+        ...input,
+      }).onConflictDoUpdate({
+        target: songRequestSettings.botChannelId,
+        set: input,
+      }).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("song-request:settings-updated", {
@@ -225,7 +219,7 @@ export const songRequestRouter = router({
         userImage: ctx.session.user.image,
         action: "song-request.settings-update",
         resourceType: "SongRequestSettings",
-        resourceId: settings.id,
+        resourceId: settings!.id,
         metadata: input,
       });
 

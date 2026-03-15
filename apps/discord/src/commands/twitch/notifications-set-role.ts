@@ -1,7 +1,7 @@
 import { MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, discordGuilds } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 
 export async function handleSetRole(
@@ -22,10 +22,7 @@ export async function handleSetRole(
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
-    await prisma.discordGuild.update({
-      where: { guildId },
-      data: { notificationRoleId: role.id },
-    });
+    await db.update(discordGuilds).set({ notificationRoleId: role.id }).where(eq(discordGuilds.guildId, guildId));
 
     logger.commands.success(
       "twitch notifications set-role",

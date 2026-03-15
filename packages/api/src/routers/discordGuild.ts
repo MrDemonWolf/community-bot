@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, desc, isNull, discordGuilds, twitchChannels, twitchNotifications, discordLogConfigs } from "@community-bot/db";
 import { protectedProcedure, leadModProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -19,8 +19,8 @@ export const discordGuildRouter = router({
   getStatus: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const guild = await prisma.discordGuild.findFirst({
-      where: { userId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
     });
 
     return guild
@@ -41,9 +41,9 @@ export const discordGuildRouter = router({
   }),
 
   listAvailableGuilds: protectedProcedure.query(async () => {
-    const guilds = await prisma.discordGuild.findMany({
-      where: { userId: null },
-      orderBy: { joinedAt: "desc" },
+    const guilds = await db.query.discordGuilds.findMany({
+      where: isNull(discordGuilds.userId),
+      orderBy: desc(discordGuilds.joinedAt),
     });
 
     return guilds.map((g) => ({
@@ -56,8 +56,8 @@ export const discordGuildRouter = router({
   getGuildChannels: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const guild = await prisma.discordGuild.findFirst({
-      where: { userId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
     });
 
     if (!guild) {
@@ -81,8 +81,8 @@ export const discordGuildRouter = router({
   getGuildRoles: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const guild = await prisma.discordGuild.findFirst({
-      where: { userId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
     });
 
     if (!guild) {
@@ -108,8 +108,8 @@ export const discordGuildRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const guild = await prisma.discordGuild.findUnique({
-        where: { guildId: input.guildId },
+      const guild = await db.query.discordGuilds.findFirst({
+        where: eq(discordGuilds.guildId, input.guildId),
       });
 
       if (!guild) {
@@ -127,10 +127,7 @@ export const discordGuildRouter = router({
         });
       }
 
-      const updated = await prisma.discordGuild.update({
-        where: { id: guild.id },
-        data: { userId },
-      });
+      const [updated] = await db.update(discordGuilds).set({ userId }).where(eq(discordGuilds.id, guild.id)).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("discord:settings-updated", {
@@ -143,21 +140,21 @@ export const discordGuildRouter = router({
         userImage: ctx.session.user.image,
         action: "discord.link",
         resourceType: "DiscordGuild",
-        resourceId: updated.id,
+        resourceId: updated!.id,
         metadata: { guildId: input.guildId },
       });
 
       return {
-        id: updated.id,
-        guildId: updated.guildId,
-        name: updated.name,
-        icon: guildIconUrl(updated.guildId, updated.icon),
-        enabled: updated.enabled,
-        notificationChannelId: updated.notificationChannelId,
-        notificationRoleId: updated.notificationRoleId,
-        adminRoleId: updated.adminRoleId,
-        modRoleId: updated.modRoleId,
-        joinedAt: updated.joinedAt.toISOString(),
+        id: updated!.id,
+        guildId: updated!.guildId,
+        name: updated!.name,
+        icon: guildIconUrl(updated!.guildId, updated!.icon),
+        enabled: updated!.enabled,
+        notificationChannelId: updated!.notificationChannelId,
+        notificationRoleId: updated!.notificationRoleId,
+        adminRoleId: updated!.adminRoleId,
+        modRoleId: updated!.modRoleId,
+        joinedAt: updated!.joinedAt.toISOString(),
       };
     }),
 
@@ -166,8 +163,8 @@ export const discordGuildRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const guild = await prisma.discordGuild.findFirst({
-        where: { userId },
+      const guild = await db.query.discordGuilds.findFirst({
+        where: eq(discordGuilds.userId, userId),
       });
 
       if (!guild) {
@@ -179,10 +176,7 @@ export const discordGuildRouter = router({
 
       const before = guild.notificationChannelId;
 
-      await prisma.discordGuild.update({
-        where: { id: guild.id },
-        data: { notificationChannelId: input.channelId },
-      });
+      await db.update(discordGuilds).set({ notificationChannelId: input.channelId }).where(eq(discordGuilds.id, guild.id));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("discord:settings-updated", {
@@ -207,8 +201,8 @@ export const discordGuildRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const guild = await prisma.discordGuild.findFirst({
-        where: { userId },
+      const guild = await db.query.discordGuilds.findFirst({
+        where: eq(discordGuilds.userId, userId),
       });
 
       if (!guild) {
@@ -220,10 +214,7 @@ export const discordGuildRouter = router({
 
       const before = guild.notificationRoleId;
 
-      await prisma.discordGuild.update({
-        where: { id: guild.id },
-        data: { notificationRoleId: input.roleId },
-      });
+      await db.update(discordGuilds).set({ notificationRoleId: input.roleId }).where(eq(discordGuilds.id, guild.id));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("discord:settings-updated", {
@@ -253,8 +244,8 @@ export const discordGuildRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const guild = await prisma.discordGuild.findFirst({
-        where: { userId },
+      const guild = await db.query.discordGuilds.findFirst({
+        where: eq(discordGuilds.userId, userId),
       });
 
       if (!guild) {
@@ -269,13 +260,10 @@ export const discordGuildRouter = router({
         modRoleId: guild.modRoleId,
       };
 
-      await prisma.discordGuild.update({
-        where: { id: guild.id },
-        data: {
-          adminRoleId: input.adminRoleId,
-          modRoleId: input.modRoleId,
-        },
-      });
+      await db.update(discordGuilds).set({
+        adminRoleId: input.adminRoleId,
+        modRoleId: input.modRoleId,
+      }).where(eq(discordGuilds.id, guild.id));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("discord:settings-updated", {
@@ -298,8 +286,8 @@ export const discordGuildRouter = router({
   enable: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const guild = await prisma.discordGuild.findFirst({
-      where: { userId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
     });
 
     if (!guild) {
@@ -309,10 +297,7 @@ export const discordGuildRouter = router({
       });
     }
 
-    await prisma.discordGuild.update({
-      where: { id: guild.id },
-      data: { enabled: true },
-    });
+    await db.update(discordGuilds).set({ enabled: true }).where(eq(discordGuilds.id, guild.id));
 
     const { eventBus } = await import("../events");
     await eventBus.publish("discord:settings-updated", {
@@ -334,8 +319,8 @@ export const discordGuildRouter = router({
   disable: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const guild = await prisma.discordGuild.findFirst({
-      where: { userId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
     });
 
     if (!guild) {
@@ -345,10 +330,7 @@ export const discordGuildRouter = router({
       });
     }
 
-    await prisma.discordGuild.update({
-      where: { id: guild.id },
-      data: { enabled: false },
-    });
+    await db.update(discordGuilds).set({ enabled: false }).where(eq(discordGuilds.id, guild.id));
 
     const { eventBus } = await import("../events");
     await eventBus.publish("discord:settings-updated", {
@@ -370,8 +352,8 @@ export const discordGuildRouter = router({
   listMonitoredChannels: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const guild = await prisma.discordGuild.findFirst({
-      where: { userId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
     });
 
     if (!guild) {
@@ -381,9 +363,9 @@ export const discordGuildRouter = router({
       });
     }
 
-    const channels = await prisma.twitchChannel.findMany({
-      where: { guildId: guild.id },
-      orderBy: { joinedAt: "asc" },
+    const channels = await db.query.twitchChannels.findMany({
+      where: eq(twitchChannels.guildId, guild.id),
+      orderBy: asc(twitchChannels.joinedAt),
     });
 
     return channels.map((ch) => ({
@@ -421,8 +403,8 @@ export const discordGuildRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const guild = await prisma.discordGuild.findFirst({
-        where: { userId },
+      const guild = await db.query.discordGuilds.findFirst({
+        where: eq(discordGuilds.userId, userId),
       });
 
       if (!guild) {
@@ -432,8 +414,8 @@ export const discordGuildRouter = router({
         });
       }
 
-      const channel = await prisma.twitchChannel.findFirst({
-        where: { id: input.channelId, guildId: guild.id },
+      const channel = await db.query.twitchChannels.findFirst({
+        where: and(eq(twitchChannels.id, input.channelId), eq(twitchChannels.guildId, guild.id)),
       });
 
       if (!channel) {
@@ -453,10 +435,7 @@ export const discordGuildRouter = router({
         }
       }
 
-      await prisma.twitchChannel.update({
-        where: { id: channel.id },
-        data,
-      });
+      await db.update(twitchChannels).set(data).where(eq(twitchChannels.id, channel.id));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("discord:settings-updated", {
@@ -481,8 +460,8 @@ export const discordGuildRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const guild = await prisma.discordGuild.findFirst({
-        where: { userId },
+      const guild = await db.query.discordGuilds.findFirst({
+        where: eq(discordGuilds.userId, userId),
       });
 
       if (!guild) {
@@ -509,13 +488,11 @@ export const discordGuildRouter = router({
         });
       }
 
-      const existing = await prisma.twitchChannel.findUnique({
-        where: {
-          twitchChannelId_guildId: {
-            twitchChannelId: twitchUser.id,
-            guildId: guild.id,
-          },
-        },
+      const existing = await db.query.twitchChannels.findFirst({
+        where: and(
+          eq(twitchChannels.twitchChannelId, twitchUser.id),
+          eq(twitchChannels.guildId, guild.id),
+        ),
       });
 
       if (existing) {
@@ -525,15 +502,13 @@ export const discordGuildRouter = router({
         });
       }
 
-      const channel = await prisma.twitchChannel.create({
-        data: {
-          twitchChannelId: twitchUser.id,
-          username: twitchUser.login,
-          displayName: twitchUser.display_name,
-          profileImageUrl: twitchUser.profile_image_url,
-          guildId: guild.id,
-        },
-      });
+      const [channel] = await db.insert(twitchChannels).values({
+        twitchChannelId: twitchUser.id,
+        username: twitchUser.login,
+        displayName: twitchUser.display_name,
+        profileImageUrl: twitchUser.profile_image_url,
+        guildId: guild.id,
+      }).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("discord:settings-updated", {
@@ -546,11 +521,11 @@ export const discordGuildRouter = router({
         userImage: ctx.session.user.image,
         action: "discord.add-channel",
         resourceType: "TwitchChannel",
-        resourceId: channel.id,
+        resourceId: channel!.id,
         metadata: { channelName: twitchUser.display_name },
       });
 
-      return { id: channel.id, displayName: twitchUser.display_name };
+      return { id: channel!.id, displayName: twitchUser.display_name };
     }),
 
   removeMonitoredChannel: leadModProcedure
@@ -558,8 +533,8 @@ export const discordGuildRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const guild = await prisma.discordGuild.findFirst({
-        where: { userId },
+      const guild = await db.query.discordGuilds.findFirst({
+        where: eq(discordGuilds.userId, userId),
       });
 
       if (!guild) {
@@ -569,8 +544,8 @@ export const discordGuildRouter = router({
         });
       }
 
-      const channel = await prisma.twitchChannel.findFirst({
-        where: { id: input.channelId, guildId: guild.id },
+      const channel = await db.query.twitchChannels.findFirst({
+        where: and(eq(twitchChannels.id, input.channelId), eq(twitchChannels.guildId, guild.id)),
       });
 
       if (!channel) {
@@ -580,13 +555,9 @@ export const discordGuildRouter = router({
         });
       }
 
-      await prisma.twitchNotification.deleteMany({
-        where: { twitchChannelId: channel.id },
-      });
+      await db.delete(twitchNotifications).where(eq(twitchNotifications.twitchChannelId, channel.id));
 
-      await prisma.twitchChannel.delete({
-        where: { id: channel.id },
-      });
+      await db.delete(twitchChannels).where(eq(twitchChannels.id, channel.id));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("discord:settings-updated", {
@@ -609,8 +580,8 @@ export const discordGuildRouter = router({
   mute: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const guild = await prisma.discordGuild.findFirst({
-      where: { userId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
     });
 
     if (!guild) {
@@ -620,10 +591,7 @@ export const discordGuildRouter = router({
       });
     }
 
-    await prisma.discordGuild.update({
-      where: { id: guild.id },
-      data: { muted: true },
-    });
+    await db.update(discordGuilds).set({ muted: true }).where(eq(discordGuilds.id, guild.id));
 
     const { eventBus } = await import("../events");
     await eventBus.publish("discord:mute", {
@@ -646,8 +614,8 @@ export const discordGuildRouter = router({
   unmute: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const guild = await prisma.discordGuild.findFirst({
-      where: { userId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
     });
 
     if (!guild) {
@@ -657,10 +625,7 @@ export const discordGuildRouter = router({
       });
     }
 
-    await prisma.discordGuild.update({
-      where: { id: guild.id },
-      data: { muted: false },
-    });
+    await db.update(discordGuilds).set({ muted: false }).where(eq(discordGuilds.id, guild.id));
 
     const { eventBus } = await import("../events");
     await eventBus.publish("discord:mute", {
@@ -683,8 +648,8 @@ export const discordGuildRouter = router({
   getLogConfig: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const guild = await prisma.discordGuild.findFirst({
-      where: { userId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
     });
 
     if (!guild) {
@@ -694,8 +659,8 @@ export const discordGuildRouter = router({
       });
     }
 
-    const config = await prisma.discordLogConfig.findUnique({
-      where: { guildId: guild.guildId },
+    const config = await db.query.discordLogConfigs.findFirst({
+      where: eq(discordLogConfigs.guildId, guild.guildId),
     });
 
     return {
@@ -716,8 +681,8 @@ export const discordGuildRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const guild = await prisma.discordGuild.findFirst({
-        where: { userId },
+      const guild = await db.query.discordGuilds.findFirst({
+        where: eq(discordGuilds.userId, userId),
       });
 
       if (!guild) {
@@ -727,15 +692,14 @@ export const discordGuildRouter = router({
         });
       }
 
-      await prisma.discordLogConfig.upsert({
-        where: { guildId: guild.guildId },
-        create: {
-          guildId: guild.guildId,
-          moderationChannelId: input.moderationChannelId,
-          serverChannelId: input.serverChannelId,
-          voiceChannelId: input.voiceChannelId,
-        },
-        update: {
+      await db.insert(discordLogConfigs).values({
+        guildId: guild.guildId,
+        moderationChannelId: input.moderationChannelId,
+        serverChannelId: input.serverChannelId,
+        voiceChannelId: input.voiceChannelId,
+      }).onConflictDoUpdate({
+        target: discordLogConfigs.guildId,
+        set: {
           moderationChannelId: input.moderationChannelId,
           serverChannelId: input.serverChannelId,
           voiceChannelId: input.voiceChannelId,
@@ -763,8 +727,8 @@ export const discordGuildRouter = router({
   testNotification: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const guild = await prisma.discordGuild.findFirst({
-      where: { userId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
     });
 
     if (!guild) {
