@@ -347,7 +347,7 @@ export default function RegularsPage() {
               <Input
                 value={newDiscordUsername}
                 onChange={(e) => setNewDiscordUsername(e.target.value)}
-                placeholder="e.g. user#1234"
+                placeholder="e.g. username"
               />
             </div>
             <div className="flex justify-end gap-2">
@@ -423,7 +423,7 @@ export default function RegularsPage() {
               <Input
                 value={linkDiscordName}
                 onChange={(e) => setLinkDiscordName(e.target.value)}
-                placeholder="e.g. user#1234"
+                placeholder="e.g. username"
               />
             </div>
             <div className="flex justify-end gap-2">

@@ -126,6 +126,34 @@ export const giveawayRouter = router({
     return { winner: winner!.twitchUsername };
   }),
 
+  delete: moderatorProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const botChannel = await getUserBotChannel(ctx.session.user.id);
+
+      const giveaway = await db.query.giveaways.findFirst({
+        where: eq(giveaways.id, input.id),
+      });
+
+      if (!giveaway || giveaway.botChannelId !== botChannel.id) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Giveaway not found." });
+      }
+
+      await db.delete(giveaways).where(eq(giveaways.id, input.id));
+
+      await logAudit({
+        userId: ctx.session.user.id,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "giveaway.delete",
+        resourceType: "Giveaway",
+        resourceId: input.id,
+        metadata: { title: giveaway.title },
+      });
+
+      return { success: true };
+    }),
+
   end: moderatorProcedure.mutation(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 

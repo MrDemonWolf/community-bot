@@ -270,6 +270,10 @@ export const spamFilters = pgTable("SpamFilter", {
     .array()
     .notNull()
     .default(sql`'{}'::text[]`),
+  linksAllowlist: text("linksAllowlist")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
   exemptLevel: twitchAccessLevelEnum("exemptLevel")
     .notNull()
     .default("SUBSCRIBER"),
