@@ -1,7 +1,8 @@
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { prisma } from "@community-bot/db";
+import { db, eq, and } from "@community-bot/db";
+import { botChannels, twitchChatCommands } from "@community-bot/db";
 import type {
   TwitchResponseType,
   TwitchAccessLevel,
@@ -33,15 +34,17 @@ async function main() {
   console.log(`Importing ${commands.length} commands from ${filePath}...`);
 
   // Get the first bot channel to scope commands to
-  const botChannel = await prisma.botChannel.findFirst();
+  const botChannel = await db.query.botChannels.findFirst();
   const botChannelId = botChannel?.id ?? null;
 
   for (const cmd of commands) {
-    await prisma.twitchChatCommand.upsert({
-      where: { name_botChannelId: { name: cmd.name, botChannelId: botChannelId ?? "" } },
-      update: cmd,
-      create: { ...cmd, botChannelId },
-    });
+    await db
+      .insert(twitchChatCommands)
+      .values({ ...cmd, botChannelId })
+      .onConflictDoUpdate({
+        target: [twitchChatCommands.name, twitchChatCommands.botChannelId],
+        set: cmd,
+      });
     console.log(
       `  ${cmd.enabled ? "+" : "-"} ${cmd.name}${cmd.aliases.length ? ` (aliases: ${cmd.aliases.join(", ")})` : ""}`
     );

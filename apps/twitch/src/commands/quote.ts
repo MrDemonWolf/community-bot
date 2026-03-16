@@ -1,5 +1,6 @@
 import { TwitchCommand } from "../types/command.js";
-import { prisma } from "@community-bot/db";
+import { db, eq, and, count, desc } from "@community-bot/db";
+import { botChannels, quotes } from "@community-bot/db";
 import { getGame } from "../services/streamStatusManager.js";
 
 function stripHash(channel: string): string {
@@ -8,17 +9,17 @@ function stripHash(channel: string): string {
 
 async function getBotChannelId(channel: string): Promise<string | null> {
   const username = stripHash(channel).toLowerCase();
-  const botChannel = await prisma.botChannel.findFirst({
-    where: { twitchUsername: username },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.twitchUsername, username),
   });
   return botChannel?.id ?? null;
 }
 
 async function getNextQuoteNumber(botChannelId: string): Promise<number> {
-  const last = await prisma.quote.findFirst({
-    where: { botChannelId },
-    orderBy: { quoteNumber: "desc" },
-    select: { quoteNumber: true },
+  const last = await db.query.quotes.findFirst({
+    where: eq(quotes.botChannelId, botChannelId),
+    orderBy: desc(quotes.quoteNumber),
+    columns: { quoteNumber: true },
   });
   return (last?.quoteNumber ?? 0) + 1;
 }
@@ -51,15 +52,13 @@ export const quote: TwitchCommand = {
       const quoteNumber = await getNextQuoteNumber(botChannelId);
       const currentGame = getGame(channel) || null;
 
-      await prisma.quote.create({
-        data: {
-          quoteNumber,
-          text,
-          game: currentGame,
-          addedBy: user,
-          source: "twitch",
-          botChannelId,
-        },
+      await db.insert(quotes).values({
+        quoteNumber,
+        text,
+        game: currentGame,
+        addedBy: user,
+        source: "twitch",
+        botChannelId,
       });
 
       await client.say(channel, `@${user}, quote #${quoteNumber} added.`);
@@ -78,13 +77,19 @@ export const quote: TwitchCommand = {
         return;
       }
 
-      try {
-        await prisma.quote.delete({
-          where: { quoteNumber_botChannelId: { quoteNumber: num, botChannelId } },
-        });
-        await client.say(channel, `@${user}, quote #${num} removed.`);
-      } catch {
+      const deleted = await db
+        .delete(quotes)
+        .where(
+          and(
+            eq(quotes.quoteNumber, num),
+            eq(quotes.botChannelId, botChannelId)
+          )
+        )
+        .returning();
+      if (deleted.length === 0) {
         await client.say(channel, `@${user}, quote #${num} not found.`);
+      } else {
+        await client.say(channel, `@${user}, quote #${num} removed.`);
       }
       return;
     }
@@ -92,8 +97,11 @@ export const quote: TwitchCommand = {
     // !quote <number> — show specific quote
     const num = parseInt(sub, 10);
     if (!isNaN(num)) {
-      const q = await prisma.quote.findUnique({
-        where: { quoteNumber_botChannelId: { quoteNumber: num, botChannelId } },
+      const q = await db.query.quotes.findFirst({
+        where: and(
+          eq(quotes.quoteNumber, num),
+          eq(quotes.botChannelId, botChannelId)
+        ),
       });
       if (!q) {
         await client.say(channel, `@${user}, quote #${num} not found.`);
@@ -105,17 +113,20 @@ export const quote: TwitchCommand = {
     }
 
     // !quote — random quote
-    const count = await prisma.quote.count({ where: { botChannelId } });
-    if (count === 0) {
+    const [{ value: quoteCount }] = await db
+      .select({ value: count() })
+      .from(quotes)
+      .where(eq(quotes.botChannelId, botChannelId));
+    if (quoteCount === 0) {
       await client.say(channel, `@${user}, no quotes yet. Add one with !quote add <text>`);
       return;
     }
 
-    const skip = Math.floor(Math.random() * count);
-    const [randomQuote] = await prisma.quote.findMany({
-      where: { botChannelId },
-      skip,
-      take: 1,
+    const skip = Math.floor(Math.random() * quoteCount);
+    const [randomQuote] = await db.query.quotes.findMany({
+      where: eq(quotes.botChannelId, botChannelId),
+      offset: skip,
+      limit: 1,
     });
 
     if (randomQuote) {

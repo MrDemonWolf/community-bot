@@ -3,7 +3,7 @@
 # Run database migrations (non-fatal: app starts even if migrations fail)
 echo "Running database migrations..."
 cd /usr/src/app/packages/db
-if npx prisma migrate deploy; then
+if bunx drizzle-kit migrate; then
   echo "Database migrations completed successfully."
 else
   echo "WARNING: Database migrations failed. The app will still start."

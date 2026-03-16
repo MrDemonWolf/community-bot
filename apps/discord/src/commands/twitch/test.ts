@@ -1,7 +1,7 @@
 import { MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction, TextChannel } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, discordGuilds, twitchChannels } from "@community-bot/db";
 import { buildLiveEmbed, buildOfflineEmbed } from "../../twitch/embeds.js";
 import env from "../../utils/env.js";
 import logger from "../../utils/logger.js";
@@ -44,8 +44,8 @@ export async function handleTest(
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
-    const guild = await prisma.discordGuild.findUnique({
-      where: { guildId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.guildId, guildId),
     });
 
     if (!guild) {
@@ -63,8 +63,8 @@ export async function handleTest(
       return;
     }
 
-    const channel = await prisma.twitchChannel.findFirst({
-      where: { username, guildId: guild.id },
+    const channel = await db.query.twitchChannels.findFirst({
+      where: and(eq(twitchChannels.username, username), eq(twitchChannels.guildId, guild.id)),
     });
 
     if (!channel) {

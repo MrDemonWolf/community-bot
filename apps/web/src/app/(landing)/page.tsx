@@ -4,7 +4,7 @@ import { Terminal, BookOpen, MessageSquare, Bell, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AuthCtaButton from "@/components/auth-cta-button";
 import { getBroadcasterUserId } from "@/lib/setup";
-import { prisma } from "@community-bot/db";
+import { db, eq, and, count, botChannels, twitchChatCommands, quotes } from "@community-bot/db";
 
 const channelUrl = process.env.NEXT_PUBLIC_CHANNEL_URL;
 const channelName = process.env.NEXT_PUBLIC_CHANNEL_NAME;
@@ -13,22 +13,26 @@ async function getPublicStats() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;
 
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId: broadcasterId },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.userId, broadcasterId),
+    columns: { id: true },
   });
   if (!botChannel) return { commandCount: 0, quoteCount: 0 };
 
-  const [commandCount, quoteCount] = await Promise.all([
-    prisma.twitchChatCommand.count({
-      where: { botChannelId: botChannel.id, enabled: true, hidden: false },
-    }),
-    prisma.quote.count({
-      where: { botChannelId: botChannel.id },
-    }),
+  const [[cmdCount], [quoteCount]] = await Promise.all([
+    db.select({ value: count() }).from(twitchChatCommands).where(
+      and(
+        eq(twitchChatCommands.botChannelId, botChannel.id),
+        eq(twitchChatCommands.enabled, true),
+        eq(twitchChatCommands.hidden, false),
+      ),
+    ),
+    db.select({ value: count() }).from(quotes).where(
+      eq(quotes.botChannelId, botChannel.id),
+    ),
   ]);
 
-  return { commandCount, quoteCount };
+  return { commandCount: cmdCount.value, quoteCount: quoteCount.value };
 }
 
 const features = [

@@ -7,16 +7,15 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
+  return { db: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
@@ -27,10 +26,10 @@ import { t } from "../index";
 import { userRouter } from "./user";
 
 const createCaller = t.createCallerFactory(userRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 function authedCaller(role = "MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
@@ -40,8 +39,8 @@ describe("userRouter", () => {
   describe("getProfile", () => {
     it("returns profile with connected accounts", async () => {
       const caller = createCaller(mockSession());
-      p.user.findUnique.mockResolvedValue({ ...mockUser(), accounts: [{ providerId: "twitch", accountId: "t-1" }] });
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1" });
+      p.query.users.findFirst.mockResolvedValue({ ...mockUser(), accounts: [{ providerId: "twitch", accountId: "t-1" }] });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
       const result = await caller.getProfile();
       expect(result.name).toBe("TestUser");
       expect(result.isChannelOwner).toBe(true);
@@ -50,7 +49,7 @@ describe("userRouter", () => {
 
     it("throws NOT_FOUND when user doesn't exist", async () => {
       const caller = createCaller(mockSession());
-      p.user.findUnique.mockResolvedValue(null);
+      p.query.users.findFirst.mockResolvedValue(null);
       await expect(caller.getProfile()).rejects.toThrow("User not found");
     });
 
@@ -63,10 +62,9 @@ describe("userRouter", () => {
   describe("exportData", () => {
     it("returns full user data export", async () => {
       const caller = createCaller(mockSession());
-      p.user.findUnique.mockResolvedValue({
+      p.query.users.findFirst.mockResolvedValue({
         ...mockUser(), accounts: [{ providerId: "twitch", accountId: "t-1", scope: "read" }],
-        botChannel: { twitchUsername: "test", twitchUserId: "t-1", enabled: true, muted: false, disabledCommands: [], commandOverrides: [], customCommands: [] },
-      });
+        botChannel: { twitchUsername: "test", twitchUserId: "t-1", enabled: true, muted: false, disabledCommands: [], commandOverrides: [], customCommands: [] } });
       const result = await caller.exportData();
       expect(result.profile.name).toBe("TestUser");
       expect(result.botChannel).not.toBeNull();
@@ -74,7 +72,7 @@ describe("userRouter", () => {
 
     it("returns null botChannel when none exists", async () => {
       const caller = createCaller(mockSession());
-      p.user.findUnique.mockResolvedValue({ ...mockUser(), accounts: [], botChannel: null });
+      p.query.users.findFirst.mockResolvedValue({ ...mockUser(), accounts: [], botChannel: null });
       const result = await caller.exportData();
       expect(result.botChannel).toBeNull();
     });
@@ -83,15 +81,14 @@ describe("userRouter", () => {
   describe("importStreamElements", () => {
     it("imports commands and publishes events", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.twitchChatCommand.findUnique.mockResolvedValue(null);
-      p.twitchChatCommand.create.mockResolvedValue({ id: "cmd-1" });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.twitchChatCommands.findFirst.mockResolvedValue(null);
+      p.query.twitchChatCommands.create.mockResolvedValue({ id: "cmd-1" });
       const result = await caller.importStreamElements({
         commands: [
           { command: "!hello", response: "Hello!" },
           { command: "!bye", response: "Goodbye!", accessLevel: 500 },
-        ],
-      });
+        ] });
       expect(result.imported).toBe(2);
       expect(result.skipped).toBe(0);
       expect(mocks.eventBus.publish).toHaveBeenCalledTimes(2);
@@ -100,8 +97,8 @@ describe("userRouter", () => {
 
     it("skips existing commands", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.twitchChatCommand.findUnique.mockResolvedValue({ id: "existing" });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.twitchChatCommands.findFirst.mockResolvedValue({ id: "existing" });
       const result = await caller.importStreamElements({ commands: [{ command: "!hello", response: "Hi!" }] });
       expect(result.imported).toBe(0);
       expect(result.skipped).toBe(1);
@@ -109,23 +106,23 @@ describe("userRouter", () => {
 
     it("skips invalid names", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
       const result = await caller.importStreamElements({ commands: [{ command: "!hello world", response: "Hi!" }] });
       expect(result.skipped).toBe(1);
     });
 
     it("maps SE access levels correctly", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.twitchChatCommand.findUnique.mockResolvedValue(null);
-      p.twitchChatCommand.create.mockResolvedValue({ id: "cmd-1" });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.twitchChatCommands.findFirst.mockResolvedValue(null);
+      p.query.twitchChatCommands.create.mockResolvedValue({ id: "cmd-1" });
       await caller.importStreamElements({ commands: [{ command: "!mod", response: "mod cmd", accessLevel: 500 }] });
-      expect(p.twitchChatCommand.create).toHaveBeenCalledWith({ data: expect.objectContaining({ accessLevel: "MODERATOR" }) });
+      expect(p.query.twitchChatCommands.create).toHaveBeenCalledWith({ data: expect.objectContaining({ accessLevel: "MODERATOR" }) });
     });
 
     it("throws PRECONDITION_FAILED when bot not enabled", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(null);
       await expect(caller.importStreamElements({ commands: [{ command: "!test", response: "test" }] })).rejects.toThrow("Bot is not enabled");
     });
   });

@@ -6,22 +6,20 @@ const mocks = vi.hoisted(() => {
   const handler: ProxyHandler<Record<string, any>> = {
     get(target, prop: string) {
       if (!target[prop]) {
-        if (prop === "$transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
+        if (prop === "transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
         else target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler), mockFetch: vi.fn() };
+  return { db: new Proxy(mp, handler), mockFetch: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
 vi.mock("@community-bot/env/server", () => ({
-  env: { REDIS_URL: "redis://localhost", TWITCH_APPLICATION_CLIENT_ID: "test-client-id" },
-}));
+  env: { REDIS_URL: "redis://localhost", TWITCH_APPLICATION_CLIENT_ID: "test-client-id" } }));
 vi.mock("next/server", () => ({}));
 
 // Mock global fetch
@@ -31,7 +29,7 @@ import { t } from "../index";
 import { setupRouter } from "./setup";
 
 const createCaller = t.createCallerFactory(setupRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 describe("setupRouter", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -39,19 +37,19 @@ describe("setupRouter", () => {
   describe("status", () => {
     it("returns setupComplete: true when done", async () => {
       const caller = createCaller({ session: null });
-      p.systemConfig.findUnique.mockResolvedValue({ key: "setupComplete", value: "true" });
+      p.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupComplete", value: "true" });
       expect((await caller.status()).setupComplete).toBe(true);
     });
 
     it("returns setupComplete: false when not configured", async () => {
       const caller = createCaller({ session: null });
-      p.systemConfig.findUnique.mockResolvedValue(null);
+      p.query.systemConfigs.findFirst.mockResolvedValue(null);
       expect((await caller.status()).setupComplete).toBe(false);
     });
 
     it("works without authentication (public)", async () => {
       const caller = createCaller({ session: null });
-      p.systemConfig.findUnique.mockResolvedValue(null);
+      p.query.systemConfigs.findFirst.mockResolvedValue(null);
       await caller.status(); // should not throw
     });
   });
@@ -59,13 +57,13 @@ describe("setupRouter", () => {
   describe("getStep", () => {
     it("returns current setup step", async () => {
       const caller = createCaller(mockSession());
-      p.systemConfig.findUnique.mockResolvedValue({ key: "setupStep", value: "link-twitch" });
+      p.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupStep", value: "link-twitch" });
       expect((await caller.getStep()).step).toBe("link-twitch");
     });
 
     it("returns null step when none saved", async () => {
       const caller = createCaller(mockSession());
-      p.systemConfig.findUnique.mockResolvedValue(null);
+      p.query.systemConfigs.findFirst.mockResolvedValue(null);
       expect((await caller.getStep()).step).toBeNull();
     });
 
@@ -78,35 +76,34 @@ describe("setupRouter", () => {
   describe("saveStep", () => {
     it("upserts the setup step", async () => {
       const caller = createCaller(mockSession());
-      p.systemConfig.upsert.mockResolvedValue({});
+      p.query.systemConfigs.upsert.mockResolvedValue({});
       const result = await caller.saveStep({ step: "enable-bot" });
       expect(result.success).toBe(true);
-      expect(p.systemConfig.upsert).toHaveBeenCalledWith({
+      expect(p.query.systemConfigs.upsert).toHaveBeenCalledWith({
         where: { key: "setupStep" },
         create: { key: "setupStep", value: "enable-bot" },
-        update: { value: "enable-bot" },
-      });
+        update: { value: "enable-bot" } });
     });
   });
 
   describe("complete", () => {
     it("completes setup with valid token", async () => {
       const caller = createCaller(mockSession());
-      p.systemConfig.findUnique.mockResolvedValue({ key: "setupToken", value: "valid-token" });
+      p.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupToken", value: "valid-token" });
       const result = await caller.complete({ token: "valid-token" });
       expect(result.success).toBe(true);
-      expect(p.$transaction).toHaveBeenCalled();
+      expect(p.transaction).toHaveBeenCalled();
     });
 
     it("throws FORBIDDEN with invalid token", async () => {
       const caller = createCaller(mockSession());
-      p.systemConfig.findUnique.mockResolvedValue({ key: "setupToken", value: "valid-token" });
+      p.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupToken", value: "valid-token" });
       await expect(caller.complete({ token: "wrong" })).rejects.toThrow("Invalid setup token");
     });
 
     it("throws FORBIDDEN when no token exists", async () => {
       const caller = createCaller(mockSession());
-      p.systemConfig.findUnique.mockResolvedValue(null);
+      p.query.systemConfigs.findFirst.mockResolvedValue(null);
       await expect(caller.complete({ token: "any" })).rejects.toThrow("Invalid setup token");
     });
   });
@@ -116,8 +113,7 @@ describe("setupRouter", () => {
       const caller = createCaller(mockSession());
       mocks.mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ device_code: "dc", user_code: "ABC-123", verification_uri: "https://twitch.tv/activate", interval: 5, expires_in: 1800 }),
-      });
+        json: async () => ({ device_code: "dc", user_code: "ABC-123", verification_uri: "https://twitch.tv/activate", interval: 5, expires_in: 1800 }) });
       const result = await caller.startBotAuth();
       expect(result.userCode).toBe("ABC-123");
       expect(result.deviceCode).toBe("dc");
@@ -144,11 +140,11 @@ describe("setupRouter", () => {
       mocks.mockFetch
         .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: "at", refresh_token: "rt", expires_in: 3600, scope: ["chat:read"] }) })
         .mockResolvedValueOnce({ ok: true, json: async () => ({ user_id: "bot-id", login: "botacct" }) });
-      p.twitchCredential.upsert.mockResolvedValue({});
+      p.query.twitchCredentials.upsert.mockResolvedValue({});
       const result = await caller.pollBotAuth({ deviceCode: "dc" });
       expect(result.success).toBe(true);
       if (result.success) expect(result.username).toBe("botacct");
-      expect(p.twitchCredential.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: "bot-id" } }));
+      expect(p.query.twitchCredentials.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: "bot-id" } }));
     });
 
     it("throws on non-pending errors", async () => {

@@ -4,7 +4,7 @@ import {
 } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, or, asc, count as countFn, discordCases, discordReports } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 
 export const dataCommand = new SlashCommandBuilder()
@@ -70,23 +70,19 @@ async function handleExport(
   const userId = interaction.user.id;
 
   // Gather all data related to this user in this guild
-  const [cases, reports, warnings] = await Promise.all([
-    prisma.discordCase.findMany({
-      where: { guildId, targetId: userId },
-      orderBy: { caseNumber: "asc" },
-      include: { notes: true },
+  const [cases, reports, warningsResult] = await Promise.all([
+    db.query.discordCases.findMany({
+      where: and(eq(discordCases.guildId, guildId), eq(discordCases.targetId, userId)),
+      orderBy: asc(discordCases.caseNumber),
+      with: { notes: true },
     }),
-    prisma.discordReport.findMany({
-      where: {
-        guildId,
-        OR: [{ reporterId: userId }, { targetId: userId }],
-      },
-      orderBy: { createdAt: "asc" },
+    db.query.discordReports.findMany({
+      where: and(eq(discordReports.guildId, guildId), or(eq(discordReports.reporterId, userId), eq(discordReports.targetId, userId))),
+      orderBy: asc(discordReports.createdAt),
     }),
-    prisma.discordCase.count({
-      where: { guildId, targetId: userId, type: "WARN", resolved: false },
-    }),
+    db.select({ value: countFn() }).from(discordCases).where(and(eq(discordCases.guildId, guildId), eq(discordCases.targetId, userId), eq(discordCases.type, "WARN"), eq(discordCases.resolved, false))),
   ]);
+  const warnings = Number(warningsResult[0]?.value ?? 0);
 
   const data = {
     userId,
@@ -141,9 +137,7 @@ async function handleDeleteData(
   const userId = interaction.user.id;
 
   // Delete user-submitted reports (where they are the reporter)
-  const deletedReports = await prisma.discordReport.deleteMany({
-    where: { guildId, reporterId: userId },
-  });
+  const deletedReports = await db.delete(discordReports).where(and(eq(discordReports.guildId, guildId), eq(discordReports.reporterId, userId))).returning();
 
   // Note: We do NOT delete moderation cases as they are moderation records.
   // We also don't delete reports where the user is the target (mod records).
@@ -151,7 +145,7 @@ async function handleDeleteData(
   await interaction.editReply({
     content: [
       "Data deletion processed:",
-      `- ${deletedReports.count} report(s) you submitted have been deleted.`,
+      `- ${deletedReports.length} report(s) you submitted have been deleted.`,
       "",
       "**Note:** Moderation cases (bans, warns, etc.) are retained as server moderation records and are not subject to self-service deletion. Contact a server administrator for questions.",
     ].join("\n"),

@@ -11,14 +11,14 @@
   "type": "module",
   "scripts": {},
   "devDependencies": {
-    "typescript": "catalog:",
+    "typescript": "^5",
     "@community-bot/config": "workspace:*"
   },
   "dependencies": {
-    "dotenv": "catalog:",
-    "zod": "catalog:",
+    "dotenv": "^17.2.2",
+    "zod": "^4.1.13",
     "@community-bot/env": "workspace:*",
     "@community-bot/db": "workspace:*",
-    "better-auth": "catalog:"
+    "better-auth": "^1.4.18"
   }
 }

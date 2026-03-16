@@ -1,4 +1,5 @@
-import { prisma } from "@community-bot/db";
+import { db, eq } from "@community-bot/db";
+import { botChannels } from "@community-bot/db";
 import { TwitchCommand } from "../types/command.js";
 import { helixFetch } from "../services/helixClient.js";
 import { generateShoutout, isAiShoutoutGloballyEnabled } from "../services/aiShoutout.js";
@@ -37,9 +38,9 @@ async function isAiEnabledForChannel(channel: string): Promise<boolean> {
 
   const channelKey = channel.replace(/^#/, "").toLowerCase();
   try {
-    const botChannel = await prisma.botChannel.findFirst({
-      where: { twitchUsername: channelKey },
-      select: { aiShoutoutEnabled: true },
+    const botChannel = await db.query.botChannels.findFirst({
+      where: eq(botChannels.twitchUsername, channelKey),
+      columns: { aiShoutoutEnabled: true },
     });
     return botChannel?.aiShoutoutEnabled ?? false;
   } catch {

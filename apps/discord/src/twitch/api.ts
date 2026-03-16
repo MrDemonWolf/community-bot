@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, desc, twitchCredentials } from "@community-bot/db";
 import env from "../utils/env.js";
 import logger from "../utils/logger.js";
 
@@ -29,8 +29,8 @@ interface HelixResponse<T> {
 }
 
 async function getAccessToken(): Promise<string> {
-  const credential = await prisma.twitchCredential.findFirst({
-    orderBy: { updatedAt: "desc" },
+  const credential = await db.query.twitchCredentials.findFirst({
+    orderBy: desc(twitchCredentials.updatedAt),
   });
 
   if (!credential) {

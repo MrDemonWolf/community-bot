@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, isNotNull, accounts } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 
 /**
@@ -14,16 +14,10 @@ import logger from "../../utils/logger.js";
 export default async function syncTwitchLinks(): Promise<void> {
   try {
     // Find all users with a Discord account that has an access token
-    const discordAccounts = await prisma.account.findMany({
-      where: {
-        providerId: "discord",
-        accessToken: { not: null },
-      },
-      select: {
-        userId: true,
-        accessToken: true,
-      },
-    });
+    const discordAccounts = await db.select({
+        userId: accounts.userId,
+        accessToken: accounts.accessToken,
+      }).from(accounts).where(and(eq(accounts.providerId, "discord"), isNotNull(accounts.accessToken)));
 
     if (discordAccounts.length === 0) {
       logger.info("SyncTwitchLinks", "No Discord accounts to check");
@@ -37,8 +31,8 @@ export default async function syncTwitchLinks(): Promise<void> {
     for (const discordAccount of discordAccounts) {
       try {
         // Skip if user already has a Twitch account
-        const existingTwitch = await prisma.account.findFirst({
-          where: { userId: discordAccount.userId, providerId: "twitch" },
+        const existingTwitch = await db.query.accounts.findFirst({
+          where: and(eq(accounts.userId, discordAccount.userId), eq(accounts.providerId, "twitch")),
         });
 
         if (existingTwitch) {
@@ -80,16 +74,14 @@ export default async function syncTwitchLinks(): Promise<void> {
 
         // Create Twitch account link
         const id = crypto.randomUUID();
-        await prisma.account.create({
-          data: {
+        await db.insert(accounts).values({
             id,
             userId: discordAccount.userId,
             providerId: "twitch",
             accountId: twitchConnection.id,
             createdAt: new Date(),
             updatedAt: new Date(),
-          },
-        });
+          });
 
         linked++;
       } catch {

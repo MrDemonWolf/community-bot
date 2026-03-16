@@ -8,12 +8,11 @@ import {
 vi.mock("../utils/audit", () => ({ logAudit: vi.fn() }));
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma };
 });
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
 vi.mock("@community-bot/env/server", () => ({
-  env: { REDIS_URL: "redis://localhost" },
-}));
+  env: { REDIS_URL: "redis://localhost" } }));
 vi.mock("next/server", () => ({}));
 
 import { t } from "../index";
@@ -35,18 +34,16 @@ describe("userManagementRouter (integration)", () => {
     await cleanDatabase(testPrisma);
     broadcaster = await seedUser(testPrisma, {
       id: "broadcaster-1",
-      role: "BROADCASTER",
-    });
+      role: "BROADCASTER" });
     target = await seedUser(testPrisma, {
       id: "target-1",
       name: "TargetUser",
-      role: "USER",
-    });
+      role: "USER" });
   });
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   function authedCaller() {
@@ -59,8 +56,7 @@ describe("userManagementRouter (integration)", () => {
       await caller.updateRole({ userId: target.id, role: "MODERATOR" });
 
       const dbUser = await testPrisma.user.findUnique({
-        where: { id: target.id },
-      });
+        where: { id: target.id } });
       expect(dbUser!.role).toBe("MODERATOR");
     });
 
@@ -74,8 +70,7 @@ describe("userManagementRouter (integration)", () => {
     it("rejects changing broadcaster role", async () => {
       const otherBroadcaster = await seedUser(testPrisma, {
         id: "other-bc",
-        role: "BROADCASTER",
-      });
+        role: "BROADCASTER" });
       const caller = authedCaller();
       await expect(
         caller.updateRole({ userId: otherBroadcaster.id, role: "USER" })
@@ -89,8 +84,7 @@ describe("userManagementRouter (integration)", () => {
       await caller.ban({ userId: target.id, reason: "Breaking rules" });
 
       const dbUser = await testPrisma.user.findUnique({
-        where: { id: target.id },
-      });
+        where: { id: target.id } });
       expect(dbUser!.banned).toBe(true);
       expect(dbUser!.banReason).toBe("Breaking rules");
       expect(dbUser!.bannedAt).not.toBeNull();
@@ -109,15 +103,13 @@ describe("userManagementRouter (integration)", () => {
       // Ban first
       await testPrisma.user.update({
         where: { id: target.id },
-        data: { banned: true, bannedAt: new Date(), banReason: "Test" },
-      });
+        data: { banned: true, bannedAt: new Date(), banReason: "Test" } });
 
       const caller = authedCaller();
       await caller.unban({ userId: target.id });
 
       const dbUser = await testPrisma.user.findUnique({
-        where: { id: target.id },
-      });
+        where: { id: target.id } });
       expect(dbUser!.banned).toBe(false);
       expect(dbUser!.bannedAt).toBeNull();
       expect(dbUser!.banReason).toBeNull();

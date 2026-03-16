@@ -6,14 +6,13 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
   return {
-    prisma: new Proxy(mp, handler),
+    db: new Proxy(mp, handler),
     helixFetch: vi.fn(),
     helixPost: vi.fn(),
     helixPatch: vi.fn(),
@@ -22,20 +21,16 @@ const mocks = vi.hoisted(() => {
 });
 
 vi.mock("@community-bot/db", () => ({
-  prisma: mocks.prisma,
-  TwitchAccessLevel: { BROADCASTER: "BROADCASTER", MODERATOR: "MODERATOR", VIP: "VIP", REGULAR: "REGULAR", SUBSCRIBER: "SUBSCRIBER", EVERYONE: "EVERYONE" },
-}));
+  db: mocks.db,
+  TwitchAccessLevel: { BROADCASTER: "BROADCASTER", MODERATOR: "MODERATOR", VIP: "VIP", REGULAR: "REGULAR", SUBSCRIBER: "SUBSCRIBER", EVERYONE: "EVERYONE" } }));
 vi.mock("../utils/logger.js", () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
-}));
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("../services/helixClient.js", () => ({
   helixFetch: mocks.helixFetch,
   helixPost: mocks.helixPost,
-  helixPatch: mocks.helixPatch,
-}));
+  helixPatch: mocks.helixPatch }));
 vi.mock("../services/broadcasterCache.js", () => ({
-  getBroadcasterId: mocks.getBroadcasterId,
-}));
+  getBroadcasterId: mocks.getBroadcasterId }));
 
 import { poll } from "./poll.js";
 
@@ -83,8 +78,7 @@ describe("poll command", () => {
         broadcaster_id: "broadcaster-456",
         title: "Best game?",
         choices: [{ title: "Minecraft" }, { title: "Fortnite" }],
-        duration: 120,
-      });
+        duration: 120 });
       expect(say).toHaveBeenCalledWith("#channel", "Poll started: Best game?");
     });
 
@@ -125,8 +119,7 @@ describe("poll command", () => {
   describe("end", () => {
     it("ends an active poll", async () => {
       mocks.helixFetch.mockResolvedValue({
-        data: [{ id: "poll-1", status: "ACTIVE" }],
-      });
+        data: [{ id: "poll-1", status: "ACTIVE" }] });
       mocks.helixPatch.mockResolvedValue({ data: [{ id: "poll-1" }] });
 
       await poll.execute(client, "#channel", "moduser", ["end"], makeMockMsg());
@@ -134,15 +127,13 @@ describe("poll command", () => {
       expect(mocks.helixPatch).toHaveBeenCalledWith("polls", {
         broadcaster_id: "broadcaster-456",
         id: "poll-1",
-        status: "TERMINATED",
-      });
+        status: "TERMINATED" });
       expect(say).toHaveBeenCalledWith("#channel", "Poll ended.");
     });
 
     it("shows message when no active poll found", async () => {
       mocks.helixFetch.mockResolvedValue({
-        data: [{ id: "poll-1", status: "COMPLETED" }],
-      });
+        data: [{ id: "poll-1", status: "COMPLETED" }] });
 
       await poll.execute(client, "#channel", "moduser", ["end"], makeMockMsg());
 
@@ -167,8 +158,7 @@ describe("poll command", () => {
               { title: "Fortnite", votes: 5 },
             ],
           },
-        ],
-      });
+        ] });
 
       await poll.execute(client, "#channel", "moduser", ["results"], makeMockMsg());
 

@@ -7,16 +7,15 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
+  return { db: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
@@ -27,10 +26,10 @@ import { t } from "../index";
 import { counterRouter } from "./counter";
 
 const createCaller = t.createCallerFactory(counterRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 function authedCaller(role = "MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
@@ -40,8 +39,8 @@ describe("counterRouter", () => {
   describe("list", () => {
     it("returns counters for the user's bot channel", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.twitchCounter.findMany.mockResolvedValue([
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.twitchCounters.findMany.mockResolvedValue([
         { id: "c1", name: "deaths", value: 10 },
         { id: "c2", name: "wins", value: 5 },
       ]);
@@ -53,16 +52,15 @@ describe("counterRouter", () => {
   describe("create", () => {
     it("creates a counter and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.twitchCounter.findUnique.mockResolvedValue(null);
-      p.twitchCounter.create.mockResolvedValue({ id: "c1", name: "deaths", value: 0 });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.twitchCounters.findFirst.mockResolvedValue(null);
+      p.query.twitchCounters.create.mockResolvedValue({ id: "c1", name: "deaths", value: 0 });
 
       const result = await caller.create({ name: "deaths" });
       expect(result.name).toBe("deaths");
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("counter:updated", {
         counterName: "deaths",
-        channelId: "bc-1",
-      });
+        channelId: "bc-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "counter.create" })
       );
@@ -70,8 +68,8 @@ describe("counterRouter", () => {
 
     it("throws CONFLICT for duplicate name", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.twitchCounter.findUnique.mockResolvedValue({ id: "c1", name: "deaths" });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.twitchCounters.findFirst.mockResolvedValue({ id: "c1", name: "deaths" });
       await expect(caller.create({ name: "deaths" })).rejects.toThrow("already exists");
     });
 
@@ -91,22 +89,21 @@ describe("counterRouter", () => {
 
     it("updates counter value", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.twitchCounter.findUnique.mockResolvedValue({ id: UUID, name: "deaths", botChannelId: "bc-1" });
-      p.twitchCounter.update.mockResolvedValue({ id: UUID, name: "deaths", value: 25 });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.twitchCounters.findFirst.mockResolvedValue({ id: UUID, name: "deaths", botChannelId: "bc-1" });
+      p.query.twitchCounters.update.mockResolvedValue({ id: UUID, name: "deaths", value: 25 });
 
       const result = await caller.update({ id: UUID, value: 25 });
       expect(result.value).toBe(25);
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("counter:updated", {
         counterName: "deaths",
-        channelId: "bc-1",
-      });
+        channelId: "bc-1" });
     });
 
     it("throws NOT_FOUND for missing counter", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.twitchCounter.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.twitchCounters.findFirst.mockResolvedValue(null);
       await expect(caller.update({ id: UUID, value: 10 })).rejects.toThrow("Counter not found");
     });
   });
@@ -116,9 +113,9 @@ describe("counterRouter", () => {
 
     it("deletes a counter and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.twitchCounter.findUnique.mockResolvedValue({ id: UUID, name: "deaths", botChannelId: "bc-1" });
-      p.twitchCounter.delete.mockResolvedValue({});
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.twitchCounters.findFirst.mockResolvedValue({ id: UUID, name: "deaths", botChannelId: "bc-1" });
+      p.query.twitchCounters.delete.mockResolvedValue({});
 
       const result = await caller.delete({ id: UUID });
       expect(result.success).toBe(true);
@@ -129,8 +126,8 @@ describe("counterRouter", () => {
 
     it("throws NOT_FOUND for counter from different channel", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.twitchCounter.findUnique.mockResolvedValue({ id: UUID, name: "deaths", botChannelId: "bc-other" });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.twitchCounters.findFirst.mockResolvedValue({ id: UUID, name: "deaths", botChannelId: "bc-other" });
       await expect(caller.delete({ id: UUID })).rejects.toThrow("Counter not found");
     });
   });

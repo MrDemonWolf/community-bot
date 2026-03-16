@@ -5,7 +5,8 @@
  * Viewers can request songs, and moderators can skip, remove, or clear.
  * Supports YouTube metadata and auto-play from playlists.
  */
-import { prisma } from "@community-bot/db";
+import { db, eq, and, count, desc, asc, sql, inArray } from "@community-bot/db";
+import { botChannels, songRequests, songRequestSettings, playlistEntries, playlists } from "@community-bot/db";
 import { TwitchAccessLevel } from "@community-bot/db";
 import type { ChatMessage } from "@twurple/chat";
 import { getUserAccessLevel, meetsAccessLevel } from "./accessControl.js";
@@ -44,24 +45,24 @@ function publishEvent(channelId: string): void {
 
 async function getBotChannelId(channel: string): Promise<string | null> {
   const username = normalize(channel);
-  const botChannel = await prisma.botChannel.findFirst({
-    where: { twitchUsername: username },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.twitchUsername, username),
+    columns: { id: true },
   });
   return botChannel?.id ?? null;
 }
 
 export async function loadSettings(channel: string): Promise<void> {
   const channelKey = normalize(channel);
-  const botChannel = await prisma.botChannel.findFirst({
-    where: { twitchUsername: channelKey },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.twitchUsername, channelKey),
+    columns: { id: true },
   });
 
   if (!botChannel) return;
 
-  const settings = await prisma.songRequestSettings.findUnique({
-    where: { botChannelId: botChannel.id },
+  const settings = await db.query.songRequestSettings.findFirst({
+    where: eq(songRequestSettings.botChannelId, botChannel.id),
   });
 
   if (settings) {
@@ -141,41 +142,46 @@ export async function addRequest(
   }
 
   // Check queue size limit
-  const queueSize = await prisma.songRequest.count({
-    where: { botChannelId },
-  });
+  const [{ value: queueSize }] = await db
+    .select({ value: count() })
+    .from(songRequests)
+    .where(eq(songRequests.botChannelId, botChannelId));
   if (queueSize >= settings.maxQueueSize) {
     return { ok: false, reason: "The song request queue is full." };
   }
 
   // Check per-user limit
-  const userCount = await prisma.songRequest.count({
-    where: { botChannelId, requestedBy: username.toLowerCase() },
-  });
+  const [{ value: userCount }] = await db
+    .select({ value: count() })
+    .from(songRequests)
+    .where(
+      and(
+        eq(songRequests.botChannelId, botChannelId),
+        eq(songRequests.requestedBy, username.toLowerCase())
+      )
+    );
   if (userCount >= settings.maxPerUser) {
     return { ok: false, reason: `You can only have ${settings.maxPerUser} song(s) in the queue.` };
   }
 
   // Get next position
-  const last = await prisma.songRequest.findFirst({
-    where: { botChannelId },
-    orderBy: { position: "desc" },
-    select: { position: true },
+  const last = await db.query.songRequests.findFirst({
+    where: eq(songRequests.botChannelId, botChannelId),
+    orderBy: desc(songRequests.position),
+    columns: { position: true },
   });
   const position = (last?.position ?? 0) + 1;
 
-  await prisma.songRequest.create({
-    data: {
-      position,
-      title,
-      requestedBy: username.toLowerCase(),
-      botChannelId,
-      youtubeVideoId: youtubeInfo?.videoId ?? null,
-      youtubeDuration: youtubeInfo?.duration ?? null,
-      youtubeThumbnail: youtubeInfo?.thumbnail ?? null,
-      youtubeChannel: youtubeInfo?.channelName ?? null,
-      source: "viewer",
-    },
+  await db.insert(songRequests).values({
+    position,
+    title,
+    requestedBy: username.toLowerCase(),
+    botChannelId,
+    youtubeVideoId: youtubeInfo?.videoId ?? null,
+    youtubeDuration: youtubeInfo?.duration ?? null,
+    youtubeThumbnail: youtubeInfo?.thumbnail ?? null,
+    youtubeChannel: youtubeInfo?.channelName ?? null,
+    source: "viewer",
   });
 
   publishEvent(botChannelId);
@@ -199,8 +205,11 @@ export async function addFromPlaylist(
   const currentPos = playlistPositionCache.get(channelKey) ?? 0;
   const nextPos = currentPos + 1;
 
-  const entry = await prisma.playlistEntry.findFirst({
-    where: { playlistId: settings.activePlaylistId, position: nextPos },
+  const entry = await db.query.playlistEntries.findFirst({
+    where: and(
+      eq(playlistEntries.playlistId, settings.activePlaylistId),
+      eq(playlistEntries.position, nextPos)
+    ),
   });
 
   if (!entry) {
@@ -212,25 +221,23 @@ export async function addFromPlaylist(
   playlistPositionCache.set(channelKey, nextPos);
 
   // Get next position in song request queue
-  const last = await prisma.songRequest.findFirst({
-    where: { botChannelId },
-    orderBy: { position: "desc" },
-    select: { position: true },
+  const last = await db.query.songRequests.findFirst({
+    where: eq(songRequests.botChannelId, botChannelId),
+    orderBy: desc(songRequests.position),
+    columns: { position: true },
   });
   const position = (last?.position ?? 0) + 1;
 
-  await prisma.songRequest.create({
-    data: {
-      position,
-      title: entry.title,
-      requestedBy: "playlist",
-      botChannelId,
-      youtubeVideoId: entry.youtubeVideoId,
-      youtubeDuration: entry.youtubeDuration,
-      youtubeThumbnail: entry.youtubeThumbnail,
-      youtubeChannel: entry.youtubeChannel,
-      source: "playlist",
-    },
+  await db.insert(songRequests).values({
+    position,
+    title: entry.title,
+    requestedBy: "playlist",
+    botChannelId,
+    youtubeVideoId: entry.youtubeVideoId,
+    youtubeDuration: entry.youtubeDuration,
+    youtubeThumbnail: entry.youtubeThumbnail,
+    youtubeChannel: entry.youtubeChannel,
+    source: "playlist",
   });
 
   publishEvent(botChannelId);
@@ -244,19 +251,20 @@ export async function removeRequest(
   const botChannelId = await getBotChannelId(channel);
   if (!botChannelId) return false;
 
-  const entry = await prisma.songRequest.findFirst({
-    where: { botChannelId, position },
+  const entry = await db.query.songRequests.findFirst({
+    where: and(
+      eq(songRequests.botChannelId, botChannelId),
+      eq(songRequests.position, position)
+    ),
   });
   if (!entry) return false;
 
-  await prisma.$transaction([
-    prisma.songRequest.delete({ where: { id: entry.id } }),
-    prisma.$executeRawUnsafe(
-      `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > $2`,
-      botChannelId,
-      position
-    ),
-  ]);
+  await db.transaction(async (tx) => {
+    await tx.delete(songRequests).where(eq(songRequests.id, entry.id));
+    await tx.execute(
+      sql`UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = ${botChannelId} AND position > ${position}`
+    );
+  });
 
   publishEvent(botChannelId);
   return true;
@@ -269,27 +277,26 @@ export async function removeByUser(
   const botChannelId = await getBotChannelId(channel);
   if (!botChannelId) return 0;
 
-  const entries = await prisma.songRequest.findMany({
-    where: { botChannelId, requestedBy: username.toLowerCase() },
-    orderBy: { position: "desc" },
+  const entries = await db.query.songRequests.findMany({
+    where: and(
+      eq(songRequests.botChannelId, botChannelId),
+      eq(songRequests.requestedBy, username.toLowerCase())
+    ),
+    orderBy: desc(songRequests.position),
   });
 
   if (entries.length === 0) return 0;
 
   // Delete all user entries and reorder in a single transaction
   const ids = entries.map((e) => e.id);
-  await prisma.$transaction([
-    prisma.songRequest.deleteMany({ where: { id: { in: ids } } }),
-    prisma.$executeRawUnsafe(
-      `WITH positions AS (
-        SELECT position FROM "SongRequest" WHERE "botChannelId" = $1 ORDER BY position
-      )
-      UPDATE "SongRequest" SET position = sub.row_num
-      FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY position) AS row_num FROM "SongRequest" WHERE "botChannelId" = $1) sub
-      WHERE "SongRequest".id = sub.id`,
-      botChannelId
-    ),
-  ]);
+  await db.transaction(async (tx) => {
+    await tx.delete(songRequests).where(inArray(songRequests.id, ids));
+    await tx.execute(
+      sql`UPDATE "SongRequest" SET position = sub.row_num
+      FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY position) AS row_num FROM "SongRequest" WHERE "botChannelId" = ${botChannelId}) sub
+      WHERE "SongRequest".id = sub.id`
+    );
+  });
 
   publishEvent(botChannelId);
   return entries.length;
@@ -305,23 +312,28 @@ export async function skipRequest(
   const botChannelId = await getBotChannelId(channel);
   if (!botChannelId) return null;
 
-  const entry = await prisma.songRequest.findFirst({
-    where: { botChannelId, position: 1 },
+  const entry = await db.query.songRequests.findFirst({
+    where: and(
+      eq(songRequests.botChannelId, botChannelId),
+      eq(songRequests.position, 1)
+    ),
   });
   if (!entry) return null;
 
-  await prisma.$transaction([
-    prisma.songRequest.delete({ where: { id: entry.id } }),
-    prisma.$executeRawUnsafe(
-      `UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = $1 AND position > 1`,
-      botChannelId
-    ),
-  ]);
+  await db.transaction(async (tx) => {
+    await tx.delete(songRequests).where(eq(songRequests.id, entry.id));
+    await tx.execute(
+      sql`UPDATE "SongRequest" SET position = position - 1 WHERE "botChannelId" = ${botChannelId} AND position > 1`
+    );
+  });
 
   publishEvent(botChannelId);
 
   // Check if queue is now empty and auto-play is enabled
-  const remaining = await prisma.songRequest.count({ where: { botChannelId } });
+  const [{ value: remaining }] = await db
+    .select({ value: count() })
+    .from(songRequests)
+    .where(eq(songRequests.botChannelId, botChannelId));
   let autoPlaySong: { title: string; youtubeVideoId: string | null } | null = null;
   if (remaining === 0) {
     autoPlaySong = await addFromPlaylist(channel);
@@ -337,11 +349,11 @@ export async function listRequests(
   const botChannelId = await getBotChannelId(channel);
   if (!botChannelId) return [];
 
-  return prisma.songRequest.findMany({
-    where: { botChannelId },
-    orderBy: { position: "asc" },
-    take: limit,
-    select: { position: true, title: true, requestedBy: true, youtubeVideoId: true, youtubeDuration: true },
+  return db.query.songRequests.findMany({
+    where: eq(songRequests.botChannelId, botChannelId),
+    orderBy: asc(songRequests.position),
+    limit,
+    columns: { position: true, title: true, requestedBy: true, youtubeVideoId: true, youtubeDuration: true },
   });
 }
 
@@ -351,9 +363,12 @@ export async function currentRequest(
   const botChannelId = await getBotChannelId(channel);
   if (!botChannelId) return null;
 
-  const entry = await prisma.songRequest.findFirst({
-    where: { botChannelId, position: 1 },
-    select: { title: true, requestedBy: true, youtubeVideoId: true, youtubeDuration: true },
+  const entry = await db.query.songRequests.findFirst({
+    where: and(
+      eq(songRequests.botChannelId, botChannelId),
+      eq(songRequests.position, 1)
+    ),
+    columns: { title: true, requestedBy: true, youtubeVideoId: true, youtubeDuration: true },
   });
   return entry ?? null;
 }
@@ -362,7 +377,7 @@ export async function clearRequests(channel: string): Promise<void> {
   const botChannelId = await getBotChannelId(channel);
   if (!botChannelId) return;
 
-  await prisma.songRequest.deleteMany({ where: { botChannelId } });
+  await db.delete(songRequests).where(eq(songRequests.botChannelId, botChannelId));
   publishEvent(botChannelId);
 }
 
@@ -370,7 +385,11 @@ export async function getQueueCount(channel: string): Promise<number> {
   const botChannelId = await getBotChannelId(channel);
   if (!botChannelId) return 0;
 
-  return prisma.songRequest.count({ where: { botChannelId } });
+  const [{ value }] = await db
+    .select({ value: count() })
+    .from(songRequests)
+    .where(eq(songRequests.botChannelId, botChannelId));
+  return value;
 }
 
 export async function listPlaylists(
@@ -379,10 +398,10 @@ export async function listPlaylists(
   const botChannelId = await getBotChannelId(channel);
   if (!botChannelId) return [];
 
-  return prisma.playlist.findMany({
-    where: { botChannelId },
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
+  return db.query.playlists.findMany({
+    where: eq(playlists.botChannelId, botChannelId),
+    columns: { id: true, name: true },
+    orderBy: asc(playlists.name),
   });
 }
 
@@ -393,16 +412,21 @@ export async function activatePlaylist(
   const botChannelId = await getBotChannelId(channel);
   if (!botChannelId) return false;
 
-  const playlist = await prisma.playlist.findFirst({
-    where: { botChannelId, name: { equals: name, mode: "insensitive" } },
+  const playlist = await db.query.playlists.findFirst({
+    where: and(
+      eq(playlists.botChannelId, botChannelId),
+      sql`lower(${playlists.name}) = lower(${name})`
+    ),
   });
   if (!playlist) return false;
 
-  await prisma.songRequestSettings.upsert({
-    where: { botChannelId },
-    update: { activePlaylistId: playlist.id, autoPlayEnabled: true },
-    create: { botChannelId, activePlaylistId: playlist.id, autoPlayEnabled: true },
-  });
+  await db
+    .insert(songRequestSettings)
+    .values({ botChannelId, activePlaylistId: playlist.id, autoPlayEnabled: true })
+    .onConflictDoUpdate({
+      target: songRequestSettings.botChannelId,
+      set: { activePlaylistId: playlist.id, autoPlayEnabled: true },
+    });
 
   // Reset position tracker and reload settings
   const channelKey = normalize(channel);

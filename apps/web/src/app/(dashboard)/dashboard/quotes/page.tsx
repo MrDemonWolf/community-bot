@@ -35,6 +35,7 @@ export default function QuotesPage() {
   );
 
   const [newQuoteText, setNewQuoteText] = useState("");
+  const [newQuoteGame, setNewQuoteGame] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -47,6 +48,7 @@ export default function QuotesPage() {
       onSuccess: (data) => {
         toast.success(`Quote #${data.quoteNumber} added.`);
         setNewQuoteText("");
+        setNewQuoteGame("");
         invalidateAll();
       },
       onError: (err) => toast.error(err.message),
@@ -115,15 +117,26 @@ export default function QuotesPage() {
       <div className="space-y-4">
         {/* Add Quote */}
         {canManage && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Input
-              placeholder="Add a new quote..."
+              placeholder="Quote text..."
               value={newQuoteText}
               onChange={(e) => setNewQuoteText(e.target.value)}
               className="flex-1"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newQuoteText.trim()) {
-                  addMutation.mutate({ text: newQuoteText.trim() });
+                  addMutation.mutate({ text: newQuoteText.trim(), game: newQuoteGame.trim() || null });
+                }
+              }}
+            />
+            <Input
+              placeholder="Game (optional)"
+              value={newQuoteGame}
+              onChange={(e) => setNewQuoteGame(e.target.value)}
+              className="sm:w-44"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newQuoteText.trim()) {
+                  addMutation.mutate({ text: newQuoteText.trim(), game: newQuoteGame.trim() || null });
                 }
               }}
             />
@@ -131,7 +144,7 @@ export default function QuotesPage() {
               size="sm"
               onClick={() => {
                 if (newQuoteText.trim()) {
-                  addMutation.mutate({ text: newQuoteText.trim() });
+                  addMutation.mutate({ text: newQuoteText.trim(), game: newQuoteGame.trim() || null });
                 }
               }}
               disabled={!newQuoteText.trim() || addMutation.isPending}

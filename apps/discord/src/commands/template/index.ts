@@ -1,7 +1,7 @@
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, discordMessageTemplates } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 import { hasPermission } from "../../utils/permissions.js";
 import { buildCustomEmbed } from "../../utils/embeds.js";
@@ -165,8 +165,8 @@ async function handleCreate(
       return;
     }
 
-    const existing = await prisma.discordMessageTemplate.findUnique({
-      where: { guildId_name: { guildId, name } },
+    const existing = await db.query.discordMessageTemplates.findFirst({
+      where: and(eq(discordMessageTemplates.guildId, guildId), eq(discordMessageTemplates.name, name)),
     });
 
     if (existing) {
@@ -187,15 +187,13 @@ async function handleCreate(
       }
     }
 
-    await prisma.discordMessageTemplate.create({
-      data: {
+    await db.insert(discordMessageTemplates).values({
         guildId,
         name,
         content,
         embedJson,
         createdBy: interaction.user.id,
-      },
-    });
+      });
 
     await interaction.editReply({
       content: `Template **${name}** created successfully.`,
@@ -241,8 +239,8 @@ async function handleEdit(
       }
     }
 
-    const template = await prisma.discordMessageTemplate.findUnique({
-      where: { guildId_name: { guildId, name } },
+    const template = await db.query.discordMessageTemplates.findFirst({
+      where: and(eq(discordMessageTemplates.guildId, guildId), eq(discordMessageTemplates.name, name)),
     });
 
     if (!template) {
@@ -252,13 +250,10 @@ async function handleEdit(
       return;
     }
 
-    await prisma.discordMessageTemplate.update({
-      where: { id: template.id },
-      data: {
+    await db.update(discordMessageTemplates).set({
         ...(content !== null && { content }),
         ...(embedJson !== null && { embedJson }),
-      },
-    });
+      }).where(eq(discordMessageTemplates.id, template.id));
 
     await interaction.editReply({
       content: `Template **${name}** updated successfully.`,
@@ -284,11 +279,9 @@ async function handleDelete(
 
     const name = interaction.options.getString("name", true).toLowerCase();
 
-    const deleted = await prisma.discordMessageTemplate.deleteMany({
-      where: { guildId, name },
-    });
+    const deleted = await db.delete(discordMessageTemplates).where(and(eq(discordMessageTemplates.guildId, guildId), eq(discordMessageTemplates.name, name))).returning();
 
-    if (deleted.count === 0) {
+    if (deleted.length === 0) {
       await interaction.editReply({
         content: `Template **${name}** not found.`,
       });
@@ -317,9 +310,9 @@ async function handleList(
   try {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const templates = await prisma.discordMessageTemplate.findMany({
-      where: { guildId },
-      orderBy: { name: "asc" },
+    const templates = await db.query.discordMessageTemplates.findMany({
+      where: eq(discordMessageTemplates.guildId, guildId),
+      orderBy: asc(discordMessageTemplates.name),
     });
 
     if (templates.length === 0) {
@@ -376,8 +369,8 @@ async function handlePreview(
 
     const name = interaction.options.getString("name", true).toLowerCase();
 
-    const template = await prisma.discordMessageTemplate.findUnique({
-      where: { guildId_name: { guildId, name } },
+    const template = await db.query.discordMessageTemplates.findFirst({
+      where: and(eq(discordMessageTemplates.guildId, guildId), eq(discordMessageTemplates.name, name)),
     });
 
     if (!template) {
@@ -450,8 +443,8 @@ async function handleSend(
       return;
     }
 
-    const template = await prisma.discordMessageTemplate.findUnique({
-      where: { guildId_name: { guildId, name } },
+    const template = await db.query.discordMessageTemplates.findFirst({
+      where: and(eq(discordMessageTemplates.guildId, guildId), eq(discordMessageTemplates.name, name)),
     });
 
     if (!template) {

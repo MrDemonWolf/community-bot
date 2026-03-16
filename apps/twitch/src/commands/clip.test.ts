@@ -2,15 +2,17 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getBroadcasterId: vi.fn(),
-  prisma: {
-    twitchCredential: { findFirst: vi.fn() },
+  db: {
+    query: {
+      twitchCredentials: { findFirst: vi.fn() },
+    },
   },
 }));
 
 vi.mock("../services/broadcasterCache.js", () => ({
   getBroadcasterId: mocks.getBroadcasterId,
 }));
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("../utils/env.js", () => ({
   env: { TWITCH_APPLICATION_CLIENT_ID: "test-client-id" },
 }));
@@ -35,7 +37,7 @@ describe("clip command", () => {
 
   it("creates a clip and returns the URL", async () => {
     mocks.getBroadcasterId.mockReturnValue("123");
-    mocks.prisma.twitchCredential.findFirst.mockResolvedValue({ accessToken: "token123" });
+    mocks.db.query.twitchCredentials.findFirst.mockResolvedValue({ accessToken: "token123" });
     (globalThis.fetch as any).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ data: [{ id: "ClipABC123", edit_url: "" }] }),
@@ -49,7 +51,7 @@ describe("clip command", () => {
 
   it("handles API failure gracefully", async () => {
     mocks.getBroadcasterId.mockReturnValue("123");
-    mocks.prisma.twitchCredential.findFirst.mockResolvedValue({ accessToken: "token123" });
+    mocks.db.query.twitchCredentials.findFirst.mockResolvedValue({ accessToken: "token123" });
     (globalThis.fetch as any).mockResolvedValue({ ok: false, status: 403 });
 
     const say = vi.fn();

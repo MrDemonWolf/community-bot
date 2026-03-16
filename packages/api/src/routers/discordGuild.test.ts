@@ -7,21 +7,20 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
   return {
-    prisma: new Proxy(mp, handler),
+    db: new Proxy(mp, handler),
     eventBus: { publish: vi.fn() },
     logAudit: vi.fn(),
     discordFetch: vi.fn(),
   };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("../utils/discord", () => ({ discordFetch: mocks.discordFetch }));
@@ -33,7 +32,7 @@ import { t } from "../index";
 import { discordGuildRouter } from "./discordGuild";
 
 const createCaller = t.createCallerFactory(discordGuildRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 const GUILD = {
   id: "g-1", guildId: "dg-1", userId: "user-1", name: "Test Server", icon: null,
@@ -50,7 +49,7 @@ const GUILD = {
 };
 
 function authedCaller(role = "LEAD_MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
@@ -60,20 +59,20 @@ describe("discordGuildRouter", () => {
   describe("getStatus", () => {
     it("returns linked guild", async () => {
       const caller = createCaller(mockSession());
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
       const result = await caller.getStatus();
       expect(result?.guildId).toBe("dg-1");
     });
 
     it("returns null when no guild linked", async () => {
       const caller = createCaller(mockSession());
-      p.discordGuild.findFirst.mockResolvedValue(null);
+      p.query.discordGuilds.findFirst.mockResolvedValue(null);
       expect(await caller.getStatus()).toBeNull();
     });
 
     it("returns adminRoleId and modRoleId in response", async () => {
       const caller = createCaller(mockSession());
-      p.discordGuild.findFirst.mockResolvedValue({ ...GUILD, adminRoleId: "ar-1", modRoleId: "mr-1" });
+      p.query.discordGuilds.findFirst.mockResolvedValue({ ...GUILD, adminRoleId: "ar-1", modRoleId: "mr-1" });
       const result = await caller.getStatus();
       expect(result?.adminRoleId).toBe("ar-1");
       expect(result?.modRoleId).toBe("mr-1");
@@ -83,7 +82,7 @@ describe("discordGuildRouter", () => {
   describe("listAvailableGuilds", () => {
     it("returns unlinked guilds", async () => {
       const caller = createCaller(mockSession());
-      p.discordGuild.findMany.mockResolvedValue([{ guildId: "g1", name: "S1", icon: null }]);
+      p.query.discordGuilds.findMany.mockResolvedValue([{ guildId: "g1", name: "S1", icon: null }]);
       const result = await caller.listAvailableGuilds();
       expect(result).toHaveLength(1);
     });
@@ -92,7 +91,7 @@ describe("discordGuildRouter", () => {
   describe("getGuildChannels", () => {
     it("returns filtered text/announcement channels", async () => {
       const caller = createCaller(mockSession());
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
       mocks.discordFetch.mockResolvedValue([
         { id: "c1", name: "general", type: 0, position: 1 },
         { id: "c2", name: "news", type: 5, position: 2 },
@@ -104,7 +103,7 @@ describe("discordGuildRouter", () => {
 
     it("throws NOT_FOUND when no guild linked", async () => {
       const caller = createCaller(mockSession());
-      p.discordGuild.findFirst.mockResolvedValue(null);
+      p.query.discordGuilds.findFirst.mockResolvedValue(null);
       await expect(caller.getGuildChannels()).rejects.toThrow("No Discord server linked");
     });
   });
@@ -112,7 +111,7 @@ describe("discordGuildRouter", () => {
   describe("getGuildRoles", () => {
     it("filters out managed roles and @everyone", async () => {
       const caller = createCaller(mockSession());
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
       mocks.discordFetch.mockResolvedValue([
         { id: "r1", name: "Admin", color: 0xff0000, position: 3, managed: false },
         { id: "r2", name: "BotRole", color: 0, position: 2, managed: true },
@@ -127,8 +126,8 @@ describe("discordGuildRouter", () => {
   describe("linkGuild", () => {
     it("links guild and publishes event", async () => {
       const caller = authedCaller();
-      p.discordGuild.findUnique.mockResolvedValue({ ...GUILD, userId: null });
-      p.discordGuild.update.mockResolvedValue(GUILD);
+      p.query.discordGuilds.findFirst.mockResolvedValue({ ...GUILD, userId: null });
+      p.query.discordGuilds.update.mockResolvedValue(GUILD);
       const result = await caller.linkGuild({ guildId: "dg-1" });
       expect(result.guildId).toBe("dg-1");
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("discord:settings-updated", { guildId: "dg-1" });
@@ -137,13 +136,13 @@ describe("discordGuildRouter", () => {
 
     it("throws NOT_FOUND for unknown guild", async () => {
       const caller = authedCaller();
-      p.discordGuild.findUnique.mockResolvedValue(null);
+      p.query.discordGuilds.findFirst.mockResolvedValue(null);
       await expect(caller.linkGuild({ guildId: "x" })).rejects.toThrow("Discord server not found");
     });
 
     it("throws CONFLICT when linked to another user", async () => {
       const caller = authedCaller();
-      p.discordGuild.findUnique.mockResolvedValue({ ...GUILD, userId: "other" });
+      p.query.discordGuilds.findFirst.mockResolvedValue({ ...GUILD, userId: "other" });
       await expect(caller.linkGuild({ guildId: "dg-1" })).rejects.toThrow("already linked");
     });
 
@@ -156,8 +155,8 @@ describe("discordGuildRouter", () => {
   describe("setNotificationChannel", () => {
     it("sets channel and publishes event", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
-      p.discordGuild.update.mockResolvedValue({});
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
+      p.query.discordGuilds.update.mockResolvedValue({});
       const result = await caller.setNotificationChannel({ channelId: "new-ch" });
       expect(result.success).toBe(true);
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "discord.set-channel" }));
@@ -165,7 +164,7 @@ describe("discordGuildRouter", () => {
 
     it("throws NOT_FOUND when no guild linked", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(null);
+      p.query.discordGuilds.findFirst.mockResolvedValue(null);
       await expect(caller.setNotificationChannel({ channelId: "ch" })).rejects.toThrow("No Discord server linked");
     });
   });
@@ -173,8 +172,8 @@ describe("discordGuildRouter", () => {
   describe("setNotificationRole", () => {
     it("sets role and publishes event", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
-      p.discordGuild.update.mockResolvedValue({});
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
+      p.query.discordGuilds.update.mockResolvedValue({});
       const result = await caller.setNotificationRole({ roleId: "new-role" });
       expect(result.success).toBe(true);
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "discord.set-role" }));
@@ -184,8 +183,8 @@ describe("discordGuildRouter", () => {
   describe("setRoleMapping", () => {
     it("sets admin and mod roles", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
-      p.discordGuild.update.mockResolvedValue({});
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
+      p.query.discordGuilds.update.mockResolvedValue({});
       const result = await caller.setRoleMapping({ adminRoleId: "ar-1", modRoleId: "mr-1" });
       expect(result.success).toBe(true);
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("discord:settings-updated", { guildId: "dg-1" });
@@ -194,15 +193,15 @@ describe("discordGuildRouter", () => {
 
     it("clears role mapping with null values", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue({ ...GUILD, adminRoleId: "ar-1", modRoleId: "mr-1" });
-      p.discordGuild.update.mockResolvedValue({});
+      p.query.discordGuilds.findFirst.mockResolvedValue({ ...GUILD, adminRoleId: "ar-1", modRoleId: "mr-1" });
+      p.query.discordGuilds.update.mockResolvedValue({});
       const result = await caller.setRoleMapping({ adminRoleId: null, modRoleId: null });
       expect(result.success).toBe(true);
     });
 
     it("throws NOT_FOUND when no guild linked", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(null);
+      p.query.discordGuilds.findFirst.mockResolvedValue(null);
       await expect(caller.setRoleMapping({ adminRoleId: null, modRoleId: null })).rejects.toThrow("No Discord server linked");
     });
 
@@ -215,8 +214,8 @@ describe("discordGuildRouter", () => {
   describe("enable", () => {
     it("enables notifications", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
-      p.discordGuild.update.mockResolvedValue({});
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
+      p.query.discordGuilds.update.mockResolvedValue({});
       expect((await caller.enable()).success).toBe(true);
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "discord.enable" }));
     });
@@ -225,8 +224,8 @@ describe("discordGuildRouter", () => {
   describe("disable", () => {
     it("disables notifications", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
-      p.discordGuild.update.mockResolvedValue({});
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
+      p.query.discordGuilds.update.mockResolvedValue({});
       expect((await caller.disable()).success).toBe(true);
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "discord.disable" }));
     });
@@ -235,8 +234,8 @@ describe("discordGuildRouter", () => {
   describe("listMonitoredChannels", () => {
     it("returns monitored channels", async () => {
       const caller = createCaller(mockSession());
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
-      p.twitchChannel.findMany.mockResolvedValue([{
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
+      p.query.twitchChannels.findMany.mockResolvedValue([{
         id: "tc-1", twitchChannelId: "t1", username: "streamer", displayName: "Streamer",
         profileImageUrl: null, isLive: false, notificationChannelId: null, notificationRoleId: null,
         updateMessageLive: false, deleteWhenOffline: false, autoPublish: false,
@@ -251,9 +250,9 @@ describe("discordGuildRouter", () => {
   describe("updateChannelSettings", () => {
     it("updates settings and publishes event", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
-      p.twitchChannel.findFirst.mockResolvedValue({ id: "tc-1", displayName: "S", username: "s" });
-      p.twitchChannel.update.mockResolvedValue({});
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
+      p.query.twitchChannels.findFirst.mockResolvedValue({ id: "tc-1", displayName: "S", username: "s" });
+      p.query.twitchChannels.update.mockResolvedValue({});
       const result = await caller.updateChannelSettings({ channelId: "tc-1", autoPublish: true });
       expect(result.success).toBe(true);
       expect(mocks.logAudit).toHaveBeenCalledWith(expect.objectContaining({ action: "discord.channel-settings" }));
@@ -261,8 +260,8 @@ describe("discordGuildRouter", () => {
 
     it("throws NOT_FOUND for unknown channel", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
-      p.twitchChannel.findFirst.mockResolvedValue(null);
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
+      p.query.twitchChannels.findFirst.mockResolvedValue(null);
       await expect(caller.updateChannelSettings({ channelId: "x" })).rejects.toThrow("Monitored channel not found");
     });
   });
@@ -270,14 +269,14 @@ describe("discordGuildRouter", () => {
   describe("testNotification", () => {
     it("publishes test notification", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue(GUILD);
+      p.query.discordGuilds.findFirst.mockResolvedValue(GUILD);
       await caller.testNotification();
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("discord:test-notification", { guildId: "dg-1" });
     });
 
     it("throws PRECONDITION_FAILED when no notification channel set", async () => {
       const caller = authedCaller();
-      p.discordGuild.findFirst.mockResolvedValue({ ...GUILD, notificationChannelId: null });
+      p.query.discordGuilds.findFirst.mockResolvedValue({ ...GUILD, notificationChannelId: null });
       await expect(caller.testNotification()).rejects.toThrow("Set a notification channel first");
     });
   });

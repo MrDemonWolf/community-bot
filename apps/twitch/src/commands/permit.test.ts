@@ -6,20 +6,19 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler) };
+  return { db: new Proxy(mp, handler) };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 
 import { permit } from "./permit.js";
 
-const p = mocks.prisma;
+const p = mocks.db;
 
 function mockMsg(isMod: boolean, isBroadcaster = false) {
   return { userInfo: { isMod, isBroadcaster, userId: "u1" } } as any;
@@ -42,26 +41,24 @@ describe("permit command", () => {
 
   it("creates a permit with default 60s duration", async () => {
     const say = vi.fn();
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.spamPermit.create.mockResolvedValue({});
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.spamPermits.create.mockResolvedValue({});
 
     await permit.execute({ say } as any, "#test", "mod", ["targetuser"], mockMsg(true));
 
-    expect(p.spamPermit.create).toHaveBeenCalledWith(
+    expect(p.query.spamPermits.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
           username: "targetuser",
-          botChannelId: "bc-1",
-        }),
-      })
+          botChannelId: "bc-1" }) })
     );
     expect(say).toHaveBeenCalledWith("#test", expect.stringContaining("60 seconds"));
   });
 
   it("creates a permit with custom duration", async () => {
     const say = vi.fn();
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.spamPermit.create.mockResolvedValue({});
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.spamPermits.create.mockResolvedValue({});
 
     await permit.execute({ say } as any, "#test", "mod", ["targetuser", "120"], mockMsg(true));
     expect(say).toHaveBeenCalledWith("#test", expect.stringContaining("120 seconds"));
@@ -69,14 +66,13 @@ describe("permit command", () => {
 
   it("strips @ from username", async () => {
     const say = vi.fn();
-    p.botChannel.findFirst.mockResolvedValue({ id: "bc-1" });
-    p.spamPermit.create.mockResolvedValue({});
+    p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    p.query.spamPermits.create.mockResolvedValue({});
 
     await permit.execute({ say } as any, "#test", "mod", ["@targetuser"], mockMsg(true));
-    expect(p.spamPermit.create).toHaveBeenCalledWith(
+    expect(p.query.spamPermits.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ username: "targetuser" }),
-      })
+        data: expect.objectContaining({ username: "targetuser" }) })
     );
   });
 });

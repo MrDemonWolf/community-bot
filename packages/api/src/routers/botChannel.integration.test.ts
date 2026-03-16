@@ -11,12 +11,11 @@ vi.mock("../events", () => ({ eventBus: { publish: vi.fn() } }));
 vi.mock("../utils/audit", () => ({ logAudit: vi.fn() }));
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma };
 });
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
 vi.mock("@community-bot/env/server", () => ({
-  env: { REDIS_URL: "redis://localhost" },
-}));
+  env: { REDIS_URL: "redis://localhost" } }));
 vi.mock("next/server", () => ({}));
 
 import { t } from "../index";
@@ -38,13 +37,12 @@ describe("botChannelRouter (integration)", () => {
     user = await seedUser(testPrisma, {
       id: "user-1",
       name: "testbroadcaster",
-      role: "BROADCASTER",
-    });
+      role: "BROADCASTER" });
   });
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   function authedCaller(userId = user.id) {
@@ -76,16 +74,14 @@ describe("botChannelRouter (integration)", () => {
       await seedAccount(testPrisma, {
         userId: user.id,
         providerId: "twitch",
-        accountId: "twitch_123",
-      });
+        accountId: "twitch_123" });
 
       const caller = authedCaller();
       const result = await caller.enable();
       expect(result.success).toBe(true);
 
       const bc = await testPrisma.botChannel.findUnique({
-        where: { userId: user.id },
-      });
+        where: { userId: user.id } });
       expect(bc).not.toBeNull();
       expect(bc!.enabled).toBe(true);
     });
@@ -98,8 +94,7 @@ describe("botChannelRouter (integration)", () => {
       await caller.enable();
 
       const bc = await testPrisma.botChannel.findUnique({
-        where: { userId: user.id },
-      });
+        where: { userId: user.id } });
       expect(bc!.enabled).toBe(true);
     });
   });
@@ -113,8 +108,7 @@ describe("botChannelRouter (integration)", () => {
       await caller.disable();
 
       const bc = await testPrisma.botChannel.findUnique({
-        where: { userId: user.id },
-      });
+        where: { userId: user.id } });
       expect(bc!.enabled).toBe(false);
     });
   });
@@ -126,12 +120,10 @@ describe("botChannelRouter (integration)", () => {
 
       const caller = authedCaller();
       await caller.updateCommandToggles({
-        disabledCommands: ["ping", "uptime"],
-      });
+        disabledCommands: ["ping", "uptime"] });
 
       const bc = await testPrisma.botChannel.findUnique({
-        where: { userId: user.id },
-      });
+        where: { userId: user.id } });
       expect(bc!.disabledCommands).toEqual(["ping", "uptime"]);
     });
   });
@@ -144,12 +136,10 @@ describe("botChannelRouter (integration)", () => {
       const caller = authedCaller();
       await caller.updateCommandAccessLevel({
         commandName: "ping",
-        accessLevel: "MODERATOR",
-      });
+        accessLevel: "MODERATOR" });
 
       const override = await testPrisma.defaultCommandOverride.findFirst({
-        where: { botChannelId: bc.id, commandName: "ping" },
-      });
+        where: { botChannelId: bc.id, commandName: "ping" } });
       expect(override).not.toBeNull();
       expect(override!.accessLevel).toBe("MODERATOR");
     });
@@ -162,17 +152,14 @@ describe("botChannelRouter (integration)", () => {
       // Ping's default is EVERYONE — set to MODERATOR first, then revert
       await caller.updateCommandAccessLevel({
         commandName: "ping",
-        accessLevel: "MODERATOR",
-      });
+        accessLevel: "MODERATOR" });
 
       await caller.updateCommandAccessLevel({
         commandName: "ping",
-        accessLevel: "EVERYONE",
-      });
+        accessLevel: "EVERYONE" });
 
       const override = await testPrisma.defaultCommandOverride.findFirst({
-        where: { botChannelId: bc.id, commandName: "ping" },
-      });
+        where: { botChannelId: bc.id, commandName: "ping" } });
       expect(override).toBeNull();
     });
   });

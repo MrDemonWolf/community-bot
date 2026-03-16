@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from "@trpc/server";
-import { prisma } from "@community-bot/db";
+import { db, eq, users } from "@community-bot/db";
 import type { Context } from "./context";
 
 export const t = initTRPC.context<Context>().create();
@@ -26,7 +26,7 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 
 /** Requires MODERATOR, LEAD_MODERATOR, or BROADCASTER role. */
 export const moderatorProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  const user = await prisma.user.findUnique({ where: { id: ctx.session.user.id } });
+  const user = await db.query.users.findFirst({ where: eq(users.id, ctx.session.user.id) });
   if (!user || user.banned) throw new TRPCError({ code: "FORBIDDEN" });
   const allowed = ["MODERATOR", "LEAD_MODERATOR", "BROADCASTER"];
   if (!allowed.includes(user.role)) throw new TRPCError({ code: "FORBIDDEN" });
@@ -35,7 +35,7 @@ export const moderatorProcedure = protectedProcedure.use(async ({ ctx, next }) =
 
 /** Requires LEAD_MODERATOR or BROADCASTER role. */
 export const leadModProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  const user = await prisma.user.findUnique({ where: { id: ctx.session.user.id } });
+  const user = await db.query.users.findFirst({ where: eq(users.id, ctx.session.user.id) });
   if (!user || user.banned) throw new TRPCError({ code: "FORBIDDEN" });
   const allowed = ["LEAD_MODERATOR", "BROADCASTER"];
   if (!allowed.includes(user.role)) throw new TRPCError({ code: "FORBIDDEN" });
@@ -44,7 +44,7 @@ export const leadModProcedure = protectedProcedure.use(async ({ ctx, next }) => 
 
 /** Requires BROADCASTER role (channel owner only). */
 export const broadcasterProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  const user = await prisma.user.findUnique({ where: { id: ctx.session.user.id } });
+  const user = await db.query.users.findFirst({ where: eq(users.id, ctx.session.user.id) });
   if (!user || user.banned) throw new TRPCError({ code: "FORBIDDEN" });
   if (user.role !== "BROADCASTER") throw new TRPCError({ code: "FORBIDDEN" });
   return next({ ctx: { ...ctx, user } });

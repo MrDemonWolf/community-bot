@@ -1,12 +1,13 @@
-import { prisma } from "@community-bot/db";
+import { db, eq } from "@community-bot/db";
+import { botChannels } from "@community-bot/db";
 import { logger } from "../utils/logger.js";
 
 // Map<twitchUsername (lowercase), boolean>
 const mutedChannels = new Map<string, boolean>();
 
 export async function loadMutedState(): Promise<void> {
-  const channels = await prisma.botChannel.findMany({
-    where: { enabled: true },
+  const channels = await db.query.botChannels.findMany({
+    where: eq(botChannels.enabled, true),
   });
 
   mutedChannels.clear();

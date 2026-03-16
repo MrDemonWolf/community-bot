@@ -16,7 +16,7 @@ function extractVideoId(input: string): string | null {
   const match = input.match(
     /(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/
   );
-  return match ? match[1] : null;
+  return match ? match[1] ?? null : null;
 }
 
 function parseDuration(iso: string): number {
@@ -37,7 +37,7 @@ async function fetchVideoById(
   const res = await fetch(url);
   if (!res.ok) return null;
 
-  const data = await res.json();
+  const data = await res.json() as any;
   const item = data.items?.[0];
   if (!item) return null;
 
@@ -61,7 +61,7 @@ async function searchVideo(
   const searchRes = await fetch(searchUrl);
   if (!searchRes.ok) return null;
 
-  const searchData = await searchRes.json();
+  const searchData = await searchRes.json() as any;
   const searchItem = searchData.items?.[0];
   if (!searchItem) return null;
 

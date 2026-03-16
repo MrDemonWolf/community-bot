@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import prisma from "@community-bot/db";
+import { db, eq, asc, users, botChannels, songRequestSettings, songRequests } from "@community-bot/db";
 import { getBroadcasterUserId } from "@/lib/setup";
 import Link from "next/link";
 import type { Route } from "next";
@@ -12,9 +12,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return {};
 
-  const user = await prisma.user.findUnique({
-    where: { id: broadcasterId },
-    select: { name: true },
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, broadcasterId),
+    columns: { name: true },
   });
 
   if (!user) return {};
@@ -29,25 +29,25 @@ async function getSongRequestData() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;
 
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId: broadcasterId },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.userId, broadcasterId),
+    columns: { id: true },
   });
 
   if (!botChannel) return null;
 
-  const settings = await prisma.songRequestSettings.findUnique({
-    where: { botChannelId: botChannel.id },
-    select: { enabled: true },
+  const settings = await db.query.songRequestSettings.findFirst({
+    where: eq(songRequestSettings.botChannelId, botChannel.id),
+    columns: { enabled: true },
   });
 
-  const songRequests = await prisma.songRequest.findMany({
-    where: { botChannelId: botChannel.id },
-    orderBy: { position: "asc" },
-    select: { id: true, position: true, title: true, requestedBy: true },
+  const songRequestList = await db.query.songRequests.findMany({
+    where: eq(songRequests.botChannelId, botChannel.id),
+    orderBy: asc(songRequests.position),
+    columns: { id: true, position: true, title: true, requestedBy: true },
   });
 
-  return { enabled: settings?.enabled ?? false, songRequests };
+  return { enabled: settings?.enabled ?? false, songRequests: songRequestList };
 }
 
 export default async function SongRequestsPage() {

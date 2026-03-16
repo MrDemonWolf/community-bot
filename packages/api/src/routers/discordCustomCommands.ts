@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, desc, discordGuilds, discordCustomCommands, discordReports } from "@community-bot/db";
 import {
   protectedProcedure,
   moderatorProcedure,
@@ -10,7 +10,7 @@ import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
 
 async function requireGuild(userId: string) {
-  const guild = await prisma.discordGuild.findFirst({ where: { userId } });
+  const guild = await db.query.discordGuilds.findFirst({ where: eq(discordGuilds.userId, userId) });
   if (!guild) {
     throw new TRPCError({
       code: "NOT_FOUND",
@@ -24,9 +24,9 @@ export const discordCustomCommandsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
     const guild = await requireGuild(ctx.session.user.id);
 
-    const commands = await prisma.discordCustomCommand.findMany({
-      where: { guildId: guild.guildId },
-      orderBy: { name: "asc" },
+    const commands = await db.query.discordCustomCommands.findMany({
+      where: eq(discordCustomCommands.guildId, guild.guildId),
+      orderBy: asc(discordCustomCommands.name),
     });
 
     return commands.map((c) => ({
@@ -62,10 +62,8 @@ export const discordCustomCommandsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const existing = await prisma.discordCustomCommand.findUnique({
-        where: {
-          guildId_name: { guildId: guild.guildId, name: input.name },
-        },
+      const existing = await db.query.discordCustomCommands.findFirst({
+        where: and(eq(discordCustomCommands.guildId, guild.guildId), eq(discordCustomCommands.name, input.name)),
       });
 
       if (existing) {
@@ -75,18 +73,16 @@ export const discordCustomCommandsRouter = router({
         });
       }
 
-      const cmd = await prisma.discordCustomCommand.create({
-        data: {
-          guildId: guild.guildId,
-          name: input.name,
-          description: input.description,
-          response: input.response,
-          embedJson: input.embedJson,
-          ephemeral: input.ephemeral,
-          allowedRoles: input.allowedRoles,
-          createdBy: ctx.session.user.id,
-        },
-      });
+      const [cmd] = await db.insert(discordCustomCommands).values({
+        guildId: guild.guildId,
+        name: input.name,
+        description: input.description,
+        response: input.response,
+        embedJson: input.embedJson,
+        ephemeral: input.ephemeral,
+        allowedRoles: input.allowedRoles,
+        createdBy: ctx.session.user.id,
+      }).returning();
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -94,11 +90,11 @@ export const discordCustomCommandsRouter = router({
         userImage: ctx.session.user.image,
         action: "discord.custom-command-create",
         resourceType: "DiscordCustomCommand",
-        resourceId: cmd.id,
+        resourceId: cmd!.id,
         metadata: { name: input.name },
       });
 
-      return { id: cmd.id, name: cmd.name };
+      return { id: cmd!.id, name: cmd!.name };
     }),
 
   update: moderatorProcedure
@@ -115,8 +111,8 @@ export const discordCustomCommandsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const cmd = await prisma.discordCustomCommand.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const cmd = await db.query.discordCustomCommands.findFirst({
+        where: and(eq(discordCustomCommands.id, input.id), eq(discordCustomCommands.guildId, guild.guildId)),
       });
 
       if (!cmd) {
@@ -132,10 +128,7 @@ export const discordCustomCommandsRouter = router({
         if (value !== undefined) data[key] = value;
       }
 
-      await prisma.discordCustomCommand.update({
-        where: { id: cmd.id },
-        data,
-      });
+      await db.update(discordCustomCommands).set(data).where(eq(discordCustomCommands.id, cmd.id));
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -155,8 +148,8 @@ export const discordCustomCommandsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const cmd = await prisma.discordCustomCommand.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const cmd = await db.query.discordCustomCommands.findFirst({
+        where: and(eq(discordCustomCommands.id, input.id), eq(discordCustomCommands.guildId, guild.guildId)),
       });
 
       if (!cmd) {
@@ -166,7 +159,7 @@ export const discordCustomCommandsRouter = router({
         });
       }
 
-      await prisma.discordCustomCommand.delete({ where: { id: cmd.id } });
+      await db.delete(discordCustomCommands).where(eq(discordCustomCommands.id, cmd.id));
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -186,8 +179,8 @@ export const discordCustomCommandsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const cmd = await prisma.discordCustomCommand.findFirst({
-        where: { id: input.id, guildId: guild.guildId },
+      const cmd = await db.query.discordCustomCommands.findFirst({
+        where: and(eq(discordCustomCommands.id, input.id), eq(discordCustomCommands.guildId, guild.guildId)),
       });
 
       if (!cmd) {
@@ -197,10 +190,7 @@ export const discordCustomCommandsRouter = router({
         });
       }
 
-      await prisma.discordCustomCommand.update({
-        where: { id: cmd.id },
-        data: { enabled: !cmd.enabled },
-      });
+      await db.update(discordCustomCommands).set({ enabled: !cmd.enabled }).where(eq(discordCustomCommands.id, cmd.id));
 
       await logAudit({
         userId: ctx.session.user.id,
@@ -228,14 +218,14 @@ export const discordCustomCommandsRouter = router({
     .query(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const where: Record<string, unknown> = { guildId: guild.guildId };
-      if (input.status) where.status = input.status;
+      const conditions = [eq(discordReports.guildId, guild.guildId)];
+      if (input.status) conditions.push(eq(discordReports.status, input.status));
 
-      const reports = await prisma.discordReport.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        take: input.limit + 1,
-        ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
+      // Simple approach: fetch with ordering and limit
+      const reports = await db.query.discordReports.findMany({
+        where: and(...conditions),
+        orderBy: desc(discordReports.createdAt),
+        limit: input.limit + 1,
       });
 
       let nextCursor: string | undefined;
@@ -273,8 +263,8 @@ export const discordCustomCommandsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const guild = await requireGuild(ctx.session.user.id);
 
-      const report = await prisma.discordReport.findFirst({
-        where: { id: input.reportId, guildId: guild.guildId },
+      const report = await db.query.discordReports.findFirst({
+        where: and(eq(discordReports.id, input.reportId), eq(discordReports.guildId, guild.guildId)),
       });
 
       if (!report) {
@@ -287,19 +277,16 @@ export const discordCustomCommandsRouter = router({
       const isResolving =
         input.status === "RESOLVED" || input.status === "DISMISSED";
 
-      await prisma.discordReport.update({
-        where: { id: report.id },
-        data: {
-          status: input.status,
-          ...(isResolving
-            ? {
-                resolvedBy: ctx.session.user.id,
-                resolvedAt: new Date(),
-                resolution: input.resolution,
-              }
-            : {}),
-        },
-      });
+      await db.update(discordReports).set({
+        status: input.status,
+        ...(isResolving
+          ? {
+              resolvedBy: ctx.session.user.id,
+              resolvedAt: new Date(),
+              resolution: input.resolution,
+            }
+          : {}),
+      }).where(eq(discordReports.id, report.id));
 
       await logAudit({
         userId: ctx.session.user.id,

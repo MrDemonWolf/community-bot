@@ -316,15 +316,14 @@ function GuildInfoCard({
                 Linked
               </span>
             </div>
-            <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
-              <span className="font-mono text-xs">{guild.guildId}</span>
-              {guild.memberCount != null && (
+            {guild.memberCount != null && (
+              <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Users className="size-3.5" />
                   {guild.memberCount.toLocaleString()} members
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
           {canEdit && (
             <a href={authorizeUrl} target="_blank" rel="noopener noreferrer">
@@ -594,16 +593,16 @@ function NotificationConfigCard({
               {canEdit ? (
                 <div className="flex gap-3">
                   <Select
-                    value={channelId || "_placeholder"}
+                    value={channelId || "_none"}
                     onValueChange={(v) =>
-                      setChannelId(v === "_placeholder" ? "" : v ?? "")
+                      setChannelId(v === "_none" ? "" : v ?? "")
                     }
                   >
                     <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select a channel..." />
+                      <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="_none">(None)</SelectItem>
+                      <SelectItem value="_none">None</SelectItem>
                       {channels?.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           # {c.name}
@@ -647,16 +646,16 @@ function NotificationConfigCard({
               {canEdit ? (
                 <div className="flex gap-3">
                   <Select
-                    value={roleId || "_placeholder"}
+                    value={roleId || "_none"}
                     onValueChange={(v) =>
-                      setRoleId(v === "_placeholder" ? "" : v ?? "")
+                      setRoleId(v === "_none" ? "" : v ?? "")
                     }
                   >
                     <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select a role..." />
+                      <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="_none">No mention</SelectItem>
+                      <SelectItem value="_none">None</SelectItem>
                       <SelectItem value="everyone">@everyone</SelectItem>
                       {roles?.map((r) => (
                         <SelectItem key={r.id} value={r.id}>
