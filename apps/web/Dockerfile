@@ -1,12 +1,12 @@
-FROM node:24-alpine AS base
+FROM oven/bun:1-alpine AS base
 
 WORKDIR /usr/src/app
 
-RUN apk add --no-cache openssl git && corepack enable
+RUN apk add --no-cache openssl git
 
 FROM base AS deps
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json bun.lock ./
 COPY packages/db/package.json packages/db/
 COPY packages/config/package.json packages/config/
 COPY packages/env/package.json packages/env/
@@ -16,8 +16,7 @@ COPY packages/api/package.json packages/api/
 COPY packages/auth/package.json packages/auth/
 COPY apps/web/package.json apps/web/
 
-RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 FROM base AS build
 
@@ -36,10 +35,9 @@ COPY apps/web ./apps/web
 COPY turbo.json tsconfig.json ./
 
 RUN --mount=type=cache,target=/usr/src/app/apps/web/.next/cache \
-    pnpm --filter @community-bot/db db:generate && \
-    pnpm --filter web build
+    bun run --filter web build
 
-FROM node:24-alpine AS production
+FROM oven/bun:1-alpine AS production
 
 WORKDIR /usr/src/app
 
@@ -47,8 +45,6 @@ RUN apk add --no-cache openssl curl
 
 COPY --from=build /usr/src/app/apps/web/.next/standalone ./
 COPY --from=build /usr/src/app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=build /usr/src/app/packages/db/prisma ./packages/db/prisma
-RUN rm -rf packages/db/node_modules
 COPY apps/web/entrypoint.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh
 

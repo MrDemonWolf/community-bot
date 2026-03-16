@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import prisma from "@community-bot/db";
+import { db, eq, asc, users, queueStates, queueEntries } from "@community-bot/db";
 import { getBroadcasterUserId } from "@/lib/setup";
 import Link from "next/link";
 import type { Route } from "next";
@@ -12,9 +12,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return {};
 
-  const user = await prisma.user.findUnique({
-    where: { id: broadcasterId },
-    select: { name: true },
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, broadcasterId),
+    columns: { name: true },
   });
 
   if (!user) return {};
@@ -29,15 +29,15 @@ async function getQueueData() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;
 
-  const queueState = await prisma.queueState.findFirst({
-    where: { id: "singleton" },
+  const queueState = await db.query.queueStates.findFirst({
+    where: eq(queueStates.id, "singleton"),
   });
 
-  const queueEntries = await prisma.queueEntry.findMany({
-    orderBy: { position: "asc" },
+  const queueEntryList = await db.query.queueEntries.findMany({
+    orderBy: asc(queueEntries.position),
   });
 
-  return { queueState, queueEntries };
+  return { queueState, queueEntries: queueEntryList };
 }
 
 export default async function QueuePage() {

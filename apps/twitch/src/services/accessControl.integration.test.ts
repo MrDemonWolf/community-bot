@@ -6,15 +6,14 @@ import {
 
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma };
 });
 vi.mock("../utils/logger.js", () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+  } }));
 
 import { loadRegulars, isRegular } from "./accessControl.js";
 import { meetsAccessLevel } from "./accessControl.constants.js";
@@ -26,7 +25,7 @@ describe("accessControl (integration)", () => {
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   describe("loadRegulars", () => {
@@ -36,15 +35,13 @@ describe("accessControl (integration)", () => {
           twitchUserId: "reg-1",
           twitchUsername: "Regular1",
           addedBy: "test",
-        },
-      });
+        } });
       await testPrisma.regular.create({
         data: {
           twitchUserId: "reg-2",
           twitchUsername: "Regular2",
           addedBy: "test",
-        },
-      });
+        } });
 
       await loadRegulars();
 
@@ -62,8 +59,7 @@ describe("accessControl (integration)", () => {
           twitchUserId: "new-reg",
           twitchUsername: "NewRegular",
           addedBy: "test",
-        },
-      });
+        } });
 
       await loadRegulars();
       expect(isRegular("new-reg")).toBe(true);
@@ -75,8 +71,7 @@ describe("accessControl (integration)", () => {
           twitchUserId: "temp-reg",
           twitchUsername: "TempReg",
           addedBy: "test",
-        },
-      });
+        } });
 
       await loadRegulars();
       expect(isRegular("temp-reg")).toBe(true);

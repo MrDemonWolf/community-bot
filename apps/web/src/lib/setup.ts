@@ -6,7 +6,7 @@
  * becomes the broadcaster, and is promoted to BROADCASTER. Runtime config is
  * stored in the SystemConfig table as key-value pairs.
  */
-import { prisma } from "@community-bot/db";
+import { db, eq, systemConfigs } from "@community-bot/db";
 import { randomBytes } from "crypto";
 
 /**
@@ -15,14 +15,14 @@ import { randomBytes } from "crypto";
  * startup from the Next.js instrumentation hook.
  */
 export async function ensureSetupToken() {
-  const setupComplete = await prisma.systemConfig.findUnique({
-    where: { key: "setupComplete" },
+  const setupComplete = await db.query.systemConfigs.findFirst({
+    where: eq(systemConfigs.key, "setupComplete"),
   });
   if (setupComplete?.value === "true") return;
 
   // Check if token already exists; create one if not
-  const existing = await prisma.systemConfig.findUnique({
-    where: { key: "setupToken" },
+  const existing = await db.query.systemConfigs.findFirst({
+    where: eq(systemConfigs.key, "setupToken"),
   });
 
   const token = existing
@@ -30,11 +30,13 @@ export async function ensureSetupToken() {
     : randomBytes(32).toString("hex");
 
   if (!existing) {
-    await prisma.systemConfig.upsert({
-      where: { key: "setupToken" },
-      create: { key: "setupToken", value: token },
-      update: { value: token },
-    });
+    await db
+      .insert(systemConfigs)
+      .values({ key: "setupToken", value: token })
+      .onConflictDoUpdate({
+        target: systemConfigs.key,
+        set: { value: token },
+      });
   }
 
   const url = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3001"}/setup/${token}`;
@@ -47,16 +49,16 @@ export async function ensureSetupToken() {
 
 /** Return the broadcaster's User ID, or null if setup hasn't completed. */
 export async function getBroadcasterUserId(): Promise<string | null> {
-  const config = await prisma.systemConfig.findUnique({
-    where: { key: "broadcasterUserId" },
+  const config = await db.query.systemConfigs.findFirst({
+    where: eq(systemConfigs.key, "broadcasterUserId"),
   });
   return config?.value ?? null;
 }
 
 /** Check whether the first-time setup wizard has been completed. */
 export async function isSetupComplete(): Promise<boolean> {
-  const config = await prisma.systemConfig.findUnique({
-    where: { key: "setupComplete" },
+  const config = await db.query.systemConfigs.findFirst({
+    where: eq(systemConfigs.key, "setupComplete"),
   });
   return config?.value === "true";
 }

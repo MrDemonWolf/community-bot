@@ -1,4 +1,5 @@
-import { prisma } from "@community-bot/db";
+import { db, eq } from "@community-bot/db";
+import { botChannels } from "@community-bot/db";
 import { logger } from "../utils/logger.js";
 
 // Map<twitchUsername, Set<commandName>>
@@ -8,9 +9,9 @@ const disabledMap = new Map<string, Set<string>>();
 const accessOverrides = new Map<string, Map<string, string>>();
 
 export async function loadDisabledCommands(): Promise<void> {
-  const channels = await prisma.botChannel.findMany({
-    where: { enabled: true },
-    include: { commandOverrides: true },
+  const channels = await db.query.botChannels.findMany({
+    where: eq(botChannels.enabled, true),
+    with: { commandOverrides: true },
   });
 
   disabledMap.clear();
@@ -36,9 +37,9 @@ export async function loadDisabledCommands(): Promise<void> {
 }
 
 export async function reloadForChannel(twitchUserId: string): Promise<void> {
-  const channel = await prisma.botChannel.findUnique({
-    where: { twitchUserId },
-    include: { commandOverrides: true },
+  const channel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.twitchUserId, twitchUserId),
+    with: { commandOverrides: true },
   });
 
   if (!channel) return;

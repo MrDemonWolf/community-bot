@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, ilike, desc, asc, discordCases, discordCaseNotes } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 import { hasPermission } from "../../utils/permissions.js";
 import { sendPaginatedEmbed } from "../../utils/pagination.js";
@@ -153,9 +153,9 @@ async function handleLookup(
   const guildId = interaction.guildId!;
   const caseNumber = interaction.options.getInteger("number", true);
 
-  const modCase = await prisma.discordCase.findUnique({
-    where: { guildId_caseNumber: { guildId, caseNumber } },
-    include: { notes: { orderBy: { createdAt: "asc" } } },
+  const modCase = await db.query.discordCases.findFirst({
+    where: and(eq(discordCases.guildId, guildId), eq(discordCases.caseNumber, caseNumber)),
+    with: { notes: { orderBy: asc(discordCaseNotes.createdAt) } },
   });
 
   if (!modCase) {
@@ -224,14 +224,14 @@ async function handleList(
   const targetUser = interaction.options.getUser("user");
   const type = interaction.options.getString("type");
 
-  const where: Record<string, unknown> = { guildId };
-  if (targetUser) where.targetId = targetUser.id;
-  if (type) where.type = type;
+  const conditions = [eq(discordCases.guildId, guildId)];
+  if (targetUser) conditions.push(eq(discordCases.targetId, targetUser.id));
+  if (type) conditions.push(eq(discordCases.type, type as any));
 
-  const cases = await prisma.discordCase.findMany({
-    where,
-    orderBy: { caseNumber: "desc" },
-    take: 100,
+  const cases = await db.query.discordCases.findMany({
+    where: and(...conditions),
+    orderBy: desc(discordCases.caseNumber),
+    limit: 100,
   });
 
   if (cases.length === 0) {
@@ -273,8 +273,8 @@ async function handleNote(
   const caseNumber = interaction.options.getInteger("number", true);
   const content = interaction.options.getString("content", true);
 
-  const modCase = await prisma.discordCase.findUnique({
-    where: { guildId_caseNumber: { guildId, caseNumber } },
+  const modCase = await db.query.discordCases.findFirst({
+    where: and(eq(discordCases.guildId, guildId), eq(discordCases.caseNumber, caseNumber)),
   });
 
   if (!modCase) {
@@ -282,14 +282,12 @@ async function handleNote(
     return;
   }
 
-  await prisma.discordCaseNote.create({
-    data: {
+  await db.insert(discordCaseNotes).values({
       caseId: modCase.id,
       authorId: interaction.user.id,
       authorTag: interaction.user.tag,
       content,
-    },
-  });
+    });
 
   await interaction.editReply({
     content: `Note added to case #${caseNumber}.`,
@@ -304,13 +302,10 @@ async function handleSearch(
   const guildId = interaction.guildId!;
   const query = interaction.options.getString("query", true);
 
-  const cases = await prisma.discordCase.findMany({
-    where: {
-      guildId,
-      reason: { contains: query, mode: "insensitive" },
-    },
-    orderBy: { caseNumber: "desc" },
-    take: 50,
+  const cases = await db.query.discordCases.findMany({
+    where: and(eq(discordCases.guildId, guildId), ilike(discordCases.reason, `%${query}%`)),
+    orderBy: desc(discordCases.caseNumber),
+    limit: 50,
   });
 
   if (cases.length === 0) {

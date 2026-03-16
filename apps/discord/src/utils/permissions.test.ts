@@ -2,13 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PermissionFlagsBits, Collection } from "discord.js";
 import type { ChatInputCommandInteraction, GuildMemberRoleManager } from "discord.js";
 
-const mocks = vi.hoisted(() => ({
-  prisma: {
+const mocks = vi.hoisted(() => ({ db: {
     discordGuild: { findFirst: vi.fn() },
-  },
-}));
+  } }));
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 
 import { hasPermission, clearGuildRoleCache } from "./permissions.js";
 
@@ -43,42 +41,37 @@ describe("hasPermission", () => {
 
   describe("admin level", () => {
     it("grants access when user has configured adminRoleId", async () => {
-      mocks.prisma.discordGuild.findFirst.mockResolvedValue({
+      mocks.db.query.discordGuilds.findFirst.mockResolvedValue({
         adminRoleId: "admin-role",
-        modRoleId: null,
-      });
+        modRoleId: null });
 
       const interaction = makeInteraction({ roleIds: ["admin-role"] });
       expect(await hasPermission(interaction, "admin")).toBe(true);
     });
 
     it("falls back to ManageGuild when no adminRoleId configured", async () => {
-      mocks.prisma.discordGuild.findFirst.mockResolvedValue({
+      mocks.db.query.discordGuilds.findFirst.mockResolvedValue({
         adminRoleId: null,
-        modRoleId: null,
-      });
+        modRoleId: null });
 
       const interaction = makeInteraction({
-        permissions: [PermissionFlagsBits.ManageGuild],
-      });
+        permissions: [PermissionFlagsBits.ManageGuild] });
       expect(await hasPermission(interaction, "admin")).toBe(true);
     });
 
     it("denies access without role or permission", async () => {
-      mocks.prisma.discordGuild.findFirst.mockResolvedValue({
+      mocks.db.query.discordGuilds.findFirst.mockResolvedValue({
         adminRoleId: "admin-role",
-        modRoleId: null,
-      });
+        modRoleId: null });
 
       const interaction = makeInteraction({ roleIds: [], permissions: [] });
       expect(await hasPermission(interaction, "admin")).toBe(false);
     });
 
     it("denies when user has modRoleId but not adminRoleId for admin check", async () => {
-      mocks.prisma.discordGuild.findFirst.mockResolvedValue({
+      mocks.db.query.discordGuilds.findFirst.mockResolvedValue({
         adminRoleId: "admin-role",
-        modRoleId: "mod-role",
-      });
+        modRoleId: "mod-role" });
 
       const interaction = makeInteraction({ roleIds: ["mod-role"] });
       expect(await hasPermission(interaction, "admin")).toBe(false);
@@ -87,42 +80,37 @@ describe("hasPermission", () => {
 
   describe("mod level", () => {
     it("grants access when user has configured modRoleId", async () => {
-      mocks.prisma.discordGuild.findFirst.mockResolvedValue({
+      mocks.db.query.discordGuilds.findFirst.mockResolvedValue({
         adminRoleId: null,
-        modRoleId: "mod-role",
-      });
+        modRoleId: "mod-role" });
 
       const interaction = makeInteraction({ roleIds: ["mod-role"] });
       expect(await hasPermission(interaction, "mod")).toBe(true);
     });
 
     it("grants mod access when user has adminRoleId", async () => {
-      mocks.prisma.discordGuild.findFirst.mockResolvedValue({
+      mocks.db.query.discordGuilds.findFirst.mockResolvedValue({
         adminRoleId: "admin-role",
-        modRoleId: "mod-role",
-      });
+        modRoleId: "mod-role" });
 
       const interaction = makeInteraction({ roleIds: ["admin-role"] });
       expect(await hasPermission(interaction, "mod")).toBe(true);
     });
 
     it("falls back to ManageMessages when no roles configured", async () => {
-      mocks.prisma.discordGuild.findFirst.mockResolvedValue({
+      mocks.db.query.discordGuilds.findFirst.mockResolvedValue({
         adminRoleId: null,
-        modRoleId: null,
-      });
+        modRoleId: null });
 
       const interaction = makeInteraction({
-        permissions: [PermissionFlagsBits.ManageMessages],
-      });
+        permissions: [PermissionFlagsBits.ManageMessages] });
       expect(await hasPermission(interaction, "mod")).toBe(true);
     });
 
     it("denies mod access without role or permission", async () => {
-      mocks.prisma.discordGuild.findFirst.mockResolvedValue({
+      mocks.db.query.discordGuilds.findFirst.mockResolvedValue({
         adminRoleId: null,
-        modRoleId: "mod-role",
-      });
+        modRoleId: "mod-role" });
 
       const interaction = makeInteraction({ roleIds: [], permissions: [] });
       expect(await hasPermission(interaction, "mod")).toBe(false);
@@ -135,23 +123,21 @@ describe("hasPermission", () => {
   });
 
   it("caches guild config and reuses it", async () => {
-    mocks.prisma.discordGuild.findFirst.mockResolvedValue({
+    mocks.db.query.discordGuilds.findFirst.mockResolvedValue({
       adminRoleId: "admin-role",
-      modRoleId: null,
-    });
+      modRoleId: null });
 
     const interaction = makeInteraction({ roleIds: ["admin-role"] });
     await hasPermission(interaction, "admin");
     await hasPermission(interaction, "admin");
 
-    expect(mocks.prisma.discordGuild.findFirst).toHaveBeenCalledTimes(1);
+    expect(mocks.db.query.discordGuilds.findFirst).toHaveBeenCalledTimes(1);
   });
 
   it("clearGuildRoleCache forces a refetch", async () => {
-    mocks.prisma.discordGuild.findFirst.mockResolvedValue({
+    mocks.db.query.discordGuilds.findFirst.mockResolvedValue({
       adminRoleId: "admin-role",
-      modRoleId: null,
-    });
+      modRoleId: null });
 
     const interaction = makeInteraction({ roleIds: ["admin-role"] });
     await hasPermission(interaction, "admin");
@@ -159,6 +145,6 @@ describe("hasPermission", () => {
     clearGuildRoleCache("guild-1");
     await hasPermission(interaction, "admin");
 
-    expect(mocks.prisma.discordGuild.findFirst).toHaveBeenCalledTimes(2);
+    expect(mocks.db.query.discordGuilds.findFirst).toHaveBeenCalledTimes(2);
   });
 });

@@ -10,21 +10,18 @@
     }
   },
   "scripts": {
-    "db:push": "prisma db push",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
-    "typescript": "catalog:",
     "@community-bot/config": "workspace:*",
-    "prisma": "^7.2.0",
-    "@types/pg": "^8.16.0"
+    "drizzle-kit": "^0.31.9",
+    "typescript": "^5"
   },
   "dependencies": {
-    "@prisma/client": "catalog:",
-    "@prisma/adapter-pg": "^7.2.0",
-    "dotenv": "catalog:",
-    "pg": "^8.17.1"
+    "dotenv": "^17.2.2",
+    "drizzle-orm": "^0.45.1",
+    "postgres": "^3.4.8"
   }
 }

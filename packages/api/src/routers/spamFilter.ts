@@ -1,7 +1,6 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, spamFilters } from "@community-bot/db";
 import { moderatorProcedure, protectedProcedure, router } from "../index";
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { logAudit } from "../utils/audit";
 import { getUserBotChannel } from "../utils/botChannel";
 
@@ -9,8 +8,8 @@ export const spamFilterRouter = router({
   get: protectedProcedure.query(async ({ ctx }) => {
     const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-    const filter = await prisma.spamFilter.findUnique({
-      where: { botChannelId: botChannel.id },
+    const filter = await db.query.spamFilters.findFirst({
+      where: eq(spamFilters.botChannelId, botChannel.id),
     });
 
     // Return defaults if no filter config exists yet
@@ -20,6 +19,7 @@ export const spamFilterRouter = router({
       capsMaxPercent: 70,
       linksEnabled: false,
       linksAllowSubs: true,
+      linksAllowlist: [] as string[],
       symbolsEnabled: false,
       symbolsMaxPercent: 50,
       emotesEnabled: false,
@@ -42,6 +42,7 @@ export const spamFilterRouter = router({
         capsMaxPercent: z.number().int().min(1).max(100).optional(),
         linksEnabled: z.boolean().optional(),
         linksAllowSubs: z.boolean().optional(),
+        linksAllowlist: z.array(z.string().min(1).max(200)).max(100).optional(),
         symbolsEnabled: z.boolean().optional(),
         symbolsMaxPercent: z.number().int().min(1).max(100).optional(),
         emotesEnabled: z.boolean().optional(),
@@ -66,14 +67,13 @@ export const spamFilterRouter = router({
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
-      const result = await prisma.spamFilter.upsert({
-        where: { botChannelId: botChannel.id },
-        create: {
-          botChannelId: botChannel.id,
-          ...input,
-        },
-        update: input,
-      });
+      const [result] = await db.insert(spamFilters).values({
+        botChannelId: botChannel.id,
+        ...input,
+      }).onConflictDoUpdate({
+        target: spamFilters.botChannelId,
+        set: input,
+      }).returning();
 
       const { eventBus } = await import("../events");
       await eventBus.publish("spam-filter:updated", { channelId: botChannel.id });
@@ -84,10 +84,10 @@ export const spamFilterRouter = router({
         userImage: ctx.session.user.image,
         action: "spam-filter.update",
         resourceType: "SpamFilter",
-        resourceId: result.id,
+        resourceId: result!.id,
         metadata: { filters: Object.keys(input) },
       });
 
-      return result;
+      return result!;
     }),
 });

@@ -1,5 +1,6 @@
 import { TwitchCommand } from "../types/command.js";
-import { Prisma, prisma } from "@community-bot/db";
+import { db, eq, and, sql } from "@community-bot/db";
+import { botChannels, twitchCounters } from "@community-bot/db";
 
 function stripHash(channel: string): string {
   return channel.startsWith("#") ? channel.slice(1) : channel;
@@ -7,8 +8,8 @@ function stripHash(channel: string): string {
 
 async function getBotChannelId(channel: string): Promise<string | null> {
   const username = stripHash(channel).toLowerCase();
-  const botChannel = await prisma.botChannel.findFirst({
-    where: { twitchUsername: username },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.twitchUsername, username),
   });
   return botChannel?.id ?? null;
 }
@@ -38,12 +39,10 @@ export const counter: TwitchCommand = {
     // !counter <name> create
     if (action === "create") {
       try {
-        await prisma.twitchCounter.create({
-          data: { name, botChannelId },
-        });
+        await db.insert(twitchCounters).values({ name, botChannelId });
         await client.say(channel, `@${user}, counter "${name}" created (value: 0).`);
-      } catch (err) {
-        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      } catch (err: any) {
+        if (err?.code === "23505") {
           await client.say(channel, `@${user}, counter "${name}" already exists.`);
         } else {
           throw err;
@@ -54,20 +53,29 @@ export const counter: TwitchCommand = {
 
     // !counter <name> delete
     if (action === "delete") {
-      try {
-        await prisma.twitchCounter.delete({
-          where: { name_botChannelId: { name, botChannelId } },
-        });
-        await client.say(channel, `@${user}, counter "${name}" deleted.`);
-      } catch {
+      const deleted = await db
+        .delete(twitchCounters)
+        .where(
+          and(
+            eq(twitchCounters.name, name),
+            eq(twitchCounters.botChannelId, botChannelId)
+          )
+        )
+        .returning();
+      if (deleted.length === 0) {
         await client.say(channel, `@${user}, counter "${name}" not found.`);
+      } else {
+        await client.say(channel, `@${user}, counter "${name}" deleted.`);
       }
       return;
     }
 
     // All other actions require the counter to exist
-    const existing = await prisma.twitchCounter.findUnique({
-      where: { name_botChannelId: { name, botChannelId } },
+    const existing = await db.query.twitchCounters.findFirst({
+      where: and(
+        eq(twitchCounters.name, name),
+        eq(twitchCounters.botChannelId, botChannelId)
+      ),
     });
 
     if (!existing) {
@@ -77,20 +85,22 @@ export const counter: TwitchCommand = {
 
     // !counter <name> + / increment
     if (action === "+" || action === "increment") {
-      const updated = await prisma.twitchCounter.update({
-        where: { id: existing.id },
-        data: { value: { increment: 1 } },
-      });
+      const [updated] = await db
+        .update(twitchCounters)
+        .set({ value: sql`${twitchCounters.value} + 1` })
+        .where(eq(twitchCounters.id, existing.id))
+        .returning();
       await client.say(channel, `${name}: ${updated.value}`);
       return;
     }
 
     // !counter <name> - / decrement
     if (action === "-" || action === "decrement") {
-      const updated = await prisma.twitchCounter.update({
-        where: { id: existing.id },
-        data: { value: { decrement: 1 } },
-      });
+      const [updated] = await db
+        .update(twitchCounters)
+        .set({ value: sql`${twitchCounters.value} - 1` })
+        .where(eq(twitchCounters.id, existing.id))
+        .returning();
       await client.say(channel, `${name}: ${updated.value}`);
       return;
     }
@@ -102,10 +112,11 @@ export const counter: TwitchCommand = {
         await client.say(channel, `@${user}, usage: !counter ${name} set <number>`);
         return;
       }
-      const updated = await prisma.twitchCounter.update({
-        where: { id: existing.id },
-        data: { value: val },
-      });
+      const [updated] = await db
+        .update(twitchCounters)
+        .set({ value: val })
+        .where(eq(twitchCounters.id, existing.id))
+        .returning();
       await client.say(channel, `${name}: ${updated.value}`);
       return;
     }

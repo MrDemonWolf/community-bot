@@ -1,4 +1,5 @@
-import { prisma } from "@community-bot/db";
+import { db, eq } from "@community-bot/db";
+import { botChannels } from "@community-bot/db";
 import { TwitchCommand } from "../types/command.js";
 import { setMuted } from "../services/botState.js";
 import { getEventBus } from "../services/eventBusAccessor.js";
@@ -18,14 +19,14 @@ export const bot: TwitchCommand = {
 
       // Persist to DB
       try {
-        await prisma.botChannel.updateMany({
-          where: { twitchUsername: channelName },
-          data: { muted: true },
-        });
+        await db
+          .update(botChannels)
+          .set({ muted: true })
+          .where(eq(botChannels.twitchUsername, channelName));
 
         const eventBus = getEventBus();
-        const botChannel = await prisma.botChannel.findFirst({
-          where: { twitchUsername: channelName },
+        const botChannel = await db.query.botChannels.findFirst({
+          where: eq(botChannels.twitchUsername, channelName),
         });
         if (botChannel) {
           await eventBus.publish("bot:mute", {
@@ -44,14 +45,14 @@ export const bot: TwitchCommand = {
 
       // Persist to DB
       try {
-        await prisma.botChannel.updateMany({
-          where: { twitchUsername: channelName },
-          data: { muted: false },
-        });
+        await db
+          .update(botChannels)
+          .set({ muted: false })
+          .where(eq(botChannels.twitchUsername, channelName));
 
         const eventBus = getEventBus();
-        const botChannel = await prisma.botChannel.findFirst({
-          where: { twitchUsername: channelName },
+        const botChannel = await db.query.botChannels.findFirst({
+          where: eq(botChannels.twitchUsername, channelName),
         });
         if (botChannel) {
           await eventBus.publish("bot:mute", {

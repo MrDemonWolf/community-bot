@@ -1,5 +1,5 @@
 import { Client, Events, GatewayIntentBits } from "discord.js";
-import { prisma } from "@community-bot/db";
+import { db, eq, discordGuilds } from "@community-bot/db";
 import { listenWithFallback } from "@community-bot/server";
 import { EventBus } from "@community-bot/events";
 import env from "./utils/env.js";
@@ -54,10 +54,7 @@ client.on(Events.GuildDelete, (guild) => {
  */
 client.on(Events.GuildUpdate, async (_oldGuild, newGuild) => {
   try {
-    await prisma.discordGuild.updateMany({
-      where: { guildId: newGuild.id },
-      data: { name: newGuild.name, icon: newGuild.icon },
-    });
+    await db.update(discordGuilds).set({ name: newGuild.name, icon: newGuild.icon }).where(eq(discordGuilds.guildId, newGuild.id));
   } catch (err) {
     logger.error(
       "Discord - Event (Guild Update)",
@@ -147,10 +144,10 @@ worker(queue);
  * Verify Prisma connection on startup.
  */
 try {
-  await prisma.user.findFirst();
-  logger.database.connected("Prisma");
+  await db.query.users.findFirst();
+  logger.database.connected("Drizzle");
 } catch (err) {
-  logger.database.error("Prisma", err as Error);
+  logger.database.error("Drizzle", err as Error);
   process.exit(1);
 }
 
@@ -230,9 +227,9 @@ eventBus.on("discord:test-notification", async (payload) => {
     );
     const { TextChannel } = await import("discord.js");
 
-    const guild = await prisma.discordGuild.findUnique({
-      where: { guildId: payload.guildId },
-      include: { TwitchChannel: { take: 1 } },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.guildId, payload.guildId),
+      with: { twitchChannels: { limit: 1 } },
     });
 
     if (!guild?.notificationChannelId) return;
@@ -242,7 +239,7 @@ eventBus.on("discord:test-notification", async (payload) => {
     );
     if (!discordChannel || !(discordChannel instanceof TextChannel)) return;
 
-    const channel = guild.TwitchChannel[0];
+    const channel = guild.twitchChannels[0];
     const username = channel?.username ?? "teststreamer";
     const displayName = channel?.displayName ?? username;
     const profileImageUrl = channel?.profileImageUrl ?? "";

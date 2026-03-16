@@ -7,16 +7,15 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
+  return { db: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
@@ -27,10 +26,10 @@ import { t } from "../index";
 import { spamFilterRouter } from "./spamFilter";
 
 const createCaller = t.createCallerFactory(spamFilterRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 function authedCaller(role = "MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
@@ -40,8 +39,8 @@ describe("spamFilterRouter", () => {
   describe("get", () => {
     it("returns existing filter config", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.spamFilter.findUnique.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.spamFilters.findFirst.mockResolvedValue({
         capsEnabled: true,
         capsMinLength: 15,
         capsMaxPercent: 70,
@@ -57,8 +56,7 @@ describe("spamFilterRouter", () => {
         bannedWords: [],
         exemptLevel: "SUBSCRIBER",
         timeoutDuration: 5,
-        warningMessage: "Don't spam.",
-      });
+        warningMessage: "Don't spam." });
 
       const result = await caller.get();
       expect(result.capsEnabled).toBe(true);
@@ -66,8 +64,8 @@ describe("spamFilterRouter", () => {
 
     it("returns defaults when no filter exists", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.spamFilter.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.spamFilters.findFirst.mockResolvedValue(null);
 
       const result = await caller.get();
       expect(result.capsEnabled).toBe(false);
@@ -78,17 +76,15 @@ describe("spamFilterRouter", () => {
   describe("update", () => {
     it("upserts filter config and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.spamFilter.upsert.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.spamFilters.upsert.mockResolvedValue({
         id: "sf-1",
         capsEnabled: true,
-        linksEnabled: true,
-      });
+        linksEnabled: true });
 
       const result = await caller.update({
         capsEnabled: true,
-        linksEnabled: true,
-      });
+        linksEnabled: true });
 
       expect(result.capsEnabled).toBe(true);
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("spam-filter:updated", { channelId: "bc-1" });
@@ -99,17 +95,15 @@ describe("spamFilterRouter", () => {
 
     it("updates banned words", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.spamFilter.upsert.mockResolvedValue({
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.spamFilters.upsert.mockResolvedValue({
         id: "sf-1",
         bannedWordsEnabled: true,
-        bannedWords: ["bad", "spam"],
-      });
+        bannedWords: ["bad", "spam"] });
 
       const result = await caller.update({
         bannedWordsEnabled: true,
-        bannedWords: ["bad", "spam"],
-      });
+        bannedWords: ["bad", "spam"] });
 
       expect(result.bannedWords).toEqual(["bad", "spam"]);
     });
@@ -121,7 +115,7 @@ describe("spamFilterRouter", () => {
 
     it("validates timeout duration range", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
       await expect(caller.update({ timeoutDuration: 0 })).rejects.toThrow();
     });
   });

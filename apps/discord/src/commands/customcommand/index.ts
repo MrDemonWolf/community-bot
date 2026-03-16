@@ -5,7 +5,7 @@ import {
 } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, sql, discordCustomCommands } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 import { hasPermission } from "../../utils/permissions.js";
 import {
@@ -179,8 +179,8 @@ async function handleRun(
   const guildId = interaction.guildId!;
   const name = interaction.options.getString("name", true).toLowerCase();
 
-  const cmd = await prisma.discordCustomCommand.findUnique({
-    where: { guildId_name: { guildId, name } },
+  const cmd = await db.query.discordCustomCommands.findFirst({
+    where: and(eq(discordCustomCommands.guildId, guildId), eq(discordCustomCommands.name, name)),
   });
 
   if (!cmd || !cmd.enabled) {
@@ -234,10 +234,7 @@ async function handleRun(
   });
 
   // Increment use count
-  await prisma.discordCustomCommand.update({
-    where: { id: cmd.id },
-    data: { useCount: { increment: 1 } },
-  });
+  await db.update(discordCustomCommands).set({ useCount: sql`${discordCustomCommands.useCount} + 1` }).where(eq(discordCustomCommands.id, cmd.id));
 
   logger.commands.success("cc run", interaction.user.username, interaction.user.id, guildId);
 }
@@ -272,8 +269,8 @@ async function handleCreate(
     return;
   }
 
-  const existing = await prisma.discordCustomCommand.findUnique({
-    where: { guildId_name: { guildId, name } },
+  const existing = await db.query.discordCustomCommands.findFirst({
+    where: and(eq(discordCustomCommands.guildId, guildId), eq(discordCustomCommands.name, name)),
   });
 
   if (existing) {
@@ -283,16 +280,14 @@ async function handleCreate(
     return;
   }
 
-  await prisma.discordCustomCommand.create({
-    data: {
+  await db.insert(discordCustomCommands).values({
       guildId,
       name,
       description,
       response,
       ephemeral,
       createdBy: interaction.user.id,
-    },
-  });
+    });
 
   await interaction.editReply({
     content: `Custom command \`${name}\` created. Use \`/cc run ${name}\` to test it.`,
@@ -315,8 +310,8 @@ async function handleEdit(
   const guildId = interaction.guildId!;
   const name = interaction.options.getString("name", true).toLowerCase();
 
-  const cmd = await prisma.discordCustomCommand.findUnique({
-    where: { guildId_name: { guildId, name } },
+  const cmd = await db.query.discordCustomCommands.findFirst({
+    where: and(eq(discordCustomCommands.guildId, guildId), eq(discordCustomCommands.name, name)),
   });
 
   if (!cmd) {
@@ -342,10 +337,7 @@ async function handleEdit(
     return;
   }
 
-  await prisma.discordCustomCommand.update({
-    where: { id: cmd.id },
-    data,
-  });
+  await db.update(discordCustomCommands).set(data).where(eq(discordCustomCommands.id, cmd.id));
 
   await interaction.editReply({
     content: `Custom command \`${name}\` updated.`,
@@ -368,11 +360,9 @@ async function handleDelete(
   const guildId = interaction.guildId!;
   const name = interaction.options.getString("name", true).toLowerCase();
 
-  const deleted = await prisma.discordCustomCommand.deleteMany({
-    where: { guildId, name },
-  });
+  const deleted = await db.delete(discordCustomCommands).where(and(eq(discordCustomCommands.guildId, guildId), eq(discordCustomCommands.name, name))).returning();
 
-  if (deleted.count === 0) {
+  if (deleted.length === 0) {
     await interaction.editReply({
       content: `Custom command \`${name}\` not found.`,
     });
@@ -391,9 +381,9 @@ async function handleList(
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const guildId = interaction.guildId!;
 
-  const commands = await prisma.discordCustomCommand.findMany({
-    where: { guildId },
-    orderBy: { name: "asc" },
+  const commands = await db.query.discordCustomCommands.findMany({
+    where: eq(discordCustomCommands.guildId, guildId),
+    orderBy: asc(discordCustomCommands.name),
   });
 
   if (commands.length === 0) {
@@ -434,8 +424,8 @@ async function handleToggle(
   const guildId = interaction.guildId!;
   const name = interaction.options.getString("name", true).toLowerCase();
 
-  const cmd = await prisma.discordCustomCommand.findUnique({
-    where: { guildId_name: { guildId, name } },
+  const cmd = await db.query.discordCustomCommands.findFirst({
+    where: and(eq(discordCustomCommands.guildId, guildId), eq(discordCustomCommands.name, name)),
   });
 
   if (!cmd) {
@@ -446,10 +436,7 @@ async function handleToggle(
   }
 
   const newState = !cmd.enabled;
-  await prisma.discordCustomCommand.update({
-    where: { id: cmd.id },
-    data: { enabled: newState },
-  });
+  await db.update(discordCustomCommands).set({ enabled: newState }).where(eq(discordCustomCommands.id, cmd.id));
 
   await interaction.editReply({
     content: `Custom command \`${name}\` ${newState ? "enabled" : "disabled"}.`,

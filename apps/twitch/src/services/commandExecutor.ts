@@ -1,6 +1,7 @@
 import { ChatClient, ChatMessage } from "@twurple/chat";
 
-import { prisma, TwitchResponseType } from "@community-bot/db";
+import { db, eq, and, sql, TwitchResponseType } from "@community-bot/db";
+import { twitchChatCommands, botChannels, twitchCounters } from "@community-bot/db";
 import { getRandomChatter, getChattersCount } from "./chatterTracker.js";
 import { getUserAccessLevel } from "./accessControl.js";
 import {
@@ -302,12 +303,12 @@ export async function substituteVariables(
   // {count} — auto-increment command use count
   if (/\{count\}/i.test(result) && commandId) {
     try {
-      const updated = await prisma.twitchChatCommand.update({
-        where: { id: commandId },
-        data: { useCount: { increment: 1 } },
-        select: { useCount: true },
-      });
-      result = result.replace(/\{count\}/gi, String(updated.useCount));
+      const [updated] = await db
+        .update(twitchChatCommands)
+        .set({ useCount: sql`${twitchChatCommands.useCount} + 1` })
+        .where(eq(twitchChatCommands.id, commandId))
+        .returning({ useCount: twitchChatCommands.useCount });
+      result = result.replace(/\{count\}/gi, String(updated?.useCount ?? 0));
     } catch {
       result = result.replace(/\{count\}/gi, "(count error)");
     }
@@ -365,14 +366,17 @@ export async function substituteVariables(
       async (_match, counterName: string) => {
         try {
           const channelName = channel.replace(/^#/, "").toLowerCase();
-          const botChannel = await prisma.botChannel.findFirst({
-            where: { twitchUsername: channelName },
-            select: { id: true },
+          const botChannel = await db.query.botChannels.findFirst({
+            where: eq(botChannels.twitchUsername, channelName),
+            columns: { id: true },
           });
           if (!botChannel) return "(counter error)";
 
-          const counter = await prisma.twitchCounter.findUnique({
-            where: { name_botChannelId: { name: counterName.trim().toLowerCase(), botChannelId: botChannel.id } },
+          const counter = await db.query.twitchCounters.findFirst({
+            where: and(
+              eq(twitchCounters.name, counterName.trim().toLowerCase()),
+              eq(twitchCounters.botChannelId, botChannel.id)
+            ),
           });
           return counter ? String(counter.value) : "0";
         } catch {

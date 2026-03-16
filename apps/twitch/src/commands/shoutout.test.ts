@@ -6,8 +6,7 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
@@ -16,22 +15,20 @@ const mocks = vi.hoisted(() => {
     helixFetch: vi.fn(),
     generateShoutout: vi.fn(),
     isAiShoutoutGloballyEnabled: vi.fn(),
-    prisma: new Proxy(mp, handler),
+    db: new Proxy(mp, handler),
   };
 });
 
 vi.mock("../services/helixClient.js", () => ({
-  helixFetch: mocks.helixFetch,
-}));
+  helixFetch: mocks.helixFetch }));
 vi.mock("../services/aiShoutout.js", () => ({
   generateShoutout: mocks.generateShoutout,
-  isAiShoutoutGloballyEnabled: mocks.isAiShoutoutGloballyEnabled,
-}));
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+  isAiShoutoutGloballyEnabled: mocks.isAiShoutoutGloballyEnabled }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 
 import { shoutout } from "./shoutout.js";
 
-const p = mocks.prisma;
+const p = mocks.db;
 
 function makeMockMsg(isMod = true) {
   return {
@@ -68,8 +65,7 @@ describe("shoutout command", () => {
           broadcaster_name: "Target",
           game_name: "Fortnite",
           title: "Playing Fortnite",
-        }],
-      });
+        }] });
 
     await shoutout.execute(client, "#channel", "testuser", ["target"], makeMockMsg());
     expect(say).toHaveBeenCalledWith(
@@ -88,8 +84,7 @@ describe("shoutout command", () => {
           broadcaster_name: "Target",
           game_name: "",
           title: "",
-        }],
-      });
+        }] });
 
     await shoutout.execute(client, "#channel", "testuser", ["target"], makeMockMsg());
     expect(say).toHaveBeenCalledWith(
@@ -114,8 +109,7 @@ describe("shoutout command", () => {
           broadcaster_name: "Target",
           game_name: "",
           title: "",
-        }],
-      });
+        }] });
 
     await shoutout.execute(client, "#channel", "testuser", ["@target"], makeMockMsg());
     expect(mocks.helixFetch).toHaveBeenCalledWith("users", { login: "target" });
@@ -123,7 +117,7 @@ describe("shoutout command", () => {
 
   it("sends AI shoutout when enabled for channel", async () => {
     mocks.isAiShoutoutGloballyEnabled.mockReturnValue(true);
-    p.botChannel.findFirst.mockResolvedValue({ aiShoutoutEnabled: true });
+    p.query.botChannels.findFirst.mockResolvedValue({ aiShoutoutEnabled: true });
     mocks.generateShoutout.mockResolvedValue("AI says: Target is awesome!");
 
     mocks.helixFetch
@@ -135,8 +129,7 @@ describe("shoutout command", () => {
           broadcaster_name: "Target",
           game_name: "Fortnite",
           title: "",
-        }],
-      });
+        }] });
 
     await shoutout.execute(client, "#channel", "testuser", ["target"], makeMockMsg());
 
@@ -147,7 +140,7 @@ describe("shoutout command", () => {
 
   it("does not send AI shoutout when disabled for channel", async () => {
     mocks.isAiShoutoutGloballyEnabled.mockReturnValue(true);
-    p.botChannel.findFirst.mockResolvedValue({ aiShoutoutEnabled: false });
+    p.query.botChannels.findFirst.mockResolvedValue({ aiShoutoutEnabled: false });
 
     mocks.helixFetch
       .mockResolvedValueOnce({ data: [{ id: "999", login: "target", display_name: "Target" }] })
@@ -158,8 +151,7 @@ describe("shoutout command", () => {
           broadcaster_name: "Target",
           game_name: "",
           title: "",
-        }],
-      });
+        }] });
 
     await shoutout.execute(client, "#channel", "testuser", ["target"], makeMockMsg());
 
@@ -169,7 +161,7 @@ describe("shoutout command", () => {
 
   it("still sends standard shoutout when AI fails", async () => {
     mocks.isAiShoutoutGloballyEnabled.mockReturnValue(true);
-    p.botChannel.findFirst.mockResolvedValue({ aiShoutoutEnabled: true });
+    p.query.botChannels.findFirst.mockResolvedValue({ aiShoutoutEnabled: true });
     mocks.generateShoutout.mockRejectedValue(new Error("API Error"));
 
     mocks.helixFetch
@@ -181,8 +173,7 @@ describe("shoutout command", () => {
           broadcaster_name: "Target",
           game_name: "",
           title: "",
-        }],
-      });
+        }] });
 
     await shoutout.execute(client, "#channel", "testuser", ["target"], makeMockMsg());
 

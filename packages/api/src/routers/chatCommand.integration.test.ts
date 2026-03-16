@@ -11,12 +11,11 @@ vi.mock("../events", () => ({ eventBus: { publish: vi.fn() } }));
 vi.mock("../utils/audit", () => ({ logAudit: vi.fn() }));
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma };
 });
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
 vi.mock("@community-bot/env/server", () => ({
-  env: { REDIS_URL: "redis://localhost" },
-}));
+  env: { REDIS_URL: "redis://localhost" } }));
 vi.mock("next/server", () => ({}));
 
 import { t } from "../index";
@@ -42,7 +41,7 @@ describe("chatCommandRouter (integration)", () => {
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   function authedCaller(userId = user.id) {
@@ -54,15 +53,13 @@ describe("chatCommandRouter (integration)", () => {
       const caller = authedCaller();
       const cmd = await caller.create({
         name: "hello",
-        response: "Hello world!",
-      });
+        response: "Hello world!" });
 
       expect(cmd.name).toBe("hello");
       expect(cmd.botChannelId).toBe(botChannel.id);
 
       const dbCmd = await testPrisma.twitchChatCommand.findUnique({
-        where: { id: cmd.id },
-      });
+        where: { id: cmd.id } });
       expect(dbCmd).not.toBeNull();
       expect(dbCmd!.response).toBe("Hello world!");
     });
@@ -88,8 +85,7 @@ describe("chatCommandRouter (integration)", () => {
       const cmd = await caller.create({
         name: "MyCmd",
         response: "test",
-        aliases: ["ALIAS1", "Alias2"],
-      });
+        aliases: ["ALIAS1", "Alias2"] });
 
       expect(cmd.name).toBe("mycmd");
       expect(cmd.aliases).toEqual(["alias1", "alias2"]);
@@ -101,20 +97,17 @@ describe("chatCommandRouter (integration)", () => {
       const caller = authedCaller();
       await seedCommand(testPrisma, {
         botChannelId: botChannel.id,
-        name: "cmd1",
-      });
+        name: "cmd1" });
       await seedCommand(testPrisma, {
         botChannelId: botChannel.id,
-        name: "cmd2",
-      });
+        name: "cmd2" });
 
       // Create another user with different bot channel
       const user2 = await seedUser(testPrisma, { id: "user-2", role: "BROADCASTER" });
       const bc2 = await seedBotChannel(testPrisma, { userId: user2.id });
       await seedCommand(testPrisma, {
         botChannelId: bc2.id,
-        name: "othercmd",
-      });
+        name: "othercmd" });
 
       const commands = await caller.list();
       expect(commands).toHaveLength(2);
@@ -127,14 +120,12 @@ describe("chatCommandRouter (integration)", () => {
       const caller = authedCaller();
       const cmd = await caller.create({
         name: "testcmd",
-        response: "original",
-      });
+        response: "original" });
 
       const updated = await caller.update({
         id: cmd.id,
         response: "updated response",
-        accessLevel: "MODERATOR",
-      });
+        accessLevel: "MODERATOR" });
 
       expect(updated.response).toBe("updated response");
       expect(updated.accessLevel).toBe("MODERATOR");
@@ -145,8 +136,7 @@ describe("chatCommandRouter (integration)", () => {
       const bc2 = await seedBotChannel(testPrisma, { userId: user2.id });
       const otherCmd = await seedCommand(testPrisma, {
         botChannelId: bc2.id,
-        name: "other",
-      });
+        name: "other" });
 
       const caller = authedCaller();
       await expect(
@@ -160,14 +150,12 @@ describe("chatCommandRouter (integration)", () => {
       const caller = authedCaller();
       const cmd = await caller.create({
         name: "deleteme",
-        response: "bye",
-      });
+        response: "bye" });
 
       await caller.delete({ id: cmd.id });
 
       const dbCmd = await testPrisma.twitchChatCommand.findUnique({
-        where: { id: cmd.id },
-      });
+        where: { id: cmd.id } });
       expect(dbCmd).toBeNull();
     });
   });
@@ -177,8 +165,7 @@ describe("chatCommandRouter (integration)", () => {
       const caller = authedCaller();
       const cmd = await caller.create({
         name: "toggleme",
-        response: "test",
-      });
+        response: "test" });
       expect(cmd.enabled).toBe(true);
 
       const toggled = await caller.toggleEnabled({ id: cmd.id });

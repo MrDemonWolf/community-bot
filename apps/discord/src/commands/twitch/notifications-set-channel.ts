@@ -1,7 +1,7 @@
 import { ChannelType, MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, discordGuilds } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 
 export async function handleSetChannel(
@@ -30,10 +30,7 @@ export async function handleSetChannel(
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
-    await prisma.discordGuild.update({
-      where: { guildId },
-      data: { notificationChannelId: channel.id },
-    });
+    await db.update(discordGuilds).set({ notificationChannelId: channel.id }).where(eq(discordGuilds.guildId, guildId));
 
     logger.commands.success(
       "twitch notifications set-channel",

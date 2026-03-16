@@ -12,15 +12,13 @@ vi.mock("../utils/audit", () => ({ logAudit: vi.fn() }));
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
   return {
-    ...original,
-    prisma: testPrisma,
+    ...original, db: testPrisma,
     QueueStatus: { OPEN: "OPEN", CLOSED: "CLOSED", PAUSED: "PAUSED" },
   };
 });
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
 vi.mock("@community-bot/env/server", () => ({
-  env: { REDIS_URL: "redis://localhost" },
-}));
+  env: { REDIS_URL: "redis://localhost" } }));
 vi.mock("next/server", () => ({}));
 
 import { t } from "../index";
@@ -41,13 +39,12 @@ describe("queueRouter (integration)", () => {
     await cleanDatabase(testPrisma);
     broadcaster = await seedUser(testPrisma, {
       id: "broadcaster-1",
-      role: "BROADCASTER",
-    });
+      role: "BROADCASTER" });
   });
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   function authedCaller(userId = broadcaster.id) {
@@ -71,8 +68,7 @@ describe("queueRouter (integration)", () => {
 
       // Verify in DB
       const dbState = await testPrisma.queueState.findUnique({
-        where: { id: "singleton" },
-      });
+        where: { id: "singleton" } });
       expect(dbState!.status).toBe("OPEN");
     });
 
@@ -91,18 +87,15 @@ describe("queueRouter (integration)", () => {
       await seedQueueEntry(testPrisma, {
         twitchUserId: "u3",
         twitchUsername: "viewer3",
-        position: 3,
-      });
+        position: 3 });
       await seedQueueEntry(testPrisma, {
         twitchUserId: "u1",
         twitchUsername: "viewer1",
-        position: 1,
-      });
+        position: 1 });
       await seedQueueEntry(testPrisma, {
         twitchUserId: "u2",
         twitchUsername: "viewer2",
-        position: 2,
-      });
+        position: 2 });
 
       const entries = await caller.list();
       expect(entries).toHaveLength(3);
@@ -117,16 +110,14 @@ describe("queueRouter (integration)", () => {
       const caller = authedCaller();
       const e1 = await seedQueueEntry(testPrisma, {
         twitchUserId: "u1",
-        position: 1,
-      });
+        position: 1 });
       await seedQueueEntry(testPrisma, { twitchUserId: "u2", position: 2 });
       await seedQueueEntry(testPrisma, { twitchUserId: "u3", position: 3 });
 
       await caller.removeEntry({ id: e1.id });
 
       const remaining = await testPrisma.queueEntry.findMany({
-        orderBy: { position: "asc" },
-      });
+        orderBy: { position: "asc" } });
       expect(remaining).toHaveLength(2);
       expect(remaining[0].position).toBe(1);
       expect(remaining[1].position).toBe(2);
@@ -146,25 +137,21 @@ describe("queueRouter (integration)", () => {
       await seedQueueEntry(testPrisma, {
         twitchUserId: "u1",
         twitchUsername: "first",
-        position: 1,
-      });
+        position: 1 });
       await seedQueueEntry(testPrisma, {
         twitchUserId: "u2",
         twitchUsername: "second",
-        position: 2,
-      });
+        position: 2 });
       await seedQueueEntry(testPrisma, {
         twitchUserId: "u3",
         twitchUsername: "third",
-        position: 3,
-      });
+        position: 3 });
 
       const picked = await caller.pickEntry({ mode: "next" });
       expect(picked.twitchUsername).toBe("first");
 
       const remaining = await testPrisma.queueEntry.findMany({
-        orderBy: { position: "asc" },
-      });
+        orderBy: { position: "asc" } });
       expect(remaining).toHaveLength(2);
       expect(remaining[0].position).toBe(1);
       expect(remaining[0].twitchUsername).toBe("second");

@@ -1,4 +1,5 @@
-import { prisma } from "@community-bot/db";
+import { db, eq } from "@community-bot/db";
+import { botChannels, spamPermits } from "@community-bot/db";
 import { TwitchCommand } from "../types/command.js";
 
 export const permit: TwitchCommand = {
@@ -18,19 +19,17 @@ export const permit: TwitchCommand = {
     const seconds = Math.min(Math.max(parseInt(args[1]) || 60, 1), 3600);
 
     const channelKey = channel.replace(/^#/, "").toLowerCase();
-    const botChannel = await prisma.botChannel.findFirst({
-      where: { twitchUsername: channelKey },
-      select: { id: true },
+    const botChannel = await db.query.botChannels.findFirst({
+      where: eq(botChannels.twitchUsername, channelKey),
+      columns: { id: true },
     });
 
     if (!botChannel) return;
 
-    await prisma.spamPermit.create({
-      data: {
-        username: target,
-        botChannelId: botChannel.id,
-        expiresAt: new Date(Date.now() + seconds * 1000),
-      },
+    await db.insert(spamPermits).values({
+      username: target,
+      botChannelId: botChannel.id,
+      expiresAt: new Date(Date.now() + seconds * 1000),
     });
 
     await client.say(

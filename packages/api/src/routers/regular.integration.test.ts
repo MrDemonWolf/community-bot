@@ -7,23 +7,20 @@ import {
 
 const mocks = vi.hoisted(() => ({
   getTwitchUserByLogin: vi.fn(),
-  getTwitchUserById: vi.fn(),
-}));
+  getTwitchUserById: vi.fn() }));
 
 vi.mock("../events", () => ({ eventBus: { publish: vi.fn() } }));
 vi.mock("../utils/audit", () => ({ logAudit: vi.fn() }));
 vi.mock("../utils/twitch", () => ({
   getTwitchUserByLogin: mocks.getTwitchUserByLogin,
-  getTwitchUserById: mocks.getTwitchUserById,
-}));
+  getTwitchUserById: mocks.getTwitchUserById }));
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma };
 });
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
 vi.mock("@community-bot/env/server", () => ({
-  env: { REDIS_URL: "redis://localhost" },
-}));
+  env: { REDIS_URL: "redis://localhost" } }));
 vi.mock("next/server", () => ({}));
 
 import { t } from "../index";
@@ -45,13 +42,12 @@ describe("regularRouter (integration)", () => {
     vi.clearAllMocks();
     broadcaster = await seedUser(testPrisma, {
       id: "user-1",
-      role: "BROADCASTER",
-    });
+      role: "BROADCASTER" });
   });
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   function authedCaller(userId = broadcaster.id) {
@@ -62,8 +58,7 @@ describe("regularRouter (integration)", () => {
     it("creates a Regular in the database", async () => {
       mocks.getTwitchUserByLogin.mockResolvedValue({
         id: "twitch-42",
-        display_name: "CoolViewer",
-      });
+        display_name: "CoolViewer" });
 
       const caller = authedCaller();
       const regular = await caller.add({ username: "coolviewer" });
@@ -72,16 +67,14 @@ describe("regularRouter (integration)", () => {
       expect(regular.twitchUsername).toBe("CoolViewer");
 
       const dbRegular = await testPrisma.regular.findUnique({
-        where: { twitchUserId: "twitch-42" },
-      });
+        where: { twitchUserId: "twitch-42" } });
       expect(dbRegular).not.toBeNull();
     });
 
     it("rejects duplicate regular (unique constraint)", async () => {
       mocks.getTwitchUserByLogin.mockResolvedValue({
         id: "twitch-42",
-        display_name: "CoolViewer",
-      });
+        display_name: "CoolViewer" });
 
       const caller = authedCaller();
       await caller.add({ username: "coolviewer" });
@@ -107,16 +100,14 @@ describe("regularRouter (integration)", () => {
           twitchUserId: "twitch-99",
           twitchUsername: "RemoveMe",
           addedBy: "test",
-        },
-      });
+        } });
 
       const caller = authedCaller();
       const result = await caller.remove({ id: regular.id });
       expect(result.success).toBe(true);
 
       const dbRegular = await testPrisma.regular.findUnique({
-        where: { id: regular.id },
-      });
+        where: { id: regular.id } });
       expect(dbRegular).toBeNull();
     });
   });
@@ -129,16 +120,14 @@ describe("regularRouter (integration)", () => {
           twitchUsername: "First",
           addedBy: "test",
           createdAt: new Date("2024-01-01"),
-        },
-      });
+        } });
       await testPrisma.regular.create({
         data: {
           twitchUserId: "t2",
           twitchUsername: "Second",
           addedBy: "test",
           createdAt: new Date("2024-06-01"),
-        },
-      });
+        } });
 
       const caller = authedCaller();
       const regulars = await caller.list();

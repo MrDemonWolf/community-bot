@@ -7,16 +7,15 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
+  return { db: new Proxy(mp, handler), eventBus: { publish: vi.fn() }, logAudit: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("../utils/audit", () => ({ logAudit: mocks.logAudit }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
@@ -27,10 +26,10 @@ import { t } from "../index";
 import { quoteRouter } from "./quote";
 
 const createCaller = t.createCallerFactory(quoteRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 function authedCaller(role = "MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
@@ -40,21 +39,21 @@ describe("quoteRouter", () => {
   describe("list", () => {
     it("returns quotes for the user's bot channel", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.quote.findMany.mockResolvedValue([
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.quotes.findMany.mockResolvedValue([
         { id: "q1", quoteNumber: 1, text: "Hello" },
         { id: "q2", quoteNumber: 2, text: "World" },
       ]);
       const result = await caller.list();
       expect(result).toHaveLength(2);
-      expect(p.quote.findMany).toHaveBeenCalledWith(
+      expect(p.query.quotes.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: { botChannelId: "bc-1" } })
       );
     });
 
     it("throws when bot not enabled", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue(null);
       await expect(caller.list()).rejects.toThrow("Bot is not enabled");
     });
   });
@@ -62,16 +61,15 @@ describe("quoteRouter", () => {
   describe("add", () => {
     it("creates a quote and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.quote.findFirst.mockResolvedValue({ quoteNumber: 5 });
-      p.quote.create.mockResolvedValue({ id: "q6", quoteNumber: 6, text: "New quote" });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.quotes.findFirst.mockResolvedValue({ quoteNumber: 5 });
+      p.query.quotes.create.mockResolvedValue({ id: "q6", quoteNumber: 6, text: "New quote" });
 
       const result = await caller.add({ text: "New quote" });
       expect(result.quoteNumber).toBe(6);
-      expect(p.quote.create).toHaveBeenCalledWith(
+      expect(p.query.quotes.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ quoteNumber: 6, text: "New quote", source: "web" }),
-        })
+          data: expect.objectContaining({ quoteNumber: 6, text: "New quote", source: "web" }) })
       );
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("quote:created", { quoteId: "q6" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
@@ -81,9 +79,9 @@ describe("quoteRouter", () => {
 
     it("starts at quote 1 when no quotes exist", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.quote.findFirst.mockResolvedValue(null);
-      p.quote.create.mockResolvedValue({ id: "q1", quoteNumber: 1, text: "First" });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.quotes.findFirst.mockResolvedValue(null);
+      p.query.quotes.create.mockResolvedValue({ id: "q1", quoteNumber: 1, text: "First" });
 
       const result = await caller.add({ text: "First" });
       expect(result.quoteNumber).toBe(1);
@@ -100,9 +98,9 @@ describe("quoteRouter", () => {
 
     it("removes a quote and publishes event", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.quote.findUnique.mockResolvedValue({ id: UUID, quoteNumber: 3, botChannelId: "bc-1" });
-      p.quote.delete.mockResolvedValue({});
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.quotes.findFirst.mockResolvedValue({ id: UUID, quoteNumber: 3, botChannelId: "bc-1" });
+      p.query.quotes.delete.mockResolvedValue({});
 
       const result = await caller.remove({ id: UUID });
       expect(result.success).toBe(true);
@@ -114,15 +112,15 @@ describe("quoteRouter", () => {
 
     it("throws NOT_FOUND for missing quote", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.quote.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.quotes.findFirst.mockResolvedValue(null);
       await expect(caller.remove({ id: UUID })).rejects.toThrow("Quote not found");
     });
 
     it("throws NOT_FOUND for quote from different channel", async () => {
       const caller = authedCaller();
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.quote.findUnique.mockResolvedValue({ id: UUID, botChannelId: "bc-other" });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.quotes.findFirst.mockResolvedValue({ id: UUID, botChannelId: "bc-other" });
       await expect(caller.remove({ id: UUID })).rejects.toThrow("Quote not found");
     });
   });
@@ -130,8 +128,8 @@ describe("quoteRouter", () => {
   describe("search", () => {
     it("returns matching quotes", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.quote.findMany.mockResolvedValue([
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.quotes.findMany.mockResolvedValue([
         { id: "q1", quoteNumber: 1, text: "Funny thing" },
       ]);
       const result = await caller.search({ query: "funny" });
@@ -142,16 +140,16 @@ describe("quoteRouter", () => {
   describe("get", () => {
     it("returns a specific quote by number", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.quote.findUnique.mockResolvedValue({ id: "q1", quoteNumber: 1, text: "Hello" });
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.quotes.findFirst.mockResolvedValue({ id: "q1", quoteNumber: 1, text: "Hello" });
       const result = await caller.get({ quoteNumber: 1 });
       expect(result.text).toBe("Hello");
     });
 
     it("throws NOT_FOUND for missing quote", async () => {
       const caller = createCaller(mockSession());
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1", enabled: true });
-      p.quote.findUnique.mockResolvedValue(null);
+      p.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1", enabled: true });
+      p.query.quotes.findFirst.mockResolvedValue(null);
       await expect(caller.get({ quoteNumber: 99 })).rejects.toThrow("Quote not found");
     });
   });

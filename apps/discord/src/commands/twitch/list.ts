@@ -1,7 +1,7 @@
 import { EmbedBuilder, MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, discordGuilds } from "@community-bot/db";
 import type { TwitchChannel } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 
@@ -21,9 +21,9 @@ export async function handleList(
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
-    const guild = await prisma.discordGuild.findUnique({
-      where: { guildId },
-      include: { TwitchChannel: true },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.guildId, guildId),
+      with: { twitchChannels: true },
     });
 
     if (!guild) {
@@ -33,7 +33,7 @@ export async function handleList(
       return;
     }
 
-    const channels = guild.TwitchChannel;
+    const channels = guild.twitchChannels;
 
     const embed = new EmbedBuilder()
       .setTitle("Twitch Stream Monitoring")

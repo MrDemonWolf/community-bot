@@ -7,16 +7,15 @@ const mocks = vi.hoisted(() => {
     get(target, prop: string) {
       if (!target[prop]) {
         target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
-        });
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
       }
       return target[prop];
     },
   };
-  return { prisma: new Proxy(mp, handler), fetch: vi.fn() };
+  return { db: new Proxy(mp, handler), fetch: vi.fn() };
 });
 
-vi.mock("@community-bot/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({ db: mocks.db }));
 vi.mock("../events", () => ({ eventBus: { publish: vi.fn() } }));
 vi.mock("../utils/audit", () => ({ logAudit: vi.fn() }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
@@ -29,23 +28,21 @@ import { t } from "../index";
 import { pollRouter } from "./poll";
 
 const createCaller = t.createCallerFactory(pollRouter);
-const p = mocks.prisma;
+const p = mocks.db;
 
 function authedCaller(role = "MODERATOR", userId = "user-1") {
-  p.user.findUnique.mockResolvedValue(mockUser({ id: userId, role }));
+  p.query.users.findFirst.mockResolvedValue(mockUser({ id: userId, role }));
   return createCaller(mockSession(userId));
 }
 
 function mockHelixAuth() {
-  p.account.findFirst.mockResolvedValue({
+  p.query.accounts.findFirst.mockResolvedValue({
     userId: "user-1",
     providerId: "twitch",
-    accountId: "twitch-123",
-  });
-  p.twitchCredential.findFirst.mockResolvedValue({
+    accountId: "twitch-123" });
+  p.query.twitchCredentials.findFirst.mockResolvedValue({
     userId: "twitch-123",
-    accessToken: "mock-token",
-  });
+    accessToken: "mock-token" });
 }
 
 describe("pollRouter", () => {
@@ -70,8 +67,7 @@ describe("pollRouter", () => {
 
       mocks.fetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ data: pollData }),
-      });
+        json: async () => ({ data: pollData }) });
 
       const result = await caller.list();
 
@@ -80,27 +76,24 @@ describe("pollRouter", () => {
         expect.stringContaining("helix/polls?broadcaster_id=twitch-123"),
         expect.objectContaining({
           headers: expect.objectContaining({
-            Authorization: "Bearer mock-token",
-          }),
-        })
+            Authorization: "Bearer mock-token" }) })
       );
     });
 
     it("throws when no Twitch account linked", async () => {
       const caller = createCaller(mockSession());
-      p.account.findFirst.mockResolvedValue(null);
+      p.query.accounts.findFirst.mockResolvedValue(null);
 
       await expect(caller.list()).rejects.toThrow("No Twitch account linked");
     });
 
     it("throws when no Twitch credentials found", async () => {
       const caller = createCaller(mockSession());
-      p.account.findFirst.mockResolvedValue({
+      p.query.accounts.findFirst.mockResolvedValue({
         userId: "user-1",
         providerId: "twitch",
-        accountId: "twitch-123",
-      });
-      p.twitchCredential.findFirst.mockResolvedValue(null);
+        accountId: "twitch-123" });
+      p.query.twitchCredentials.findFirst.mockResolvedValue(null);
 
       await expect(caller.list()).rejects.toThrow("No Twitch credentials found");
     });
@@ -111,8 +104,7 @@ describe("pollRouter", () => {
 
       mocks.fetch.mockResolvedValue({
         ok: false,
-        status: 401,
-      });
+        status: 401 });
 
       await expect(caller.list()).rejects.toThrow("Helix API error");
     });
@@ -131,14 +123,12 @@ describe("pollRouter", () => {
 
       mocks.fetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ data: [createdPoll] }),
-      });
+        json: async () => ({ data: [createdPoll] }) });
 
       const result = await caller.create({
         title: "Favorite color?",
         choices: ["Red", "Blue", "Green"],
-        duration: 120,
-      });
+        duration: 120 });
 
       expect(result).toEqual(createdPoll);
       expect(mocks.fetch).toHaveBeenCalledWith(
@@ -149,9 +139,7 @@ describe("pollRouter", () => {
             broadcaster_id: "twitch-123",
             title: "Favorite color?",
             choices: [{ title: "Red" }, { title: "Blue" }, { title: "Green" }],
-            duration: 120,
-          }),
-        })
+            duration: 120 }) })
       );
     });
 
@@ -161,8 +149,7 @@ describe("pollRouter", () => {
 
       mocks.fetch.mockResolvedValue({
         ok: false,
-        text: async () => "Bad Request",
-      });
+        text: async () => "Bad Request" });
 
       await expect(
         caller.create({ title: "Test", choices: ["A", "B"] })
@@ -190,8 +177,7 @@ describe("pollRouter", () => {
 
       mocks.fetch.mockResolvedValue({
         ok: true,
-        json: async () => ({ data: [endedPoll] }),
-      });
+        json: async () => ({ data: [endedPoll] }) });
 
       const result = await caller.end({ id: "poll-1" });
 
@@ -203,9 +189,7 @@ describe("pollRouter", () => {
           body: JSON.stringify({
             broadcaster_id: "twitch-123",
             id: "poll-1",
-            status: "TERMINATED",
-          }),
-        })
+            status: "TERMINATED" }) })
       );
     });
 
@@ -215,8 +199,7 @@ describe("pollRouter", () => {
 
       mocks.fetch.mockResolvedValue({
         ok: false,
-        status: 404,
-      });
+        status: 404 });
 
       await expect(
         caller.end({ id: "poll-1" })

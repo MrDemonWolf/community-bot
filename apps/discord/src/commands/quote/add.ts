@@ -1,7 +1,7 @@
 import { MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, desc, quotes } from "@community-bot/db";
 import { resolveBotChannelId } from "./resolve.js";
 import logger from "../../utils/logger.js";
 import { hasPermission } from "../../utils/permissions.js";
@@ -40,22 +40,20 @@ export async function handleQuoteAdd(
     const text = interaction.options.getString("text", true);
 
     // Get next quote number
-    const last = await prisma.quote.findFirst({
-      where: { botChannelId },
-      orderBy: { quoteNumber: "desc" },
-      select: { quoteNumber: true },
+    const last = await db.query.quotes.findFirst({
+      where: eq(quotes.botChannelId, botChannelId),
+      orderBy: desc(quotes.quoteNumber),
+      columns: { quoteNumber: true },
     });
     const quoteNumber = (last?.quoteNumber ?? 0) + 1;
 
-    await prisma.quote.create({
-      data: {
+    await db.insert(quotes).values({
         quoteNumber,
         text,
         addedBy: interaction.user.username,
         source: "discord",
         botChannelId,
-      },
-    });
+      });
 
     logger.commands.success(
       "quote add",

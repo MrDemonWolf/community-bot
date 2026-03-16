@@ -1,9 +1,0 @@
-model DiscordLogConfig {
-  id                 String   @id @default(uuid())
-  guildId            String   @unique
-  moderationChannelId String?
-  serverChannelId    String?
-  voiceChannelId     String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-}

@@ -16,7 +16,7 @@
     "fumadocs-mdx": "^14.2.7",
     "fumadocs-ui": "^16.6.0",
     "mermaid": "^11.12.3",
-    "next": "catalog:",
+    "next": "^16.1.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -28,6 +28,6 @@
     "@types/react-dom": "^19.1.6",
     "serve": "^14.2.5",
     "tailwindcss": "^4.1.18",
-    "typescript": "catalog:"
+    "typescript": "^5"
   }
 }

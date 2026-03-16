@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, count, accounts, users, botChannels, defaultCommandOverrides, quotes, twitchCounters, twitchTimers, songRequests, giveaways } from "@community-bot/db";
 import { protectedProcedure, leadModProcedure, router } from "../index";
 import { z } from "zod";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
@@ -10,19 +10,19 @@ export const botChannelRouter = router({
     const userId = ctx.session.user.id;
 
     // Check if user has a linked Twitch account
-    const twitchAccount = await prisma.account.findFirst({
-      where: { userId, providerId: "twitch" },
+    const twitchAccount = await db.query.accounts.findFirst({
+      where: and(eq(accounts.userId, userId), eq(accounts.providerId, "twitch")),
     });
 
     // Check if user has a linked Discord account
-    const discordAccount = await prisma.account.findFirst({
-      where: { userId, providerId: "discord" },
+    const discordAccount = await db.query.accounts.findFirst({
+      where: and(eq(accounts.userId, userId), eq(accounts.providerId, "discord")),
     });
 
     // Check if user has a bot channel entry
-    const botChannel = await prisma.botChannel.findUnique({
-      where: { userId },
-      include: { commandOverrides: true },
+    const botChannel = await db.query.botChannels.findFirst({
+      where: eq(botChannels.userId, userId),
+      with: { commandOverrides: true },
     });
 
     return {
@@ -53,8 +53,8 @@ export const botChannelRouter = router({
     const userId = ctx.session.user.id;
 
     // Get linked Twitch account
-    const twitchAccount = await prisma.account.findFirst({
-      where: { userId, providerId: "twitch" },
+    const twitchAccount = await db.query.accounts.findFirst({
+      where: and(eq(accounts.userId, userId), eq(accounts.providerId, "twitch")),
     });
 
     if (!twitchAccount) {
@@ -65,31 +65,30 @@ export const botChannelRouter = router({
 
     // We need the Twitch username. The accountId from better-auth is the Twitch user ID.
     // We'll fetch the username from the user's name as a fallback.
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
     const twitchUserId = twitchAccount.accountId;
     const twitchUsername = user?.name?.toLowerCase() ?? twitchUserId;
 
     // Upsert the bot channel
-    const botChannel = await prisma.botChannel.upsert({
-      where: { userId },
-      create: {
-        userId,
+    const [botChannel] = await db.insert(botChannels).values({
+      userId,
+      twitchUsername,
+      twitchUserId,
+      enabled: true,
+    }).onConflictDoUpdate({
+      target: botChannels.userId,
+      set: {
+        enabled: true,
         twitchUsername,
         twitchUserId,
-        enabled: true,
       },
-      update: {
-        enabled: true,
-        twitchUsername,
-        twitchUserId,
-      },
-    });
+    }).returning();
 
     // Publish event — lazy import to avoid circular deps at module level
     const { eventBus } = await import("../events");
     await eventBus.publish("channel:join", {
-      channelId: botChannel.twitchUserId,
-      username: botChannel.twitchUsername,
+      channelId: botChannel!.twitchUserId,
+      username: botChannel!.twitchUsername,
     });
 
     await logAudit({
@@ -98,8 +97,8 @@ export const botChannelRouter = router({
       userImage: ctx.session.user.image,
       action: "bot.enable",
       resourceType: "BotChannel",
-      resourceId: botChannel.id,
-      metadata: { twitchUsername: botChannel.twitchUsername },
+      resourceId: botChannel!.id,
+      metadata: { twitchUsername: botChannel!.twitchUsername },
     });
 
     return { success: true, botChannel };
@@ -109,18 +108,15 @@ export const botChannelRouter = router({
   disable: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const botChannel = await prisma.botChannel.findUnique({
-      where: { userId },
+    const botChannel = await db.query.botChannels.findFirst({
+      where: eq(botChannels.userId, userId),
     });
 
     if (!botChannel) {
       throw new Error("Bot is not enabled for your channel.");
     }
 
-    await prisma.botChannel.update({
-      where: { userId },
-      data: { enabled: false },
-    });
+    await db.update(botChannels).set({ enabled: false }).where(eq(botChannels.userId, userId));
 
     const { eventBus } = await import("../events");
     await eventBus.publish("channel:leave", {
@@ -147,18 +143,15 @@ export const botChannelRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const botChannel = await prisma.botChannel.findUnique({
-        where: { userId },
+      const botChannel = await db.query.botChannels.findFirst({
+        where: eq(botChannels.userId, userId),
       });
 
       if (!botChannel || !botChannel.enabled) {
         throw new Error("Bot is not enabled for your channel.");
       }
 
-      await prisma.botChannel.update({
-        where: { userId },
-        data: { muted: input.muted },
-      });
+      await db.update(botChannels).set({ muted: input.muted }).where(eq(botChannels.userId, userId));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("bot:mute", {
@@ -186,8 +179,8 @@ export const botChannelRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const botChannel = await prisma.botChannel.findUnique({
-        where: { userId },
+      const botChannel = await db.query.botChannels.findFirst({
+        where: eq(botChannels.userId, userId),
       });
 
       if (!botChannel || !botChannel.enabled) {
@@ -203,10 +196,7 @@ export const botChannelRouter = router({
         throw new Error(`Invalid command names: ${invalid.join(", ")}`);
       }
 
-      await prisma.botChannel.update({
-        where: { userId },
-        data: { disabledCommands: input.disabledCommands },
-      });
+      await db.update(botChannels).set({ disabledCommands: input.disabledCommands }).where(eq(botChannels.userId, userId));
 
       const { eventBus } = await import("../events");
       await eventBus.publish("commands:defaults-updated", {
@@ -232,18 +222,15 @@ export const botChannelRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const botChannel = await prisma.botChannel.findUnique({
-        where: { userId },
+      const botChannel = await db.query.botChannels.findFirst({
+        where: eq(botChannels.userId, userId),
       });
 
       if (!botChannel || !botChannel.enabled) {
         throw new Error("Bot is not enabled for your channel.");
       }
 
-      await prisma.botChannel.update({
-        where: { userId },
-        data: { aiShoutoutEnabled: input.enabled },
-      });
+      await db.update(botChannels).set({ aiShoutoutEnabled: input.enabled }).where(eq(botChannels.userId, userId));
 
       await logAudit({
         userId,
@@ -277,8 +264,8 @@ export const botChannelRouter = router({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const botChannel = await prisma.botChannel.findUnique({
-        where: { userId },
+      const botChannel = await db.query.botChannels.findFirst({
+        where: eq(botChannels.userId, userId),
       });
 
       if (!botChannel || !botChannel.enabled) {
@@ -298,26 +285,20 @@ export const botChannelRouter = router({
 
       // If setting back to default, delete the override
       if (input.accessLevel === defaultCmd.accessLevel) {
-        await prisma.defaultCommandOverride.deleteMany({
-          where: {
-            botChannelId: botChannel.id,
-            commandName: input.commandName,
-          },
-        });
+        await db.delete(defaultCommandOverrides).where(
+          and(
+            eq(defaultCommandOverrides.botChannelId, botChannel.id),
+            eq(defaultCommandOverrides.commandName, input.commandName),
+          )
+        );
       } else {
-        await prisma.defaultCommandOverride.upsert({
-          where: {
-            botChannelId_commandName: {
-              botChannelId: botChannel.id,
-              commandName: input.commandName,
-            },
-          },
-          create: {
-            botChannelId: botChannel.id,
-            commandName: input.commandName,
-            accessLevel: input.accessLevel,
-          },
-          update: {
+        await db.insert(defaultCommandOverrides).values({
+          botChannelId: botChannel.id,
+          commandName: input.commandName,
+          accessLevel: input.accessLevel,
+        }).onConflictDoUpdate({
+          target: [defaultCommandOverrides.botChannelId, defaultCommandOverrides.commandName],
+          set: {
             accessLevel: input.accessLevel,
           },
         });
@@ -345,22 +326,22 @@ export const botChannelRouter = router({
   stats: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    const botChannel = await prisma.botChannel.findUnique({
-      where: { userId },
+    const botChannel = await db.query.botChannels.findFirst({
+      where: eq(botChannels.userId, userId),
     });
 
     if (!botChannel || !botChannel.enabled) {
       return { quotes: 0, counters: 0, timers: 0, songRequests: 0, giveaways: 0 };
     }
 
-    const [quotes, counters, timers, songRequests, giveaways] = await Promise.all([
-      prisma.quote.count({ where: { botChannelId: botChannel.id } }),
-      prisma.twitchCounter.count({ where: { botChannelId: botChannel.id } }),
-      prisma.twitchTimer.count({ where: { botChannelId: botChannel.id, enabled: true } }),
-      prisma.songRequest.count({ where: { botChannelId: botChannel.id } }),
-      prisma.giveaway.count({ where: { botChannelId: botChannel.id } }),
+    const [quotesResult, countersResult, timersResult, songRequestsResult, giveawaysResult] = await Promise.all([
+      db.select({ value: count() }).from(quotes).where(eq(quotes.botChannelId, botChannel.id)),
+      db.select({ value: count() }).from(twitchCounters).where(eq(twitchCounters.botChannelId, botChannel.id)),
+      db.select({ value: count() }).from(twitchTimers).where(and(eq(twitchTimers.botChannelId, botChannel.id), eq(twitchTimers.enabled, true))),
+      db.select({ value: count() }).from(songRequests).where(eq(songRequests.botChannelId, botChannel.id)),
+      db.select({ value: count() }).from(giveaways).where(eq(giveaways.botChannelId, botChannel.id)),
     ]);
 
-    return { quotes, counters, timers, songRequests, giveaways };
+    return { quotes: quotesResult[0]?.value ?? 0, counters: countersResult[0]?.value ?? 0, timers: timersResult[0]?.value ?? 0, songRequests: songRequestsResult[0]?.value ?? 0, giveaways: giveawaysResult[0]?.value ?? 0 };
   }),
 });

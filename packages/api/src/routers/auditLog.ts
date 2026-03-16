@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, and, desc, count, inArray, like, auditLogs, botChannels, users } from "@community-bot/db";
 import { protectedProcedure, router } from "../index";
 import { z } from "zod";
 
@@ -22,10 +22,7 @@ export const auditLogRouter = router({
         .default({ skip: 0, take: 25 })
     )
     .query(async ({ ctx, input }) => {
-      const user = await prisma.user.findUnique({
-        where: { id: ctx.session.user.id },
-        select: { role: true },
-      });
+      const user = await db.query.users.findFirst({ where: eq(users.id, ctx.session.user.id) });
 
       const currentRole = user?.role ?? "USER";
       const currentLevel = ROLE_HIERARCHY[currentRole] ?? 0;
@@ -35,37 +32,41 @@ export const auditLogRouter = router({
         .filter(([, level]) => level <= currentLevel)
         .map(([role]) => role);
 
-      const where: Record<string, unknown> = {};
+      const conditions = [];
 
       // BROADCASTER sees all, others see only logs from their level and below
       if (currentRole !== "BROADCASTER") {
-        where.userRole = { in: visibleRoles };
+        conditions.push(inArray(auditLogs.userRole, visibleRoles as ("BROADCASTER" | "USER" | "MODERATOR" | "LEAD_MODERATOR")[]));
+
       }
 
       if (input.action) {
-        where.action = { startsWith: input.action };
+        conditions.push(like(auditLogs.action, `${input.action}%`));
       }
 
       if (input.resourceType) {
-        where.resourceType = input.resourceType;
+        conditions.push(eq(auditLogs.resourceType, input.resourceType));
       }
 
-      const [items, total] = await Promise.all([
-        prisma.auditLog.findMany({
-          where,
-          orderBy: { createdAt: "desc" },
-          skip: input.skip,
-          take: input.take,
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      const [items, totalResult] = await Promise.all([
+        db.query.auditLogs.findMany({
+          where: whereClause,
+          orderBy: desc(auditLogs.createdAt),
+          offset: input.skip,
+          limit: input.take,
         }),
-        prisma.auditLog.count({ where }),
+        db.select({ value: count() }).from(auditLogs).where(whereClause),
       ]);
+
+      const total = totalResult[0]?.value ?? 0;
 
       // Check which users are channel owners
       const userIds = [...new Set(items.map((item) => item.userId))];
-      const channelOwners = await prisma.botChannel.findMany({
-        where: { userId: { in: userIds } },
-        select: { userId: true },
-      });
+      const channelOwners = userIds.length > 0
+        ? await db.select({ userId: botChannels.userId }).from(botChannels).where(inArray(botChannels.userId, userIds))
+        : [];
       const ownerSet = new Set(channelOwners.map((c) => c.userId));
 
       return {

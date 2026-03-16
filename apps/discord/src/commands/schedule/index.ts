@@ -6,7 +6,7 @@ import {
 } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, asc, discordScheduledMessages, discordMessageTemplates } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 import { hasPermission } from "../../utils/permissions.js";
 import { isValidCron, cronToText } from "../../utils/cronParser.js";
@@ -214,8 +214,8 @@ async function handleCreate(
       return;
     }
 
-    const existing = await prisma.discordScheduledMessage.findUnique({
-      where: { guildId_name: { guildId, name } },
+    const existing = await db.query.discordScheduledMessages.findFirst({
+      where: and(eq(discordScheduledMessages.guildId, guildId), eq(discordScheduledMessages.name, name)),
     });
 
     if (existing) {
@@ -227,8 +227,8 @@ async function handleCreate(
 
     let templateId: string | undefined;
     if (templateName) {
-      const template = await prisma.discordMessageTemplate.findUnique({
-        where: { guildId_name: { guildId, name: templateName.toLowerCase() } },
+      const template = await db.query.discordMessageTemplates.findFirst({
+        where: and(eq(discordMessageTemplates.guildId, guildId), eq(discordMessageTemplates.name, templateName.toLowerCase())),
       });
       if (!template) {
         await interaction.editReply({
@@ -239,8 +239,7 @@ async function handleCreate(
       templateId = template.id;
     }
 
-    await prisma.discordScheduledMessage.create({
-      data: {
+    await db.insert(discordScheduledMessages).values({
         guildId,
         name,
         channelId: channel.id,
@@ -249,8 +248,7 @@ async function handleCreate(
         content: templateId ? undefined : content,
         templateId,
         createdBy: interaction.user.id,
-      },
-    });
+      });
 
     const scheduleDesc = cron ? cronToText(cron) : "One-time (manual trigger)";
 
@@ -295,8 +293,8 @@ async function handleEdit(
       return;
     }
 
-    const schedule = await prisma.discordScheduledMessage.findUnique({
-      where: { guildId_name: { guildId, name } },
+    const schedule = await db.query.discordScheduledMessages.findFirst({
+      where: and(eq(discordScheduledMessages.guildId, guildId), eq(discordScheduledMessages.name, name)),
     });
 
     if (!schedule) {
@@ -306,14 +304,11 @@ async function handleEdit(
       return;
     }
 
-    await prisma.discordScheduledMessage.update({
-      where: { id: schedule.id },
-      data: {
+    await db.update(discordScheduledMessages).set({
         ...(content !== null && { content }),
         ...(cron !== null && { cronExpression: cron }),
         ...(channel && { channelId: channel.id }),
-      },
-    });
+      }).where(eq(discordScheduledMessages.id, schedule.id));
 
     await interaction.editReply({
       content: `Schedule **${name}** updated.`,
@@ -339,11 +334,9 @@ async function handleDelete(
 
     const name = interaction.options.getString("name", true).toLowerCase();
 
-    const deleted = await prisma.discordScheduledMessage.deleteMany({
-      where: { guildId, name },
-    });
+    const deleted = await db.delete(discordScheduledMessages).where(and(eq(discordScheduledMessages.guildId, guildId), eq(discordScheduledMessages.name, name))).returning();
 
-    if (deleted.count === 0) {
+    if (deleted.length === 0) {
       await interaction.editReply({
         content: `Schedule **${name}** not found.`,
       });
@@ -372,9 +365,9 @@ async function handleList(
   try {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const schedules = await prisma.discordScheduledMessage.findMany({
-      where: { guildId },
-      orderBy: { name: "asc" },
+    const schedules = await db.query.discordScheduledMessages.findMany({
+      where: eq(discordScheduledMessages.guildId, guildId),
+      orderBy: asc(discordScheduledMessages.name),
     });
 
     if (schedules.length === 0) {
@@ -435,8 +428,8 @@ async function handleToggle(
 
     const name = interaction.options.getString("name", true).toLowerCase();
 
-    const schedule = await prisma.discordScheduledMessage.findUnique({
-      where: { guildId_name: { guildId, name } },
+    const schedule = await db.query.discordScheduledMessages.findFirst({
+      where: and(eq(discordScheduledMessages.guildId, guildId), eq(discordScheduledMessages.name, name)),
     });
 
     if (!schedule) {
@@ -446,10 +439,7 @@ async function handleToggle(
       return;
     }
 
-    await prisma.discordScheduledMessage.update({
-      where: { id: schedule.id },
-      data: { enabled },
-    });
+    await db.update(discordScheduledMessages).set({ enabled }).where(eq(discordScheduledMessages.id, schedule.id));
 
     await interaction.editReply({
       content: `Schedule **${name}** ${enabled ? "enabled" : "disabled"}.`,

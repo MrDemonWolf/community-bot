@@ -7,15 +7,14 @@ import {
 
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma };
 });
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
 vi.mock("@community-bot/env/server", () => ({
   env: {
     REDIS_URL: "redis://localhost",
     TWITCH_APPLICATION_CLIENT_ID: "test-client-id",
-  },
-}));
+  } }));
 vi.mock("next/server", () => ({}));
 
 import { t } from "../index";
@@ -36,7 +35,7 @@ describe("setupRouter (integration)", () => {
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   describe("status", () => {
@@ -48,8 +47,7 @@ describe("setupRouter (integration)", () => {
 
     it("returns setupComplete: true when configured", async () => {
       await testPrisma.systemConfig.create({
-        data: { key: "setupComplete", value: "true" },
-      });
+        data: { key: "setupComplete", value: "true" } });
 
       const caller = createCaller({ session: null });
       const result = await caller.status();
@@ -61,8 +59,7 @@ describe("setupRouter (integration)", () => {
     it("finalizes setup with valid token", async () => {
       const user = await seedUser(testPrisma, { id: "setup-user", role: "USER" });
       await testPrisma.systemConfig.create({
-        data: { key: "setupToken", value: "valid-token-123" },
-      });
+        data: { key: "setupToken", value: "valid-token-123" } });
 
       const caller = createCaller(session(user.id));
       const result = await caller.complete({ token: "valid-token-123" });
@@ -70,34 +67,29 @@ describe("setupRouter (integration)", () => {
 
       // Verify broadcaster is set
       const bcConfig = await testPrisma.systemConfig.findUnique({
-        where: { key: "broadcasterUserId" },
-      });
+        where: { key: "broadcasterUserId" } });
       expect(bcConfig!.value).toBe(user.id);
 
       // Verify setup complete
       const completeConfig = await testPrisma.systemConfig.findUnique({
-        where: { key: "setupComplete" },
-      });
+        where: { key: "setupComplete" } });
       expect(completeConfig!.value).toBe("true");
 
       // Verify token deleted
       const tokenConfig = await testPrisma.systemConfig.findUnique({
-        where: { key: "setupToken" },
-      });
+        where: { key: "setupToken" } });
       expect(tokenConfig).toBeNull();
 
       // Verify user promoted to BROADCASTER
       const dbUser = await testPrisma.user.findUnique({
-        where: { id: user.id },
-      });
+        where: { id: user.id } });
       expect(dbUser!.role).toBe("BROADCASTER");
     });
 
     it("rejects invalid token", async () => {
       const user = await seedUser(testPrisma, { id: "setup-user", role: "USER" });
       await testPrisma.systemConfig.create({
-        data: { key: "setupToken", value: "real-token" },
-      });
+        data: { key: "setupToken", value: "real-token" } });
 
       const caller = createCaller(session(user.id));
       await expect(

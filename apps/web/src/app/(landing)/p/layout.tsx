@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import prisma from "@community-bot/db";
+import { db, eq, and, count, users, accounts, twitchChannels, botChannels, twitchChatCommands, queueStates, songRequestSettings, quotes } from "@community-bot/db";
 import { getBroadcasterUserId } from "@/lib/setup";
 import Image from "next/image";
 import { User, Terminal, Trophy, Music, BookOpen } from "lucide-react";
@@ -9,11 +9,11 @@ async function getLayoutData() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { id: broadcasterId },
-    include: {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, broadcasterId),
+    with: {
       accounts: {
-        select: { providerId: true, accountId: true },
+        columns: { providerId: true, accountId: true },
       },
     },
   });
@@ -24,38 +24,48 @@ async function getLayoutData() {
 
   let twitchChannel = null;
   if (twitchAccount) {
-    twitchChannel = await prisma.twitchChannel.findFirst({
-      where: { twitchChannelId: twitchAccount.accountId },
-      select: { username: true, isLive: true },
+    twitchChannel = await db.query.twitchChannels.findFirst({
+      where: eq(twitchChannels.twitchChannelId, twitchAccount.accountId),
+      columns: { username: true, isLive: true },
     });
   }
 
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId: user.id },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.userId, user.id),
+    columns: { id: true },
   });
 
-  const hasCommands = botChannel
-    ? (await prisma.twitchChatCommand.count({
-        where: { hidden: false, enabled: true, botChannelId: botChannel.id },
-      })) > 0
-    : false;
+  let hasCommands = false;
+  if (botChannel) {
+    const [cmdCount] = await db.select({ value: count() }).from(twitchChatCommands).where(
+      and(
+        eq(twitchChatCommands.hidden, false),
+        eq(twitchChatCommands.enabled, true),
+        eq(twitchChatCommands.botChannelId, botChannel.id),
+      ),
+    );
+    hasCommands = cmdCount.value > 0;
+  }
 
-  const queueState = await prisma.queueState.findFirst({
-    where: { id: "singleton" },
-    select: { status: true },
+  const queueState = await db.query.queueStates.findFirst({
+    where: eq(queueStates.id, "singleton"),
+    columns: { status: true },
   });
 
-  const songRequestSettings = botChannel
-    ? await prisma.songRequestSettings.findUnique({
-        where: { botChannelId: botChannel.id },
-        select: { enabled: true },
+  const srSettings = botChannel
+    ? await db.query.songRequestSettings.findFirst({
+        where: eq(songRequestSettings.botChannelId, botChannel.id),
+        columns: { enabled: true },
       })
     : null;
 
-  const hasQuotes = botChannel
-    ? (await prisma.quote.count({ where: { botChannelId: botChannel.id } })) > 0
-    : false;
+  let hasQuotes = false;
+  if (botChannel) {
+    const [quoteCount] = await db.select({ value: count() }).from(quotes).where(
+      eq(quotes.botChannelId, botChannel.id),
+    );
+    hasQuotes = quoteCount.value > 0;
+  }
 
   return {
     user,
@@ -64,7 +74,7 @@ async function getLayoutData() {
     hasCommands,
     hasQuotes,
     queueStatus: queueState?.status ?? "CLOSED",
-    songRequestsEnabled: songRequestSettings?.enabled ?? false,
+    songRequestsEnabled: srSettings?.enabled ?? false,
   };
 }
 

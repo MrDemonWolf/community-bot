@@ -1,5 +1,5 @@
 import type { AutocompleteInteraction } from "discord.js";
-import { prisma } from "@community-bot/db";
+import { db, eq, and, ilike, asc, discordMessageTemplates, discordScheduledMessages, discordRolePanels, discordCustomCommands } from "@community-bot/db";
 import logger from "../utils/logger.js";
 
 export async function autocompleteEvent(
@@ -17,15 +17,7 @@ export async function autocompleteEvent(
       commandName === "template" ||
       (commandName === "schedule" && focused.name === "template")
     ) {
-      const templates = await prisma.discordMessageTemplate.findMany({
-        where: {
-          guildId,
-          name: { contains: query, mode: "insensitive" },
-        },
-        take: 25,
-        select: { name: true },
-        orderBy: { name: "asc" },
-      });
+      const templates = await db.select({ name: discordMessageTemplates.name }).from(discordMessageTemplates).where(and(eq(discordMessageTemplates.guildId, guildId), ilike(discordMessageTemplates.name, `%${query}%`))).orderBy(asc(discordMessageTemplates.name)).limit(25);
 
       await interaction.respond(
         templates.map((t) => ({ name: t.name, value: t.name }))
@@ -34,15 +26,7 @@ export async function autocompleteEvent(
     }
 
     if (commandName === "schedule" && focused.name === "name") {
-      const schedules = await prisma.discordScheduledMessage.findMany({
-        where: {
-          guildId,
-          name: { contains: query, mode: "insensitive" },
-        },
-        take: 25,
-        select: { name: true },
-        orderBy: { name: "asc" },
-      });
+      const schedules = await db.select({ name: discordScheduledMessages.name }).from(discordScheduledMessages).where(and(eq(discordScheduledMessages.guildId, guildId), ilike(discordScheduledMessages.name, `%${query}%`))).orderBy(asc(discordScheduledMessages.name)).limit(25);
 
       await interaction.respond(
         schedules.map((s) => ({ name: s.name, value: s.name }))
@@ -54,15 +38,7 @@ export async function autocompleteEvent(
       commandName === "roles" &&
       (focused.name === "panel" || focused.name === "name")
     ) {
-      const panels = await prisma.discordRolePanel.findMany({
-        where: {
-          guildId,
-          name: { contains: query, mode: "insensitive" },
-        },
-        take: 25,
-        select: { name: true },
-        orderBy: { name: "asc" },
-      });
+      const panels = await db.select({ name: discordRolePanels.name }).from(discordRolePanels).where(and(eq(discordRolePanels.guildId, guildId), ilike(discordRolePanels.name, `%${query}%`))).orderBy(asc(discordRolePanels.name)).limit(25);
 
       await interaction.respond(
         panels.map((p) => ({ name: p.name, value: p.name }))
@@ -71,15 +47,7 @@ export async function autocompleteEvent(
     }
 
     if (commandName === "cc" && focused.name === "name") {
-      const cmds = await prisma.discordCustomCommand.findMany({
-        where: {
-          guildId,
-          name: { contains: query, mode: "insensitive" },
-        },
-        take: 25,
-        select: { name: true },
-        orderBy: { name: "asc" },
-      });
+      const cmds = await db.select({ name: discordCustomCommands.name }).from(discordCustomCommands).where(and(eq(discordCustomCommands.guildId, guildId), ilike(discordCustomCommands.name, `%${query}%`))).orderBy(asc(discordCustomCommands.name)).limit(25);
 
       await interaction.respond(
         cmds.map((c) => ({ name: c.name, value: c.name }))

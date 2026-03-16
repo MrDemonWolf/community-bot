@@ -7,15 +7,14 @@ import {
 
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma };
 });
 vi.mock("../utils/logger.js", () => ({
   default: {
     discord: { guildJoined: vi.fn(), guildLeft: vi.fn() },
     database: { operation: vi.fn() },
     error: vi.fn(),
-  },
-}));
+  } }));
 
 import { guildCreateEvent } from "./guildCreate.js";
 import { guildDeleteEvent } from "./guildDelete.js";
@@ -38,7 +37,7 @@ describe("guildCreate / guildDelete (integration)", () => {
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   describe("guildCreateEvent", () => {
@@ -46,8 +45,7 @@ describe("guildCreate / guildDelete (integration)", () => {
       await guildCreateEvent(fakeGuild({ id: "g-1", name: "My Guild" }));
 
       const guild = await testPrisma.discordGuild.findUnique({
-        where: { guildId: "g-1" },
-      });
+        where: { guildId: "g-1" } });
       expect(guild).not.toBeNull();
       expect(guild!.name).toBe("My Guild");
     });
@@ -60,8 +58,7 @@ describe("guildCreate / guildDelete (integration)", () => {
 
       // Original record should still exist
       const guild = await testPrisma.discordGuild.findUnique({
-        where: { guildId: "g-dup" },
-      });
+        where: { guildId: "g-dup" } });
       expect(guild).not.toBeNull();
     });
   });
@@ -73,8 +70,7 @@ describe("guildCreate / guildDelete (integration)", () => {
       await guildDeleteEvent(fakeGuild({ id: "g-del", name: "DeleteMe" }));
 
       const guild = await testPrisma.discordGuild.findUnique({
-        where: { guildId: "g-del" },
-      });
+        where: { guildId: "g-del" } });
       expect(guild).toBeNull();
     });
 
@@ -93,8 +89,7 @@ describe("guildCreate / guildDelete (integration)", () => {
       await guildCreateEvent(fakeGuild({ id: "g-rt", name: "Round Trip v2" }));
 
       const guild = await testPrisma.discordGuild.findUnique({
-        where: { guildId: "g-rt" },
-      });
+        where: { guildId: "g-rt" } });
       expect(guild).not.toBeNull();
       expect(guild!.name).toBe("Round Trip v2");
     });

@@ -1,4 +1,4 @@
-import { prisma } from "@community-bot/db";
+import { db, eq, discordGuilds, botChannels } from "@community-bot/db";
 
 /**
  * Resolves the botChannelId for a Discord guild by looking up the
@@ -7,16 +7,16 @@ import { prisma } from "@community-bot/db";
 export async function resolveBotChannelId(
   guildId: string
 ): Promise<string | null> {
-  const guild = await prisma.discordGuild.findUnique({
-    where: { guildId },
-    select: { userId: true },
+  const guild = await db.query.discordGuilds.findFirst({
+    where: eq(discordGuilds.guildId, guildId),
+    columns: { userId: true },
   });
 
   if (!guild?.userId) return null;
 
-  const botChannel = await prisma.botChannel.findUnique({
-    where: { userId: guild.userId },
-    select: { id: true },
+  const botChannel = await db.query.botChannels.findFirst({
+    where: eq(botChannels.userId, guild.userId),
+    columns: { id: true },
   });
 
   return botChannel?.id ?? null;

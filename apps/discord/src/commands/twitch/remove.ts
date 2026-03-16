@@ -1,7 +1,7 @@
 import { MessageFlags } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { prisma } from "@community-bot/db";
+import { db, eq, and, discordGuilds, twitchChannels, twitchNotifications } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 
 export async function handleRemove(
@@ -24,8 +24,8 @@ export async function handleRemove(
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
-    const guild = await prisma.discordGuild.findUnique({
-      where: { guildId },
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.guildId, guildId),
     });
 
     if (!guild) {
@@ -35,11 +35,8 @@ export async function handleRemove(
       return;
     }
 
-    const channel = await prisma.twitchChannel.findFirst({
-      where: {
-        username,
-        guildId: guild.id,
-      },
+    const channel = await db.query.twitchChannels.findFirst({
+      where: and(eq(twitchChannels.username, username), eq(twitchChannels.guildId, guild.id)),
     });
 
     if (!channel) {
@@ -50,13 +47,9 @@ export async function handleRemove(
     }
 
     // Delete associated notifications first
-    await prisma.twitchNotification.deleteMany({
-      where: { twitchChannelId: channel.id },
-    });
+    await db.delete(twitchNotifications).where(eq(twitchNotifications.twitchChannelId, channel.id));
 
-    await prisma.twitchChannel.delete({
-      where: { id: channel.id },
-    });
+    await db.delete(twitchChannels).where(eq(twitchChannels.id, channel.id));
 
     logger.commands.success(
       "twitch remove",

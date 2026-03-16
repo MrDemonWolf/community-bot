@@ -1,6 +1,6 @@
 import type { Client, EmbedBuilder, TextChannel } from "discord.js";
 import { CronExpressionParser } from "cron-parser";
-import { prisma } from "@community-bot/db";
+import { db, eq, and, isNotNull, discordScheduledMessages, discordMessageTemplates } from "@community-bot/db";
 import logger from "../../utils/logger.js";
 import {
   replaceTemplateVariables,
@@ -21,12 +21,8 @@ export default async function sendScheduledMessage(
 ): Promise<void> {
   const now = new Date();
 
-  const schedules = await prisma.discordScheduledMessage.findMany({
-    where: {
-      enabled: true,
-      type: "RECURRING",
-      cronExpression: { not: null },
-    },
+  const schedules = await db.query.discordScheduledMessages.findMany({
+    where: and(eq(discordScheduledMessages.enabled, true), eq(discordScheduledMessages.type, "RECURRING"), isNotNull(discordScheduledMessages.cronExpression)),
   });
 
   for (const schedule of schedules) {
@@ -40,10 +36,7 @@ export default async function sendScheduledMessage(
       if (!schedule.nextRunAt) {
         const nextRun = getNextRun(schedule.cronExpression!, now);
         if (nextRun) {
-          await prisma.discordScheduledMessage.update({
-            where: { id: schedule.id },
-            data: { nextRunAt: nextRun },
-          });
+          await db.update(discordScheduledMessages).set({ nextRunAt: nextRun }).where(eq(discordScheduledMessages.id, schedule.id));
         }
         continue;
       }
@@ -65,8 +58,8 @@ export default async function sendScheduledMessage(
       let embedJson: string | null | undefined;
 
       if (schedule.templateId) {
-        const template = await prisma.discordMessageTemplate.findUnique({
-          where: { id: schedule.templateId },
+        const template = await db.query.discordMessageTemplates.findFirst({
+          where: eq(discordMessageTemplates.id, schedule.templateId),
         });
         if (template) {
           content = template.content ?? undefined;
@@ -100,13 +93,10 @@ export default async function sendScheduledMessage(
       // Compute next run time from cron
       const nextRun = getNextRun(schedule.cronExpression!, now);
 
-      await prisma.discordScheduledMessage.update({
-        where: { id: schedule.id },
-        data: {
+      await db.update(discordScheduledMessages).set({
           lastRunAt: now,
           nextRunAt: nextRun,
-        },
-      });
+        }).where(eq(discordScheduledMessages.id, schedule.id));
 
       logger.success(
         "Scheduled Message",

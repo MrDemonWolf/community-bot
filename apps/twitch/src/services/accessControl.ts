@@ -1,6 +1,7 @@
 import { ChatMessage } from "@twurple/chat";
 
-import { prisma } from "@community-bot/db";
+import { db, isNotNull } from "@community-bot/db";
+import { regulars } from "@community-bot/db";
 import { logger } from "../utils/logger.js";
 import { TwitchAccessLevel } from "@community-bot/db";
 import { ACCESS_HIERARCHY } from "./accessControl.constants.js";
@@ -8,11 +9,11 @@ import { ACCESS_HIERARCHY } from "./accessControl.constants.js";
 let regularsSet = new Set<string>();
 
 export async function loadRegulars(): Promise<void> {
-  const regulars = await prisma.regular.findMany({
-    where: { twitchUserId: { not: null } },
+  const regularsList = await db.query.regulars.findMany({
+    where: isNotNull(regulars.twitchUserId),
   });
   regularsSet = new Set(
-    regulars.map((r) => r.twitchUserId).filter((id): id is string => id !== null)
+    regularsList.map((r) => r.twitchUserId).filter((id): id is string => id !== null)
   );
 
   logger.info("AccessControl", `Loaded ${regularsSet.size} regulars`);

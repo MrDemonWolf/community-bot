@@ -7,19 +7,17 @@ import {
 
 vi.mock("@community-bot/db", async (importOriginal) => {
   const original = await importOriginal<Record<string, unknown>>();
-  return { ...original, prisma: testPrisma };
+  return { ...original, db: testPrisma };
 });
 
 const mockGetStreams = vi.hoisted(() => vi.fn());
 vi.mock("../../twitch/api.js", () => ({
-  getStreams: mockGetStreams,
-}));
+  getStreams: mockGetStreams }));
 vi.mock("../../twitch/embeds.js", () => ({
   buildLiveEmbed: vi.fn(() => ({ data: { title: "LIVE" } })),
   buildOfflineEmbed: vi.fn(() => ({ data: { title: "OFFLINE" } })),
   buildCustomEmbed: vi.fn(() => ({ data: { title: "CUSTOM" } })),
-  formatDuration: vi.fn(() => "1h 30m"),
-}));
+  formatDuration: vi.fn(() => "1h 30m") }));
 vi.mock("../../utils/logger.js", () => ({
   default: {
     twitch: { streamOnline: vi.fn(), streamOffline: vi.fn() },
@@ -28,8 +26,7 @@ vi.mock("../../utils/logger.js", () => ({
     warn: vi.fn(),
     error: vi.fn(),
     database: { operation: vi.fn() },
-  },
-}));
+  } }));
 
 import {
   resolveNotificationChannelId,
@@ -44,7 +41,7 @@ describe("checkTwitchStreams (integration)", () => {
 
   afterAll(async () => {
     await cleanDatabase(testPrisma);
-    await testPrisma.$disconnect();
+    await testPrisma.execute();
   });
 
   describe("resolveNotificationChannelId", () => {
@@ -103,8 +100,7 @@ describe("checkTwitchStreams (integration)", () => {
     it("creates TwitchChannel with guild association", async () => {
       const guild = await seedDiscordGuild(testPrisma, {
         guildId: "guild-1",
-        name: "Stream Guild",
-      });
+        name: "Stream Guild" });
 
       const channel = await testPrisma.twitchChannel.create({
         data: {
@@ -112,8 +108,7 @@ describe("checkTwitchStreams (integration)", () => {
           username: "teststreamer",
           displayName: "TestStreamer",
           guildId: guild.id,
-        },
-      });
+        } });
 
       expect(channel.guildId).toBe(guild.id);
 
@@ -127,8 +122,7 @@ describe("checkTwitchStreams (integration)", () => {
             take: 1,
             orderBy: { createdAt: "desc" },
           },
-        },
-      });
+        } });
 
       expect(monitored).toHaveLength(1);
       expect(monitored[0].DiscordGuild).not.toBeNull();
@@ -138,32 +132,27 @@ describe("checkTwitchStreams (integration)", () => {
     it("skips channels with disabled guilds", async () => {
       const enabledGuild = await seedDiscordGuild(testPrisma, {
         guildId: "g-enabled",
-        enabled: true,
-      });
+        enabled: true });
       const disabledGuild = await seedDiscordGuild(testPrisma, {
         guildId: "g-disabled",
-        enabled: false,
-      });
+        enabled: false });
 
       await testPrisma.twitchChannel.create({
         data: {
           twitchChannelId: "tc-1",
           username: "streamer1",
           guildId: enabledGuild.id,
-        },
-      });
+        } });
       await testPrisma.twitchChannel.create({
         data: {
           twitchChannelId: "tc-2",
           username: "streamer2",
           guildId: disabledGuild.id,
-        },
-      });
+        } });
 
       const channels = await testPrisma.twitchChannel.findMany({
         where: { guildId: { not: null } },
-        include: { DiscordGuild: true },
-      });
+        include: { DiscordGuild: true } });
 
       const activeChannels = channels.filter(
         (c) => c.DiscordGuild?.enabled !== false
@@ -180,8 +169,7 @@ describe("checkTwitchStreams (integration)", () => {
           twitchChannelId: "tc-notif",
           username: "notifstreamer",
           guildId: guild.id,
-        },
-      });
+        } });
 
       // Simulate a live notification being created (as checkTwitchStreams does)
       await testPrisma.twitchNotification.create({
@@ -192,8 +180,7 @@ describe("checkTwitchStreams (integration)", () => {
           twitchChannelId: channel.id,
           isLive: true,
           streamStartedAt: new Date(),
-        },
-      });
+        } });
 
       // Verify the query pattern
       const withNotifs = await testPrisma.twitchChannel.findMany({
@@ -205,8 +192,7 @@ describe("checkTwitchStreams (integration)", () => {
             take: 1,
             orderBy: { createdAt: "desc" },
           },
-        },
-      });
+        } });
 
       expect(withNotifs[0].TwitchNotification).toHaveLength(1);
       expect(withNotifs[0].TwitchNotification[0].messageId).toBe("msg-123");
@@ -215,12 +201,10 @@ describe("checkTwitchStreams (integration)", () => {
     it("multiple guilds monitoring same Twitch channel", async () => {
       const guild1 = await seedDiscordGuild(testPrisma, {
         guildId: "g-multi-1",
-        name: "Guild 1",
-      });
+        name: "Guild 1" });
       const guild2 = await seedDiscordGuild(testPrisma, {
         guildId: "g-multi-2",
-        name: "Guild 2",
-      });
+        name: "Guild 2" });
 
       // Same Twitch channel ID but different guild associations
       await testPrisma.twitchChannel.create({
@@ -228,20 +212,17 @@ describe("checkTwitchStreams (integration)", () => {
           twitchChannelId: "shared-streamer",
           username: "sharedstreamer",
           guildId: guild1.id,
-        },
-      });
+        } });
       await testPrisma.twitchChannel.create({
         data: {
           twitchChannelId: "shared-streamer",
           username: "sharedstreamer",
           guildId: guild2.id,
-        },
-      });
+        } });
 
       const channels = await testPrisma.twitchChannel.findMany({
         where: { twitchChannelId: "shared-streamer" },
-        include: { DiscordGuild: true },
-      });
+        include: { DiscordGuild: true } });
 
       expect(channels).toHaveLength(2);
       const guildNames = channels.map((c) => c.DiscordGuild!.name).sort();
@@ -257,8 +238,7 @@ describe("checkTwitchStreams (integration)", () => {
           username: "statusstreamer",
           guildId: guild.id,
           isLive: false,
-        },
-      });
+        } });
 
       // Simulate going live
       await testPrisma.twitchChannel.update({
@@ -268,12 +248,10 @@ describe("checkTwitchStreams (integration)", () => {
           lastStreamTitle: "Playing Minecraft!",
           lastGameName: "Minecraft",
           lastStartedAt: new Date(),
-        },
-      });
+        } });
 
       const updated = await testPrisma.twitchChannel.findUnique({
-        where: { id: channel.id },
-      });
+        where: { id: channel.id } });
       expect(updated!.isLive).toBe(true);
       expect(updated!.lastStreamTitle).toBe("Playing Minecraft!");
     });

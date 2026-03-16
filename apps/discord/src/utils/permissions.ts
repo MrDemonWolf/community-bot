@@ -1,6 +1,6 @@
 import { PermissionFlagsBits } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
-import { prisma } from "@community-bot/db";
+import { db, eq, discordGuilds } from "@community-bot/db";
 
 interface GuildRoleConfig {
   adminRoleId: string | null;
@@ -17,9 +17,9 @@ async function getGuildRoleConfig(guildId: string): Promise<GuildRoleConfig> {
     return cached;
   }
 
-  const guild = await prisma.discordGuild.findFirst({
-    where: { guildId },
-    select: { adminRoleId: true, modRoleId: true },
+  const guild = await db.query.discordGuilds.findFirst({
+    where: eq(discordGuilds.guildId, guildId),
+    columns: { adminRoleId: true, modRoleId: true },
   });
 
   const config: GuildRoleConfig = {
