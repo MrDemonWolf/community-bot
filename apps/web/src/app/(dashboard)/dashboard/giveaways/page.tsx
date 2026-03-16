@@ -8,12 +8,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/empty-state";
-import { Gift, Plus, Trophy, Users, X, Loader2, Calendar } from "lucide-react";
+import { Gift, Plus, Trophy, Users, X, Loader2, Calendar, Trash2 } from "lucide-react";
 
 export default function GiveawaysPage() {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState("");
   const [keyword, setKeyword] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const { data: giveaways, isLoading } = useQuery(
     trpc.giveaway.list.queryOptions()
@@ -47,6 +48,17 @@ export default function GiveawaysPage() {
         queryClient.invalidateQueries({
           queryKey: trpc.giveaway.list.queryKey(),
         });
+      },
+    })
+  );
+
+  const deleteMutation = useMutation(
+    trpc.giveaway.delete.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: trpc.giveaway.list.queryKey(),
+        });
+        setDeleteConfirmId(null);
       },
     })
   );
@@ -237,12 +249,42 @@ export default function GiveawaysPage() {
                         </div>
                       </div>
                     </div>
-                    {g.winnerName && (
-                      <div className="flex items-center gap-1.5 text-sm text-foreground">
-                        <Trophy className="size-3.5 text-yellow-500" />
-                        <span>{g.winnerName}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {g.winnerName && (
+                        <div className="flex items-center gap-1.5 text-sm text-foreground">
+                          <Trophy className="size-3.5 text-yellow-500" />
+                          <span>{g.winnerName}</span>
+                        </div>
+                      )}
+                      {deleteConfirmId === g.id ? (
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="xs"
+                            variant="destructive"
+                            onClick={() => deleteMutation.mutate({ id: g.id })}
+                            disabled={deleteMutation.isPending}
+                          >
+                            {deleteMutation.isPending ? "..." : "Confirm"}
+                          </Button>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            onClick={() => setDeleteConfirmId(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="icon-xs"
+                          variant="ghost"
+                          onClick={() => setDeleteConfirmId(g.id)}
+                          aria-label={`Delete ${g.title}`}
+                        >
+                          <Trash2 className="size-3.5 text-red-400" />
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}

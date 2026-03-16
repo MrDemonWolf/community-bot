@@ -33,6 +33,7 @@ interface FilterState {
   capsMaxPercent: number;
   linksEnabled: boolean;
   linksAllowSubs: boolean;
+  linksAllowlist: string[];
   symbolsEnabled: boolean;
   symbolsMaxPercent: number;
   emotesEnabled: boolean;
@@ -55,6 +56,13 @@ const ACCESS_LEVELS = [
   "LEAD_MODERATOR",
   "BROADCASTER",
 ];
+
+function formatAccessLevel(level: string): string {
+  return level
+    .split("_")
+    .map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w.charAt(0) + w.slice(1).toLowerCase()))
+    .join(" ");
+}
 
 type FilterSection =
   | "caps"
@@ -86,6 +94,7 @@ export default function ModerationPage() {
   const [form, setForm] = useState<FilterState | null>(null);
   const [originalForm, setOriginalForm] = useState<FilterState | null>(null);
   const [newBannedWord, setNewBannedWord] = useState("");
+  const [newAllowlistEntry, setNewAllowlistEntry] = useState("");
   const [expanded, setExpanded] = useState<Set<FilterSection>>(new Set());
 
   useEffect(() => {
@@ -96,6 +105,7 @@ export default function ModerationPage() {
         capsMaxPercent: filterData.capsMaxPercent,
         linksEnabled: filterData.linksEnabled,
         linksAllowSubs: filterData.linksAllowSubs,
+        linksAllowlist: filterData.linksAllowlist ?? [],
         symbolsEnabled: filterData.symbolsEnabled,
         symbolsMaxPercent: filterData.symbolsMaxPercent,
         emotesEnabled: filterData.emotesEnabled,
@@ -180,6 +190,27 @@ export default function ModerationPage() {
     });
   }
 
+  function addAllowlistEntry() {
+    if (!form || !newAllowlistEntry.trim()) return;
+    if (form.linksAllowlist.includes(newAllowlistEntry.trim())) {
+      toast.error("Domain already in allowlist.");
+      return;
+    }
+    setForm({
+      ...form,
+      linksAllowlist: [...form.linksAllowlist, newAllowlistEntry.trim()],
+    });
+    setNewAllowlistEntry("");
+  }
+
+  function removeAllowlistEntry(entry: string) {
+    if (!form) return;
+    setForm({
+      ...form,
+      linksAllowlist: form.linksAllowlist.filter((e) => e !== entry),
+    });
+  }
+
   if (!botStatus?.botChannel?.enabled) {
     return (
       <div>
@@ -236,7 +267,7 @@ export default function ModerationPage() {
                   <SelectContent>
                     {ACCESS_LEVELS.map((l) => (
                       <SelectItem key={l} value={l}>
-                        {l.replace(/_/g, " ")}
+                        {formatAccessLevel(l)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -378,7 +409,7 @@ export default function ModerationPage() {
               </div>
             </button>
             {expanded.has("links") && (
-              <div id="panel-links" className="px-4 pb-4 pl-10">
+              <div id="panel-links" className="px-4 pb-4 pl-10 space-y-4">
                 <div className="flex items-center gap-3">
                   <label className="text-xs font-medium text-muted-foreground">
                     Allow Subscribers
@@ -390,6 +421,56 @@ export default function ModerationPage() {
                     }
                     disabled={!canManage}
                   />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Domain Allowlist
+                  </p>
+                  <p className="text-xs text-muted-foreground/70">
+                    Domains or regex patterns that bypass the links filter (e.g. <code>twitch.tv</code>, <code>youtube.com</code>, <code>^https?://mysite\.com</code>)
+                  </p>
+                  {canManage && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="e.g. twitch.tv or ^https?://mysite\.com"
+                        value={newAllowlistEntry}
+                        onChange={(e) => setNewAllowlistEntry(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            addAllowlistEntry();
+                          }
+                        }}
+                      />
+                      <Button size="sm" onClick={addAllowlistEntry}>
+                        <Plus className="size-3.5" />
+                        Add
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {form.linksAllowlist.map((entry) => (
+                      <span
+                        key={entry}
+                        className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-400"
+                      >
+                        {entry}
+                        {canManage && (
+                          <button
+                            onClick={() => removeAllowlistEntry(entry)}
+                            className="ml-1 text-green-400/70 hover:text-green-400"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                    {form.linksAllowlist.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        No domains allowlisted. All links will be filtered.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

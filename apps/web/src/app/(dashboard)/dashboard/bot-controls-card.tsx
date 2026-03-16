@@ -198,9 +198,6 @@ export default function BotControlsCard() {
               <CheckCircle2 className="size-4 text-green-500" />
             </div>
             <div className="flex-1 space-y-2">
-              <p className="text-sm font-medium text-foreground">
-                Bot is active
-              </p>
               <p className="text-xs text-muted-foreground">
                 Connected to{" "}
                 <a
