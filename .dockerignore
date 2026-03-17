@@ -14,3 +14,4 @@ tmp
 README.md
 CLAUDE.md
 apps/docs
+!apps/docs/package.json
