@@ -8,7 +8,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { lastLoginMethod } from "better-auth/plugins";
 import { env } from "@community-bot/env/server";
-import { db, eq, and, accounts } from "@community-bot/db";
+import { db, eq, and, accounts, users, sessions, verifications } from "@community-bot/db";
 import { nextCookies } from "better-auth/next-js";
 
 /**
@@ -69,6 +69,12 @@ async function autoLinkTwitchFromDiscord(userId: string) {
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
 		provider: "pg",
+		schema: {
+			user: users,
+			session: sessions,
+			account: accounts,
+			verification: verifications,
+		},
 	}),
 	trustedOrigins: [env.CORS_ORIGIN],
 	socialProviders: {
