@@ -1,12 +1,12 @@
 #!/bin/sh
 
 # Run database migrations (non-fatal: app starts even if migrations fail)
-echo "Running database migrations..."
+echo "Pushing database schema..."
 cd /usr/src/app/packages/db
-if bunx drizzle-kit migrate; then
-  echo "Database migrations completed successfully."
+if bunx drizzle-kit push --force; then
+  echo "Database schema pushed successfully."
 else
-  echo "WARNING: Database migrations failed. The app will still start."
+  echo "WARNING: Database schema push failed. The app will still start."
   echo "Check your DATABASE_URL and ensure the database is reachable."
 fi
 cd /usr/src/app
