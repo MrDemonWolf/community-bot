@@ -19,7 +19,7 @@ COPY apps/discord/package.json apps/discord/
 COPY apps/web/package.json apps/web/
 COPY apps/docs/package.json apps/docs/
 
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --ignore-scripts
 
 FROM base AS production
 
