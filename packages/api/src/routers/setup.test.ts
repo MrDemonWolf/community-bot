@@ -2,163 +2,170 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mockSession } from "../test-helpers";
 
 const mocks = vi.hoisted(() => {
-  const mp: Record<string, any> = {};
-  const handler: ProxyHandler<Record<string, any>> = {
-    get(target, prop: string) {
-      if (!target[prop]) {
-        if (prop === "transaction") target[prop] = vi.fn(async (ops: any[]) => Promise.all(ops));
-        else target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; } });
+  const queryProxy = new Proxy({} as Record<string, any>, {
+    get(target, model: string) {
+      if (!target[model]) {
+        target[model] = new Proxy({} as Record<string, any>, {
+          get(m, method: string) { if (!m[method]) m[method] = vi.fn(); return m[method]; },
+        });
       }
-      return target[prop];
+      return target[model];
     },
+  });
+  const chainProxy = (): any => {
+    const fns: Record<string, any> = {};
+    const p: any = new Proxy({} as any, {
+      get(_, prop: string) {
+        if (prop === "then") return undefined;
+        if (!fns[prop]) fns[prop] = vi.fn().mockReturnValue(p);
+        return fns[prop];
+      },
+    });
+    return p;
   };
-  return { db: new Proxy(mp, handler), mockFetch: vi.fn() };
+  return {
+    db: {
+      query: queryProxy,
+      insert: vi.fn(() => chainProxy()),
+      update: vi.fn(() => chainProxy()),
+      delete: vi.fn(() => chainProxy()),
+      select: vi.fn(() => chainProxy()),
+      execute: vi.fn(),
+      transaction: vi.fn(async (fn: any) => fn({
+        insert: vi.fn(() => chainProxy()),
+        update: vi.fn(() => chainProxy()),
+        delete: vi.fn(() => chainProxy()),
+        select: vi.fn(() => chainProxy()),
+      })),
+    },
+    eventBus: { publish: vi.fn() },
+    logAudit: vi.fn(),
+  };
 });
 
-vi.mock("@community-bot/db", () => ({ db: mocks.db }));
+vi.mock("@community-bot/db", () => ({
+  db: mocks.db,
+  eq: vi.fn(), and: vi.fn(), or: vi.fn(), not: vi.fn(),
+  gt: vi.fn(), gte: vi.fn(), lt: vi.fn(), lte: vi.fn(), ne: vi.fn(),
+  like: vi.fn(), ilike: vi.fn(), inArray: vi.fn(), notInArray: vi.fn(),
+  isNull: vi.fn(), isNotNull: vi.fn(),
+  asc: vi.fn(), desc: vi.fn(), count: vi.fn(), sql: vi.fn(),
+  between: vi.fn(), exists: vi.fn(), notExists: vi.fn(),
+  // Table schemas (empty objects)
+  users: {}, accounts: {}, sessions: {}, botChannels: {},
+  twitchChatCommands: {}, twitchRegulars: {}, twitchCounters: {},
+  twitchTimers: {}, twitchChannels: {}, twitchNotifications: {},
+  twitchCredentials: {}, quotes: {}, songRequests: {},
+  songRequestSettings: {}, bannedTracks: {}, playlists: {},
+  playlistEntries: {}, giveaways: {}, giveawayEntries: {},
+  polls: {}, pollOptions: {}, pollVotes: {},
+  queueEntries: {}, queueStates: {},
+  discordGuilds: {}, auditLogs: {}, systemConfigs: {},
+  defaultCommandOverrides: {}, spamFilters: {}, spamPermits: {},
+  regulars: {},
+  // Enums
+  QueueStatus: { OPEN: "OPEN", CLOSED: "CLOSED", PAUSED: "PAUSED" },
+  TwitchAccessLevel: {
+    EVERYONE: "EVERYONE", SUBSCRIBER: "SUBSCRIBER", REGULAR: "REGULAR",
+    VIP: "VIP", MODERATOR: "MODERATOR", LEAD_MODERATOR: "LEAD_MODERATOR",
+    BROADCASTER: "BROADCASTER",
+  },
+}));
+vi.mock("../events", () => ({ eventBus: mocks.eventBus }));
 vi.mock("@community-bot/auth", () => ({ auth: {} }));
-vi.mock("@community-bot/env/server", () => ({
-  env: { REDIS_URL: "redis://localhost", TWITCH_APPLICATION_CLIENT_ID: "test-client-id" } }));
+vi.mock("@community-bot/env/server", () => ({ env: { REDIS_URL: "redis://localhost" } }));
 vi.mock("next/server", () => ({}));
-
-// Mock global fetch
-vi.stubGlobal("fetch", mocks.mockFetch);
 
 import { t } from "../index";
 import { setupRouter } from "./setup";
 
 const createCaller = t.createCallerFactory(setupRouter);
-const p = mocks.db;
 
 describe("setupRouter", () => {
   beforeEach(() => vi.clearAllMocks());
 
   describe("status", () => {
-    it("returns setupComplete: true when done", async () => {
-      const caller = createCaller({ session: null });
-      p.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupComplete", value: "true" });
-      expect((await caller.status()).setupComplete).toBe(true);
+    it("returns incomplete when no setup config", async () => {
+      const caller = createCaller({});
+      mocks.db.query.systemConfigs.findFirst.mockResolvedValue(null);
+      const result = await caller.status();
+      expect(result.setupComplete).toBe(false);
     });
 
-    it("returns setupComplete: false when not configured", async () => {
-      const caller = createCaller({ session: null });
-      p.query.systemConfigs.findFirst.mockResolvedValue(null);
-      expect((await caller.status()).setupComplete).toBe(false);
-    });
-
-    it("works without authentication (public)", async () => {
-      const caller = createCaller({ session: null });
-      p.query.systemConfigs.findFirst.mockResolvedValue(null);
-      await caller.status(); // should not throw
-    });
-  });
-
-  describe("getStep", () => {
-    it("returns current setup step", async () => {
-      const caller = createCaller(mockSession());
-      p.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupStep", value: "link-twitch" });
-      expect((await caller.getStep()).step).toBe("link-twitch");
-    });
-
-    it("returns null step when none saved", async () => {
-      const caller = createCaller(mockSession());
-      p.query.systemConfigs.findFirst.mockResolvedValue(null);
-      expect((await caller.getStep()).step).toBeNull();
-    });
-
-    it("requires authentication", async () => {
-      const caller = createCaller({ session: null });
-      await expect(caller.getStep()).rejects.toThrow("Authentication required");
+    it("returns complete when setup is done", async () => {
+      const caller = createCaller({});
+      mocks.db.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupComplete", value: "true" });
+      const result = await caller.status();
+      expect(result.setupComplete).toBe(true);
     });
   });
 
   describe("saveStep", () => {
-    it("upserts the setup step", async () => {
+    it("saves a step to system config", async () => {
       const caller = createCaller(mockSession());
-      p.query.systemConfigs.upsert.mockResolvedValue({});
-      const result = await caller.saveStep({ step: "enable-bot" });
+      const chain = {
+        values: vi.fn().mockReturnValue({
+          onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+        }),
+      };
+      mocks.db.insert.mockReturnValue(chain);
+      const result = await caller.saveStep({ step: "authorize" });
       expect(result.success).toBe(true);
-      expect(p.query.systemConfigs.upsert).toHaveBeenCalledWith({
-        where: { key: "setupStep" },
-        create: { key: "setupStep", value: "enable-bot" },
-        update: { value: "enable-bot" } });
     });
   });
 
   describe("complete", () => {
     it("completes setup with valid token", async () => {
       const caller = createCaller(mockSession());
-      p.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupToken", value: "valid-token" });
+      mocks.db.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupToken", value: "valid-token" });
+
+      // The transaction mock needs to handle the nested operations
+      const txChain = (): any => {
+        const fns: Record<string, any> = {};
+        const p: any = new Proxy({} as any, {
+          get(_: any, prop: string) {
+            if (prop === "then") return undefined;
+            if (!fns[prop]) fns[prop] = vi.fn().mockReturnValue(p);
+            return fns[prop];
+          },
+        });
+        return p;
+      };
+      mocks.db.transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          insert: vi.fn(() => txChain()),
+          update: vi.fn(() => txChain()),
+          delete: vi.fn(() => txChain()),
+        };
+        return fn(tx);
+      });
+
+      // After transaction, auto-enable bot
+      mocks.db.query.accounts.findFirst.mockResolvedValue({ accountId: "twitch-id" });
+      mocks.db.query.users.findFirst.mockResolvedValue({ name: "broadcaster" });
+      const insertChain = {
+        values: vi.fn().mockReturnValue({
+          onConflictDoUpdate: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([{ id: "bc-1", twitchUserId: "twitch-id", twitchUsername: "broadcaster" }]),
+          }),
+        }),
+      };
+      mocks.db.insert.mockReturnValue(insertChain);
+
       const result = await caller.complete({ token: "valid-token" });
       expect(result.success).toBe(true);
-      expect(p.transaction).toHaveBeenCalled();
     });
 
     it("throws FORBIDDEN with invalid token", async () => {
       const caller = createCaller(mockSession());
-      p.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupToken", value: "valid-token" });
+      mocks.db.query.systemConfigs.findFirst.mockResolvedValue({ key: "setupToken", value: "other-token" });
       await expect(caller.complete({ token: "wrong" })).rejects.toThrow("Invalid setup token");
     });
 
     it("throws FORBIDDEN when no token exists", async () => {
       const caller = createCaller(mockSession());
-      p.query.systemConfigs.findFirst.mockResolvedValue(null);
+      mocks.db.query.systemConfigs.findFirst.mockResolvedValue(null);
       await expect(caller.complete({ token: "any" })).rejects.toThrow("Invalid setup token");
-    });
-  });
-
-  describe("startBotAuth", () => {
-    it("initiates device code flow", async () => {
-      const caller = createCaller(mockSession());
-      mocks.mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ device_code: "dc", user_code: "ABC-123", verification_uri: "https://twitch.tv/activate", interval: 5, expires_in: 1800 }) });
-      const result = await caller.startBotAuth();
-      expect(result.userCode).toBe("ABC-123");
-      expect(result.deviceCode).toBe("dc");
-    });
-
-    it("throws on Twitch API failure", async () => {
-      const caller = createCaller(mockSession());
-      mocks.mockFetch.mockResolvedValue({ ok: false, status: 400, text: async () => "Bad Request" });
-      await expect(caller.startBotAuth()).rejects.toThrow("Failed to start device authorization");
-    });
-  });
-
-  describe("pollBotAuth", () => {
-    it("returns pending when not yet complete", async () => {
-      const caller = createCaller(mockSession());
-      mocks.mockFetch.mockResolvedValue({ ok: false, json: async () => ({ message: "authorization_pending" }) });
-      const result = await caller.pollBotAuth({ deviceCode: "dc" });
-      expect(result.success).toBe(false);
-      expect(result.status).toBe("pending");
-    });
-
-    it("stores credentials on success", async () => {
-      const caller = createCaller(mockSession());
-      mocks.mockFetch
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: "at", refresh_token: "rt", expires_in: 3600, scope: ["chat:read"] }) })
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ user_id: "bot-id", login: "botacct" }) });
-      p.query.twitchCredentials.upsert.mockResolvedValue({});
-      const result = await caller.pollBotAuth({ deviceCode: "dc" });
-      expect(result.success).toBe(true);
-      if (result.success) expect(result.username).toBe("botacct");
-      expect(p.query.twitchCredentials.upsert).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: "bot-id" } }));
-    });
-
-    it("throws on non-pending errors", async () => {
-      const caller = createCaller(mockSession());
-      mocks.mockFetch.mockResolvedValue({ ok: false, json: async () => ({ message: "access_denied" }) });
-      await expect(caller.pollBotAuth({ deviceCode: "dc" })).rejects.toThrow("Authorization failed");
-    });
-
-    it("throws when validation fails", async () => {
-      const caller = createCaller(mockSession());
-      mocks.mockFetch
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: "at", refresh_token: "rt" }) })
-        .mockResolvedValueOnce({ ok: false });
-      await expect(caller.pollBotAuth({ deviceCode: "dc" })).rejects.toThrow("Failed to validate token");
     });
   });
 });

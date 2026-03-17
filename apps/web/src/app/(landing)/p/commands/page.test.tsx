@@ -1,28 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mocks = vi.hoisted(() => {
-  const mp: Record<string, any> = {};
-  const handler: ProxyHandler<Record<string, any>> = {
-    get(target, prop: string) {
-      if (!target[prop]) {
-        target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) {
-            if (!m[method]) m[method] = vi.fn();
-            return m[method];
-          },
-        });
-      }
-      return target[prop];
+const mocks = vi.hoisted(() => ({
+  db: {
+    query: {
+      users: { findFirst: vi.fn() },
+      botChannels: { findFirst: vi.fn() },
+      twitchChatCommands: { findMany: vi.fn() },
     },
-  };
-  return {
-    prisma: new Proxy(mp, handler),
-    getBroadcasterUserId: vi.fn(),
-    notFound: vi.fn(),
-  };
-});
+  },
+  getBroadcasterUserId: vi.fn(),
+  notFound: vi.fn(),
+}));
 
-vi.mock("@community-bot/db", () => ({ default: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({
+  db: mocks.db,
+  eq: vi.fn(),
+  asc: vi.fn(),
+  users: {},
+  botChannels: {},
+  twitchChatCommands: {},
+}));
 vi.mock("@/lib/setup", () => ({
   getBroadcasterUserId: mocks.getBroadcasterUserId,
 }));
@@ -45,15 +42,13 @@ vi.mock("./commands-tabs", () => ({
 
 import CommandsPage, { generateMetadata } from "./page";
 
-const p = mocks.prisma;
-
 describe("CommandsPage", () => {
   beforeEach(() => vi.clearAllMocks());
 
   describe("generateMetadata", () => {
     it("returns commands title with broadcaster name", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.user.findUnique.mockResolvedValue({ name: "TestStreamer" });
+      mocks.db.query.users.findFirst.mockResolvedValue({ name: "TestStreamer" });
 
       const meta = await generateMetadata();
       expect(meta.title).toBe("Commands — TestStreamer");
@@ -69,13 +64,13 @@ describe("CommandsPage", () => {
   describe("page component", () => {
     it("renders with custom and default commands", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.user.findUnique.mockResolvedValue({ id: "user-1", name: "TestStreamer" });
-      p.botChannel.findUnique.mockResolvedValue({
+      mocks.db.query.users.findFirst.mockResolvedValue({ id: "user-1", name: "TestStreamer" });
+      mocks.db.query.botChannels.findFirst.mockResolvedValue({
         id: "bc-1",
         disabledCommands: [],
         commandOverrides: [],
       });
-      p.twitchChatCommand.findMany.mockResolvedValue([
+      mocks.db.query.twitchChatCommands.findMany.mockResolvedValue([
         { name: "hello", response: "Hi!", accessLevel: "EVERYONE", aliases: [] },
       ]);
 

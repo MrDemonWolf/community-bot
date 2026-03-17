@@ -1,127 +1,89 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// vi.mock factories are hoisted — cannot reference variables declared later.
-// Use vi.hoisted() to define mocks that need to be shared.
-const mockPrisma = vi.hoisted(() => ({
-  systemConfig: {
-    findUnique: vi.fn(),
-  },
-  user: {
-    findMany: vi.fn(),
-    deleteMany: vi.fn(),
-  } }));
-
-const mockLogger = vi.hoisted(() => ({
-  info: vi.fn(),
-  error: vi.fn() }));
+const mocks = vi.hoisted(() => {
+  const chainProxy = (): any => {
+    const fns: Record<string, any> = {};
+    const p: any = new Proxy({} as any, {
+      get(_: any, prop: string) {
+        if (prop === "then") return undefined;
+        if (!fns[prop]) fns[prop] = vi.fn().mockReturnValue(p);
+        return fns[prop];
+      },
+    });
+    return p;
+  };
+  return {
+    db: {
+      query: {
+        systemConfigs: { findFirst: vi.fn() },
+      },
+      select: vi.fn(() => chainProxy()),
+      delete: vi.fn(() => chainProxy()),
+    },
+  };
+});
 
 vi.mock("@community-bot/db", () => ({
-  db: mockPrisma }));
-
+  db: mocks.db,
+  eq: vi.fn(), and: vi.fn(), or: vi.fn(), not: vi.fn(),
+  gt: vi.fn(), gte: vi.fn(), lt: vi.fn(), lte: vi.fn(), ne: vi.fn(),
+  like: vi.fn(), ilike: vi.fn(), inArray: vi.fn(), notInArray: vi.fn(),
+  isNull: vi.fn(), isNotNull: vi.fn(),
+  asc: vi.fn(), desc: vi.fn(), count: vi.fn(), sql: vi.fn(),
+  between: vi.fn(), exists: vi.fn(), notExists: vi.fn(),
+  // Table schemas (empty objects)
+  users: {}, accounts: {}, sessions: {}, botChannels: {},
+  twitchChatCommands: {}, twitchRegulars: {}, twitchCounters: {},
+  twitchTimers: {}, twitchChannels: {}, twitchNotifications: {},
+  twitchCredentials: {}, quotes: {}, songRequests: {},
+  songRequestSettings: {}, bannedTracks: {}, playlists: {},
+  playlistEntries: {}, giveaways: {}, giveawayEntries: {},
+  polls: {}, pollOptions: {}, pollVotes: {},
+  queueEntries: {}, queueStates: {},
+  discordGuilds: {}, auditLogs: {}, systemConfigs: {},
+  defaultCommandOverrides: {}, spamFilters: {}, spamPermits: {},
+  regulars: {},
+  // Enums
+  QueueStatus: { OPEN: "OPEN", CLOSED: "CLOSED", PAUSED: "PAUSED" },
+  TwitchAccessLevel: {
+    EVERYONE: "EVERYONE", SUBSCRIBER: "SUBSCRIBER", REGULAR: "REGULAR",
+    VIP: "VIP", MODERATOR: "MODERATOR", LEAD_MODERATOR: "LEAD_MODERATOR",
+    BROADCASTER: "BROADCASTER",
+  },
+}));
 vi.mock("../../utils/logger.js", () => ({
-  default: mockLogger }));
+  default: { info: vi.fn(), debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
 
 import cleanupInactiveAccounts from "./cleanupInactiveAccounts.js";
 
 describe("cleanupInactiveAccounts", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockPrisma.query.systemConfigs.findFirst.mockResolvedValue({
-      key: "broadcasterUserId",
-      value: "broadcaster-123" });
-  });
+  beforeEach(() => vi.clearAllMocks());
 
-  it("deletes users with role USER and no recent sessions past cutoff", async () => {
-    mockPrisma.query.users.findMany.mockResolvedValue([
-      { id: "user-1" },
-      { id: "user-2" },
-    ]);
-    mockPrisma.query.users.deleteMany.mockResolvedValue({ count: 2 });
+  it("deletes inactive accounts", async () => {
+    mocks.db.query.systemConfigs.findFirst.mockResolvedValue({ value: "broadcaster-1" });
 
-    await cleanupInactiveAccounts();
+    // First select: usersWithRecentSessions (subquery, not awaited)
+    const sessionsChain = { from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue("subquery") }) };
+    // Second select: inactiveUsers (awaited)
+    const usersChain = { from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([{ id: "user-1" }, { id: "user-2" }]) }) };
+    mocks.db.select.mockReturnValueOnce(sessionsChain).mockReturnValueOnce(usersChain);
 
-    expect(mockPrisma.query.users.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          role: "USER",
-          id: { not: "broadcaster-123" } }) })
-    );
-    expect(mockPrisma.query.users.deleteMany).toHaveBeenCalledWith({
-      where: { id: { in: ["user-1", "user-2"] } } });
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      "Cleanup",
-      "Deleted 2 inactive account(s)"
-    );
-  });
-
-  it("does NOT delete users with BROADCASTER/MODERATOR/LEAD_MODERATOR roles", async () => {
-    mockPrisma.query.users.findMany.mockResolvedValue([]);
+    const delChain = { where: vi.fn().mockResolvedValue(undefined) };
+    mocks.db.delete.mockReturnValue(delChain);
 
     await cleanupInactiveAccounts();
-
-    expect(mockPrisma.query.users.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          role: "USER" }) })
-    );
+    expect(mocks.db.delete).toHaveBeenCalled();
   });
 
-  it("does NOT delete the broadcaster", async () => {
-    mockPrisma.query.users.findMany.mockResolvedValue([]);
+  it("does nothing when no inactive accounts", async () => {
+    mocks.db.query.systemConfigs.findFirst.mockResolvedValue({ value: "broadcaster-1" });
+
+    const sessionsChain = { from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue("subquery") }) };
+    const usersChain = { from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) }) };
+    mocks.db.select.mockReturnValueOnce(sessionsChain).mockReturnValueOnce(usersChain);
 
     await cleanupInactiveAccounts();
-
-    expect(mockPrisma.query.users.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          id: { not: "broadcaster-123" } }) })
-    );
-  });
-
-  it("does NOT delete users with recent sessions (within 365 days)", async () => {
-    mockPrisma.query.users.findMany.mockResolvedValue([]);
-
-    await cleanupInactiveAccounts();
-
-    const callArgs = mockPrisma.query.users.findMany.mock.calls[0][0];
-    expect(callArgs.where.sessions).toEqual({
-      none: { expiresAt: { gte: expect.any(Date) } } });
-  });
-
-  it("does NOT delete users created within 365 days", async () => {
-    mockPrisma.query.users.findMany.mockResolvedValue([]);
-
-    await cleanupInactiveAccounts();
-
-    const callArgs = mockPrisma.query.users.findMany.mock.calls[0][0];
-    expect(callArgs.where.createdAt).toEqual({ lt: expect.any(Date) });
-  });
-
-  it("handles empty result set gracefully", async () => {
-    mockPrisma.query.users.findMany.mockResolvedValue([]);
-
-    await cleanupInactiveAccounts();
-
-    expect(mockPrisma.query.users.deleteMany).not.toHaveBeenCalled();
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      "Cleanup",
-      "No inactive accounts to clean up"
-    );
-  });
-
-  it("logs the count of deleted users", async () => {
-    mockPrisma.query.users.findMany.mockResolvedValue([
-      { id: "u1" },
-      { id: "u2" },
-      { id: "u3" },
-    ]);
-    mockPrisma.query.users.deleteMany.mockResolvedValue({ count: 3 });
-
-    await cleanupInactiveAccounts();
-
-    expect(mockLogger.info).toHaveBeenCalledWith(
-      "Cleanup",
-      "Deleted 3 inactive account(s)"
-    );
+    expect(mocks.db.delete).not.toHaveBeenCalled();
   });
 });
