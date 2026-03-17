@@ -19,7 +19,7 @@ COPY apps/discord/package.json apps/discord/
 COPY apps/twitch/package.json apps/twitch/
 COPY apps/docs/package.json apps/docs/
 
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --ignore-scripts
 
 FROM base AS build
 
