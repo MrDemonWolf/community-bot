@@ -29,6 +29,12 @@ import {
   FileText,
   Clock,
   ShieldCheck,
+  Sparkles,
+  Bell,
+  Coins,
+  FlaskConical,
+  ShieldAlert,
+  Download,
 } from "lucide-react";
 
 interface NavLink {
@@ -79,8 +85,10 @@ export function SidebarContent({
       label: "Chat",
       links: [
         { href: "/dashboard/commands", label: "Commands", icon: Terminal },
+        { href: "/dashboard/keywords", label: "Keywords", icon: Sparkles },
         { href: "/dashboard/regulars", label: "Regulars", icon: Users },
-        { href: "/dashboard/moderation", label: "Moderation", icon: Shield },
+        { href: "/dashboard/moderation", label: "Spam Filter", icon: Shield, exact: true },
+        { href: "/dashboard/moderation/automod", label: "AutoMod", icon: ShieldAlert },
         { href: "/dashboard/quotes", label: "Quotes", icon: Quote },
       ],
     },
@@ -89,6 +97,8 @@ export function SidebarContent({
       label: "Interactive",
       links: [
         { href: "/dashboard/queue", label: "Queue", icon: ListOrdered },
+        { href: "/dashboard/channel-points", label: "Channel Points", icon: Coins },
+        { href: "/dashboard/alerts", label: "Chat Alerts", icon: Bell },
         { href: "/dashboard/giveaways", label: "Giveaways", icon: Gift },
         { href: "/dashboard/polls", label: "Polls", icon: BarChart3 },
       ],
@@ -101,6 +111,14 @@ export function SidebarContent({
         { href: "/dashboard/timers", label: "Timers", icon: Timer },
         { href: "/dashboard/song-requests", label: "Song Requests", icon: Music },
         { href: "/dashboard/playlists", label: "Playlists", icon: ListMusic },
+      ],
+    },
+    {
+      key: "tools",
+      label: "Tools",
+      links: [
+        { href: "/dashboard/tools/tester", label: "Config Tester", icon: FlaskConical },
+        { href: "/dashboard/settings", label: "Import / Export", icon: Download },
       ],
     },
     {

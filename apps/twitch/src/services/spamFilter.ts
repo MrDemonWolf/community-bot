@@ -14,7 +14,7 @@ import { TwitchAccessLevel } from "@community-bot/db";
 import { getUserAccessLevel, meetsAccessLevel } from "./accessControl.js";
 import { logger } from "../utils/logger.js";
 
-interface SpamFilterConfig {
+export interface SpamFilterConfig {
   capsEnabled: boolean;
   capsMinLength: number;
   capsMaxPercent: number;

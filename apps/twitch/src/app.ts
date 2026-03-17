@@ -34,6 +34,8 @@ import { loadBroadcasterIds, loadBotChannelIds } from "./services/broadcasterCac
 import * as timerManager from "./services/timerManager.js";
 import * as spamFilter from "./services/spamFilter.js";
 import * as songRequestManager from "./services/songRequestManager.js";
+import * as keywordCache from "./services/keywordCache.js";
+import * as eventSubManager from "./services/eventSubManager.js";
 
 export let botStatus = {
   status: "offline" as "offline" | "connecting" | "online",
@@ -160,6 +162,50 @@ async function main() {
     }
   });
 
+  // Keyword events — reload keyword cache for the channel
+  await eventBus.on("keyword:created", async () => {
+    logger.info("EventBus", "Keyword created, reloading all keyword caches");
+    // Reload all active channels' keyword caches
+    const activeChannels = await db.query.botChannels.findMany({
+      where: eq(botChannels.enabled, true),
+      columns: { twitchUsername: true },
+    });
+    for (const ch of activeChannels) {
+      await keywordCache.loadKeywords(ch.twitchUsername);
+    }
+  });
+
+  await eventBus.on("keyword:updated", async () => {
+    logger.info("EventBus", "Keyword updated, reloading all keyword caches");
+    const activeChannels = await db.query.botChannels.findMany({
+      where: eq(botChannels.enabled, true),
+      columns: { twitchUsername: true },
+    });
+    for (const ch of activeChannels) {
+      await keywordCache.loadKeywords(ch.twitchUsername);
+    }
+  });
+
+  await eventBus.on("keyword:deleted", async () => {
+    logger.info("EventBus", "Keyword deleted, reloading all keyword caches");
+    const activeChannels = await db.query.botChannels.findMany({
+      where: eq(botChannels.enabled, true),
+      columns: { twitchUsername: true },
+    });
+    for (const ch of activeChannels) {
+      await keywordCache.loadKeywords(ch.twitchUsername);
+    }
+  });
+
+  // Stream status changes should restart timers with updated intervals
+  await eventBus.on("stream:online", async (payload) => {
+    await timerManager.onStreamStatusChange(payload.username);
+  });
+
+  await eventBus.on("stream:offline", async (payload) => {
+    await timerManager.onStreamStatusChange(payload.username);
+  });
+
   // Fallback cron: reload commands + regulars every 5 minutes
   cron.schedule("*/5 * * * *", async () => {
     try {
@@ -205,12 +251,22 @@ async function main() {
   registerJoinEvents(chatClient);
   registerPartEvents(chatClient);
 
-  // Set chat client for timer manager and load timers + spam filters for all channels
+  // Initialize EventSub WebSocket for chat alerts, channel points, and automod
+  await eventSubManager.initEventSub(authProvider);
+  eventSubManager.setAlertChatClient(chatClient);
+
+  // Set chat client for timer manager and load timers + spam filters + keywords for all channels
   timerManager.setChatClient(chatClient);
   for (const ch of channels) {
     await timerManager.loadTimers(ch);
     await spamFilter.loadSpamFilter(ch);
     await songRequestManager.loadSettings(ch);
+    await keywordCache.loadKeywords(ch);
+  }
+
+  // Subscribe to EventSub events for all enabled channels
+  for (const ch of enabledChannels) {
+    await eventSubManager.subscribeChannel(ch.twitchUserId, ch.twitchUsername, ch.id);
   }
 
   // Subscribe to EventBus events that require chat
@@ -221,6 +277,14 @@ async function main() {
     await timerManager.loadTimers(payload.username);
     await spamFilter.loadSpamFilter(payload.username);
     await songRequestManager.loadSettings(payload.username);
+    await keywordCache.loadKeywords(payload.username);
+    // Subscribe to EventSub events for new channel
+    const botCh = await db.query.botChannels.findFirst({
+      where: eq(botChannels.twitchUsername, payload.username.toLowerCase()),
+    });
+    if (botCh) {
+      await eventSubManager.subscribeChannel(botCh.twitchUserId, payload.username, botCh.id);
+    }
   });
 
   await eventBus.on("channel:leave", async (payload) => {
@@ -229,6 +293,7 @@ async function main() {
     streamStatusManager.removeChannel(payload.username);
     timerManager.stopTimers(payload.username);
     songRequestManager.clearCache(payload.username);
+    keywordCache.clearKeywords(payload.username);
   });
 
   // Mute/unmute via web dashboard

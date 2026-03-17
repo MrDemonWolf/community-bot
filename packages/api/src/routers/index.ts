@@ -24,6 +24,12 @@ import { discordScheduledRouter } from "./discordScheduled";
 import { discordRolesRouter } from "./discordRoles";
 import { discordModerationRouter } from "./discordModeration";
 import { discordCustomCommandsRouter } from "./discordCustomCommands";
+import { keywordRouter } from "./keyword";
+import { configTesterRouter } from "./configTester";
+import { chatAlertRouter } from "./chatAlert";
+import { channelPointsRouter } from "./channelPoints";
+import { automodRouter } from "./automod";
+import { importExportRouter } from "./importExport";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -57,5 +63,11 @@ export const appRouter = router({
   discordRoles: discordRolesRouter,
   discordModeration: discordModerationRouter,
   discordCustomCommands: discordCustomCommandsRouter,
+  keyword: keywordRouter,
+  configTester: configTesterRouter,
+  chatAlert: chatAlertRouter,
+  channelPoints: channelPointsRouter,
+  automod: automodRouter,
+  importExport: importExportRouter,
 });
 export type AppRouter = typeof appRouter;

@@ -26,6 +26,12 @@ export const timerRouter = router({
         message: z.string().min(1).max(500),
         intervalMinutes: z.number().int().min(1).max(1440).default(5),
         chatLines: z.number().int().min(0).max(1000).default(0),
+        onlineIntervalSeconds: z.number().int().min(30).max(86400).default(300),
+        offlineIntervalSeconds: z.number().int().min(30).max(86400).nullable().default(null),
+        enabledWhenOnline: z.boolean().default(true),
+        enabledWhenOffline: z.boolean().default(false),
+        gameFilter: z.array(z.string().min(1).max(200)).max(20).default([]),
+        titleKeywords: z.array(z.string().min(1).max(200)).max(20).default([]),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -48,6 +54,12 @@ export const timerRouter = router({
         message: input.message,
         intervalMinutes: input.intervalMinutes,
         chatLines: input.chatLines,
+        onlineIntervalSeconds: input.onlineIntervalSeconds,
+        offlineIntervalSeconds: input.offlineIntervalSeconds,
+        enabledWhenOnline: input.enabledWhenOnline,
+        enabledWhenOffline: input.enabledWhenOffline,
+        gameFilter: input.gameFilter,
+        titleKeywords: input.titleKeywords,
         botChannelId: botChannel.id,
       }).returning();
 
@@ -80,6 +92,12 @@ export const timerRouter = router({
         message: z.string().min(1).max(500).optional(),
         intervalMinutes: z.number().int().min(1).max(1440).optional(),
         chatLines: z.number().int().min(0).max(1000).optional(),
+        onlineIntervalSeconds: z.number().int().min(30).max(86400).optional(),
+        offlineIntervalSeconds: z.number().int().min(30).max(86400).nullable().optional(),
+        enabledWhenOnline: z.boolean().optional(),
+        enabledWhenOffline: z.boolean().optional(),
+        gameFilter: z.array(z.string().min(1).max(200)).max(20).optional(),
+        titleKeywords: z.array(z.string().min(1).max(200)).max(20).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

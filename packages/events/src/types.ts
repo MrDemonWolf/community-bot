@@ -91,6 +91,23 @@ export interface EventMap {
     service: "discord" | "twitch";
     status: "online" | "offline" | "connecting";
   };
+
+  // Feature 2: Keyword lifecycle
+  "keyword:created": { keywordId: string };
+  "keyword:updated": { keywordId: string };
+  "keyword:deleted": { keywordId: string };
+
+  // Feature 4: Chat Alert config updated
+  "alert:updated": { channelId: string };
+
+  // Feature 5: Channel Points
+  "channel-points:updated": { channelId: string };
+  "channel-points:redeemed": { channelId: string; rewardId: string; redemptionId: string; username: string; userInput: string };
+
+  // Feature 7: AutoMod
+  "automod:held": { channelId: string; messageId: string; userId: string; username: string; text: string };
+  "automod:resolved": { channelId: string; messageId: string; action: "approved" | "denied" };
+  "automod:settings-updated": { channelId: string };
 }
 
 export type EventName = keyof EventMap;
