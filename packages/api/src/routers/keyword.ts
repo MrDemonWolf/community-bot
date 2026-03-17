@@ -29,9 +29,7 @@ export const keywordRouter = router({
 
     return db.query.keywords.findMany({
       where: eq(keywords.botChannelId, botChannel.id),
-      orderBy: [
-        (kw, { desc, asc }) => [desc(kw.priority), asc(kw.name)],
-      ],
+      orderBy: (kw, { desc, asc }) => [desc(kw.priority), asc(kw.name)],
     });
   }),
 
