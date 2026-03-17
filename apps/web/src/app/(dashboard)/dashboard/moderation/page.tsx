@@ -42,7 +42,7 @@ interface FilterState {
   repetitionMaxRepeat: number;
   bannedWordsEnabled: boolean;
   bannedWords: string[];
-  exemptLevel: string;
+  exemptLevel: "EVERYONE" | "SUBSCRIBER" | "REGULAR" | "VIP" | "MODERATOR" | "LEAD_MODERATOR" | "BROADCASTER";
   timeoutDuration: number;
   warningMessage: string;
 }
@@ -114,7 +114,7 @@ export default function ModerationPage() {
         repetitionMaxRepeat: filterData.repetitionMaxRepeat,
         bannedWordsEnabled: filterData.bannedWordsEnabled,
         bannedWords: filterData.bannedWords,
-        exemptLevel: filterData.exemptLevel,
+        exemptLevel: filterData.exemptLevel as FilterState["exemptLevel"],
         timeoutDuration: filterData.timeoutDuration,
         warningMessage: filterData.warningMessage,
       };
@@ -148,7 +148,7 @@ export default function ModerationPage() {
 
   function handleSave() {
     if (!form) return;
-    updateMutation.mutate(form as any);
+    updateMutation.mutate(form);
   }
 
   function handleDiscard() {
@@ -257,7 +257,7 @@ export default function ModerationPage() {
                 <Select
                   value={form.exemptLevel}
                   onValueChange={(v) => {
-                    if (v) setForm({ ...form, exemptLevel: v });
+                    if (v) setForm({ ...form, exemptLevel: v as FilterState["exemptLevel"] });
                   }}
                   disabled={!canManage}
                 >
