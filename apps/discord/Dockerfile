@@ -12,7 +12,12 @@ COPY packages/config/package.json packages/config/
 COPY packages/env/package.json packages/env/
 COPY packages/events/package.json packages/events/
 COPY packages/server/package.json packages/server/
+COPY packages/api/package.json packages/api/
+COPY packages/auth/package.json packages/auth/
 COPY apps/discord/package.json apps/discord/
+COPY apps/twitch/package.json apps/twitch/
+COPY apps/web/package.json apps/web/
+COPY apps/docs/package.json apps/docs/
 
 RUN bun install --frozen-lockfile
 
