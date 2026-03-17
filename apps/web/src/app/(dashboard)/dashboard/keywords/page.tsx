@@ -27,7 +27,7 @@ interface KeywordFormState {
   phraseGroups: string[][];
   response: string;
   responseType: "SAY" | "MENTION" | "REPLY";
-  accessLevel: string;
+  accessLevel: "EVERYONE" | "SUBSCRIBER" | "REGULAR" | "VIP" | "MODERATOR" | "LEAD_MODERATOR" | "BROADCASTER";
   globalCooldown: number;
   userCooldown: number;
   streamStatus: "ONLINE" | "OFFLINE" | "BOTH";
