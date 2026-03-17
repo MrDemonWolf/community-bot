@@ -39,9 +39,9 @@ export default function AutoModPage() {
   function handleSave() {
     updateMutation.mutate({
       automodEnabled: automodEnabled ?? settings?.automodEnabled,
-      automodAction: (automodAction ?? settings?.automodAction) as any,
+      automodAction: (automodAction ?? settings?.automodAction) as "notify" | "auto_approve" | "auto_deny",
       suspiciousUserEnabled: suspiciousUserEnabled ?? settings?.suspiciousUserEnabled,
-      suspiciousUserAction: (suspiciousUserAction ?? settings?.suspiciousUserAction) as any,
+      suspiciousUserAction: (suspiciousUserAction ?? settings?.suspiciousUserAction) as "notify" | "restrict" | "ban",
     });
   }
 

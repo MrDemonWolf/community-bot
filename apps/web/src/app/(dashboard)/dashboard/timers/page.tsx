@@ -133,7 +133,7 @@ export default function TimersPage() {
     if (editingId) {
       updateMutation.mutate({ id: editingId, ...payload });
     } else {
-      createMutation.mutate(payload as any);
+      createMutation.mutate(payload);
     }
   }
 
