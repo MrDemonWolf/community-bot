@@ -16,6 +16,11 @@ import {
   giveawayEntries,
   playlists,
   playlistEntries,
+  keywords,
+  chatAlerts,
+  channelPointRewards,
+  bannedTracks,
+  automodSettings,
 } from "./twitch";
 import { discordGuilds } from "./discord";
 import { discordCases, discordCaseNotes } from "./discord-moderation";
@@ -98,6 +103,14 @@ export const botChannelsRelations = relations(botChannels, ({ one, many }) => ({
   }),
   playlists: many(playlists),
   giveaways: many(giveaways),
+  keywords: many(keywords),
+  chatAlerts: many(chatAlerts),
+  channelPointRewards: many(channelPointRewards),
+  bannedTracks: many(bannedTracks),
+  automodSettings: one(automodSettings, {
+    fields: [botChannels.id],
+    references: [automodSettings.botChannelId],
+  }),
 }));
 
 // ── Twitch model relations ──────────────────────────────────────────
@@ -234,6 +247,52 @@ export const discordRoleButtonsRelations = relations(
     panel: one(discordRolePanels, {
       fields: [discordRoleButtons.panelId],
       references: [discordRolePanels.id],
+    }),
+  })
+);
+
+// ── Feature 2: Keywords relations ───────────────────────────────────
+export const keywordsRelations = relations(keywords, ({ one }) => ({
+  botChannel: one(botChannels, {
+    fields: [keywords.botChannelId],
+    references: [botChannels.id],
+  }),
+}));
+
+// ── Feature 4: Chat Alerts relations ────────────────────────────────
+export const chatAlertsRelations = relations(chatAlerts, ({ one }) => ({
+  botChannel: one(botChannels, {
+    fields: [chatAlerts.botChannelId],
+    references: [botChannels.id],
+  }),
+}));
+
+// ── Feature 5: Channel Point Rewards relations ──────────────────────
+export const channelPointRewardsRelations = relations(
+  channelPointRewards,
+  ({ one }) => ({
+    botChannel: one(botChannels, {
+      fields: [channelPointRewards.botChannelId],
+      references: [botChannels.id],
+    }),
+  })
+);
+
+// ── Feature 6: Banned Tracks relations ──────────────────────────────
+export const bannedTracksRelations = relations(bannedTracks, ({ one }) => ({
+  botChannel: one(botChannels, {
+    fields: [bannedTracks.botChannelId],
+    references: [botChannels.id],
+  }),
+}));
+
+// ── Feature 7: AutoMod Settings relations ───────────────────────────
+export const automodSettingsRelations = relations(
+  automodSettings,
+  ({ one }) => ({
+    botChannel: one(botChannels, {
+      fields: [automodSettings.botChannelId],
+      references: [botChannels.id],
     }),
   })
 );

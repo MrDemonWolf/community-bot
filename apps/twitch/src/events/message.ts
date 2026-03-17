@@ -17,6 +17,7 @@ import { getBroadcasterId, getBotChannelId } from "../services/broadcasterCache.
 import { addEntry } from "../services/giveawayManager.js";
 import { isMuted } from "../services/botState.js";
 import { checkMessage, handleViolation } from "../services/spamFilter.js";
+import { matchKeywords } from "../services/keywordCache.js";
 import {
   isCommandDisabled,
   getAccessLevelOverride,
@@ -101,6 +102,57 @@ export function registerMessageEvents(chatClient: ChatClient): void {
       .catch(() => {
         // Silently ignore spam filter errors to not block message flow
       });
+
+    // Keyword check — content-based auto-responders (no prefix required)
+    const matchedKeyword = matchKeywords(channel, text);
+    if (matchedKeyword) {
+      const userLevel = getUserAccessLevel(msg);
+      const keywordMeetsAccess = meetsAccessLevel(
+        userLevel,
+        matchedKeyword.accessLevel as TwitchAccessLevel
+      );
+      if (keywordMeetsAccess) {
+        // Stream status check
+        const live = isLive(channel.replace(/^#/, "").toLowerCase());
+        const kwStatus = matchedKeyword.streamStatus;
+        const statusOk =
+          kwStatus === TwitchStreamStatus.BOTH ||
+          (kwStatus === TwitchStreamStatus.ONLINE && live) ||
+          (kwStatus === TwitchStreamStatus.OFFLINE && !live);
+
+        if (statusOk) {
+          const { onCooldown } = isOnCooldown(
+            `kw:${matchedKeyword.id}`,
+            msg.userInfo.userId,
+            matchedKeyword.globalCooldown,
+            matchedKeyword.userCooldown
+          );
+
+          if (!onCooldown) {
+            recordUsage(
+              `kw:${matchedKeyword.id}`,
+              msg.userInfo.userId,
+              matchedKeyword.globalCooldown,
+              matchedKeyword.userCooldown
+            );
+
+            executeCommand(
+              chatClient,
+              channel,
+              user,
+              [],
+              msg,
+              matchedKeyword.response,
+              matchedKeyword.responseType as any,
+              matchedKeyword.id,
+              getBroadcasterId(channel)
+            ).catch(() => {});
+
+            if (matchedKeyword.stopProcessing) return;
+          }
+        }
+      }
+    }
 
     // Phase 1: Built-in prefix commands (highest priority)
     if (text.startsWith(COMMAND_PREFIX)) {

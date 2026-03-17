@@ -8,6 +8,7 @@ import {
   timestamp,
   index,
   unique,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -238,6 +239,19 @@ export const twitchTimers = pgTable(
     message: text("message").notNull(),
     intervalMinutes: integer("intervalMinutes").notNull().default(5),
     chatLines: integer("chatLines").notNull().default(0),
+    // Enhanced timer fields
+    onlineIntervalSeconds: integer("onlineIntervalSeconds").notNull().default(300),
+    offlineIntervalSeconds: integer("offlineIntervalSeconds"),
+    enabledWhenOnline: boolean("enabledWhenOnline").notNull().default(true),
+    enabledWhenOffline: boolean("enabledWhenOffline").notNull().default(false),
+    gameFilter: text("gameFilter")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    titleKeywords: text("titleKeywords")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     botChannelId: text("botChannelId").notNull(),
     createdAt: timestamp("createdAt").notNull().defaultNow(),
     updatedAt: timestamp("updatedAt")
@@ -341,6 +355,21 @@ export const songRequestSettings = pgTable("SongRequestSettings", {
   maxDuration: integer("maxDuration"),
   autoPlayEnabled: boolean("autoPlayEnabled").notNull().default(false),
   activePlaylistId: text("activePlaylistId"),
+  // Feature 6: Enhanced validation fields
+  minViews: integer("minViews"),
+  requireEmbeddable: boolean("requireEmbeddable").notNull().default(true),
+  musicOnly: boolean("musicOnly").notNull().default(false),
+  bannedChannels: text("bannedChannels")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  bannedTags: text("bannedTags")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  voteSkipEnabled: boolean("voteSkipEnabled").notNull().default(false),
+  voteSkipThreshold: integer("voteSkipThreshold").notNull().default(50),
+  soundcloudEnabled: boolean("soundcloudEnabled").notNull().default(false),
   createdAt: timestamp("createdAt").notNull().defaultNow(),
   updatedAt: timestamp("updatedAt")
     .notNull()
@@ -415,6 +444,7 @@ export const playlists = pgTable(
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
+    isBackup: boolean("isBackup").notNull().default(false),
     botChannelId: text("botChannelId").notNull(),
     createdAt: timestamp("createdAt").notNull().defaultNow(),
     updatedAt: timestamp("updatedAt")
@@ -448,3 +478,203 @@ export const playlistEntries = pgTable(
     ),
   ]
 );
+
+// ── Feature 2: Keywords / Auto-Response ─────────────────────────────
+
+export const keywords = pgTable(
+  "Keyword",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    name: text("name").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    // phraseGroups: string[][] — outer array = OR groups, inner array = AND phrases
+    phraseGroups: jsonb("phraseGroups")
+      .notNull()
+      .$type<string[][]>()
+      .default(sql`'[]'::jsonb`),
+    response: text("response").notNull(),
+    responseType: twitchResponseTypeEnum("responseType")
+      .notNull()
+      .default("SAY"),
+    accessLevel: twitchAccessLevelEnum("accessLevel")
+      .notNull()
+      .default("EVERYONE"),
+    globalCooldown: integer("globalCooldown").notNull().default(0),
+    userCooldown: integer("userCooldown").notNull().default(0),
+    streamStatus: twitchStreamStatusEnum("streamStatus")
+      .notNull()
+      .default("BOTH"),
+    priority: integer("priority").notNull().default(0),
+    stopProcessing: boolean("stopProcessing").notNull().default(false),
+    caseSensitive: boolean("caseSensitive").notNull().default(false),
+    botChannelId: text("botChannelId").notNull(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt")
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    unique("Keyword_name_botChannelId_key").on(t.name, t.botChannelId),
+    index("Keyword_botChannelId_priority_idx").on(t.botChannelId, t.priority),
+  ]
+);
+
+// ── Feature 4: Chat Alerts ──────────────────────────────────────────
+
+export const chatAlertTypeEnum = pgEnum("ChatAlertType", [
+  "follow",
+  "subscribe",
+  "resubscribe",
+  "gift_sub",
+  "gift_sub_bomb",
+  "raid",
+  "cheer",
+  "charity_donation",
+  "hype_train_begin",
+  "hype_train_end",
+  "ad_break_begin",
+  "stream_online",
+  "stream_offline",
+  "shoutout_received",
+  "ban",
+  "vip_add",
+  "moderator_add",
+]);
+
+export const chatAlerts = pgTable(
+  "ChatAlert",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    alertType: chatAlertTypeEnum("alertType").notNull(),
+    enabled: boolean("enabled").notNull().default(false),
+    // Array of message templates; one is picked at random per fire
+    messageTemplates: jsonb("messageTemplates")
+      .notNull()
+      .$type<string[]>()
+      .default(sql`'[]'::jsonb`),
+    // Optional tier-specific overrides: { "1": "...", "2": "...", "3": "..." }
+    tierConfigs: jsonb("tierConfigs")
+      .$type<Record<string, string>>()
+      .default(sql`'{}'::jsonb`),
+    minThreshold: integer("minThreshold").notNull().default(1),
+    cooldownSeconds: integer("cooldownSeconds").notNull().default(0),
+    botChannelId: text("botChannelId").notNull(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt")
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    unique("ChatAlert_alertType_botChannelId_key").on(
+      t.alertType,
+      t.botChannelId
+    ),
+  ]
+);
+
+// ── Feature 5: Channel Points ───────────────────────────────────────
+
+export const channelPointActionTypeEnum = pgEnum("ChannelPointActionType", [
+  "RUN_COMMAND",
+  "ADD_TO_QUEUE",
+  "SONG_REQUEST",
+  "CUSTOM_MESSAGE",
+  "SHOUTOUT",
+  "HIGHLIGHT",
+]);
+
+export const channelPointSyncStatusEnum = pgEnum("ChannelPointSyncStatus", [
+  "pending",
+  "synced",
+  "error",
+]);
+
+export const channelPointRewards = pgTable("ChannelPointReward", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  twitchRewardId: text("twitchRewardId"),
+  title: text("title").notNull(),
+  cost: integer("cost").notNull().default(100),
+  prompt: text("prompt"),
+  backgroundColor: text("backgroundColor"),
+  isEnabled: boolean("isEnabled").notNull().default(true),
+  requireUserInput: boolean("requireUserInput").notNull().default(false),
+  actionType: channelPointActionTypeEnum("actionType")
+    .notNull()
+    .default("CUSTOM_MESSAGE"),
+  actionConfig: jsonb("actionConfig")
+    .$type<Record<string, unknown>>()
+    .default(sql`'{}'::jsonb`),
+  syncStatus: channelPointSyncStatusEnum("syncStatus")
+    .notNull()
+    .default("pending"),
+  syncError: text("syncError"),
+  botChannelId: text("botChannelId").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt")
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+// ── Feature 6: Enhanced Media Requests ─────────────────────────────
+
+export const bannedTracks = pgTable(
+  "BannedTrack",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    videoId: text("videoId").notNull(),
+    title: text("title").notNull(),
+    reason: text("reason"),
+    addedBy: text("addedBy").notNull(),
+    botChannelId: text("botChannelId").notNull(),
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (t) => [
+    unique("BannedTrack_videoId_botChannelId_key").on(
+      t.videoId,
+      t.botChannelId
+    ),
+  ]
+);
+
+// ── Feature 7: AutoMod / Suspicious Users ──────────────────────────
+
+export const automodActionEnum = pgEnum("AutomodAction", [
+  "notify",
+  "auto_approve",
+  "auto_deny",
+]);
+
+export const suspiciousUserActionEnum = pgEnum("SuspiciousUserAction", [
+  "notify",
+  "restrict",
+  "ban",
+]);
+
+export const automodSettings = pgTable("AutomodSettings", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  botChannelId: text("botChannelId").notNull().unique(),
+  automodEnabled: boolean("automodEnabled").notNull().default(false),
+  automodAction: automodActionEnum("automodAction")
+    .notNull()
+    .default("notify"),
+  suspiciousUserEnabled: boolean("suspiciousUserEnabled")
+    .notNull()
+    .default(false),
+  suspiciousUserAction: suspiciousUserActionEnum("suspiciousUserAction")
+    .notNull()
+    .default("notify"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt")
+    .notNull()
+    .$onUpdate(() => new Date()),
+});

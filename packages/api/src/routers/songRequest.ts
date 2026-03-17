@@ -1,4 +1,4 @@
-import { db, eq, and, asc, sql, systemConfigs, botChannels, songRequests, songRequestSettings } from "@community-bot/db";
+import { db, eq, and, asc, sql, systemConfigs, botChannels, songRequests, songRequestSettings, bannedTracks } from "@community-bot/db";
 import { publicProcedure, protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -195,6 +195,15 @@ export const songRequestRouter = router({
         maxDuration: z.number().int().min(1).max(36000).nullable().optional(),
         autoPlayEnabled: z.boolean().optional(),
         activePlaylistId: z.string().uuid().nullable().optional(),
+        // Feature 6: Enhanced validation
+        minViews: z.number().int().min(0).nullable().optional(),
+        requireEmbeddable: z.boolean().optional(),
+        musicOnly: z.boolean().optional(),
+        bannedChannels: z.array(z.string().min(1).max(200)).max(50).optional(),
+        bannedTags: z.array(z.string().min(1).max(100)).max(50).optional(),
+        voteSkipEnabled: z.boolean().optional(),
+        voteSkipThreshold: z.number().int().min(1).max(100).optional(),
+        soundcloudEnabled: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -224,5 +233,81 @@ export const songRequestRouter = router({
       });
 
       return settings;
+    }),
+
+  // ── Feature 6: Banned Tracks ──────────────────────────────────────
+  listBannedTracks: protectedProcedure.query(async ({ ctx }) => {
+    const botChannel = await getUserBotChannel(ctx.session.user.id);
+    return db.query.bannedTracks.findMany({
+      where: eq(bannedTracks.botChannelId, botChannel.id),
+      orderBy: (bt, { desc }) => [desc(bt.createdAt)],
+    });
+  }),
+
+  banTrack: moderatorProcedure
+    .input(
+      z.object({
+        videoId: z.string().min(1).max(50),
+        title: z.string().min(1).max(200),
+        reason: z.string().max(300).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const botChannel = await getUserBotChannel(ctx.session.user.id);
+
+      const [track] = await db
+        .insert(bannedTracks)
+        .values({
+          videoId: input.videoId,
+          title: input.title,
+          reason: input.reason,
+          addedBy: ctx.session.user.name ?? ctx.session.user.id,
+          botChannelId: botChannel.id,
+        })
+        .onConflictDoUpdate({
+          target: [bannedTracks.videoId, bannedTracks.botChannelId],
+          set: { reason: input.reason, title: input.title },
+        })
+        .returning();
+
+      await logAudit({
+        userId: ctx.session.user.id,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "song-request.ban-track",
+        resourceType: "BannedTrack",
+        resourceId: track!.id,
+        metadata: { videoId: input.videoId, title: input.title },
+      });
+
+      return track!;
+    }),
+
+  unbanTrack: moderatorProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const botChannel = await getUserBotChannel(ctx.session.user.id);
+
+      const track = await db.query.bannedTracks.findFirst({
+        where: eq(bannedTracks.id, input.id),
+      });
+
+      if (!track || track.botChannelId !== botChannel.id) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Banned track not found." });
+      }
+
+      await db.delete(bannedTracks).where(eq(bannedTracks.id, input.id));
+
+      await logAudit({
+        userId: ctx.session.user.id,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "song-request.unban-track",
+        resourceType: "BannedTrack",
+        resourceId: input.id,
+        metadata: { videoId: track.videoId, title: track.title },
+      });
+
+      return { success: true };
     }),
 });

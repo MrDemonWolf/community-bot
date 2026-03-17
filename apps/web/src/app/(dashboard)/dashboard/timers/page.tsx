@@ -26,6 +26,12 @@ interface TimerFormState {
   message: string;
   intervalMinutes: number;
   chatLines: number;
+  onlineIntervalSeconds: number;
+  offlineIntervalSeconds: number | null;
+  enabledWhenOnline: boolean;
+  enabledWhenOffline: boolean;
+  gameFilter: string[];
+  titleKeywords: string[];
 }
 
 const emptyForm: TimerFormState = {
@@ -33,6 +39,12 @@ const emptyForm: TimerFormState = {
   message: "",
   intervalMinutes: 5,
   chatLines: 0,
+  onlineIntervalSeconds: 300,
+  offlineIntervalSeconds: null,
+  enabledWhenOnline: true,
+  enabledWhenOffline: false,
+  gameFilter: [],
+  titleKeywords: [],
 };
 
 export default function TimersPage() {
@@ -106,39 +118,49 @@ export default function TimersPage() {
 
   function handleSubmit() {
     if (!form.name.trim() || !form.message.trim()) return;
+    const payload = {
+      name: form.name.trim(),
+      message: form.message.trim(),
+      intervalMinutes: form.intervalMinutes,
+      chatLines: form.chatLines,
+      onlineIntervalSeconds: form.onlineIntervalSeconds,
+      offlineIntervalSeconds: form.offlineIntervalSeconds,
+      enabledWhenOnline: form.enabledWhenOnline,
+      enabledWhenOffline: form.enabledWhenOffline,
+      gameFilter: form.gameFilter,
+      titleKeywords: form.titleKeywords,
+    };
     if (editingId) {
-      updateMutation.mutate({
-        id: editingId,
-        name: form.name.trim(),
-        message: form.message.trim(),
-        intervalMinutes: form.intervalMinutes,
-        chatLines: form.chatLines,
-      });
+      updateMutation.mutate({ id: editingId, ...payload });
     } else {
-      createMutation.mutate({
-        name: form.name.trim(),
-        message: form.message.trim(),
-        intervalMinutes: form.intervalMinutes,
-        chatLines: form.chatLines,
-      });
+      createMutation.mutate(payload as any);
     }
   }
 
-  function startEdit(timer: {
-    id: string;
-    name: string;
-    message: string;
-    intervalMinutes: number;
-    chatLines: number;
-  }) {
+  function startEdit(timer: NonNullable<typeof timers>[number]) {
     setForm({
       name: timer.name,
       message: timer.message,
       intervalMinutes: timer.intervalMinutes,
       chatLines: timer.chatLines,
+      onlineIntervalSeconds: timer.onlineIntervalSeconds,
+      offlineIntervalSeconds: timer.offlineIntervalSeconds ?? null,
+      enabledWhenOnline: timer.enabledWhenOnline,
+      enabledWhenOffline: timer.enabledWhenOffline,
+      gameFilter: timer.gameFilter ?? [],
+      titleKeywords: timer.titleKeywords ?? [],
     });
     setEditingId(timer.id);
     setShowForm(true);
+  }
+
+  function addTag(field: "gameFilter" | "titleKeywords", value: string) {
+    if (!value.trim()) return;
+    setForm({ ...form, [field]: [...form[field], value.trim()] });
+  }
+
+  function removeTag(field: "gameFilter" | "titleKeywords", idx: number) {
+    setForm({ ...form, [field]: form[field].filter((_, i) => i !== idx) });
   }
 
   if (!botStatus?.botChannel?.enabled) {
@@ -249,6 +271,50 @@ export default function TimersPage() {
                   value={form.message}
                   onChange={(e) => setForm({ ...form, message: e.target.value })}
                 />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Online Interval (seconds)</label>
+                  <Input type="number" min={30} max={86400} value={form.onlineIntervalSeconds} onChange={(e) => setForm({ ...form, onlineIntervalSeconds: parseInt(e.target.value) || 300 })} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Offline Interval (seconds, optional)</label>
+                  <Input type="number" min={30} max={86400} placeholder="Same as online" value={form.offlineIntervalSeconds ?? ""} onChange={(e) => setForm({ ...form, offlineIntervalSeconds: e.target.value ? parseInt(e.target.value) : null })} />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <Switch checked={form.enabledWhenOnline} onCheckedChange={(v) => setForm({ ...form, enabledWhenOnline: v })} />
+                  Fire when online
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <Switch checked={form.enabledWhenOffline} onCheckedChange={(v) => setForm({ ...form, enabledWhenOffline: v })} />
+                  Fire when offline
+                </label>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Game Filter (fire only for these games)</label>
+                <div className="flex flex-wrap gap-1 mb-1">
+                  {form.gameFilter.map((g, i) => (
+                    <span key={i} className="flex items-center gap-1 rounded-full bg-brand-main/10 px-2 py-0.5 text-xs text-brand-main">
+                      {g}
+                      <button type="button" onClick={() => removeTag("gameFilter", i)} className="ml-0.5 text-brand-main/60 hover:text-brand-main">×</button>
+                    </span>
+                  ))}
+                </div>
+                <Input placeholder="Add game name, press Enter" onKeyDown={(e) => { if (e.key === "Enter") { addTag("gameFilter", (e.target as HTMLInputElement).value); (e.target as HTMLInputElement).value = ""; }}} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Title Keywords (fire only when title contains)</label>
+                <div className="flex flex-wrap gap-1 mb-1">
+                  {form.titleKeywords.map((kw, i) => (
+                    <span key={i} className="flex items-center gap-1 rounded-full bg-brand-main/10 px-2 py-0.5 text-xs text-brand-main">
+                      {kw}
+                      <button type="button" onClick={() => removeTag("titleKeywords", i)} className="ml-0.5 text-brand-main/60 hover:text-brand-main">×</button>
+                    </span>
+                  ))}
+                </div>
+                <Input placeholder="Add title keyword, press Enter" onKeyDown={(e) => { if (e.key === "Enter") { addTag("titleKeywords", (e.target as HTMLInputElement).value); (e.target as HTMLInputElement).value = ""; }}} />
               </div>
               <div className="flex items-center gap-2">
                 <Button

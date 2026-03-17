@@ -23,6 +23,11 @@ import type {
   giveawayEntries,
   playlists,
   playlistEntries,
+  keywords,
+  chatAlerts,
+  channelPointRewards,
+  bannedTracks,
+  automodSettings,
 } from "./schema/twitch";
 import type { discordGuilds } from "./schema/discord";
 import type {
@@ -69,6 +74,11 @@ export type Giveaway = InferSelectModel<typeof giveaways>;
 export type GiveawayEntry = InferSelectModel<typeof giveawayEntries>;
 export type Playlist = InferSelectModel<typeof playlists>;
 export type PlaylistEntry = InferSelectModel<typeof playlistEntries>;
+export type Keyword = InferSelectModel<typeof keywords>;
+export type ChatAlert = InferSelectModel<typeof chatAlerts>;
+export type ChannelPointReward = InferSelectModel<typeof channelPointRewards>;
+export type BannedTrack = InferSelectModel<typeof bannedTracks>;
+export type AutomodSettings = InferSelectModel<typeof automodSettings>;
 
 // Discord
 export type DiscordGuild = InferSelectModel<typeof discordGuilds>;
