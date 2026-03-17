@@ -62,32 +62,6 @@ export default function LoginPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 pt-2">
-          {/* Discord Button */}
-          <div className="flex flex-col gap-1">
-            <Button
-              size="lg"
-              className="w-full rounded-md bg-brand-discord py-5 text-sm font-bold text-white hover:bg-brand-discord/80"
-              disabled={signingIn !== null}
-              onClick={() => handleSignIn("discord")}
-            >
-              {signingIn === "discord" ? "Redirecting..." : "Discord"}
-            </Button>
-            {lastUsedMethod === "discord" && (
-              <p className="text-center text-xs text-brand-main">
-                Last signed in with Discord
-              </p>
-            )}
-          </div>
-
-          {/* Separator */}
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs font-medium uppercase text-muted-foreground">
-              or
-            </span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-
           {/* Twitch Button */}
           <div className="flex flex-col gap-1">
             <Button
@@ -101,6 +75,32 @@ export default function LoginPage() {
             {lastUsedMethod === "twitch" && (
               <p className="text-center text-xs text-brand-main">
                 Last signed in with Twitch
+              </p>
+            )}
+          </div>
+
+          {/* Separator */}
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs font-medium uppercase text-muted-foreground">
+              or
+            </span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* Discord Button */}
+          <div className="flex flex-col gap-1">
+            <Button
+              size="lg"
+              className="w-full rounded-md bg-brand-discord py-5 text-sm font-bold text-white hover:bg-brand-discord/80"
+              disabled={signingIn !== null}
+              onClick={() => handleSignIn("discord")}
+            >
+              {signingIn === "discord" ? "Redirecting..." : "Discord"}
+            </Button>
+            {lastUsedMethod === "discord" && (
+              <p className="text-center text-xs text-brand-main">
+                Last signed in with Discord
               </p>
             )}
           </div>
