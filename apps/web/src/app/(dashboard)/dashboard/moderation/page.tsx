@@ -55,7 +55,13 @@ const ACCESS_LEVELS = [
   "MODERATOR",
   "LEAD_MODERATOR",
   "BROADCASTER",
-];
+] as const;
+
+type ExemptLevel = FilterState["exemptLevel"];
+
+function isValidExemptLevel(value: string): value is ExemptLevel {
+  return (ACCESS_LEVELS as readonly string[]).includes(value);
+}
 
 function formatAccessLevel(level: string): string {
   return level
@@ -114,7 +120,7 @@ export default function ModerationPage() {
         repetitionMaxRepeat: filterData.repetitionMaxRepeat,
         bannedWordsEnabled: filterData.bannedWordsEnabled,
         bannedWords: filterData.bannedWords,
-        exemptLevel: filterData.exemptLevel as FilterState["exemptLevel"],
+        exemptLevel: isValidExemptLevel(filterData.exemptLevel) ? filterData.exemptLevel : "MODERATOR",
         timeoutDuration: filterData.timeoutDuration,
         warningMessage: filterData.warningMessage,
       };
@@ -257,7 +263,7 @@ export default function ModerationPage() {
                 <Select
                   value={form.exemptLevel}
                   onValueChange={(v) => {
-                    if (v) setForm({ ...form, exemptLevel: v as FilterState["exemptLevel"] });
+                    if (v && isValidExemptLevel(v)) setForm({ ...form, exemptLevel: v });
                   }}
                   disabled={!canManage}
                 >

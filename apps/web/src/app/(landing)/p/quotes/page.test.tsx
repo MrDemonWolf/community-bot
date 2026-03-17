@@ -1,28 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mocks = vi.hoisted(() => {
-  const mp: Record<string, any> = {};
-  const handler: ProxyHandler<Record<string, any>> = {
-    get(target, prop: string) {
-      if (!target[prop]) {
-        target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) {
-            if (!m[method]) m[method] = vi.fn();
-            return m[method];
-          },
-        });
-      }
-      return target[prop];
+const mocks = vi.hoisted(() => ({
+  db: {
+    query: {
+      users: { findFirst: vi.fn() },
+      botChannels: { findFirst: vi.fn() },
+      quotes: { findMany: vi.fn() },
     },
-  };
-  return {
-    prisma: new Proxy(mp, handler),
-    getBroadcasterUserId: vi.fn(),
-    notFound: vi.fn(),
-  };
-});
+  },
+  getBroadcasterUserId: vi.fn(),
+  notFound: vi.fn(),
+}));
 
-vi.mock("@community-bot/db", () => ({ default: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({
+  db: mocks.db,
+  eq: vi.fn(),
+  asc: vi.fn(),
+  users: {},
+  botChannels: {},
+  quotes: {},
+}));
 vi.mock("@/lib/setup", () => ({
   getBroadcasterUserId: mocks.getBroadcasterUserId,
 }));
@@ -32,15 +29,13 @@ vi.mock("next/image", () => ({ default: () => null }));
 
 import QuotesPage, { generateMetadata } from "./page";
 
-const p = mocks.prisma;
-
 describe("QuotesPage", () => {
   beforeEach(() => vi.clearAllMocks());
 
   describe("generateMetadata", () => {
     it("returns title with broadcaster name", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.user.findUnique.mockResolvedValue({ name: "TestStreamer" });
+      mocks.db.query.users.findFirst.mockResolvedValue({ name: "TestStreamer" });
 
       const meta = await generateMetadata();
       expect(meta.title).toBe("Quotes — TestStreamer");
@@ -56,8 +51,8 @@ describe("QuotesPage", () => {
   describe("page component", () => {
     it("renders quotes list", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1" });
-      p.quote.findMany.mockResolvedValue([
+      mocks.db.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+      mocks.db.query.quotes.findMany.mockResolvedValue([
         { id: "q1", quoteNumber: 1, text: "Hello world", game: "Minecraft", addedBy: "viewer1" },
         { id: "q2", quoteNumber: 2, text: "GG", game: null, addedBy: "viewer2" },
       ]);
@@ -72,8 +67,8 @@ describe("QuotesPage", () => {
 
     it("renders empty state when no quotes", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1" });
-      p.quote.findMany.mockResolvedValue([]);
+      mocks.db.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+      mocks.db.query.quotes.findMany.mockResolvedValue([]);
 
       const result = await QuotesPage();
       const html = JSON.stringify(result);
@@ -89,7 +84,7 @@ describe("QuotesPage", () => {
 
     it("calls notFound when no bot channel", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.botChannel.findUnique.mockResolvedValue(null);
+      mocks.db.query.botChannels.findFirst.mockResolvedValue(null);
 
       await QuotesPage();
       expect(mocks.notFound).toHaveBeenCalled();

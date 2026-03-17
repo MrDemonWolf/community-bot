@@ -1,28 +1,38 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mocks = vi.hoisted(() => {
-  const mp: Record<string, any> = {};
-  const handler: ProxyHandler<Record<string, any>> = {
-    get(target, prop: string) {
-      if (!target[prop]) {
-        target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) {
-            if (!m[method]) m[method] = vi.fn();
-            return m[method];
-          },
-        });
-      }
-      return target[prop];
+const mocks = vi.hoisted(() => ({
+  db: {
+    query: {
+      users: { findFirst: vi.fn() },
+      twitchChannels: { findFirst: vi.fn() },
+      botChannels: { findFirst: vi.fn() },
+      twitchChatCommands: { findMany: vi.fn() },
+      queueStates: { findFirst: vi.fn() },
+      queueEntries: { findMany: vi.fn() },
+      songRequestSettings: { findFirst: vi.fn() },
+      songRequests: { findMany: vi.fn() },
+      quotes: { findMany: vi.fn() },
     },
-  };
-  return {
-    prisma: new Proxy(mp, handler),
-    getBroadcasterUserId: vi.fn(),
-    notFound: vi.fn(),
-  };
-});
+  },
+  getBroadcasterUserId: vi.fn(),
+  notFound: vi.fn(),
+}));
 
-vi.mock("@community-bot/db", () => ({ default: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({
+  db: mocks.db,
+  eq: vi.fn(),
+  asc: vi.fn(),
+  desc: vi.fn(),
+  users: {},
+  twitchChannels: {},
+  botChannels: {},
+  twitchChatCommands: {},
+  queueStates: {},
+  queueEntries: {},
+  songRequestSettings: {},
+  songRequests: {},
+  quotes: {},
+}));
 vi.mock("@/lib/setup", () => ({
   getBroadcasterUserId: mocks.getBroadcasterUserId,
 }));
@@ -32,8 +42,6 @@ vi.mock("next/image", () => ({ default: () => null }));
 vi.mock("./twitch-embed", () => ({ default: () => null }));
 
 import PublicPage, { generateMetadata } from "./page";
-
-const p = mocks.prisma;
 
 function setupProfileMocks(overrides: Record<string, any> = {}) {
   const defaults = {
@@ -64,17 +72,17 @@ function setupProfileMocks(overrides: Record<string, any> = {}) {
   };
 
   mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-  p.user.findUnique.mockResolvedValue(defaults.user);
-  p.twitchChannel.findFirst.mockResolvedValue(defaults.twitchChannel);
-  p.botChannel.findUnique.mockResolvedValue({ id: "bc-1" });
-  p.twitchChatCommand.findMany.mockResolvedValue(defaults.commands);
-  p.queueState.findFirst.mockResolvedValue(defaults.queueState);
-  p.queueEntry.findMany.mockResolvedValue(defaults.queueEntries);
-  p.songRequestSettings.findUnique.mockResolvedValue(
+  mocks.db.query.users.findFirst.mockResolvedValue(defaults.user);
+  mocks.db.query.twitchChannels.findFirst.mockResolvedValue(defaults.twitchChannel);
+  mocks.db.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+  mocks.db.query.twitchChatCommands.findMany.mockResolvedValue(defaults.commands);
+  mocks.db.query.queueStates.findFirst.mockResolvedValue(defaults.queueState);
+  mocks.db.query.queueEntries.findMany.mockResolvedValue(defaults.queueEntries);
+  mocks.db.query.songRequestSettings.findFirst.mockResolvedValue(
     defaults.songRequestSettings
   );
-  p.songRequest.findMany.mockResolvedValue(defaults.songRequests);
-  p.quote.findMany.mockResolvedValue(defaults.quotes);
+  mocks.db.query.songRequests.findMany.mockResolvedValue(defaults.songRequests);
+  mocks.db.query.quotes.findMany.mockResolvedValue(defaults.quotes);
 }
 
 describe("PublicPage", () => {
@@ -83,7 +91,7 @@ describe("PublicPage", () => {
   describe("generateMetadata", () => {
     it("returns profile title with broadcaster name", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.user.findUnique.mockResolvedValue({ name: "TestStreamer" });
+      mocks.db.query.users.findFirst.mockResolvedValue({ name: "TestStreamer" });
 
       const meta = await generateMetadata();
       expect(meta.title).toBe("TestStreamer's Community");
@@ -143,7 +151,7 @@ describe("PublicPage", () => {
 
     it("calls notFound when user not found", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.user.findUnique.mockResolvedValue(null);
+      mocks.db.query.users.findFirst.mockResolvedValue(null);
 
       await PublicPage();
       expect(mocks.notFound).toHaveBeenCalled();

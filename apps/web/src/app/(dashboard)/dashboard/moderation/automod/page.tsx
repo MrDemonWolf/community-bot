@@ -11,6 +11,20 @@ import { canManageCommands } from "@/utils/roles";
 import { PageHeader } from "@/components/page-header";
 import { useState } from "react";
 
+type AutomodAction = "notify" | "auto_approve" | "auto_deny";
+type SuspiciousUserAction = "notify" | "restrict" | "ban";
+
+const AUTOMOD_ACTIONS: AutomodAction[] = ["notify", "auto_approve", "auto_deny"];
+const SUSPICIOUS_USER_ACTIONS: SuspiciousUserAction[] = ["notify", "restrict", "ban"];
+
+function isAutomodAction(v: string): v is AutomodAction {
+  return (AUTOMOD_ACTIONS as string[]).includes(v);
+}
+
+function isSuspiciousUserAction(v: string): v is SuspiciousUserAction {
+  return (SUSPICIOUS_USER_ACTIONS as string[]).includes(v);
+}
+
 export default function AutoModPage() {
   const queryClient = useQueryClient();
   const settingsQueryKey = trpc.automod.get.queryOptions().queryKey;
@@ -22,9 +36,9 @@ export default function AutoModPage() {
   const { data: settings, isLoading } = useQuery(trpc.automod.get.queryOptions());
 
   const [automodEnabled, setAutomodEnabled] = useState<boolean | null>(null);
-  const [automodAction, setAutomodAction] = useState<string | null>(null);
+  const [automodAction, setAutomodAction] = useState<AutomodAction | null>(null);
   const [suspiciousUserEnabled, setSuspiciousUserEnabled] = useState<boolean | null>(null);
-  const [suspiciousUserAction, setSuspiciousUserAction] = useState<string | null>(null);
+  const [suspiciousUserAction, setSuspiciousUserAction] = useState<SuspiciousUserAction | null>(null);
 
   const updateMutation = useMutation(
     trpc.automod.update.mutationOptions({
@@ -39,9 +53,9 @@ export default function AutoModPage() {
   function handleSave() {
     updateMutation.mutate({
       automodEnabled: automodEnabled ?? settings?.automodEnabled,
-      automodAction: (automodAction ?? settings?.automodAction) as "notify" | "auto_approve" | "auto_deny",
+      automodAction: automodAction ?? (settings?.automodAction as AutomodAction | undefined),
       suspiciousUserEnabled: suspiciousUserEnabled ?? settings?.suspiciousUserEnabled,
-      suspiciousUserAction: (suspiciousUserAction ?? settings?.suspiciousUserAction) as "notify" | "restrict" | "ban",
+      suspiciousUserAction: suspiciousUserAction ?? (settings?.suspiciousUserAction as SuspiciousUserAction | undefined),
     });
   }
 
@@ -117,7 +131,7 @@ export default function AutoModPage() {
                 <select
                   className="w-full max-w-xs rounded-md border border-border bg-background px-2 py-1.5 text-sm"
                   value={current.automodAction}
-                  onChange={(e) => setAutomodAction(e.target.value)}
+                  onChange={(e) => { if (isAutomodAction(e.target.value)) setAutomodAction(e.target.value); }}
                   disabled={!canManage}
                 >
                   <option value="notify">Notify only (log to audit)</option>
@@ -156,7 +170,7 @@ export default function AutoModPage() {
                 <select
                   className="w-full max-w-xs rounded-md border border-border bg-background px-2 py-1.5 text-sm"
                   value={current.suspiciousUserAction}
-                  onChange={(e) => setSuspiciousUserAction(e.target.value)}
+                  onChange={(e) => { if (isSuspiciousUserAction(e.target.value)) setSuspiciousUserAction(e.target.value); }}
                   disabled={!canManage}
                 >
                   <option value="notify">Notify only (log to audit)</option>
