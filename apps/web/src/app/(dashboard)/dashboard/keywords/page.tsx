@@ -50,7 +50,7 @@ const emptyForm: KeywordFormState = {
   caseSensitive: false,
 };
 
-const ACCESS_LEVELS = ["EVERYONE", "SUBSCRIBER", "REGULAR", "VIP", "MODERATOR", "LEAD_MODERATOR", "BROADCASTER"];
+const ACCESS_LEVELS = ["EVERYONE", "SUBSCRIBER", "REGULAR", "VIP", "MODERATOR", "LEAD_MODERATOR", "BROADCASTER"] as const;
 
 export default function KeywordsPage() {
   const queryClient = useQueryClient();
@@ -110,7 +110,7 @@ export default function KeywordsPage() {
     if (editingId) {
       updateMutation.mutate({ id: editingId, ...payload });
     } else {
-      createMutation.mutate(payload as any);
+      createMutation.mutate(payload);
     }
   }
 
@@ -267,7 +267,7 @@ export default function KeywordsPage() {
               <div className="grid gap-3 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Response Type</label>
-                  <select className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm" value={form.responseType} onChange={(e) => setForm({ ...form, responseType: e.target.value as any })}>
+                  <select className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm" value={form.responseType} onChange={(e) => setForm({ ...form, responseType: e.target.value as KeywordFormState["responseType"] })}>
                     <option value="SAY">Say</option>
                     <option value="MENTION">Mention</option>
                     <option value="REPLY">Reply</option>
@@ -275,13 +275,13 @@ export default function KeywordsPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Access Level</label>
-                  <select className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm" value={form.accessLevel} onChange={(e) => setForm({ ...form, accessLevel: e.target.value as any })}>
+                  <select className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm" value={form.accessLevel} onChange={(e) => setForm({ ...form, accessLevel: e.target.value as KeywordFormState["accessLevel"] })}>
                     {ACCESS_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Stream Status</label>
-                  <select className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm" value={form.streamStatus} onChange={(e) => setForm({ ...form, streamStatus: e.target.value as any })}>
+                  <select className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm" value={form.streamStatus} onChange={(e) => setForm({ ...form, streamStatus: e.target.value as KeywordFormState["streamStatus"] })}>
                     <option value="BOTH">Both</option>
                     <option value="ONLINE">Online</option>
                     <option value="OFFLINE">Offline</option>
