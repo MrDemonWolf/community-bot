@@ -275,7 +275,7 @@ export default function KeywordsPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-muted-foreground">Access Level</label>
-                  <select className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm" value={form.accessLevel} onChange={(e) => setForm({ ...form, accessLevel: e.target.value })}>
+                  <select className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm" value={form.accessLevel} onChange={(e) => setForm({ ...form, accessLevel: e.target.value as any })}>
                     {ACCESS_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
                   </select>
                 </div>
