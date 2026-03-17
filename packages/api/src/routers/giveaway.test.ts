@@ -144,8 +144,7 @@ describe("giveawayRouter", () => {
       expect(result.keyword).toBe("enter");
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("giveaway:started", {
         giveawayId: "ga-new",
-        channelId: "tw-1",
-      });
+        channelId: "tw-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "giveaway.create" })
       );
@@ -174,8 +173,7 @@ describe("giveawayRouter", () => {
       expect(["viewer1", "viewer2"]).toContain(result.winner);
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("giveaway:winner", {
         giveawayId: "ga-1",
-        channelId: "tw-1",
-      });
+        channelId: "tw-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "giveaway.draw" })
       );
@@ -213,8 +211,7 @@ describe("giveawayRouter", () => {
       expect(mocks.db.update).toHaveBeenCalled();
       expect(mocks.eventBus.publish).toHaveBeenCalledWith("giveaway:ended", {
         giveawayId: "ga-1",
-        channelId: "tw-1",
-      });
+        channelId: "tw-1" });
       expect(mocks.logAudit).toHaveBeenCalledWith(
         expect.objectContaining({ action: "giveaway.end" })
       );
