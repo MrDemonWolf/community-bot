@@ -11,21 +11,11 @@ The web dashboard generates the URL on first startup. If it doesn't appear:
 
 - Ensure PostgreSQL is running: `docker compose up -d postgres`
 - Verify `DATABASE_URL` in `apps/web/.env` is correct
-- Run `pnpm db:generate && pnpm db:push` if you haven't initialized the database
+- Run `bun db:push` if you haven't initialized the database
 
 ### **"Invalid setup token" error**
 
 The token is single-use and regenerated on each restart (if setup is incomplete). Restart the web app to get a fresh URL.
-
-### **Prisma client not generated**
-
-If you see `Cannot find module '.prisma/client'` or similar:
-
-```bash
-pnpm db:generate
-```
-
-This generates the Prisma client from the schema. You need to re-run this after pulling schema changes.
 
 ## Database & Redis
 

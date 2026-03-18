@@ -48,8 +48,8 @@ docker compose build twitch
 ```
 
 The Dockerfiles use multi-stage builds:
-1. **deps** — Install dependencies with `pnpm install --frozen-lockfile`
-2. **build** — Generate Prisma client and compile TypeScript
+1. **deps** — Install dependencies with `bun install --frozen-lockfile`
+2. **build** — Compile TypeScript
 3. **production** — Minimal runtime image with only compiled output
 
 ## Environment Variables

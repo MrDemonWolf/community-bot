@@ -21,10 +21,10 @@ See [Built-in Commands](/docs/twitch-bot/built-in-commands) for the full list of
 
 The web dashboard at `/dashboard/commands` provides a full UI for creating, editing, deleting, and toggling commands. Changes made in the dashboard take effect instantly via EventBus — no bot restart or reload needed.
 
-## Managing via Prisma Studio
+## Managing via Drizzle Studio
 
 ```bash
-pnpm db:studio
+bun db:studio
 ```
 
 This opens a web UI where you can view and edit all command fields directly.
@@ -82,8 +82,8 @@ When a message arrives in chat, it goes through a 3-phase pipeline. The first ma
 Import commands from a JSON file:
 
 ```bash
-pnpm db:import                        # Import from prisma/commands.json
-pnpm db:import path/to/commands.json  # Import from a custom file
+bun db:import                        # Import from prisma/commands.json
+bun db:import path/to/commands.json  # Import from a custom file
 ```
 
 ## Reloading Without Restart
