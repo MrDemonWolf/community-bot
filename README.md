@@ -39,7 +39,7 @@ Full documentation is available at the
 1. Install dependencies:
 
 ```bash
-pnpm install
+bun install
 ```
 
 2. Start infrastructure services:
@@ -59,13 +59,13 @@ cp apps/twitch/.env.example apps/twitch/.env
 4. Push the database schema:
 
 ```bash
-pnpm db:push
+bun db:push
 ```
 
 5. Start all services in development mode:
 
 ```bash
-pnpm dev
+bun dev
 ```
 
 6. Complete first-time setup by visiting the one-time setup
@@ -104,13 +104,13 @@ for full command details and response variables.
 | Layer              | Technology                           |
 |--------------------|--------------------------------------|
 | Language           | TypeScript (ESM)                     |
-| Build System       | Turborepo, pnpm workspaces          |
+| Build System       | Turborepo, bun workspaces           |
 | Web Framework      | Next.js 16                           |
 | API Layer          | tRPC                                 |
 | Authentication     | better-auth (Discord + Twitch OAuth) |
 | Discord Library    | discord.js v14                       |
 | Twitch Library     | @twurple/chat v7, @twurple/auth v7   |
-| Database           | PostgreSQL via Prisma ORM            |
+| Database           | PostgreSQL via Drizzle ORM           |
 | Cache / Events     | Redis (ioredis), Redis Pub/Sub       |
 | Job Queue          | BullMQ                               |
 | UI Components      | shadcn/ui, Tailwind CSS v4           |
@@ -124,7 +124,7 @@ for full command details and response variables.
 ### Prerequisites
 
 - Node.js 22+
-- pnpm 10+
+- Bun 1.x
 - Docker and Docker Compose
 - A Twitch application (Client ID and Secret)
 - A Discord application (Bot Token, Client ID, Client Secret)
@@ -141,7 +141,7 @@ cd community-bot
 2. Install dependencies:
 
 ```bash
-pnpm install
+bun install
 ```
 
 3. Start PostgreSQL and Redis:
@@ -161,32 +161,25 @@ cp apps/twitch/.env.example apps/twitch/.env
 5. Push the database schema:
 
 ```bash
-pnpm db:push
+bun db:push
 ```
 
-6. Generate the Prisma client:
+6. Start development:
 
 ```bash
-pnpm db:generate
-```
-
-7. Start development:
-
-```bash
-pnpm dev
+bun dev
 ```
 
 ### Development Scripts
 
-- `pnpm dev` - Start all apps in development mode
-- `pnpm build` - Build all packages and apps
-- `pnpm test` - Run Vitest unit tests
-- `pnpm check-types` - Type-check all packages
-- `pnpm db:generate` - Generate Prisma client from schema
-- `pnpm db:push` - Push schema changes to database
-- `pnpm db:migrate` - Run database migrations
-- `pnpm db:studio` - Open Prisma Studio GUI
-- `pnpm dev:web` - Start only the web dashboard
+- `bun dev` - Start all apps in development mode
+- `bun build` - Build all packages and apps
+- `bun test` - Run Vitest unit tests
+- `bun check-types` - Type-check all packages
+- `bun db:push` - Push schema changes to database
+- `bun db:migrate` - Run database migrations
+- `bun db:studio` - Open Drizzle Studio GUI
+- `bun dev:web` - Start only the web dashboard
 
 ### Code Quality
 
@@ -204,7 +197,7 @@ apps/
   discord/                # Discord bot (discord.js v14, BullMQ, Express)
   twitch/                 # Twitch chat bot (@twurple/chat, Express)
 packages/
-  db/                     # Prisma schema + generated client
+  db/                     # Drizzle schema + client
   env/                    # Shared Zod-validated environment configs
   events/                 # Redis Pub/Sub typed event bus
   config/                 # Shared TypeScript config
