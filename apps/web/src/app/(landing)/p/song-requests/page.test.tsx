@@ -1,28 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mocks = vi.hoisted(() => {
-  const mp: Record<string, any> = {};
-  const handler: ProxyHandler<Record<string, any>> = {
-    get(target, prop: string) {
-      if (!target[prop]) {
-        target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) {
-            if (!m[method]) m[method] = vi.fn();
-            return m[method];
-          },
-        });
-      }
-      return target[prop];
+const mocks = vi.hoisted(() => ({
+  db: {
+    query: {
+      users: { findFirst: vi.fn() },
+      botChannels: { findFirst: vi.fn() },
+      songRequestSettings: { findFirst: vi.fn() },
+      songRequests: { findMany: vi.fn() },
     },
-  };
-  return {
-    prisma: new Proxy(mp, handler),
-    getBroadcasterUserId: vi.fn(),
-    notFound: vi.fn(),
-  };
-});
+  },
+  getBroadcasterUserId: vi.fn(),
+  notFound: vi.fn(),
+}));
 
-vi.mock("@community-bot/db", () => ({ default: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({
+  db: mocks.db,
+  eq: vi.fn(),
+  asc: vi.fn(),
+  users: {},
+  botChannels: {},
+  songRequestSettings: {},
+  songRequests: {},
+}));
 vi.mock("@/lib/setup", () => ({
   getBroadcasterUserId: mocks.getBroadcasterUserId,
 }));
@@ -32,15 +31,13 @@ vi.mock("next/image", () => ({ default: () => null }));
 
 import SongRequestsPage, { generateMetadata } from "./page";
 
-const p = mocks.prisma;
-
 describe("SongRequestsPage", () => {
   beforeEach(() => vi.clearAllMocks());
 
   describe("generateMetadata", () => {
     it("returns title with broadcaster name", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.user.findUnique.mockResolvedValue({ name: "TestStreamer" });
+      mocks.db.query.users.findFirst.mockResolvedValue({ name: "TestStreamer" });
 
       const meta = await generateMetadata();
       expect(meta.title).toBe("Song Requests — TestStreamer");
@@ -57,9 +54,9 @@ describe("SongRequestsPage", () => {
   describe("page component", () => {
     it("renders song list when data exists", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1" });
-      p.songRequestSettings.findUnique.mockResolvedValue({ enabled: true });
-      p.songRequest.findMany.mockResolvedValue([
+      mocks.db.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+      mocks.db.query.songRequestSettings.findFirst.mockResolvedValue({ enabled: true });
+      mocks.db.query.songRequests.findMany.mockResolvedValue([
         { id: "sr-1", position: 1, title: "Song A", requestedBy: "viewer1" },
         { id: "sr-2", position: 2, title: "Song B", requestedBy: "viewer2" },
       ]);
@@ -73,9 +70,9 @@ describe("SongRequestsPage", () => {
 
     it("renders empty state when no songs and enabled", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1" });
-      p.songRequestSettings.findUnique.mockResolvedValue({ enabled: true });
-      p.songRequest.findMany.mockResolvedValue([]);
+      mocks.db.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+      mocks.db.query.songRequestSettings.findFirst.mockResolvedValue({ enabled: true });
+      mocks.db.query.songRequests.findMany.mockResolvedValue([]);
 
       const result = await SongRequestsPage();
       const html = JSON.stringify(result);
@@ -84,9 +81,9 @@ describe("SongRequestsPage", () => {
 
     it("renders disabled state", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.botChannel.findUnique.mockResolvedValue({ id: "bc-1" });
-      p.songRequestSettings.findUnique.mockResolvedValue({ enabled: false });
-      p.songRequest.findMany.mockResolvedValue([]);
+      mocks.db.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+      mocks.db.query.songRequestSettings.findFirst.mockResolvedValue({ enabled: false });
+      mocks.db.query.songRequests.findMany.mockResolvedValue([]);
 
       const result = await SongRequestsPage();
       const html = JSON.stringify(result);
@@ -102,7 +99,7 @@ describe("SongRequestsPage", () => {
 
     it("calls notFound when no bot channel", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.botChannel.findUnique.mockResolvedValue(null);
+      mocks.db.query.botChannels.findFirst.mockResolvedValue(null);
 
       await SongRequestsPage();
       expect(mocks.notFound).toHaveBeenCalled();
