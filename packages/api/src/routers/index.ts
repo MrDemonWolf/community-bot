@@ -30,6 +30,7 @@ import { chatAlertRouter } from "./chatAlert";
 import { channelPointsRouter } from "./channelPoints";
 import { automodRouter } from "./automod";
 import { importExportRouter } from "./importExport";
+import { titleGeneratorRouter } from "./titleGenerator";
 
 export const appRouter = router({
   healthCheck: publicProcedure.query(() => {
@@ -69,5 +70,6 @@ export const appRouter = router({
   channelPoints: channelPointsRouter,
   automod: automodRouter,
   importExport: importExportRouter,
+  titleGenerator: titleGeneratorRouter,
 });
 export type AppRouter = typeof appRouter;

@@ -21,6 +21,7 @@ import {
   channelPointRewards,
   bannedTracks,
   automodSettings,
+  titleGeneratorSettings,
 } from "./twitch";
 import { discordGuilds } from "./discord";
 import { discordCases, discordCaseNotes } from "./discord-moderation";
@@ -110,6 +111,10 @@ export const botChannelsRelations = relations(botChannels, ({ one, many }) => ({
   automodSettings: one(automodSettings, {
     fields: [botChannels.id],
     references: [automodSettings.botChannelId],
+  }),
+  titleGeneratorSettings: one(titleGeneratorSettings, {
+    fields: [botChannels.id],
+    references: [titleGeneratorSettings.botChannelId],
   }),
 }));
 
@@ -285,6 +290,17 @@ export const bannedTracksRelations = relations(bannedTracks, ({ one }) => ({
     references: [botChannels.id],
   }),
 }));
+
+// ── Title Generator Settings relations ───────────────────────────────
+export const titleGeneratorSettingsRelations = relations(
+  titleGeneratorSettings,
+  ({ one }) => ({
+    botChannel: one(botChannels, {
+      fields: [titleGeneratorSettings.botChannelId],
+      references: [botChannels.id],
+    }),
+  })
+);
 
 // ── Feature 7: AutoMod Settings relations ───────────────────────────
 export const automodSettingsRelations = relations(

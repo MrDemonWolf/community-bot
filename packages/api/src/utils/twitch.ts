@@ -70,3 +70,46 @@ export async function getTwitchUserById(
   );
   return data[0];
 }
+
+interface TwitchChannelInfo {
+  broadcaster_id: string;
+  broadcaster_login: string;
+  broadcaster_name: string;
+  game_name: string;
+  game_id: string;
+  title: string;
+}
+
+export async function getChannelInfo(
+  broadcasterId: string
+): Promise<TwitchChannelInfo | undefined> {
+  const { data } = await helixFetch<TwitchChannelInfo>(
+    `/channels?broadcaster_id=${encodeURIComponent(broadcasterId)}`
+  );
+  return data[0];
+}
+
+export async function patchTwitchChannel(
+  broadcasterId: string,
+  body: { title?: string; game_id?: string }
+): Promise<void> {
+  const token = await getAccessToken();
+
+  const res = await fetch(
+    `${HELIX_BASE}/channels?broadcaster_id=${encodeURIComponent(broadcasterId)}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Client-Id": env.TWITCH_APPLICATION_CLIENT_ID,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Twitch API PATCH ${res.status}: ${text}`);
+  }
+}

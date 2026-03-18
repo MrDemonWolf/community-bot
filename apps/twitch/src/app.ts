@@ -56,6 +56,17 @@ async function main() {
   const eventBus = new EventBus(env.REDIS_URL);
   setEventBus(eventBus);
 
+  // Log AI feature readiness
+  const hasGeminiKey = !!env.GEMINI_API_KEY;
+  const aiShoutoutEnabled = env.AI_SHOUTOUT_ENABLED === "true";
+  if (hasGeminiKey && aiShoutoutEnabled) {
+    logger.info("AI", "Shoutouts: ✓ ready (Gemini key set, globally enabled)");
+  } else if (hasGeminiKey) {
+    logger.warn("AI", "Shoutouts: ⚠ disabled (key set but AI_SHOUTOUT_ENABLED !== \"true\")");
+  } else {
+    logger.warn("AI", "Shoutouts: ✗ not configured (missing GEMINI_API_KEY)");
+  }
+
   await commandCache.load();
   await loadRegulars();
   await loadMutedState();

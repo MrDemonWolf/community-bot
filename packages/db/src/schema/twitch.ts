@@ -658,6 +658,18 @@ export const suspiciousUserActionEnum = pgEnum("SuspiciousUserAction", [
   "ban",
 ]);
 
+export const titleGeneratorSettings = pgTable("TitleGeneratorSettings", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  botChannelId: text("botChannelId").notNull().unique(),
+  brandingPrompt: text("brandingPrompt").notNull().default(""),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt")
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
 export const automodSettings = pgTable("AutomodSettings", {
   id: text("id")
     .primaryKey()

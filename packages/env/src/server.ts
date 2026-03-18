@@ -21,6 +21,7 @@ export const env = createEnv({
 				"Invalid Redis URL"
 			),
 		YOUTUBE_API_KEY: z.string().optional(),
+		GEMINI_API_KEY: z.string().optional(),
 		NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
 	},
 	runtimeEnv: process.env,

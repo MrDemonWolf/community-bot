@@ -2,14 +2,14 @@
   <img src="assets/logo-white-border.png" alt="MrDemonWolf Logo" width="150" />
 </p>
 
-# Community Bot - All-in-One Stream Management Platform
+# Community Bot - MrDemonWolf's Stream Management Platform
 
-Community Bot is a self-hosted monorepo that brings together
-a Twitch chat bot, Discord notification bot, and web dashboard
-into a single, cohesive platform for streamers. Built for
-MrDemonWolf, Inc., it provides real-time inter-service
-communication, database-driven commands with dynamic variables,
-and a first-user setup wizard that gets you streaming in minutes.
+Community Bot is MrDemonWolf's personal, self-hosted stream
+management platform — a monorepo that ties together a Twitch
+chat bot, Discord notification bot, and web dashboard into one
+cohesive system. It's built specifically for his channels, but
+it's fully open source so anyone can fork it and adapt it for
+their own streams.
 
 Your stream, your bot, your rules.
 
@@ -208,9 +208,30 @@ docker-compose.yml        # PostgreSQL, Redis, and bot services
 turbo.json                # Turborepo pipeline configuration
 ```
 
+## Acknowledgments
+
+Community Bot is built on the shoulders of these excellent
+open-source projects and tools:
+
+- [Next.js](https://nextjs.org/) - React framework for the web dashboard
+- [Turborepo](https://turbo.build/) - Monorepo build system
+- [Bun](https://bun.sh/) - JavaScript runtime and package manager
+- [discord.js](https://discord.js.org/) - Discord API library
+- [@twurple](https://twurple.js.org/) - Twitch API and chat library
+- [Drizzle ORM](https://orm.drizzle.team/) - TypeScript ORM
+- [PostgreSQL](https://www.postgresql.org/) - Database
+- [Redis](https://redis.io/) - Caching and Pub/Sub event bus
+- [better-auth](https://www.better-auth.com/) - Authentication
+- [tRPC](https://trpc.io/) - End-to-end typesafe API layer
+- [shadcn/ui](https://ui.shadcn.com/) - UI component library
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
+- [Fumadocs](https://fumadocs.vercel.app/) - Documentation framework
+- [BullMQ](https://bullmq.io/) - Job queue for background tasks
+- [Docker](https://www.docker.com/) - Containerization
+
 ## License
 
-![GitHub license](https://img.shields.io/github/license/mrdemonwolf/community-bot.svg?style=for-the-badge&logo=github)
+[![GitHub license](https://img.shields.io/github/license/MrDemonWolf/community-bot.svg?style=for-the-badge&logo=github)](https://github.com/MrDemonWolf/community-bot/blob/main/LICENSE)
 
 ## Contact
 
