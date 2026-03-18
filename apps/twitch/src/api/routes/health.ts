@@ -4,10 +4,12 @@ import { db, sql } from "@community-bot/db";
 import { logger } from "../../utils/logger.js";
 import { botStatus } from "../../app.js";
 import { getEventBus } from "../../services/eventBusAccessor.js";
+import { env } from "../../utils/env.js";
 
 const router: ReturnType<typeof express.Router> = express.Router();
 
 type CheckStatus = "up" | "degraded" | "down";
+type AiShoutoutStatus = "ready" | "disabled" | "not_configured";
 
 interface CheckResult {
   status: CheckStatus;
@@ -77,12 +79,23 @@ router.get("/", async (_req, res) => {
     const status = overallStatus(checks);
     const infraStatus = overallStatus(infraChecks);
 
+    const geminiKey = !!env.GEMINI_API_KEY;
+    const globalEnabled = env.AI_SHOUTOUT_ENABLED === "true";
+    let shoutout: AiShoutoutStatus = "not_configured";
+    if (geminiKey && globalEnabled) shoutout = "ready";
+    else if (geminiKey) shoutout = "disabled";
+
     res.status(infraStatus === "unhealthy" ? 503 : 200).json({
       status,
       uptime: process.uptime(),
       version: process.env["npm_package_version"] || "1.7.0",
       timestamp: new Date().toISOString(),
       checks,
+      ai: {
+        shoutout,
+        geminiKey,
+        globalEnabled,
+      },
     });
   } catch (err) {
     logger.error("API", "Health check failed", err);

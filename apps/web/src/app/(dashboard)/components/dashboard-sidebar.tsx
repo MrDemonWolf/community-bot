@@ -35,6 +35,7 @@ import {
   FlaskConical,
   ShieldAlert,
   Download,
+  Type,
 } from "lucide-react";
 
 interface NavLink {
@@ -118,6 +119,7 @@ export function SidebarContent({
       label: "Tools",
       links: [
         { href: "/dashboard/tools/tester", label: "Config Tester", icon: FlaskConical },
+        { href: "/dashboard/tools/title-generator", label: "Title Generator", icon: Type },
         { href: "/dashboard/settings", label: "Import / Export", icon: Download },
       ],
     },
