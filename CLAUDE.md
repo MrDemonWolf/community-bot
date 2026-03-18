@@ -27,40 +27,29 @@ packages/
 ## Commands
 
 ```bash
-pnpm install              # Install all workspace dependencies
-pnpm dev                  # Run all apps in dev mode (turbo)
-pnpm build                # Build all packages and apps
-pnpm db:generate          # Generate Prisma client from shared schema
-pnpm db:push              # Push schema to database
-pnpm db:migrate           # Run database migrations
-pnpm db:studio            # Open Prisma Studio
+bun install               # Install all workspace dependencies
+bun dev                   # Run all apps in dev mode (turbo)
+bun build                 # Build all packages and apps
+bun db:push               # Push schema to database
+bun db:migrate            # Run database migrations
+bun db:studio             # Open Drizzle Studio
 ```
 
 ## Shared Database (`@community-bot/db`)
 
-All apps import the Prisma client and types from the shared db package:
+All apps import the Drizzle client and types from the shared db package:
 
 ```typescript
-import { prisma } from "@community-bot/db";
+import { db } from "@community-bot/db";
 import type { DiscordGuild } from "@community-bot/db";
 import { TwitchAccessLevel, QueueStatus } from "@community-bot/db";
 ```
 
-### Prisma Schema — Source of Truth
+### Drizzle Schema — Source of Truth
 
-All model/enum definitions live in `packages/db/prisma/schema/` as split domain files:
+All table/enum definitions live in `packages/db/src/schema/` as split domain files.
 
-| File | Contents |
-|------|----------|
-| `schema.prisma` | Generator + datasource config |
-| `auth.prisma` | User, Session, Account, Verification, BotChannel relation on User |
-| `discord.prisma` | DiscordGuild |
-| `twitch.prisma` | TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular, BotChannel, Quote, TwitchCounter, TwitchTimer, SpamFilter, SpamPermit, SongRequest, SongRequestSettings, DefaultCommandOverride, enums |
-| `queue.prisma` | QueueEntry, QueueState, QueueStatus |
-| `audit.prisma` | AuditLog |
-| `system.prisma` | SystemConfig (key-value runtime config) |
-
-After schema changes, run `pnpm db:generate` from root.
+After schema changes, run `bun db:push` from root.
 
 ## Shared Event Bus (`@community-bot/events`)
 

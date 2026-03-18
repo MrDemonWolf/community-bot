@@ -3,7 +3,7 @@ title: Architecture
 description: Monorepo structure and shared packages.
 ---
 
-Community Bot uses [Turborepo](https://turbo.build/repo) for monorepo management with pnpm workspaces.
+Community Bot uses [Turborepo](https://turbo.build/repo) for monorepo management with bun workspaces.
 
 ## Workspace Layout
 
@@ -14,7 +14,7 @@ apps/
   web/         Next.js web dashboard
   docs/        Fumadocs documentation site
 packages/
-  db/          Prisma schema + client (source of truth)
+  db/          Drizzle schema + client (source of truth)
   env/         Zod-validated environment variables
   config/      Shared TypeScript configuration
   server/      Shared Express API server
@@ -103,9 +103,8 @@ Both bots use ESM (`"type": "module"`) with bundler module resolution. All relat
 
 | Task | Description |
 |------|-------------|
-| `pnpm dev` | Start all apps in dev mode |
-| `pnpm build` | Build all packages and apps |
-| `pnpm db:generate` | Generate Prisma client |
-| `pnpm db:push` | Push schema to database |
-| `pnpm db:migrate` | Run database migrations |
-| `pnpm db:studio` | Open Prisma Studio |
+| `bun dev` | Start all apps in dev mode |
+| `bun build` | Build all packages and apps |
+| `bun db:push` | Push schema to database |
+| `bun db:migrate` | Run database migrations |
+| `bun db:studio` | Open Drizzle Studio |

@@ -9,7 +9,7 @@ Mods and broadcasters can create and manage commands directly from chat using `!
 ## Managing via Prisma Studio
 
 ```bash
-pnpm db:studio
+bun db:studio
 ```
 
 ## Command Fields
@@ -95,7 +95,7 @@ If `keywords` are set, the command additionally requires the stream title to con
 The `TwitchRegular` table defines users who get the REGULAR access level (rank 2, between SUBSCRIBER and VIP). Manage them via Prisma Studio:
 
 ```bash
-pnpm db:studio
+bun db:studio
 ```
 
 Each regular needs:
@@ -123,6 +123,6 @@ When a message arrives in chat, it goes through a 3-phase pipeline. The first ma
 The bot includes a JSON file with legacy commands that can be imported into the database:
 
 ```bash
-pnpm db:import                        # Import from prisma/commands.json
-pnpm db:import path/to/commands.json  # Import from a custom file
+bun db:import                        # Import from prisma/commands.json
+bun db:import path/to/commands.json  # Import from a custom file
 ```

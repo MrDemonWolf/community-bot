@@ -3,9 +3,9 @@
 ## Prerequisites
 
 - Local PostgreSQL and Redis running (`docker compose up -d postgres redis`)
-- Run `pnpm db:migrate` to apply schema changes
-- Run `pnpm db:generate` to regenerate Prisma client
-- All apps running (`pnpm dev`)
+- Run `bun db:migrate` to apply schema changes
+- Run `bun db:generate` to regenerate Prisma client
+- All apps running (`bun dev`)
 
 ## A. Enhanced Twitch Notifications
 
@@ -241,9 +241,9 @@
 
 ### F1. Schema Migration
 
-- [ ] `pnpm db:migrate` runs cleanly (renames ADMIN→BROADCASTER, adds ban fields)
+- [ ] `bun db:migrate` runs cleanly (renames ADMIN→BROADCASTER, adds ban fields)
 - [ ] Existing ADMIN users in the database are now BROADCASTER after migration
-- [ ] `pnpm check-types` — no type errors
+- [ ] `bun check-types` — no type errors
 
 ### F2. USER Role
 
@@ -517,14 +517,14 @@
 
 ### I10. Build Verification
 
-- [ ] `pnpm --filter docs build` succeeds with no errors
+- [ ] `bun run --filter docs build` succeeds with no errors
 - [ ] All 40 pages generate successfully (34 original + 3 new + base paths)
 
 ## J. Automated Tests (Existing)
 
-- [ ] Run `pnpm test` — all tests pass
-- [ ] Run `pnpm check-types` — all packages pass (verified for Phase 6)
-- [ ] Run `pnpm turbo build --filter="!web"` — all builds succeed
+- [ ] Run `bun test` — all tests pass
+- [ ] Run `bun check-types` — all packages pass (verified for Phase 6)
+- [ ] Run `bun turbo build --filter="!web"` — all builds succeed
 
 ## K. Phase 8 — EventBus & tRPC API Unit Tests
 
@@ -709,7 +709,7 @@
 
 ### K13. Full Suite Verification
 
-- [ ] Run `pnpm test` — all 523 tests pass across 52 test files
+- [ ] Run `bun test` — all 523 tests pass across 52 test files
 - [ ] No test file has import/mock errors
 - [ ] All new tests use `vi.hoisted()` pattern for mock factories
 
@@ -731,8 +731,8 @@
 - [ ] `apps/twitch/vitest.integration.config.ts` — same pattern for Twitch bot
 - [ ] `apps/discord/vitest.integration.config.ts` — same pattern for Discord bot
 - [ ] `vitest.config.ts` (root) — excludes `*.integration.test.ts` from unit runs
-- [ ] `pnpm test` runs only unit tests (395 tests, 35 files — no integration tests)
-- [ ] `pnpm test:integration` runs all integration tests sequentially
+- [ ] `bun test` runs only unit tests (395 tests, 35 files — no integration tests)
+- [ ] `bun test:integration` runs all integration tests sequentially
 
 ### L2. tRPC Queue Router Integration (12 tests)
 
@@ -867,9 +867,9 @@
 ### L14. Full Integration Suite Verification
 
 - [ ] `docker compose up -d postgres` — PostgreSQL running
-- [ ] `pnpm test:integration` — all ~95 integration tests pass
-- [ ] `pnpm test` — all 523 unit tests still pass (no regression)
-- [ ] Integration tests properly excluded from `pnpm test` via root `vitest.config.ts`
+- [ ] `bun test:integration` — all ~95 integration tests pass
+- [ ] `bun test` — all 523 unit tests still pass (no regression)
+- [ ] Integration tests properly excluded from `bun test` via root `vitest.config.ts`
 
 ---
 
@@ -1055,7 +1055,7 @@
 
 ### P2. Full Suite Verification
 
-- [ ] Run `pnpm test` — all 523 tests pass across 52 test files
+- [ ] Run `bun test` — all 523 tests pass across 52 test files
 - [ ] No test file has import/mock errors
 
 ---
@@ -1066,7 +1066,7 @@
 
 - [ ] `SongRequest` model with `position`, `title`, `requestedBy`, `botChannelId`
 - [ ] `SongRequestSettings` model with `enabled`, `maxQueueSize`, `maxPerUser`, `minAccessLevel`
-- [ ] `pnpm db:generate` succeeds
+- [ ] `bun db:generate` succeeds
 
 ### P2. EventBus Events
 
@@ -1118,6 +1118,6 @@
 
 ### P8. Full Suite Verification
 
-- [ ] Run `pnpm test` — all 564 tests pass across 55 test files
-- [ ] `pnpm turbo build --filter="!web"` succeeds
-- [ ] `pnpm --filter docs build` succeeds
+- [ ] Run `bun test` — all 564 tests pass across 55 test files
+- [ ] `bun turbo build --filter="!web"` succeeds
+- [ ] `bun run --filter docs build` succeeds

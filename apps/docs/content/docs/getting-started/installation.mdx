@@ -6,7 +6,7 @@ description: Set up the Community Bot monorepo for local development.
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) v20 or later
-- [pnpm](https://pnpm.io/) v10 or later
+- [Bun](https://bun.sh/) v1.x or later
 - [Docker](https://www.docker.com/) (for PostgreSQL and Redis)
 - A [Twitch application](/docs/getting-started/create-twitch-app) with client ID and secret
 - A [Discord application](/docs/getting-started/create-discord-app) with a bot token
@@ -16,7 +16,7 @@ description: Set up the Community Bot monorepo for local development.
 ```bash
 git clone https://github.com/mrdemonwolf/community-bot.git
 cd community-bot
-pnpm install
+bun install
 ```
 
 ## Start Infrastructure
@@ -42,22 +42,21 @@ Each `.env.example` file includes comments explaining every variable. See [Envir
 ## Initialize Database
 
 ```bash
-pnpm db:generate   # Generate Prisma client
-pnpm db:push       # Push schema to database
+bun db:push        # Push schema to database
 ```
 
 ## Start Development
 
 ```bash
-pnpm dev           # Starts all apps in dev mode
+bun dev            # Starts all apps in dev mode
 ```
 
 Or start individual apps:
 
 ```bash
-pnpm dev --filter discord-bot
-pnpm dev --filter twitch-bot
-pnpm dev --filter docs
+bun dev --filter discord-bot
+bun dev --filter twitch-bot
+bun dev --filter docs
 ```
 
 ## What to Expect
