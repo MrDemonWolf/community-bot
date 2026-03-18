@@ -99,9 +99,7 @@ const managedChannels = new Map<string, ManagedChannel>();
 export async function initEventSub(authProvider: unknown): Promise<void> {
   try {
     // Dynamic import so startup doesn't fail if package is missing
-    // @ts-expect-error optional peer dependency — install with: bun add @twurple/eventsub-ws @twurple/api
     const { EventSubWsListener } = await import("@twurple/eventsub-ws");
-    // @ts-expect-error optional peer dependency
     const { ApiClient } = await import("@twurple/api");
 
     apiClientRef = new ApiClient({ authProvider: authProvider as any });

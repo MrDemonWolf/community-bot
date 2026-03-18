@@ -1,28 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mocks = vi.hoisted(() => {
-  const mp: Record<string, any> = {};
-  const handler: ProxyHandler<Record<string, any>> = {
-    get(target, prop: string) {
-      if (!target[prop]) {
-        target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) {
-            if (!m[method]) m[method] = vi.fn();
-            return m[method];
-          },
-        });
-      }
-      return target[prop];
+const mocks = vi.hoisted(() => ({
+  db: {
+    query: {
+      users: { findFirst: vi.fn() },
+      twitchChannels: { findFirst: vi.fn() },
+      botChannels: { findFirst: vi.fn() },
+      queueStates: { findFirst: vi.fn() },
+      songRequestSettings: { findFirst: vi.fn() },
     },
-  };
-  return {
-    prisma: new Proxy(mp, handler),
-    getBroadcasterUserId: vi.fn(),
-    notFound: vi.fn(),
-  };
-});
+    select: vi.fn(),
+  },
+  getBroadcasterUserId: vi.fn(),
+  notFound: vi.fn(),
+}));
 
-vi.mock("@community-bot/db", () => ({ default: mocks.prisma }));
+// Chain mock for db.select({ value: count() }).from(...).where(...)
+const whereMock = vi.fn();
+const fromMock = vi.fn(() => ({ where: whereMock }));
+mocks.db.select.mockReturnValue({ from: fromMock });
+
+vi.mock("@community-bot/db", () => ({
+  db: mocks.db,
+  eq: vi.fn(),
+  and: vi.fn(),
+  count: vi.fn(),
+  users: {},
+  accounts: {},
+  twitchChannels: {},
+  botChannels: {},
+  twitchChatCommands: {},
+  queueStates: {},
+  songRequestSettings: {},
+  quotes: {},
+}));
 vi.mock("@/lib/setup", () => ({
   getBroadcasterUserId: mocks.getBroadcasterUserId,
 }));
@@ -37,8 +48,6 @@ vi.mock("./sidebar-link", () => ({
 }));
 
 import PublicLayout from "./layout";
-
-const p = mocks.prisma;
 
 function setupLayoutMocks(overrides: Record<string, any> = {}) {
   const defaults = {
@@ -57,22 +66,27 @@ function setupLayoutMocks(overrides: Record<string, any> = {}) {
   };
 
   mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-  p.user.findUnique.mockResolvedValue(defaults.user);
-  p.twitchChannel.findFirst.mockResolvedValue(defaults.twitchChannel);
-  p.botChannel.findUnique.mockResolvedValue({ id: "bc-1" });
-  p.twitchChatCommand.count.mockResolvedValue(defaults.hasCommands ? 5 : 0);
-  p.quote.count.mockResolvedValue(defaults.hasQuotes ? 10 : 0);
-  p.queueState.findFirst.mockResolvedValue({ status: defaults.queueStatus });
-  p.songRequestSettings.findUnique.mockResolvedValue({
+  mocks.db.query.users.findFirst.mockResolvedValue(defaults.user);
+  mocks.db.query.twitchChannels.findFirst.mockResolvedValue(defaults.twitchChannel);
+  mocks.db.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+  // db.select().from().where() for command count
+  whereMock.mockResolvedValue([{ value: defaults.hasCommands ? 5 : 0 }]);
+  mocks.db.query.queueStates.findFirst.mockResolvedValue({ status: defaults.queueStatus });
+  mocks.db.query.songRequestSettings.findFirst.mockResolvedValue({
     enabled: defaults.songRequestsEnabled,
   });
 }
 
 describe("PublicLayout", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.db.select.mockReturnValue({ from: fromMock });
+  });
 
   it("renders sidebar with profile info", async () => {
     setupLayoutMocks();
+    // quote count query
+    whereMock.mockResolvedValueOnce([{ value: 5 }]).mockResolvedValueOnce([{ value: 10 }]);
 
     const result = await PublicLayout({ children: "child-content" });
     const html = JSON.stringify(result);

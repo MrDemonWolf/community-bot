@@ -1,28 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mocks = vi.hoisted(() => {
-  const mp: Record<string, any> = {};
-  const handler: ProxyHandler<Record<string, any>> = {
-    get(target, prop: string) {
-      if (!target[prop]) {
-        target[prop] = new Proxy({} as Record<string, any>, {
-          get(m, method: string) {
-            if (!m[method]) m[method] = vi.fn();
-            return m[method];
-          },
-        });
-      }
-      return target[prop];
+const mocks = vi.hoisted(() => ({
+  db: {
+    query: {
+      users: { findFirst: vi.fn() },
+      queueStates: { findFirst: vi.fn() },
+      queueEntries: { findMany: vi.fn() },
     },
-  };
-  return {
-    prisma: new Proxy(mp, handler),
-    getBroadcasterUserId: vi.fn(),
-    notFound: vi.fn(),
-  };
-});
+  },
+  getBroadcasterUserId: vi.fn(),
+  notFound: vi.fn(),
+}));
 
-vi.mock("@community-bot/db", () => ({ default: mocks.prisma }));
+vi.mock("@community-bot/db", () => ({
+  db: mocks.db,
+  eq: vi.fn(),
+  asc: vi.fn(),
+  users: {},
+  queueStates: {},
+  queueEntries: {},
+}));
 vi.mock("@/lib/setup", () => ({
   getBroadcasterUserId: mocks.getBroadcasterUserId,
 }));
@@ -32,15 +29,13 @@ vi.mock("next/image", () => ({ default: () => null }));
 
 import QueuePage, { generateMetadata } from "./page";
 
-const p = mocks.prisma;
-
 describe("QueuePage", () => {
   beforeEach(() => vi.clearAllMocks());
 
   describe("generateMetadata", () => {
     it("returns queue title with broadcaster name", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.user.findUnique.mockResolvedValue({ name: "TestStreamer" });
+      mocks.db.query.users.findFirst.mockResolvedValue({ name: "TestStreamer" });
 
       const meta = await generateMetadata();
       expect(meta.title).toBe("Viewer Queue — TestStreamer");
@@ -56,8 +51,8 @@ describe("QueuePage", () => {
   describe("page component", () => {
     it("renders queue entries with positions", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.queueState.findFirst.mockResolvedValue({ status: "OPEN" });
-      p.queueEntry.findMany.mockResolvedValue([
+      mocks.db.query.queueStates.findFirst.mockResolvedValue({ status: "OPEN" });
+      mocks.db.query.queueEntries.findMany.mockResolvedValue([
         { id: "e1", position: 1, twitchUsername: "player1" },
         { id: "e2", position: 2, twitchUsername: "player2" },
       ]);
@@ -70,8 +65,8 @@ describe("QueuePage", () => {
 
     it("renders empty state with open queue", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.queueState.findFirst.mockResolvedValue({ status: "OPEN" });
-      p.queueEntry.findMany.mockResolvedValue([]);
+      mocks.db.query.queueStates.findFirst.mockResolvedValue({ status: "OPEN" });
+      mocks.db.query.queueEntries.findMany.mockResolvedValue([]);
 
       const result = await QueuePage();
       const html = JSON.stringify(result);
@@ -80,8 +75,8 @@ describe("QueuePage", () => {
 
     it("renders closed queue message", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue("user-1");
-      p.queueState.findFirst.mockResolvedValue({ status: "CLOSED" });
-      p.queueEntry.findMany.mockResolvedValue([]);
+      mocks.db.query.queueStates.findFirst.mockResolvedValue({ status: "CLOSED" });
+      mocks.db.query.queueEntries.findMany.mockResolvedValue([]);
 
       const result = await QueuePage();
       const html = JSON.stringify(result);
@@ -90,8 +85,6 @@ describe("QueuePage", () => {
 
     it("calls notFound when no broadcaster", async () => {
       mocks.getBroadcasterUserId.mockResolvedValue(null);
-      p.queueState.findFirst.mockResolvedValue(null);
-      p.queueEntry.findMany.mockResolvedValue([]);
 
       await QueuePage();
       expect(mocks.notFound).toHaveBeenCalled();
