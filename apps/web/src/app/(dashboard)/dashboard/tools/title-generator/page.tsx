@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,27 +18,33 @@ export default function TitleGeneratorPage() {
   const [currentGame, setCurrentGame] = useState("");
   const [cooldown, setCooldown] = useState(0);
 
-  const settings = trpc.titleGenerator.getSettings.useQuery();
-  const updateSettings = trpc.titleGenerator.updateSettings.useMutation({
-    onSuccess: () => toast.success("Branding prompt saved."),
-    onError: (err) => toast.error(err.message),
-  });
-  const generate = trpc.titleGenerator.generate.useMutation({
-    onSuccess: (data) => {
-      setGeneratedTitles(data.titles);
-      setCurrentTitle(data.currentTitle);
-      setCurrentGame(data.currentGame);
-      setCooldown(30);
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  const setTitle = trpc.titleGenerator.setTitle.useMutation({
-    onSuccess: (_, variables) => {
-      toast.success("Stream title updated!");
-      setCurrentTitle(variables.title);
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const settings = useQuery(trpc.titleGenerator.getSettings.queryOptions());
+  const updateSettings = useMutation(
+    trpc.titleGenerator.updateSettings.mutationOptions({
+      onSuccess: () => toast.success("Branding prompt saved."),
+      onError: (err) => toast.error(err.message),
+    })
+  );
+  const generate = useMutation(
+    trpc.titleGenerator.generate.mutationOptions({
+      onSuccess: (data) => {
+        setGeneratedTitles(data.titles);
+        setCurrentTitle(data.currentTitle);
+        setCurrentGame(data.currentGame);
+        setCooldown(30);
+      },
+      onError: (err) => toast.error(err.message),
+    })
+  );
+  const setTitle = useMutation(
+    trpc.titleGenerator.setTitle.mutationOptions({
+      onSuccess: (_, variables) => {
+        toast.success("Stream title updated!");
+        setCurrentTitle(variables.title);
+      },
+      onError: (err) => toast.error(err.message),
+    })
+  );
 
   // Load saved branding prompt
   useEffect(() => {
