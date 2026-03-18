@@ -1,44 +1,19 @@
 ---
 title: Database
-description: Prisma schema management and migration workflow.
+description: Drizzle schema management and migration workflow.
 ---
 
 ## Schema Structure
 
-All Prisma models live in `packages/db/prisma/schema/` as split domain files:
-
-| File | Contents |
-|------|----------|
-| `schema.prisma` | Generator + datasource config |
-| `auth.prisma` | User, Session, Account, Verification (web app) |
-| `discord.prisma` | DiscordGuild |
-| `discord-moderation.prisma` | DiscordCase, DiscordCaseNote, DiscordWarnThreshold, DiscordCaseType enum |
-| `discord-templates.prisma` | DiscordMessageTemplate |
-| `discord-scheduled.prisma` | DiscordScheduledMessage, DiscordScheduleType enum |
-| `discord-custom-commands.prisma` | DiscordCustomCommand |
-| `discord-logging.prisma` | DiscordLogConfig |
-| `discord-reports.prisma` | DiscordReport, DiscordReportStatus enum |
-| `discord-roles.prisma` | DiscordRolePanel, DiscordRoleButton |
-| `twitch.prisma` | TwitchChannel, TwitchNotification, TwitchCredential, TwitchChatCommand, TwitchRegular, enums |
-| `queue.prisma` | QueueEntry, QueueState, QueueStatus |
-| `audit.prisma` | AuditLog |
-| `system.prisma` | SystemConfig (key-value runtime config for setup wizard) |
+All Drizzle table definitions live in `packages/db/src/schema/` as split domain files.
 
 ## Workflow
-
-### After Schema Changes
-
-```bash
-pnpm db:generate    # Regenerate Prisma client
-```
-
-This must be run any time you modify `.prisma` files. The generated client is used by all apps via the `@community-bot/db` package.
 
 ### Development
 
 ```bash
-pnpm db:push        # Push schema changes directly (no migration file)
-pnpm db:studio      # Open Prisma Studio web UI
+bun db:push        # Push schema changes directly (no migration file)
+bun db:studio      # Open Drizzle Studio web UI
 ```
 
 `db:push` is convenient for development as it syncs the schema without creating migration files.
@@ -46,17 +21,17 @@ pnpm db:studio      # Open Prisma Studio web UI
 ### Production
 
 ```bash
-pnpm db:migrate     # Create and apply migration files
+bun db:migrate     # Create and apply migration files
 ```
 
 Use migrations for production deployments to maintain a history of schema changes.
 
 ## Importing Data
 
-All apps import the Prisma client from the shared package:
+All apps import the Drizzle client from the shared package:
 
 ```typescript
-import { prisma } from "@community-bot/db";
+import { db } from "@community-bot/db";
 import type { DiscordGuild } from "@community-bot/db";
 import { TwitchAccessLevel, QueueStatus } from "@community-bot/db";
 ```
@@ -67,8 +42,8 @@ The Twitch bot includes a script to import commands from a JSON file:
 
 ```bash
 cd apps/twitch
-pnpm db:import                        # Import from prisma/commands.json
-pnpm db:import path/to/commands.json  # Import from a custom path
+bun db:import                        # Import from prisma/commands.json
+bun db:import path/to/commands.json  # Import from a custom path
 ```
 
 The JSON file should contain an array of command objects matching the `TwitchChatCommand` model fields.

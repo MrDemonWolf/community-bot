@@ -48,11 +48,10 @@ This app is part of the Community Bot monorepo. All commands should be run from 
 
 ```bash
 # From monorepo root
-pnpm install
+bun install
 docker compose up -d postgres redis
-pnpm db:generate
-pnpm db:push
-pnpm dev
+bun db:push
+bun dev
 ```
 
 On first run, the bot starts the Twitch Device Code Flow — it prints a link to your terminal, you authorize in your browser, and the bot saves the tokens automatically.

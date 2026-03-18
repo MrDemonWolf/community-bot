@@ -27,11 +27,10 @@ This app is part of the Community Bot monorepo. All commands should be run from 
 
 ```bash
 # From monorepo root
-pnpm install
+bun install
 docker compose up -d postgres redis
-pnpm db:generate
-pnpm db:push
-pnpm dev
+bun db:push
+bun dev
 ```
 
 ### Environment

@@ -11,7 +11,7 @@ Make sure your database is running and the schema is pushed, then:
 
 ```bash
 cd apps/twitch
-pnpm db:import
+bun db:import
 ```
 
 This reads `prisma/commands.json` and upserts every command into the `TwitchChatCommand` table. Existing commands with the same name are updated; new ones are created.
@@ -21,7 +21,7 @@ This reads `prisma/commands.json` and upserts every command into the `TwitchChat
 You can also import from any JSON file:
 
 ```bash
-pnpm db:import /path/to/your/commands.json
+bun db:import /path/to/your/commands.json
 ```
 
 ## JSON Format
