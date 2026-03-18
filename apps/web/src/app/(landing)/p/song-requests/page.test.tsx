@@ -26,7 +26,9 @@ vi.mock("@/lib/setup", () => ({
   getBroadcasterUserId: mocks.getBroadcasterUserId,
 }));
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
-vi.mock("next/link", () => ({ default: (props: any) => props.children }));
+vi.mock("next/link", () => ({
+  default: (props: { children?: React.ReactNode }) => props.children,
+}));
 vi.mock("next/image", () => ({ default: () => null }));
 
 import SongRequestsPage, { generateMetadata } from "./page";
