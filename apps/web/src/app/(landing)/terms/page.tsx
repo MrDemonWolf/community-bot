@@ -1,8 +1,9 @@
-const companyName =
-  process.env.NEXT_PUBLIC_COMPANY_NAME || "Community Bot";
+import { env } from "@community-bot/env/web";
+
+const companyName = env.NEXT_PUBLIC_COMPANY_NAME || "Community Bot";
 
 export const metadata = {
-  title: "Terms of Service — Community Bot",
+  title: `Terms of Service — ${companyName}`,
 };
 
 export default function TermsPage() {
