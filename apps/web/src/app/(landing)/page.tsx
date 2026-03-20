@@ -6,18 +6,15 @@ import AuthCtaButton from "@/components/auth-cta-button";
 import { getBroadcasterUserId } from "@/lib/setup";
 import { db, eq, and, count, botChannels, twitchChatCommands, quotes } from "@community-bot/db";
 
-const channelUrl = process.env.NEXT_PUBLIC_CHANNEL_URL;
-const channelName = process.env.NEXT_PUBLIC_CHANNEL_NAME;
-
 async function getPublicStats() {
   const broadcasterId = await getBroadcasterUserId();
   if (!broadcasterId) return null;
 
   const botChannel = await db.query.botChannels.findFirst({
     where: eq(botChannels.userId, broadcasterId),
-    columns: { id: true },
+    columns: { id: true, twitchUsername: true },
   });
-  if (!botChannel) return { commandCount: 0, quoteCount: 0 };
+  if (!botChannel) return { commandCount: 0, quoteCount: 0, twitchUsername: null };
 
   const [[cmdCount], [quoteCount]] = await Promise.all([
     db.select({ value: count() }).from(twitchChatCommands).where(
@@ -32,7 +29,11 @@ async function getPublicStats() {
     ),
   ]);
 
-  return { commandCount: cmdCount.value, quoteCount: quoteCount.value };
+  return {
+    commandCount: cmdCount.value,
+    quoteCount: quoteCount.value,
+    twitchUsername: botChannel.twitchUsername ?? null,
+  };
 }
 
 const features = [
@@ -74,11 +75,11 @@ export default async function Home() {
             className="animate-fade-in-up mt-8 font-heading text-4xl font-extrabold leading-[1.1] tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl"
             style={{ animationDelay: "100ms" }}
           >
-            {channelName ? (
+            {stats?.twitchUsername ? (
               <>
                 Welcome to{" "}
                 <span className="bg-gradient-to-r from-brand-main to-brand-main/70 bg-clip-text text-transparent">
-                  {channelName}
+                  {stats.twitchUsername}
                 </span>
                 {"'s Community"}
               </>
@@ -99,8 +100,8 @@ export default async function Home() {
             className="animate-fade-in-up mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4"
             style={{ animationDelay: "300ms" }}
           >
-            {channelUrl && channelName && (
-              <Link href={channelUrl as Route}>
+            {stats?.twitchUsername && (
+              <Link href={`https://twitch.tv/${encodeURIComponent(stats.twitchUsername)}` as Route}>
                 <Button
                   size="lg"
                   className="w-full bg-brand-main px-8 font-semibold text-white shadow-lg shadow-brand-main/25 transition-all hover:bg-brand-main/90 hover:shadow-xl hover:shadow-brand-main/30 sm:w-auto"
