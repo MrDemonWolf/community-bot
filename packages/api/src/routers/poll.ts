@@ -3,6 +3,18 @@ import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
+/** Shape returned by the Twitch Helix Polls API. */
+interface HelixPollResponse {
+  data?: Array<{
+    id: string;
+    title: string;
+    status: string;
+    choices: { title: string; votes: number }[];
+    started_at: string;
+    ended_at?: string;
+  }>;
+}
+
 async function getHelixHeaders(userId: string) {
   // Get the broadcaster's Twitch credential
   const account = await db.query.accounts.findFirst({
@@ -53,7 +65,7 @@ export const pollRouter = router({
       });
     }
 
-    const data = await res.json() as any;
+    const data = await res.json() as HelixPollResponse;
     return data.data ?? [];
   }),
 
@@ -87,7 +99,7 @@ export const pollRouter = router({
         });
       }
 
-      const data = await res.json() as any;
+      const data = await res.json() as HelixPollResponse;
       return data.data?.[0] ?? null;
     }),
 
@@ -113,7 +125,7 @@ export const pollRouter = router({
         });
       }
 
-      const data = await res.json() as any;
+      const data = await res.json() as HelixPollResponse;
       return data.data?.[0] ?? null;
     }),
 });

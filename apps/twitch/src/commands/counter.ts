@@ -41,8 +41,8 @@ export const counter: TwitchCommand = {
       try {
         await db.insert(twitchCounters).values({ name, botChannelId });
         await client.say(channel, `@${user}, counter "${name}" created (value: 0).`);
-      } catch (err: any) {
-        if (err?.code === "23505") {
+      } catch (err: unknown) {
+        if (err instanceof Error && "code" in err && (err as { code: string }).code === "23505") {
           await client.say(channel, `@${user}, counter "${name}" already exists.`);
         } else {
           throw err;

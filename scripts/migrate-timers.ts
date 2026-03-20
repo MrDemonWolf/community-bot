@@ -24,7 +24,8 @@ async function main() {
           AND "intervalMinutes" * 60 != 300`
   );
 
-  console.log(`Migration complete. Rows updated: ${(result as any).rowCount ?? "unknown"}`);
+  const rowCount = Array.isArray(result) ? result.length : "unknown";
+  console.log(`Migration complete. Rows updated: ${rowCount}`);
   console.log(
     "intervalMinutes column is retained for backwards compatibility. " +
     "New code uses onlineIntervalSeconds / offlineIntervalSeconds."

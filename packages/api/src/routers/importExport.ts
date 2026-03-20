@@ -5,7 +5,12 @@ import {
   db, eq, and,
   twitchChatCommands, twitchTimers, twitchCounters, quotes,
   regulars, spamFilters, keywords,
+  TwitchAccessLevel, TwitchResponseType, TwitchStreamStatus,
 } from "@community-bot/db";
+
+type AccessLevel = (typeof TwitchAccessLevel)[keyof typeof TwitchAccessLevel];
+type ResponseType = (typeof TwitchResponseType)[keyof typeof TwitchResponseType];
+type StreamStatus = (typeof TwitchStreamStatus)[keyof typeof TwitchStreamStatus];
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { logAudit } from "../utils/audit";
@@ -20,7 +25,7 @@ interface NightbotCommand {
   count?: number;
 }
 
-function nightbotUserlevelToAccessLevel(level?: string): string {
+function nightbotUserlevelToAccessLevel(level?: string): AccessLevel {
   switch (level?.toLowerCase()) {
     case "owner": return "BROADCASTER";
     case "moderator": case "mod": return "MODERATOR";
@@ -135,7 +140,7 @@ export const importExportRouter = router({
             .set({
               response: cmd.message,
               globalCooldown: cmd.cooldown ?? 0,
-              accessLevel: nightbotUserlevelToAccessLevel(cmd.userlevel) as any,
+              accessLevel: nightbotUserlevelToAccessLevel(cmd.userlevel),
               useCount: cmd.count ?? 0,
             })
             .where(eq(twitchChatCommands.id, existing.id));
@@ -145,7 +150,7 @@ export const importExportRouter = router({
             name,
             response: cmd.message,
             globalCooldown: cmd.cooldown ?? 0,
-            accessLevel: nightbotUserlevelToAccessLevel(cmd.userlevel) as any,
+            accessLevel: nightbotUserlevelToAccessLevel(cmd.userlevel),
             useCount: cmd.count ?? 0,
             botChannelId: botChannel.id,
           });
@@ -219,11 +224,11 @@ export const importExportRouter = router({
           await db.update(twitchChatCommands)
             .set({
               response: cmd.response,
-              responseType: (cmd.responseType as any) ?? "SAY",
+              responseType: (cmd.responseType as ResponseType) ?? "SAY",
               globalCooldown: cmd.globalCooldown ?? 0,
               userCooldown: cmd.userCooldown ?? 0,
-              accessLevel: (cmd.accessLevel as any) ?? "EVERYONE",
-              streamStatus: (cmd.streamStatus as any) ?? "BOTH",
+              accessLevel: (cmd.accessLevel as AccessLevel) ?? "EVERYONE",
+              streamStatus: (cmd.streamStatus as StreamStatus) ?? "BOTH",
               enabled: cmd.enabled ?? true,
             })
             .where(eq(twitchChatCommands.id, existing.id));
@@ -232,11 +237,11 @@ export const importExportRouter = router({
           await db.insert(twitchChatCommands).values({
             name,
             response: cmd.response,
-            responseType: (cmd.responseType as any) ?? "SAY",
+            responseType: (cmd.responseType as ResponseType) ?? "SAY",
             globalCooldown: cmd.globalCooldown ?? 0,
             userCooldown: cmd.userCooldown ?? 0,
-            accessLevel: (cmd.accessLevel as any) ?? "EVERYONE",
-            streamStatus: (cmd.streamStatus as any) ?? "BOTH",
+            accessLevel: (cmd.accessLevel as AccessLevel) ?? "EVERYONE",
+            streamStatus: (cmd.streamStatus as StreamStatus) ?? "BOTH",
             enabled: cmd.enabled ?? true,
             botChannelId: botChannel.id,
           });
@@ -299,7 +304,7 @@ export const importExportRouter = router({
             name,
             phraseGroups: kw.phraseGroups,
             response: kw.response,
-            accessLevel: (kw.accessLevel as any) ?? "EVERYONE",
+            accessLevel: (kw.accessLevel as AccessLevel) ?? "EVERYONE",
             enabled: kw.enabled ?? true,
             botChannelId: botChannel.id,
           });
