@@ -33,8 +33,7 @@ export * from "./types";
 export { eq, ne, gt, gte, lt, lte, and, or, not, inArray, notInArray, isNull, isNotNull, between, like, ilike, exists, sql, asc, desc, count, sum, avg, max, min } from "drizzle-orm";
 export type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
-// Enum value objects — drop-in replacements for Prisma enums
-// Usage: TwitchAccessLevel.EVERYONE (same as before)
+/** Twitch command access levels — who can run a command (EVERYONE through BROADCASTER). */
 export const TwitchAccessLevel = {
   EVERYONE: "EVERYONE",
   SUBSCRIBER: "SUBSCRIBER",
@@ -45,24 +44,28 @@ export const TwitchAccessLevel = {
   BROADCASTER: "BROADCASTER",
 } as const;
 
+/** How the bot delivers a command response: plain message, @mention, or threaded reply. */
 export const TwitchResponseType = {
   SAY: "SAY",
   MENTION: "MENTION",
   REPLY: "REPLY",
 } as const;
 
+/** When a command is active: only while ONLINE, only while OFFLINE, or BOTH. */
 export const TwitchStreamStatus = {
   ONLINE: "ONLINE",
   OFFLINE: "OFFLINE",
   BOTH: "BOTH",
 } as const;
 
+/** Viewer queue state: OPEN (accepting joins), PAUSED (frozen), or CLOSED. */
 export const QueueStatus = {
   OPEN: "OPEN",
   CLOSED: "CLOSED",
   PAUSED: "PAUSED",
 } as const;
 
+/** Dashboard user roles — ascending privilege: USER → MODERATOR → LEAD_MODERATOR → BROADCASTER. */
 export const UserRole = {
   USER: "USER",
   MODERATOR: "MODERATOR",
@@ -77,6 +80,7 @@ export type TwitchStreamStatus = (typeof TwitchStreamStatus)[keyof typeof Twitch
 export type QueueStatus = (typeof QueueStatus)[keyof typeof QueueStatus];
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
+/** Discord moderation case types (ban, kick, warn, mute, and their reversals). */
 export const DiscordCaseType = {
   BAN: "BAN",
   TEMPBAN: "TEMPBAN",
@@ -89,6 +93,7 @@ export const DiscordCaseType = {
   NOTE: "NOTE",
 } as const;
 
+/** Discord user report lifecycle: OPEN → INVESTIGATING → RESOLVED or DISMISSED. */
 export const DiscordReportStatus = {
   OPEN: "OPEN",
   INVESTIGATING: "INVESTIGATING",
@@ -96,6 +101,7 @@ export const DiscordReportStatus = {
   DISMISSED: "DISMISSED",
 } as const;
 
+/** Scheduled message frequency: fire ONCE or on a RECURRING cron. */
 export const DiscordScheduleType = {
   ONCE: "ONCE",
   RECURRING: "RECURRING",

@@ -78,6 +78,7 @@ export class EventBus {
     }
   }
 
+  /** Unsubscribe from all events and close both Redis connections. */
   async disconnect(): Promise<void> {
     await this.sub.unsubscribe();
     this.sub.disconnect();
