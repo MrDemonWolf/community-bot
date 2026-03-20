@@ -11,6 +11,23 @@ import {
 type AccessLevel = (typeof TwitchAccessLevel)[keyof typeof TwitchAccessLevel];
 type ResponseType = (typeof TwitchResponseType)[keyof typeof TwitchResponseType];
 type StreamStatus = (typeof TwitchStreamStatus)[keyof typeof TwitchStreamStatus];
+
+const ACCESS_LEVELS = new Set(Object.values(TwitchAccessLevel));
+const RESPONSE_TYPES = new Set(Object.values(TwitchResponseType));
+const STREAM_STATUSES = new Set(Object.values(TwitchStreamStatus));
+
+function toAccessLevel(value?: string, fallback: AccessLevel = "EVERYONE"): AccessLevel {
+  return value && ACCESS_LEVELS.has(value as AccessLevel) ? (value as AccessLevel) : fallback;
+}
+
+function toResponseType(value?: string, fallback: ResponseType = "SAY"): ResponseType {
+  return value && RESPONSE_TYPES.has(value as ResponseType) ? (value as ResponseType) : fallback;
+}
+
+function toStreamStatus(value?: string, fallback: StreamStatus = "BOTH"): StreamStatus {
+  return value && STREAM_STATUSES.has(value as StreamStatus) ? (value as StreamStatus) : fallback;
+}
+
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { logAudit } from "../utils/audit";
@@ -224,11 +241,11 @@ export const importExportRouter = router({
           await db.update(twitchChatCommands)
             .set({
               response: cmd.response,
-              responseType: (cmd.responseType as ResponseType) ?? "SAY",
+              responseType: toResponseType(cmd.responseType),
               globalCooldown: cmd.globalCooldown ?? 0,
               userCooldown: cmd.userCooldown ?? 0,
-              accessLevel: (cmd.accessLevel as AccessLevel) ?? "EVERYONE",
-              streamStatus: (cmd.streamStatus as StreamStatus) ?? "BOTH",
+              accessLevel: toAccessLevel(cmd.accessLevel),
+              streamStatus: toStreamStatus(cmd.streamStatus),
               enabled: cmd.enabled ?? true,
             })
             .where(eq(twitchChatCommands.id, existing.id));
@@ -237,11 +254,11 @@ export const importExportRouter = router({
           await db.insert(twitchChatCommands).values({
             name,
             response: cmd.response,
-            responseType: (cmd.responseType as ResponseType) ?? "SAY",
+            responseType: toResponseType(cmd.responseType),
             globalCooldown: cmd.globalCooldown ?? 0,
             userCooldown: cmd.userCooldown ?? 0,
-            accessLevel: (cmd.accessLevel as AccessLevel) ?? "EVERYONE",
-            streamStatus: (cmd.streamStatus as StreamStatus) ?? "BOTH",
+            accessLevel: toAccessLevel(cmd.accessLevel),
+            streamStatus: toStreamStatus(cmd.streamStatus),
             enabled: cmd.enabled ?? true,
             botChannelId: botChannel.id,
           });
@@ -304,7 +321,7 @@ export const importExportRouter = router({
             name,
             phraseGroups: kw.phraseGroups,
             response: kw.response,
-            accessLevel: (kw.accessLevel as AccessLevel) ?? "EVERYONE",
+            accessLevel: toAccessLevel(kw.accessLevel),
             enabled: kw.enabled ?? true,
             botChannelId: botChannel.id,
           });

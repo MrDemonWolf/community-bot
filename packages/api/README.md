@@ -4,10 +4,15 @@ Shared tRPC routers and role-gated procedures for the Community Bot web dashboar
 
 ## Exports
 
+- **`appRouter`** / **`AppRouter`** — The composed tRPC router containing all sub-routers (the public API surface)
 - **Procedures** — `publicProcedure`, `protectedProcedure`, `moderatorProcedure`, `leadModProcedure`, `broadcasterProcedure`
 - **Router factory** — `router` (re-export of `t.router`)
-- **Context** — `createContext` for binding auth sessions to tRPC calls
-- **Routers** — `botChannel`, `chatCommand`, `discordGuild`, `user`, `auditLog`, `setup`, `regular`, `quote`, `counter`, `timer`, `spamFilter`, `queue`, `poll`, `songRequest`, `importExport`, `userManagement`
+
+### Sub-routers (composed into `appRouter`)
+
+`botChannel`, `chatCommand`, `user`, `regular`, `auditLog`, `discordGuild`, `setup`, `userManagement`, `queue`, `quote`, `counter`, `timer`, `spamFilter`, `songRequest`, `playlist`, `giveaway`, `poll`, `discordTemplates`, `discordScheduled`, `discordRoles`, `discordModeration`, `discordCustomCommands`, `keyword`, `configTester`, `chatAlert`, `channelPoints`, `automod`, `importExport`, `titleGenerator`
+
+Context creation (`createContext`) lives in `src/context.ts` and is consumed by the web dashboard's tRPC handler, not re-exported from the package.
 
 ## Usage
 

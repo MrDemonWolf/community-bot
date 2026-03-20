@@ -1,4 +1,5 @@
 import { db, eq, and, accounts, twitchCredentials } from "@community-bot/db";
+import { env } from "@community-bot/env/server";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -42,7 +43,7 @@ async function getHelixHeaders(userId: string) {
   return {
     headers: {
       Authorization: `Bearer ${credential.accessToken}`,
-      "Client-Id": process.env.TWITCH_APPLICATION_CLIENT_ID ?? "",
+      "Client-Id": env.TWITCH_APPLICATION_CLIENT_ID,
       "Content-Type": "application/json",
     },
     broadcasterId: account.accountId,
