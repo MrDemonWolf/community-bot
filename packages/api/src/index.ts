@@ -1,13 +1,23 @@
+/**
+ * @community-bot/api — tRPC initialization, router factory, and role-gated procedures.
+ *
+ * All tRPC routers in the app import `router` and the procedure helpers from
+ * this file. Procedure hierarchy: public → protected → moderator → leadMod → broadcaster.
+ */
 import { initTRPC, TRPCError } from "@trpc/server";
 import { db, eq, users } from "@community-bot/db";
 import type { Context } from "./context";
 
+/** Initialized tRPC instance bound to the app's Context type. */
 export const t = initTRPC.context<Context>().create();
 
+/** Create a new tRPC router from a record of procedures. */
 export const router = t.router;
 
+/** No auth required — open to all callers. */
 export const publicProcedure = t.procedure;
 
+/** Requires an authenticated session (any role). */
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.session) {
     throw new TRPCError({

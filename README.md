@@ -15,21 +15,24 @@ Your stream, your bot, your rules.
 
 ## Features
 
-- **Twitch Chat Bot** - Database-driven custom commands with
-  40+ dynamic response variables, viewer queue, cooldowns,
-  access levels, regex triggers, and stream status awareness.
-- **Discord Bot** - Slash commands and Twitch live stream
-  notifications with BullMQ job scheduling and automatic
-  guild sync.
-- **Web Dashboard** - Next.js app with tRPC, Discord and
-  Twitch OAuth, audit log feed, bot controls, and full
-  command management.
-- **Real-Time Event Bus** - Type-safe Redis Pub/Sub for
-  instant communication between all services.
-- **First-User Setup Wizard** - One-time `/setup/{token}` flow
-  that designates the broadcaster and promotes them to admin.
-- **Documentation Site** - Fumadocs-powered docs with guides
-  for every feature and full variable reference.
+- **Twitch Chat Bot** — Database-driven custom commands with 40+ dynamic response variables, cooldowns, access levels, regex triggers, keyword matching, and stream status awareness.
+- **Discord Bot** — Slash commands, Twitch live stream notifications, moderation (ban/kick/warn/mute with case tracking), self-assignable role panels, message templates, scheduled messages, and cross-platform quotes.
+- **Web Dashboard** — Next.js app with tRPC, Discord and Twitch OAuth, audit log feed, bot controls, and full management of commands, regulars, quotes, counters, timers, spam filters, song requests, viewer queue, Discord settings, and user roles.
+- **Viewer Queue** — Position-based queue system managed from chat (`!queue`) or the dashboard with open/close/pause controls.
+- **Quotes** — Cross-platform quote system shared between Twitch chat and Discord slash commands.
+- **Named Counters** — Create, increment, decrement, and display counters from chat.
+- **Recurring Timers** — Automated chat messages on an interval with chat-line thresholds and online-only mode.
+- **Spam Filters** — Configurable filters for caps, links, symbols, emotes, repetition, and banned words with permit system.
+- **Moderation Commands** — `!permit`, `!nuke`, `!vanish`, and `!clip` for Twitch chat moderation.
+- **Song Requests** — Viewers request songs via `!sr`; manage the queue from the dashboard with skip, remove, and clear.
+- **AI-Enhanced Shoutouts** — Optional Google Gemini integration for personalized shoutout messages via `!so`.
+- **Giveaways & Polls** — Run giveaways and polls from chat or the dashboard.
+- **Import/Export** — Import commands from Nightbot or export your full channel config as JSON.
+- **Welcome Messages** — Configurable Discord welcome/leave messages, auto-role, and DM welcome with embed builder.
+- **User Management** — Role-based access control (USER → MODERATOR → LEAD_MODERATOR → BROADCASTER) with ban system.
+- **Real-Time Event Bus** — Type-safe Redis Pub/Sub for instant communication between all services.
+- **First-User Setup Wizard** — One-time `/setup/{token}` flow that designates the broadcaster.
+- **Documentation Site** — Fumadocs-powered docs with guides for every feature and full variable reference.
 
 ## Getting Started
 
@@ -84,20 +87,48 @@ bun dev
 
 ### Built-In Twitch Commands
 
-| Command           | Description                              |
-|-------------------|------------------------------------------|
-| `!ping`           | Basic ping/pong response                 |
-| `!uptime`         | Display stream uptime                    |
-| `!accountage`     | Look up Twitch account age               |
-| `!bot`            | Bot mute/unmute controls                 |
-| `!queue`          | Viewer queue management                  |
-| `!command`        | Manage custom commands (mod+)            |
-| `!reloadcommands` | Reload commands from database (mod+)     |
-| `!filesay`        | Fetch a URL and send lines to chat       |
-| `!commands`       | Links to the public commands page        |
+| Command           | Description                              | Access     |
+|-------------------|------------------------------------------|------------|
+| `!ping`           | Basic ping/pong response                 | Everyone   |
+| `!uptime`         | Display stream uptime                    | Everyone   |
+| `!title`          | Show current stream title                | Everyone   |
+| `!game`           | Show current game/category               | Everyone   |
+| `!followage`      | Show how long you've followed            | Everyone   |
+| `!accountage`     | Look up Twitch account age               | Everyone   |
+| `!commands`       | Links to the public commands page        | Everyone   |
+| `!quote`          | View, add, remove, search quotes         | Everyone/Mod |
+| `!counter`        | Manage named counters                    | Mod+       |
+| `!sr`             | Song request queue                       | Everyone/Mod |
+| `!queue`          | Viewer queue management                  | Everyone/Mod |
+| `!so` / `!shoutout` | Shout out another streamer (+ AI)     | Mod+       |
+| `!permit`         | Temporarily exempt a user from filters   | Mod+       |
+| `!nuke`           | Timeout users matching a phrase          | Mod+       |
+| `!vanish`         | Self-timeout for 1 second                | Everyone   |
+| `!clip`           | Create a clip of the current stream      | Everyone   |
+| `!command`        | Manage custom commands                   | Mod+       |
+| `!reloadcommands` | Reload commands from database            | Mod+       |
+| `!bot`            | Bot mute/unmute controls                 | Mod+       |
+| `!filesay`        | Fetch a URL and send lines to chat       | Mod+       |
+| `!weather`        | Show weather for a location              | Everyone   |
+| `!giveaway`       | Run a chat giveaway                      | Mod+       |
+| `!poll`           | Run a chat poll                          | Mod+       |
 
 See the [docs](http://localhost:3000/docs/twitch-bot/built-in-commands)
 for full command details and response variables.
+
+### Web Dashboard
+
+After completing the setup wizard, the dashboard provides:
+
+- **Bot Controls** — Enable/disable/mute the Twitch bot
+- **Command Management** — CRUD for custom commands and default command toggles
+- **Regulars, Quotes, Counters, Timers** — Full management UI
+- **Spam Filters** — Configure all filter types with thresholds
+- **Song Requests & Viewer Queue** — Real-time queue management
+- **Discord Settings** — Link guild, set notification channel/role, welcome messages
+- **User Management** — Assign roles and ban/unban users (broadcaster only)
+- **Audit Log** — Role-filtered history of all dashboard changes
+- **Public Pages** — `/p/commands` and `/p/queue` for viewers
 
 ## Tech Stack
 

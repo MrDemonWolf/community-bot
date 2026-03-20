@@ -6,6 +6,7 @@ import cors from "cors";
 import consola from "consola";
 import type { Server } from "node:http";
 
+/** Options for creating an Express API server via `createApiServer`. */
 export interface ServerOptions {
   name: string;
   defaultPort: number;
@@ -16,6 +17,7 @@ export interface ServerOptions {
   routes?: (app: Application) => void;
 }
 
+/** Options for `listenWithFallback` — port, host, and service name for logs. */
 export interface ListenOptions {
   port: number;
   host: string;

@@ -1,7 +1,20 @@
 import { db, eq, and, accounts, twitchCredentials } from "@community-bot/db";
+import { env } from "@community-bot/env/server";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+
+/** Shape returned by the Twitch Helix Polls API. */
+interface HelixPollResponse {
+  data?: Array<{
+    id: string;
+    title: string;
+    status: string;
+    choices: { title: string; votes: number }[];
+    started_at: string;
+    ended_at?: string;
+  }>;
+}
 
 async function getHelixHeaders(userId: string) {
   // Get the broadcaster's Twitch credential
@@ -30,7 +43,7 @@ async function getHelixHeaders(userId: string) {
   return {
     headers: {
       Authorization: `Bearer ${credential.accessToken}`,
-      "Client-Id": process.env.TWITCH_APPLICATION_CLIENT_ID ?? "",
+      "Client-Id": env.TWITCH_APPLICATION_CLIENT_ID,
       "Content-Type": "application/json",
     },
     broadcasterId: account.accountId,
@@ -53,7 +66,7 @@ export const pollRouter = router({
       });
     }
 
-    const data = await res.json() as any;
+    const data = await res.json() as HelixPollResponse;
     return data.data ?? [];
   }),
 
@@ -87,7 +100,7 @@ export const pollRouter = router({
         });
       }
 
-      const data = await res.json() as any;
+      const data = await res.json() as HelixPollResponse;
       return data.data?.[0] ?? null;
     }),
 
@@ -113,7 +126,7 @@ export const pollRouter = router({
         });
       }
 
-      const data = await res.json() as any;
+      const data = await res.json() as HelixPollResponse;
       return data.data?.[0] ?? null;
     }),
 });
