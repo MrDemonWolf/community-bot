@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogPopup,
   DialogTitle,
+  DialogDescription,
   DialogCloseButton,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -138,42 +139,50 @@ export default function RegularsPage() {
     );
   });
 
+  const totalCount = regulars?.length ?? 0;
+
   return (
     <div>
-      <PageHeader title="Regulars" platforms={["twitch", "discord"]} />
+      <PageHeader title="Regulars" platforms={["twitch", "discord"]}>
+        <span className="inline-flex items-center rounded-full bg-brand-main/10 px-2.5 py-0.5 text-xs font-medium text-brand-main">
+          {totalCount}
+        </span>
+        <Button
+          onClick={() => refreshMutation.mutate()}
+          disabled={refreshMutation.isPending}
+          size="sm"
+          variant="outline"
+        >
+          <RefreshCw
+            className={`size-3.5 ${refreshMutation.isPending ? "animate-spin" : ""}`}
+          />
+          Refresh
+        </Button>
+        {canManage && (
+          <Button
+            onClick={() => setDialogOpen(true)}
+            size="sm"
+            className="bg-brand-main text-white hover:bg-brand-main/80"
+          >
+            <Plus className="size-3.5" />
+            Add Regular
+          </Button>
+        )}
+      </PageHeader>
 
       <div className="space-y-4">
-        {/* Search + Actions */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by username..."
-              className="pl-9"
-            />
-          </div>
-          <Button
-            onClick={() => refreshMutation.mutate()}
-            disabled={refreshMutation.isPending}
-            size="sm"
-            variant="outline"
-          >
-            <RefreshCw
-              className={`size-3.5 ${refreshMutation.isPending ? "animate-spin" : ""}`}
-            />
-            Refresh Names
-          </Button>
-          {canManage && (
-            <Button onClick={() => setDialogOpen(true)} size="sm">
-              <Plus className="size-3.5" />
-              Add Regular
-            </Button>
-          )}
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by username..."
+            className="pl-9"
+          />
         </div>
 
-        {/* Regulars Table */}
+        {/* Regulars List */}
         {filteredRegulars.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -196,50 +205,153 @@ export default function RegularsPage() {
             )}
           </EmptyState>
         ) : (
-          <div className="glass overflow-x-auto rounded-lg border border-border">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Twitch Username
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Added By
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Date Added
-                  </th>
-                  {canManage && (
-                    <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Actions
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredRegulars.map((regular) => (
-                  <tr
-                    key={regular.id}
-                    className="transition-colors hover:bg-surface-raised"
-                  >
-                    <td className="px-4 py-3">
-                      {regular.twitchUsername ? (
-                        <span className="text-sm font-medium text-brand-main">
-                          {regular.twitchUsername}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">--</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {regular.addedBy}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {new Date(regular.createdAt).toLocaleDateString()}
-                    </td>
-                    {canManage && (
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Username
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Discord
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Added By
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Date Added
+                        </th>
+                        {canManage && (
+                          <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            Actions
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {filteredRegulars.map((regular) => (
+                        <tr
+                          key={regular.id}
+                          className="transition-colors hover:bg-muted/30"
+                        >
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-twitch/10 text-sm font-medium text-brand-twitch">
+                                {(regular.twitchUsername ?? "?")[0]?.toUpperCase()}
+                              </div>
+                              {regular.twitchUsername ? (
+                                <span className="text-sm font-medium text-foreground">
+                                  {regular.twitchUsername}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  Unknown
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {regular.discordUsername ? (
+                              <span className="inline-flex items-center gap-1.5 text-sm text-brand-discord">
+                                <span className="size-1.5 rounded-full bg-brand-discord" />
+                                {regular.discordUsername}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">--</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            {regular.addedBy}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
+                            {new Date(regular.createdAt).toLocaleDateString()}
+                          </td>
+                          {canManage && (
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                {!regular.discordUserId && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={() => {
+                                      setLinkDiscordId(regular.id);
+                                      setLinkDiscordValue("");
+                                      setLinkDiscordName("");
+                                    }}
+                                    aria-label={`Link Discord for ${regular.twitchUsername}`}
+                                  >
+                                    <Link2 className="size-3.5 text-brand-discord" />
+                                  </Button>
+                                )}
+                                {deleteConfirmId === regular.id ? (
+                                  <>
+                                    <Button
+                                      variant="destructive"
+                                      size="xs"
+                                      onClick={() =>
+                                        removeMutation.mutate({ id: regular.id })
+                                      }
+                                      disabled={removeMutation.isPending}
+                                    >
+                                      {removeMutation.isPending ? "..." : "Confirm"}
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="xs"
+                                      onClick={() => setDeleteConfirmId(null)}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={() => setDeleteConfirmId(regular.id)}
+                                    aria-label={`Remove ${regular.twitchUsername}`}
+                                  >
+                                    <Trash2 className="size-3.5 text-red-400" />
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="grid gap-3 md:hidden">
+              {filteredRegulars.map((regular) => (
+                <Card key={regular.id} className="transition-colors hover:bg-muted/30">
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-twitch/10 text-sm font-bold text-brand-twitch">
+                          {(regular.twitchUsername ?? "?")[0]?.toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {regular.twitchUsername ?? "Unknown"}
+                          </p>
+                          {regular.discordUsername && (
+                            <p className="flex items-center gap-1.5 text-xs text-brand-discord">
+                              <span className="size-1.5 rounded-full bg-brand-discord" />
+                              {regular.discordUsername}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {canManage && (
+                        <div className="flex items-center gap-1">
                           {!regular.discordUserId && (
                             <Button
                               variant="ghost"
@@ -255,7 +367,7 @@ export default function RegularsPage() {
                             </Button>
                           )}
                           {deleteConfirmId === regular.id ? (
-                            <>
+                            <div className="flex items-center gap-1">
                               <Button
                                 variant="destructive"
                                 size="xs"
@@ -273,7 +385,7 @@ export default function RegularsPage() {
                               >
                                 Cancel
                               </Button>
-                            </>
+                            </div>
                           ) : (
                             <Button
                               variant="ghost"
@@ -285,14 +397,25 @@ export default function RegularsPage() {
                             </Button>
                           )}
                         </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span>by {regular.addedBy}</span>
+                      <span>{new Date(regular.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
         )}
+
+        <p className="text-xs text-muted-foreground">
+          {totalCount} regular{totalCount !== 1 ? "s" : ""} total
+          {search && filteredRegulars
+            ? ` (${filteredRegulars.length} matching)`
+            : ""}
+        </p>
       </div>
 
       {/* Add Regular Dialog */}
@@ -300,6 +423,9 @@ export default function RegularsPage() {
         <DialogPopup>
           <DialogCloseButton />
           <DialogTitle>Add Regular</DialogTitle>
+          <DialogDescription>
+            Add a trusted user who gets extra permissions in your chat.
+          </DialogDescription>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -366,6 +492,7 @@ export default function RegularsPage() {
               <Button
                 type="submit"
                 disabled={!newUsername.trim() || addMutation.isPending}
+                className="bg-brand-main text-white hover:bg-brand-main/80"
               >
                 {addMutation.isPending ? (
                   <Loader2 className="size-3.5 animate-spin" />
@@ -389,6 +516,9 @@ export default function RegularsPage() {
         <DialogPopup>
           <DialogCloseButton />
           <DialogTitle>Link Discord Account</DialogTitle>
+          <DialogDescription>
+            Connect a Discord account to this regular for cross-platform permissions.
+          </DialogDescription>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -439,6 +569,7 @@ export default function RegularsPage() {
                 disabled={
                   !linkDiscordValue.trim() || linkDiscordMutation.isPending
                 }
+                className="bg-brand-main text-white hover:bg-brand-main/80"
               >
                 {linkDiscordMutation.isPending ? (
                   <Loader2 className="size-3.5 animate-spin" />

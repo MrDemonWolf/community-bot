@@ -6,6 +6,13 @@ import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogPopup,
+  DialogTitle,
+  DialogDescription,
+  DialogCloseButton,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -34,6 +41,7 @@ export default function QuotesPage() {
     trpc.quote.list.queryOptions()
   );
 
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [newQuoteText, setNewQuoteText] = useState("");
   const [newQuoteGame, setNewQuoteGame] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,6 +57,7 @@ export default function QuotesPage() {
         toast.success(`Quote #${data.quoteNumber} added.`);
         setNewQuoteText("");
         setNewQuoteGame("");
+        setDialogOpen(false);
         invalidateAll();
       },
       onError: (err) => toast.error(err.message),
@@ -110,55 +119,27 @@ export default function QuotesPage() {
       )
     : quotes;
 
+  const totalCount = quotes?.length ?? 0;
+
   return (
     <div>
-      <PageHeader title="Quotes" platforms={["twitch", "discord"]} />
+      <PageHeader title="Quotes" platforms={["twitch", "discord"]}>
+        <span className="inline-flex items-center rounded-full bg-brand-main/10 px-2.5 py-0.5 text-xs font-medium text-brand-main">
+          {totalCount}
+        </span>
+        {canManage && (
+          <Button
+            size="sm"
+            onClick={() => setDialogOpen(true)}
+            className="bg-brand-main text-white hover:bg-brand-main/80"
+          >
+            <Plus className="size-3.5" />
+            Add Quote
+          </Button>
+        )}
+      </PageHeader>
 
       <div className="space-y-4">
-        {/* Add Quote */}
-        {canManage && (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Input
-              placeholder="Quote text..."
-              value={newQuoteText}
-              onChange={(e) => setNewQuoteText(e.target.value)}
-              className="flex-1"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newQuoteText.trim()) {
-                  addMutation.mutate({ text: newQuoteText.trim(), game: newQuoteGame.trim() || null });
-                }
-              }}
-            />
-            <Input
-              placeholder="Game (optional)"
-              value={newQuoteGame}
-              onChange={(e) => setNewQuoteGame(e.target.value)}
-              className="sm:w-44"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newQuoteText.trim()) {
-                  addMutation.mutate({ text: newQuoteText.trim(), game: newQuoteGame.trim() || null });
-                }
-              }}
-            />
-            <Button
-              size="sm"
-              onClick={() => {
-                if (newQuoteText.trim()) {
-                  addMutation.mutate({ text: newQuoteText.trim(), game: newQuoteGame.trim() || null });
-                }
-              }}
-              disabled={!newQuoteText.trim() || addMutation.isPending}
-            >
-              {addMutation.isPending ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Plus className="size-3.5" />
-              )}
-              Add
-            </Button>
-          </div>
-        )}
-
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -170,7 +151,7 @@ export default function QuotesPage() {
           />
         </div>
 
-        {/* Quotes Table */}
+        {/* Quotes List */}
         {(filteredQuotes?.length ?? 0) === 0 ? (
           <EmptyState
             icon={QuoteIcon}
@@ -180,59 +161,136 @@ export default function QuotesPage() {
                 ? "Add memorable moments from your stream to look back on later."
                 : undefined
             }
-          />
+          >
+            {!searchQuery && canManage && (
+              <Button
+                onClick={() => setDialogOpen(true)}
+                variant="outline"
+                size="sm"
+              >
+                <Plus className="size-3.5" />
+                Add your first quote
+              </Button>
+            )}
+          </EmptyState>
         ) : (
-          <div className="glass overflow-x-auto rounded-lg border border-border">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    #
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Quote
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Game
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Added By
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Date
-                  </th>
-                  <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredQuotes?.map((q) => (
-                  <tr
-                    key={q.id}
-                    className="transition-colors hover:bg-surface-raised"
-                  >
-                    <td className="px-4 py-3">
-                      <span className="text-sm font-bold text-brand-main">
-                        {q.quoteNumber}
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block">
+              <Card className="overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          #
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Quote
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Game
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Added By
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Date
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {filteredQuotes?.map((q) => (
+                        <tr
+                          key={q.id}
+                          className="transition-colors hover:bg-muted/30"
+                        >
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold text-brand-main">
+                              {q.quoteNumber}
+                            </span>
+                          </td>
+                          <td className="max-w-md px-4 py-3 text-sm text-foreground">
+                            <span className="line-clamp-2 break-words">
+                              &ldquo;{q.text}&rdquo;
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm italic text-muted-foreground">
+                            {q.game || "--"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
+                            {q.addedBy}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
+                            {new Date(q.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={() => copyQuote(q.text, q.quoteNumber)}
+                                aria-label={`Copy quote #${q.quoteNumber}`}
+                              >
+                                <Copy className="size-3.5 text-muted-foreground" />
+                              </Button>
+                              {canManage && (
+                                <>
+                                  {deleteConfirmId === q.id ? (
+                                    <>
+                                      <Button
+                                        variant="destructive"
+                                        size="xs"
+                                        onClick={() =>
+                                          removeMutation.mutate({ id: q.id })
+                                        }
+                                        disabled={removeMutation.isPending}
+                                      >
+                                        {removeMutation.isPending ? "..." : "Confirm"}
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        onClick={() => setDeleteConfirmId(null)}
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-xs"
+                                      onClick={() => setDeleteConfirmId(q.id)}
+                                      aria-label={`Remove quote #${q.quoteNumber}`}
+                                    >
+                                      <Trash2 className="size-3.5 text-red-400" />
+                                    </Button>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="grid gap-3 md:hidden">
+              {filteredQuotes?.map((q) => (
+                <Card key={q.id} className="transition-colors hover:bg-muted/30">
+                  <CardContent className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="shrink-0 rounded-full bg-brand-main/10 px-2 py-0.5 text-xs font-bold text-brand-main">
+                        #{q.quoteNumber}
                       </span>
-                    </td>
-                    <td className="max-w-md px-4 py-3 text-sm text-foreground">
-                      <span className="line-clamp-2 break-words">
-                        &ldquo;{q.text}&rdquo;
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm italic text-muted-foreground">
-                      {q.game || "--"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {q.addedBy}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {new Date(q.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="icon-xs"
@@ -244,7 +302,7 @@ export default function QuotesPage() {
                         {canManage && (
                           <>
                             {deleteConfirmId === q.id ? (
-                              <>
+                              <div className="flex items-center gap-1">
                                 <Button
                                   variant="destructive"
                                   size="xs"
@@ -262,7 +320,7 @@ export default function QuotesPage() {
                                 >
                                   Cancel
                                 </Button>
-                              </>
+                              </div>
                             ) : (
                               <Button
                                 variant="ghost"
@@ -276,19 +334,102 @@ export default function QuotesPage() {
                           </>
                         )}
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                    <p className="text-sm text-foreground">
+                      &ldquo;{q.text}&rdquo;
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      {q.game && (
+                        <span className="italic">{q.game}</span>
+                      )}
+                      <span>by {q.addedBy}</span>
+                      <span>{new Date(q.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
         )}
 
         <p className="text-xs text-muted-foreground">
-          {quotes?.length ?? 0} quote{(quotes?.length ?? 0) !== 1 ? "s" : ""}{" "}
-          total
+          {totalCount} quote{totalCount !== 1 ? "s" : ""} total
+          {searchQuery && filteredQuotes
+            ? ` (${filteredQuotes.length} matching)`
+            : ""}
         </p>
       </div>
+
+      {/* Add Quote Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogPopup>
+          <DialogCloseButton />
+          <DialogTitle>Add Quote</DialogTitle>
+          <DialogDescription>
+            Save a memorable moment from your stream.
+          </DialogDescription>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (newQuoteText.trim()) {
+                addMutation.mutate({
+                  text: newQuoteText.trim(),
+                  game: newQuoteGame.trim() || null,
+                });
+              }
+            }}
+            className="mt-4 space-y-4"
+          >
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                Quote Text
+              </label>
+              <Input
+                value={newQuoteText}
+                onChange={(e) => setNewQuoteText(e.target.value)}
+                placeholder="Enter the quote..."
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                Game{" "}
+                <span className="text-xs text-muted-foreground">(optional)</span>
+              </label>
+              <Input
+                value={newQuoteGame}
+                onChange={(e) => setNewQuoteGame(e.target.value)}
+                placeholder="e.g. Minecraft"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setDialogOpen(false);
+                  setNewQuoteText("");
+                  setNewQuoteGame("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!newQuoteText.trim() || addMutation.isPending}
+                className="bg-brand-main text-white hover:bg-brand-main/80"
+              >
+                {addMutation.isPending ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Plus className="size-3.5" />
+                )}
+                Add Quote
+              </Button>
+            </div>
+          </form>
+        </DialogPopup>
+      </Dialog>
     </div>
   );
 }
