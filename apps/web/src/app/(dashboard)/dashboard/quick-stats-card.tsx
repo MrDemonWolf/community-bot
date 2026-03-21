@@ -2,10 +2,53 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Terminal, Users, Radio, ListOrdered } from "lucide-react";
+import { Terminal, BookOpen, ListOrdered, Activity } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import type { LucideIcon } from "lucide-react";
 
 const REFETCH_INTERVAL = 30_000;
+
+interface StatCardProps {
+  icon: LucideIcon;
+  label: string;
+  value: string | number;
+  iconClass?: string;
+}
+
+function StatCard({ icon: Icon, label, value, iconClass }: StatCardProps) {
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-3 p-4">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-main/10">
+          <Icon className={`size-5 ${iconClass ?? "text-brand-main"}`} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="text-lg font-bold text-foreground">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function QueueBadge({ status }: { status: string }) {
+  const colorMap: Record<string, string> = {
+    OPEN: "bg-green-500/10 text-green-600 dark:text-green-400",
+    PAUSED: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    CLOSED: "bg-muted text-muted-foreground",
+  };
+  const colors = colorMap[status] ?? colorMap.CLOSED;
+
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors}`}>
+      {status}
+    </span>
+  );
+}
 
 export default function QuickStatsStrip() {
   const { data: botStatus, isLoading: loadingBot } = useQuery({
@@ -16,104 +59,75 @@ export default function QuickStatsStrip() {
     ...trpc.chatCommand.list.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
   });
-  const { data: regulars, isLoading: loadingRegs } = useQuery({
-    ...trpc.regular.list.queryOptions(),
+  const { data: stats, isLoading: loadingStats } = useQuery({
+    ...trpc.botChannel.stats.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
   });
   const { data: queueState, isLoading: loadingQState } = useQuery({
     ...trpc.queue.getState.queryOptions(),
     refetchInterval: REFETCH_INTERVAL,
   });
-  const { data: queueEntries, isLoading: loadingQEntries } = useQuery({
-    ...trpc.queue.list.queryOptions(),
-    refetchInterval: REFETCH_INTERVAL,
-  });
 
-  const isLoading =
-    loadingBot || loadingCmds || loadingRegs || loadingQState || loadingQEntries;
-
-  const botChannel = botStatus?.botChannel;
-  const statusLabel = !botChannel
-    ? "Inactive"
-    : botChannel.muted
-      ? "Muted"
-      : "Active";
-  const statusBorder = !botChannel
-    ? "border-l-muted-foreground/30"
-    : botChannel.muted
-      ? "border-l-brand-accent"
-      : "border-l-brand-main";
-  const statusColor = !botChannel
-    ? "text-muted-foreground"
-    : botChannel.muted
-      ? "text-brand-accent"
-      : "text-brand-main";
-
-  const queueStatus = queueState?.status ?? "CLOSED";
-  const queueBorder =
-    queueStatus === "OPEN"
-      ? "border-l-brand-main"
-      : queueStatus === "PAUSED"
-        ? "border-l-brand-accent"
-        : "border-l-muted-foreground/30";
-
-  const stats = [
-    {
-      icon: Terminal,
-      label: "Commands",
-      value: commands?.length ?? 0,
-      borderClass: "border-l-brand-main",
-    },
-    {
-      icon: Users,
-      label: "Regulars",
-      value: regulars?.length ?? 0,
-      borderClass: "border-l-brand-main",
-    },
-    {
-      icon: ListOrdered,
-      label: "Queue",
-      value: `${queueStatus} (${queueEntries?.length ?? 0})`,
-      borderClass: queueBorder,
-    },
-    {
-      icon: Radio,
-      label: "Bot",
-      value: statusLabel,
-      valueClass: statusColor,
-      borderClass: statusBorder,
-    },
-  ];
+  const isLoading = loadingBot || loadingCmds || loadingStats || loadingQState;
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="glass rounded-lg border-l-3 border-l-muted p-3">
-            <Skeleton className="mb-2 h-3 w-16" />
-            <Skeleton className="h-6 w-12" />
-          </div>
+          <Card key={i}>
+            <CardContent className="flex items-center gap-3 p-4">
+              <Skeleton className="size-10 rounded-lg" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-6 w-10" />
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     );
   }
 
+  const botChannel = botStatus?.botChannel;
+  const isHealthy = botChannel?.enabled && !botChannel?.muted;
+  const queueStatus = queueState?.status ?? "CLOSED";
+
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      {stats.map((stat) => (
-        <div
-          key={stat.label}
-          className={`glass rounded-lg border-l-3 p-3 ${stat.borderClass}`}
-        >
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <stat.icon className="size-3.5" />
-            {stat.label}
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {/* Commands count */}
+      <StatCard
+        icon={Terminal}
+        label="Commands"
+        value={commands?.length ?? 0}
+      />
+
+      {/* Quotes count */}
+      <StatCard
+        icon={BookOpen}
+        label="Quotes"
+        value={stats?.quotes ?? 0}
+      />
+
+      {/* Queue status */}
+      <Card>
+        <CardContent className="flex items-center gap-3 p-4">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-main/10">
+            <ListOrdered className="size-5 text-brand-main" />
           </div>
-          <p className={`mt-1 text-lg font-bold ${stat.valueClass ?? "text-foreground"}`}>
-            {stat.value}
-          </p>
-        </div>
-      ))}
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Queue</p>
+            <QueueBadge status={queueStatus} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bot health */}
+      <StatCard
+        icon={Activity}
+        label="Bot Status"
+        value={isHealthy ? "Healthy" : "Unhealthy"}
+        iconClass={isHealthy ? "text-green-500" : "text-amber-500"}
+      />
     </div>
   );
 }

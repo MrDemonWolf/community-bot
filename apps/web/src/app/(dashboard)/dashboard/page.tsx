@@ -19,16 +19,16 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <PageHeader title="Dashboard" />
 
-      {/* Stats strip */}
+      {/* Quick Stats Row */}
       <QuickStatsStrip />
 
-      {/* Bot controls + Discord side-by-side */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
+      {/* Bot controls + Discord side-by-side on desktop, stacked on mobile */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <BotControlsCard />
         <DiscordStatusCard />
       </div>
 
-      {/* Full-width audit log */}
+      {/* Audit Log Feed */}
       <AuditLogFeed />
     </div>
   );

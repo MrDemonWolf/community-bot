@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User, Activity } from "lucide-react";
@@ -128,12 +128,14 @@ export default function AuditLogFeed() {
   const hasMore = items.length < total;
 
   return (
-    <Card className="glass">
-      <CardContent className="pt-5">
-        <div className="glass-subtle mb-4 flex items-center gap-2">
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 font-heading">
           <Activity className="size-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold text-foreground">Activity</h2>
-        </div>
+          Activity
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
 
         {isLoading && (
           <div className="space-y-4">
@@ -155,8 +157,8 @@ export default function AuditLogFeed() {
           </p>
         )}
 
-        {/* Timeline */}
-        <div className="relative">
+        {/* Timeline — scrollable */}
+        <div className="relative max-h-[28rem] overflow-y-auto">
           {/* Timeline line */}
           {items.length > 0 && (
             <div className="absolute bottom-0 left-4 top-0 w-px bg-border" />
