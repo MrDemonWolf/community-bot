@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -80,6 +81,7 @@ export default function SongRequestsPage() {
 
   const [showPlayer, setShowPlayer] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
   const [settingsForm, setSettingsForm] = useState<{
     enabled: boolean;
     maxQueueSize: number;
@@ -145,6 +147,7 @@ export default function SongRequestsPage() {
       onSuccess: () => {
         toast.success("Queue cleared.");
         invalidateAll();
+        setClearConfirm(false);
       },
       onError: (err) => toast.error(err.message),
     })
@@ -190,9 +193,17 @@ export default function SongRequestsPage() {
     );
   }
 
+  const requestCount = requests?.length ?? 0;
+
   return (
     <div>
       <PageHeader title="Song Requests" platforms={["twitch"]}>
+        <Badge className={currentSettings?.enabled
+          ? "border-transparent bg-green-500/15 text-green-700 dark:text-green-400"
+          : "border-transparent bg-muted text-muted-foreground"
+        }>
+          {currentSettings?.enabled ? "Enabled" : "Disabled"}
+        </Badge>
         {canManage && (
           <Button
             variant="outline"
@@ -224,21 +235,21 @@ export default function SongRequestsPage() {
                       alt=""
                       className="h-full w-full object-cover sm:aspect-video"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/50 hidden sm:block" />
+                    <div className="absolute inset-0 hidden bg-gradient-to-r from-transparent to-card/50 sm:block" />
                   </div>
                 )}
                 {/* Song Info */}
                 <div className="flex flex-1 items-center justify-between gap-4 p-4">
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-main/10">
+                      <div className="flex size-6 items-center justify-center rounded-full bg-brand-main/10">
                         <Play className="size-3 text-brand-main" />
                       </div>
                       <span className="text-xs font-medium uppercase tracking-wider text-brand-main">Now Playing</span>
                       {currentSong.source === "playlist" && (
-                        <span className="rounded-full bg-brand-main/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-main">
+                        <Badge className="border-transparent bg-brand-main/10 text-brand-main">
                           Playlist
-                        </span>
+                        </Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -314,7 +325,7 @@ export default function SongRequestsPage() {
           )}
         </Card>
 
-        {/* Collapsible Settings Card */}
+        {/* Settings Card */}
         {canManage && currentSettings && (
           <Card>
             <CardContent className="p-0">
@@ -326,13 +337,6 @@ export default function SongRequestsPage() {
                 <div className="flex items-center gap-2">
                   <Settings className="size-4 text-muted-foreground" />
                   <h2 className="text-sm font-semibold text-foreground">Settings</h2>
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                    currentSettings.enabled
-                      ? "bg-green-500/10 text-green-500"
-                      : "bg-muted text-muted-foreground"
-                  }`}>
-                    {currentSettings.enabled ? "Enabled" : "Disabled"}
-                  </span>
                 </div>
                 {settingsOpen ? (
                   <ChevronUp className="size-4 text-muted-foreground" />
@@ -509,141 +513,250 @@ export default function SongRequestsPage() {
         )}
 
         {/* Queue Actions */}
-        {canManage && (requests?.length ?? 0) > 0 && (
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => skipMutation.mutate()}
-              disabled={skipMutation.isPending}
-            >
-              <SkipForward className="size-3.5" />
-              Skip Current
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => clearMutation.mutate()}
-              disabled={clearMutation.isPending}
-            >
-              <Trash2 className="size-3.5" />
-              Clear All
-            </Button>
-          </div>
+        {canManage && requestCount > 0 && (
+          <Card>
+            <CardContent className="flex flex-wrap items-center gap-2 p-4">
+              <p className="mr-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Actions
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => skipMutation.mutate()}
+                disabled={skipMutation.isPending}
+              >
+                <SkipForward className="size-3.5" />
+                Skip Current
+              </Button>
+              {clearConfirm ? (
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => clearMutation.mutate()}
+                    disabled={clearMutation.isPending}
+                  >
+                    {clearMutation.isPending ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-3.5" />
+                    )}
+                    Confirm Clear
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setClearConfirm(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                  onClick={() => setClearConfirm(true)}
+                >
+                  <Trash2 className="size-3.5" />
+                  Clear Queue
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Queue Table */}
-        {(requests?.length ?? 0) === 0 ? (
+        {requestCount === 0 ? (
           <EmptyState
             icon={Music}
             title="No song requests yet"
             description="Viewers can request songs with !sr <song title> in chat."
           />
         ) : (
-          <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    #
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Title
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Duration
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Source
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Requested By
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Time
-                  </th>
-                  {canManage && (
-                    <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Actions
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {requests?.map((r) => (
-                  <tr
-                    key={r.id}
-                    className="transition-colors hover:bg-surface-raised"
-                  >
-                    <td className="px-4 py-3 text-sm font-medium text-foreground">
-                      {r.position}
-                    </td>
-                    <td className="max-w-xs px-4 py-3 text-sm text-foreground">
-                      <div className="flex items-center gap-2">
-                        {r.youtubeThumbnail && (
-                          <img
-                            src={r.youtubeThumbnail}
-                            alt=""
-                            className="h-8 w-14 shrink-0 rounded object-cover"
-                          />
-                        )}
-                        <span className="line-clamp-1">{r.title}</span>
-                        {r.youtubeVideoId && (
-                          <a
-                            href={`https://youtu.be/${r.youtubeVideoId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0 text-muted-foreground hover:text-foreground"
-                          >
-                            <ExternalLink className="size-3.5" />
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {r.youtubeDuration
-                        ? formatDuration(r.youtubeDuration)
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                          r.source === "playlist"
-                            ? "bg-brand-main/10 text-brand-main"
-                            : "bg-muted text-muted-foreground"
-                        }`}
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              {/* Desktop table */}
+              <div className="hidden md:block">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        #
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Title
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Duration
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Source
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Requested By
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Time
+                      </th>
+                      {canManage && (
+                        <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Actions
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {requests?.map((r) => (
+                      <tr
+                        key={r.id}
+                        className="transition-colors hover:bg-surface-raised"
                       >
-                        {r.source === "playlist" ? "Playlist" : "Viewer"}
+                        <td className="px-4 py-3">
+                          <span className="inline-flex size-7 items-center justify-center rounded-full bg-brand-main/10 text-xs font-bold text-brand-main">
+                            {r.position}
+                          </span>
+                        </td>
+                        <td className="max-w-xs px-4 py-3 text-sm text-foreground">
+                          <div className="flex items-center gap-2">
+                            {r.youtubeThumbnail && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={r.youtubeThumbnail}
+                                alt=""
+                                className="h-8 w-14 shrink-0 rounded object-cover"
+                              />
+                            )}
+                            <span className="line-clamp-1 font-medium">{r.title}</span>
+                            {r.youtubeVideoId && (
+                              <a
+                                href={`https://youtu.be/${r.youtubeVideoId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="shrink-0 text-muted-foreground hover:text-foreground"
+                              >
+                                <ExternalLink className="size-3.5" />
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {r.youtubeDuration
+                            ? formatDuration(r.youtubeDuration)
+                            : "\u2014"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={
+                            r.source === "playlist"
+                              ? "border-transparent bg-brand-main/10 text-brand-main"
+                              : "border-transparent bg-muted text-muted-foreground"
+                          }>
+                            {r.source === "playlist" ? "Playlist" : "Viewer"}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {r.requestedBy}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {new Date(r.createdAt).toLocaleTimeString()}
+                        </td>
+                        {canManage && (
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={() => skipMutation.mutate()}
+                                disabled={skipMutation.isPending}
+                                aria-label={`Skip to ${r.title}`}
+                              >
+                                <SkipForward className="size-3.5 text-muted-foreground" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={() => removeMutation.mutate({ id: r.id })}
+                                disabled={removeMutation.isPending}
+                                aria-label={`Remove ${r.title}`}
+                              >
+                                <Trash2 className="size-3.5 text-destructive" />
+                              </Button>
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile card list */}
+              <div className="divide-y divide-border md:hidden">
+                {requests?.map((r) => (
+                  <div key={r.id} className="p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-main/10 text-sm font-bold text-brand-main">
+                        {r.position}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {r.requestedBy}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {new Date(r.createdAt).toLocaleTimeString()}
-                    </td>
-                    {canManage && (
-                      <td className="px-4 py-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => removeMutation.mutate({ id: r.id })}
-                          disabled={removeMutation.isPending}
-                          aria-label={`Remove ${r.title}`}
-                        >
-                          <Trash2 className="size-3.5 text-red-400" />
-                        </Button>
-                      </td>
-                    )}
-                  </tr>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {r.title}
+                          </p>
+                          {r.youtubeVideoId && (
+                            <a
+                              href={`https://youtu.be/${r.youtubeVideoId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="shrink-0 text-muted-foreground hover:text-foreground"
+                            >
+                              <ExternalLink className="size-3.5" />
+                            </a>
+                          )}
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span>{r.requestedBy}</span>
+                          {r.youtubeDuration && (
+                            <>
+                              <span>&middot;</span>
+                              <span>{formatDuration(r.youtubeDuration)}</span>
+                            </>
+                          )}
+                          <Badge className={
+                            r.source === "playlist"
+                              ? "border-transparent bg-brand-main/10 text-brand-main"
+                              : "border-transparent bg-muted text-muted-foreground"
+                          }>
+                            {r.source === "playlist" ? "Playlist" : "Viewer"}
+                          </Badge>
+                        </div>
+                      </div>
+                      {canManage && (
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            onClick={() => removeMutation.mutate({ id: r.id })}
+                            disabled={removeMutation.isPending}
+                            aria-label={`Remove ${r.title}`}
+                          >
+                            <Trash2 className="size-3.5 text-destructive" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         <p className="text-xs text-muted-foreground">
-          Song requests are managed via chat commands (!sr) or this dashboard. Enable song requests in settings above.
+          {requestCount > 0
+            ? `${requestCount} ${requestCount === 1 ? "song" : "songs"} in queue. `
+            : ""}
+          Song requests are managed via chat commands (!sr) or this dashboard.
         </p>
       </div>
     </div>
