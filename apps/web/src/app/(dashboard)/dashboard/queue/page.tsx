@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -14,6 +15,9 @@ import {
   SkipForward,
   Eraser,
   ListOrdered,
+  Play,
+  Pause,
+  XCircle,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
 import { PageHeader } from "@/components/page-header";
@@ -31,6 +35,27 @@ function relativeTime(date: Date): string {
   const diffDay = Math.floor(diffHr / 24);
   return `${diffDay}d ago`;
 }
+
+const STATUS_CONFIG = {
+  OPEN: {
+    label: "Open",
+    badgeClass: "border-transparent bg-green-500/15 text-green-700 dark:text-green-400",
+    buttonClass: "bg-brand-main text-white hover:bg-brand-main/80",
+    icon: Play,
+  },
+  PAUSED: {
+    label: "Paused",
+    badgeClass: "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-400",
+    buttonClass: "bg-amber-500 text-white hover:bg-amber-500/80",
+    icon: Pause,
+  },
+  CLOSED: {
+    label: "Closed",
+    badgeClass: "border-transparent bg-muted text-muted-foreground",
+    buttonClass: "bg-muted text-muted-foreground hover:bg-muted/80",
+    icon: XCircle,
+  },
+} as const;
 
 export default function QueuePage() {
   const queryClient = useQueryClient();
@@ -128,204 +153,252 @@ export default function QueuePage() {
   }
 
   const status = queueState?.status ?? "CLOSED";
+  const statusConfig = STATUS_CONFIG[status];
+  const entryCount = entries?.length ?? 0;
 
   return (
     <div>
-      <PageHeader title="Viewer Queue" platforms={["twitch"]} />
+      <PageHeader title="Viewer Queue" platforms={["twitch"]}>
+        <Badge className={statusConfig.badgeClass}>
+          {statusConfig.label}
+        </Badge>
+      </PageHeader>
 
       <div className="space-y-4">
         {/* Status Controls */}
         {canManage && (
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="inline-flex overflow-hidden rounded-lg border border-border">
-              <button
-                type="button"
-                onClick={() =>
-                  setStatusMutation.mutate({ status: "OPEN" })
-                }
-                disabled={
-                  status === "OPEN" || setStatusMutation.isPending
-                }
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  status === "OPEN"
-                    ? "bg-green-500/20 text-green-400"
-                    : "text-muted-foreground hover:bg-surface-raised"
-                } disabled:cursor-not-allowed`}
-              >
-                Open
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setStatusMutation.mutate({ status: "PAUSED" })
-                }
-                disabled={
-                  status === "PAUSED" || setStatusMutation.isPending
-                }
-                className={`border-x border-border px-4 py-2 text-sm font-medium transition-colors ${
-                  status === "PAUSED"
-                    ? "bg-amber-500/20 text-amber-400"
-                    : "text-muted-foreground hover:bg-surface-raised"
-                } disabled:cursor-not-allowed`}
-              >
-                Pause
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setStatusMutation.mutate({ status: "CLOSED" })
-                }
-                disabled={
-                  status === "CLOSED" || setStatusMutation.isPending
-                }
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  status === "CLOSED"
-                    ? "bg-muted-foreground/20 text-muted-foreground"
-                    : "text-muted-foreground hover:bg-surface-raised"
-                } disabled:cursor-not-allowed`}
-              >
-                Close
-              </button>
-            </div>
-
-            {/* Action Buttons */}
-            {(entries?.length ?? 0) > 0 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => pickEntryMutation.mutate({ mode: "next" })}
-                  disabled={pickEntryMutation.isPending}
-                >
-                  <SkipForward className="size-3.5" />
-                  Pick Next
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => pickEntryMutation.mutate({ mode: "random" })}
-                  disabled={pickEntryMutation.isPending}
-                >
-                  <Shuffle className="size-3.5" />
-                  Pick Random
-                </Button>
-                {clearConfirm ? (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => clearMutation.mutate()}
-                      disabled={clearMutation.isPending}
-                    >
-                      {clearMutation.isPending ? "..." : "Confirm Clear"}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setClearConfirm(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                    onClick={() => setClearConfirm(true)}
-                  >
-                    <Eraser className="size-3.5" />
-                    Clear Queue
-                  </Button>
-                )}
+          <Card>
+            <CardContent className="space-y-4 p-4">
+              {/* Status Toggle Buttons */}
+              <div>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Queue Status
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.keys(STATUS_CONFIG) as Array<keyof typeof STATUS_CONFIG>).map((key) => {
+                    const config = STATUS_CONFIG[key];
+                    const Icon = config.icon;
+                    const isActive = status === key;
+                    return (
+                      <Button
+                        key={key}
+                        size="sm"
+                        variant={isActive ? "default" : "outline"}
+                        className={isActive ? config.buttonClass : ""}
+                        onClick={() => setStatusMutation.mutate({ status: key })}
+                        disabled={isActive || setStatusMutation.isPending}
+                      >
+                        <Icon className="size-3.5" />
+                        {config.label}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* Action Buttons */}
+              {entryCount > 0 && (
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Actions
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => pickEntryMutation.mutate({ mode: "next" })}
+                      disabled={pickEntryMutation.isPending}
+                    >
+                      <SkipForward className="size-3.5" />
+                      Pick Next
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => pickEntryMutation.mutate({ mode: "random" })}
+                      disabled={pickEntryMutation.isPending}
+                    >
+                      <Shuffle className="size-3.5" />
+                      Pick Random
+                    </Button>
+                    {clearConfirm ? (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => clearMutation.mutate()}
+                          disabled={clearMutation.isPending}
+                        >
+                          {clearMutation.isPending ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <Eraser className="size-3.5" />
+                          )}
+                          Confirm Clear
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setClearConfirm(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                        onClick={() => setClearConfirm(true)}
+                      >
+                        <Eraser className="size-3.5" />
+                        Clear Queue
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         )}
 
         {/* Non-manage status display */}
         {!canManage && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Status:</span>
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                status === "OPEN"
-                  ? "bg-green-500/15 text-green-500"
-                  : status === "PAUSED"
-                    ? "bg-amber-500/15 text-amber-500"
-                    : "bg-muted-foreground/15 text-muted-foreground"
-              }`}
-            >
-              {status === "OPEN"
-                ? "Open"
-                : status === "PAUSED"
-                  ? "Paused"
-                  : "Closed"}
-            </span>
-          </div>
+          <Card>
+            <CardContent className="flex items-center gap-2 p-4">
+              <span className="text-sm text-muted-foreground">Status:</span>
+              <Badge className={statusConfig.badgeClass}>
+                {statusConfig.label}
+              </Badge>
+              <span className="ml-auto text-sm text-muted-foreground">
+                {entryCount} {entryCount === 1 ? "viewer" : "viewers"} in queue
+              </span>
+            </CardContent>
+          </Card>
         )}
 
         {/* Queue Table */}
-        {(entries?.length ?? 0) === 0 ? (
+        {entryCount === 0 ? (
           <EmptyState
             icon={ListOrdered}
-            title="Queue is empty."
+            title="Queue is empty"
             description="Viewers can join the queue when it is open."
           />
         ) : (
-          <div className="glass overflow-x-auto rounded-lg border border-border">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    #
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Username
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Joined
-                  </th>
-                  {canManage && (
-                    <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Actions
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              {/* Desktop table */}
+              <div className="hidden sm:block">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        #
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Username
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Joined
+                      </th>
+                      {canManage && (
+                        <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Actions
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {entries?.map((entry) => (
+                      <tr
+                        key={entry.id}
+                        className="transition-colors hover:bg-surface-raised"
+                      >
+                        <td className="px-4 py-3">
+                          <span className="inline-flex size-7 items-center justify-center rounded-full bg-brand-main/10 text-xs font-bold text-brand-main">
+                            {entry.position}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-foreground">
+                          {entry.twitchUsername}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">
+                          {relativeTime(new Date(entry.createdAt))}
+                        </td>
+                        {canManage && (
+                          <td className="px-4 py-3 text-right">
+                            {deleteConfirmId === entry.id ? (
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="destructive"
+                                  size="xs"
+                                  onClick={() =>
+                                    removeEntryMutation.mutate({
+                                      id: entry.id,
+                                    })
+                                  }
+                                  disabled={removeEntryMutation.isPending}
+                                >
+                                  {removeEntryMutation.isPending
+                                    ? "..."
+                                    : "Confirm"}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="xs"
+                                  onClick={() => setDeleteConfirmId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="icon-xs"
+                                onClick={() => setDeleteConfirmId(entry.id)}
+                                aria-label={`Remove ${entry.twitchUsername}`}
+                              >
+                                <Trash2 className="size-3.5 text-destructive" />
+                              </Button>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile card list */}
+              <div className="divide-y divide-border sm:hidden">
                 {entries?.map((entry) => (
-                  <tr
+                  <div
                     key={entry.id}
-                    className="transition-colors hover:bg-surface-raised"
+                    className="flex items-center gap-3 p-4"
                   >
-                    <td className="px-4 py-3">
-                      <span className="text-sm font-bold text-foreground">
-                        {entry.position}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-brand-main">
-                      {entry.twitchUsername}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {relativeTime(new Date(entry.createdAt))}
-                    </td>
+                    <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-main/10 text-sm font-bold text-brand-main">
+                      {entry.position}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {entry.twitchUsername}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {relativeTime(new Date(entry.createdAt))}
+                      </p>
+                    </div>
                     {canManage && (
-                      <td className="px-4 py-3 text-right">
+                      <>
                         {deleteConfirmId === entry.id ? (
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex shrink-0 items-center gap-1">
                             <Button
                               variant="destructive"
                               size="xs"
                               onClick={() =>
-                                removeEntryMutation.mutate({
-                                  id: entry.id,
-                                })
+                                removeEntryMutation.mutate({ id: entry.id })
                               }
                               disabled={removeEntryMutation.isPending}
                             >
-                              {removeEntryMutation.isPending
-                                ? "..."
-                                : "Confirm"}
+                              {removeEntryMutation.isPending ? "..." : "Remove"}
                             </Button>
                             <Button
                               variant="ghost"
@@ -339,19 +412,26 @@ export default function QueuePage() {
                           <Button
                             variant="ghost"
                             size="icon-xs"
+                            className="shrink-0"
                             onClick={() => setDeleteConfirmId(entry.id)}
                             aria-label={`Remove ${entry.twitchUsername}`}
                           >
-                            <Trash2 className="size-3.5 text-red-400" />
+                            <Trash2 className="size-3.5 text-destructive" />
                           </Button>
                         )}
-                      </td>
+                      </>
                     )}
-                  </tr>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {entryCount > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {entryCount} {entryCount === 1 ? "viewer" : "viewers"} in queue
+          </p>
         )}
       </div>
     </div>
