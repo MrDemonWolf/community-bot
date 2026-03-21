@@ -60,19 +60,26 @@ export default async function Home() {
   const stats = await getPublicStats();
 
   return (
-    <div className="-mt-[1px] flex flex-col">
+    <div className="flex flex-col">
       {/* Hero */}
-      <section className="bg-background px-6 pb-16 pt-20 sm:pb-24">
-        <div className="mx-auto max-w-5xl text-center">
-          <div className="animate-fade-in-up inline-block rounded-full border border-border/50 bg-brand-main/10 px-4 py-1.5 text-xs font-medium tracking-wider text-brand-main">
-            COMMUNITY HUB
+      <section className="relative overflow-hidden bg-background px-6 pb-20 pt-24 sm:pb-32 sm:pt-32">
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-main/5 via-transparent to-transparent" />
+        <div className="relative mx-auto max-w-4xl text-center">
+          <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-brand-main/20 bg-brand-main/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-main">
+            <span className="inline-block size-1.5 rounded-full bg-brand-main" />
+            Community Hub
           </div>
 
-          <h1 className="animate-fade-in-up mt-6 font-heading text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl lg:text-6xl" style={{ animationDelay: "100ms" }}>
+          <h1
+            className="animate-fade-in-up mt-8 font-heading text-4xl font-extrabold leading-[1.1] tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl"
+            style={{ animationDelay: "100ms" }}
+          >
             {channelName ? (
               <>
                 Welcome to{" "}
-                <span className="text-brand-main">{channelName}</span>
+                <span className="bg-gradient-to-r from-brand-main to-brand-main/70 bg-clip-text text-transparent">
+                  {channelName}
+                </span>
                 {"'s Community"}
               </>
             ) : (
@@ -80,16 +87,23 @@ export default async function Home() {
             )}
           </h1>
 
-          <p className="animate-fade-in-up mx-auto mt-4 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg" style={{ animationDelay: "200ms" }}>
-            Your central hub for stream interaction, commands, and community fun.
+          <p
+            className="animate-fade-in-up mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg md:text-xl"
+            style={{ animationDelay: "200ms" }}
+          >
+            Your central hub for stream interaction, commands, and community
+            fun.
           </p>
 
-          <div className="animate-fade-in-up mt-8 flex flex-wrap justify-center gap-3" style={{ animationDelay: "300ms" }}>
+          <div
+            className="animate-fade-in-up mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4"
+            style={{ animationDelay: "300ms" }}
+          >
             {channelUrl && channelName && (
               <Link href={channelUrl as Route}>
                 <Button
                   size="lg"
-                  className="bg-brand-main px-6 text-white hover:bg-brand-main/80"
+                  className="w-full bg-brand-main px-8 font-semibold text-white shadow-lg shadow-brand-main/25 transition-all hover:bg-brand-main/90 hover:shadow-xl hover:shadow-brand-main/30 sm:w-auto"
                 >
                   Visit Channel
                 </Button>
@@ -97,30 +111,37 @@ export default async function Home() {
             )}
             <AuthCtaButton />
             <Link href={"/p/commands" as Route}>
-              <Button size="lg" variant="outline" className="px-6">
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full border-border px-8 font-semibold text-foreground transition-colors hover:border-brand-main/50 hover:text-brand-main sm:w-auto"
+              >
                 View Commands
               </Button>
             </Link>
           </div>
 
           {stats && (
-            <div className="animate-fade-in-up mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6" style={{ animationDelay: "400ms" }}>
-              <div className="glass flex min-w-[140px] flex-col items-center rounded-xl px-6 py-4">
-                <Terminal className="mb-1.5 size-5 text-brand-main" />
-                <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Commands
-                </span>
-                <span className="text-2xl font-bold text-foreground">
+            <div
+              className="animate-fade-in-up mt-16 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6"
+              style={{ animationDelay: "400ms" }}
+            >
+              <div className="glass flex min-w-[160px] flex-col items-center gap-1 rounded-2xl px-8 py-5 transition-shadow hover:shadow-lg">
+                <Terminal className="mb-1 size-5 text-brand-main" />
+                <span className="font-heading text-3xl font-bold text-foreground">
                   {stats.commandCount}
                 </span>
-              </div>
-              <div className="glass flex min-w-[140px] flex-col items-center rounded-xl px-6 py-4">
-                <BookOpen className="mb-1.5 size-5 text-brand-main" />
-                <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Quotes
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Commands
                 </span>
-                <span className="text-2xl font-bold text-foreground">
+              </div>
+              <div className="glass flex min-w-[160px] flex-col items-center gap-1 rounded-2xl px-8 py-5 transition-shadow hover:shadow-lg">
+                <BookOpen className="mb-1 size-5 text-brand-main" />
+                <span className="font-heading text-3xl font-bold text-foreground">
                   {stats.quoteCount}
+                </span>
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Quotes
                 </span>
               </div>
             </div>
@@ -129,23 +150,27 @@ export default async function Home() {
       </section>
 
       {/* Features */}
-      <section className="bg-muted px-6 py-16 sm:py-24">
+      <section className="border-t border-border/50 bg-muted/50 px-6 py-20 sm:py-28">
         <div className="mx-auto max-w-5xl">
-          <h2 className="mb-4 text-center text-2xl font-bold text-foreground sm:text-3xl">
-            Community Features
-          </h2>
-          <p className="mx-auto mb-12 max-w-xl text-center text-muted-foreground">
-            Everything you need to interact with the stream.
-          </p>
-          <div className="grid gap-6 sm:grid-cols-3">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+              Community Features
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+              Everything you need to interact with the stream.
+            </p>
+          </div>
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature, i) => (
               <div
                 key={feature.title}
-                className="animate-fade-in-up glass rounded-xl border border-border p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+                className="animate-fade-in-up glass group rounded-2xl border border-border/50 p-7 transition-all duration-300 hover:border-brand-main/30 hover:shadow-xl"
                 style={{ animationDelay: `${(i + 1) * 100}ms` }}
               >
-                <feature.icon className="mb-3 size-6 text-brand-main" />
-                <h3 className="mb-2 font-semibold text-foreground">
+                <div className="mb-4 inline-flex rounded-xl bg-brand-main/10 p-3 transition-colors group-hover:bg-brand-main/15">
+                  <feature.icon className="size-6 text-brand-main" />
+                </div>
+                <h3 className="mb-2 font-heading text-lg font-semibold text-foreground">
                   {feature.title}
                 </h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">
