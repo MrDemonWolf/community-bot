@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import { db, eq, asc, desc, users, twitchChannels, botChannels, twitchChatCommands, queueStates, queueEntries, songRequestSettings, songRequests, quotes } from "@community-bot/db";
+import { db, eq, asc, desc, count, users, twitchChannels, botChannels, twitchChatCommands, queueStates, queueEntries, songRequestSettings, songRequests, quotes } from "@community-bot/db";
 import { getBroadcasterUserId } from "@/lib/setup";
 import Link from "next/link";
 import type { Route } from "next";
 import type { Metadata } from "next";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Terminal, Trophy, BookOpen, Music, ChevronRight } from "lucide-react";
 import TwitchEmbed from "./twitch-embed";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +54,19 @@ async function getProfileData() {
     where: eq(botChannels.userId, user.id),
     columns: { id: true },
   });
+
+  // Count stats
+  const [commandCount] = botChannel
+    ? await db.select({ value: count() }).from(twitchChatCommands).where(
+        eq(twitchChatCommands.botChannelId, botChannel.id),
+      )
+    : [{ value: 0 }];
+
+  const [quoteCount] = botChannel
+    ? await db.select({ value: count() }).from(quotes).where(
+        eq(quotes.botChannelId, botChannel.id),
+      )
+    : [{ value: 0 }];
 
   const commands = botChannel
     ? await db.query.twitchChatCommands.findMany({
@@ -106,6 +119,8 @@ async function getProfileData() {
     user,
     twitchChannel,
     commands,
+    commandCount: commandCount.value,
+    quoteCount: quoteCount.value,
     queueState,
     queueEntries: queueEntryList,
     songRequestsEnabled: srSettings?.enabled ?? false,
@@ -118,205 +133,271 @@ export default async function PublicPage() {
   const data = await getProfileData();
   if (!data) return notFound();
 
-  const { user, twitchChannel, commands, queueState, queueEntries, songRequestsEnabled, songRequests, quotes } = data;
+  const { user, twitchChannel, commands, commandCount, quoteCount, queueState, queueEntries, songRequestsEnabled, songRequests, quotes } = data;
   const isLive = twitchChannel?.isLive ?? false;
   const twitchUsername = twitchChannel?.username;
 
+  const navItems = [
+    commands.length > 0 && {
+      href: "/p/commands" as const,
+      icon: <Terminal className="h-5 w-5" />,
+      label: "Commands",
+      description: `${commands.length} chat commands available`,
+      color: "text-brand-main",
+      bgColor: "bg-brand-main/10",
+    },
+    quotes.length > 0 && {
+      href: "/p/quotes" as const,
+      icon: <BookOpen className="h-5 w-5" />,
+      label: "Quotes",
+      description: `${quoteCount} memorable quotes`,
+      color: "text-amber-500",
+      bgColor: "bg-amber-500/10",
+    },
+    queueState && queueState.status !== "CLOSED" && {
+      href: "/p/queue" as const,
+      icon: <Trophy className="h-5 w-5" />,
+      label: "Queue",
+      description: queueState.status === "OPEN" ? `${queueEntries.length} in queue` : "Queue paused",
+      color: "text-green-500",
+      bgColor: "bg-green-500/10",
+    },
+    songRequestsEnabled && {
+      href: "/p/song-requests" as const,
+      icon: <Music className="h-5 w-5" />,
+      label: "Song Requests",
+      description: `${songRequests.length} song${songRequests.length !== 1 ? "s" : ""} in queue`,
+      color: "text-brand-twitch",
+      bgColor: "bg-brand-twitch/10",
+    },
+  ].filter(Boolean) as Array<{
+    href: string;
+    icon: React.ReactNode;
+    label: string;
+    description: string;
+    color: string;
+    bgColor: string;
+  }>;
+
   return (
     <>
-      {/* Twitch Embed */}
+      {/* Stream Embed */}
       {twitchUsername && (
         <div className="animate-fade-in-up">
           <TwitchEmbed channel={twitchUsername} isLive={isLive} />
         </div>
       )}
 
-      {/* Stream Status Card */}
+      {/* Stream Status */}
       <div
         className="animate-fade-in-up overflow-hidden rounded-xl border border-border bg-card"
         style={{ animationDelay: "100ms" }}
       >
-        <div className="p-6">
-          <span
-            className={`mb-3 inline-block rounded-md px-2.5 py-1 text-xs font-bold uppercase ${
-              isLive
-                ? "bg-red-500/20 text-red-500 dark:text-red-400"
-                : "border border-border text-muted-foreground"
-            }`}
-          >
-            {isLive ? "Live" : "Offline"}
-          </span>
-          <h2 className="text-lg font-bold text-foreground">
-            <span className="text-brand-main">{user.name}</span> is{" "}
-            {isLive ? "live!" : "offline."}
-          </h2>
-          {twitchChannel?.lastStreamTitle && (
-            <p className="mt-2 text-muted-foreground">
-              {isLive
-                ? twitchChannel.lastStreamTitle
-                : `Check out this ${twitchChannel.lastGameName || "stream"} from ${
-                    twitchChannel.lastStartedAt
-                      ? formatTimeAgo(twitchChannel.lastStartedAt)
-                      : "recently"
-                  }.`}
-            </p>
-          )}
+        <div className="p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="font-heading text-lg font-bold text-foreground">
+                <span className="text-brand-main">{user.name}</span> is{" "}
+                {isLive ? "live!" : "offline."}
+              </h2>
+              {twitchChannel?.lastStreamTitle && (
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {isLive
+                    ? twitchChannel.lastStreamTitle
+                    : `Last stream: ${twitchChannel.lastStreamTitle}`}
+                </p>
+              )}
+              {!isLive && twitchChannel?.lastGameName && (
+                <p className="mt-1 text-xs text-muted-foreground/70">
+                  Playing {twitchChannel.lastGameName}
+                  {twitchChannel.lastStartedAt && (
+                    <> &middot; {formatTimeAgo(twitchChannel.lastStartedAt)}</>
+                  )}
+                </p>
+              )}
+            </div>
+            <span
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
+                isLive
+                  ? "bg-red-500/15 text-red-500 dark:text-red-400"
+                  : "border border-border text-muted-foreground"
+              }`}
+            >
+              {isLive ? "Live" : "Offline"}
+            </span>
+          </div>
           {twitchUsername && (
             <a
               href={`https://twitch.tv/${twitchUsername}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-brand-twitch transition-colors hover:text-brand-twitch/80"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-twitch/10 px-4 py-2 text-sm font-medium text-brand-twitch transition-colors hover:bg-brand-twitch/20"
             >
-              <span>&#9654;</span> Watch{" "}
-              {isLive ? "Stream" : "Latest Stream"}
-              <ExternalLink className="h-3 w-3" />
+              Watch on Twitch
+              <ExternalLink className="h-3.5 w-3.5" />
             </a>
           )}
         </div>
       </div>
 
-      {/* Commands Preview */}
-      {commands.length > 0 && (
+      {/* Quick Stats */}
+      <div
+        className="animate-fade-in-up grid grid-cols-2 gap-3 sm:grid-cols-3"
+        style={{ animationDelay: "150ms" }}
+      >
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="font-heading text-2xl font-bold text-foreground">{commands.length}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Commands</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="font-heading text-2xl font-bold text-foreground">{quoteCount}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Quotes</p>
+        </div>
+        <div className="col-span-2 rounded-xl border border-border bg-card p-4 text-center sm:col-span-1">
+          <p className="font-heading text-2xl font-bold text-foreground">
+            {queueEntries.length}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">In Queue</p>
+        </div>
+      </div>
+
+      {/* Navigation Cards */}
+      {navItems.length > 0 && (
         <div
-          className="animate-fade-in-up rounded-xl border border-border bg-card p-6"
+          className="animate-fade-in-up grid gap-3 sm:grid-cols-2"
           style={{ animationDelay: "200ms" }}
         >
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">Chat Commands</h3>
+          {navItems.map((item) => (
             <Link
-              href={"/p/commands" as Route}
-              className="text-sm text-brand-main transition-colors hover:text-brand-main/70"
+              key={item.href}
+              href={item.href as Route}
+              className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-all hover:border-brand-main/30 hover:shadow-sm"
             >
-              View all
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${item.bgColor} ${item.color}`}>
+                {item.icon}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-foreground">{item.label}</p>
+                <p className="text-xs text-muted-foreground">{item.description}</p>
+              </div>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
             </Link>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {commands.slice(0, 12).map((cmd) => (
-              <span
-                key={cmd.name}
-                className="rounded-md bg-surface-raised px-2.5 py-1 text-sm text-muted-foreground"
-              >
-                !{cmd.name}
-              </span>
-            ))}
-            {commands.length > 12 && (
-              <span className="rounded-md bg-surface-raised px-2.5 py-1 text-sm text-muted-foreground/70">
-                +{commands.length - 12} more
-              </span>
-            )}
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Quotes Preview */}
+      {/* Recent Quotes */}
       {quotes.length > 0 && (
         <div
-          className="animate-fade-in-up rounded-xl border border-border bg-card p-6"
+          className="animate-fade-in-up rounded-xl border border-border bg-card"
           style={{ animationDelay: "250ms" }}
         >
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">Quotes</h3>
+          <div className="flex items-center justify-between border-b border-border px-5 py-3 sm:px-6">
+            <h3 className="font-heading text-sm font-semibold text-foreground">Recent Quotes</h3>
             <Link
               href={"/p/quotes" as Route}
-              className="text-sm text-brand-main transition-colors hover:text-brand-main/70"
+              className="text-xs font-medium text-brand-main transition-colors hover:text-brand-main/70"
             >
               View all
             </Link>
           </div>
-          <ol className="space-y-2">
+          <div className="divide-y divide-border">
             {quotes.map((quote) => (
-              <li
+              <div
                 key={quote.id}
-                className="flex items-center gap-3 rounded-md bg-surface-raised px-3 py-2 text-sm"
+                className="flex items-start gap-3 px-5 py-3 sm:px-6"
               >
-                <span className="font-mono text-xs text-muted-foreground/70">
+                <span className="mt-0.5 shrink-0 font-mono text-xs text-muted-foreground/60">
                   #{quote.quoteNumber}
                 </span>
-                <span className="truncate text-muted-foreground">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   &ldquo;{quote.text}&rdquo;
-                </span>
-              </li>
+                </p>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
       )}
 
-      {/* Queue */}
+      {/* Queue Preview */}
       {queueState && queueState.status !== "CLOSED" && (
         <div
-          className="animate-fade-in-up rounded-xl border border-border bg-card p-6"
+          className="animate-fade-in-up rounded-xl border border-border bg-card"
           style={{ animationDelay: "300ms" }}
         >
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">Viewer Queue</h3>
+          <div className="flex items-center justify-between border-b border-border px-5 py-3 sm:px-6">
+            <h3 className="font-heading text-sm font-semibold text-foreground">Viewer Queue</h3>
             <span
-              className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase ${
+              className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase ${
                 queueState.status === "OPEN"
-                  ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                  : "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                  ? "bg-green-500/15 text-green-600 dark:text-green-400"
+                  : "bg-yellow-500/15 text-yellow-600 dark:text-yellow-400"
               }`}
             >
               {queueState.status === "OPEN" ? "Open" : "Paused"}
             </span>
           </div>
-          {queueEntries.length > 0 ? (
-            <ol className="space-y-2">
-              {queueEntries.slice(0, 10).map((entry) => (
-                <li
-                  key={entry.position}
-                  className="flex items-center gap-3 rounded-md bg-surface-raised px-3 py-2 text-sm"
-                >
-                  <span className="font-mono text-xs text-muted-foreground/70">
-                    #{entry.position}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {entry.twitchUsername}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No one in the queue yet.
-            </p>
-          )}
+          <div className="p-5 sm:p-6">
+            {queueEntries.length > 0 ? (
+              <ol className="space-y-2">
+                {queueEntries.slice(0, 10).map((entry) => (
+                  <li
+                    key={entry.position}
+                    className="flex items-center gap-3 rounded-lg bg-surface-raised px-3 py-2 text-sm"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-main/10 font-mono text-xs font-bold text-brand-main">
+                      {entry.position}
+                    </span>
+                    <span className="text-foreground">
+                      {entry.twitchUsername}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-center text-sm text-muted-foreground">
+                No one in the queue yet. Be the first to join!
+              </p>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Song Requests */}
+      {/* Song Requests Preview */}
       {songRequestsEnabled && songRequests.length > 0 && (
         <div
-          className="animate-fade-in-up rounded-xl border border-border bg-card p-6"
-          style={{ animationDelay: "400ms" }}
+          className="animate-fade-in-up rounded-xl border border-border bg-card"
+          style={{ animationDelay: "350ms" }}
         >
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">Song Requests</h3>
+          <div className="flex items-center justify-between border-b border-border px-5 py-3 sm:px-6">
+            <h3 className="font-heading text-sm font-semibold text-foreground">Now Playing</h3>
             <Link
               href={"/p/song-requests" as Route}
-              className="text-sm text-brand-main transition-colors hover:text-brand-main/70"
+              className="text-xs font-medium text-brand-main transition-colors hover:text-brand-main/70"
             >
               View all
             </Link>
           </div>
-          <ol className="space-y-2">
-            {songRequests.map((song) => (
-              <li
+          <div className="divide-y divide-border">
+            {songRequests.map((song, i) => (
+              <div
                 key={song.id}
-                className="flex items-center gap-3 rounded-md bg-surface-raised px-3 py-2 text-sm"
+                className="flex items-center gap-3 px-5 py-3 sm:px-6"
               >
-                <span className="font-mono text-xs text-muted-foreground/70">
-                  #{song.position}
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-twitch/10 font-mono text-xs font-bold text-brand-twitch">
+                  {song.position}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <span className="truncate text-foreground">{song.title}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    — {song.requestedBy}
-                  </span>
+                  <p className={`truncate text-sm ${i === 0 ? "font-medium text-foreground" : "text-muted-foreground"}`}>
+                    {song.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground/70">
+                    requested by {song.requestedBy}
+                  </p>
                 </div>
-              </li>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
       )}
     </>
