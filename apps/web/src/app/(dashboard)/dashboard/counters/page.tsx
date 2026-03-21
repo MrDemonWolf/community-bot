@@ -4,7 +4,12 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
@@ -35,6 +40,9 @@ export default function CountersPage() {
 
   const [newCounterName, setNewCounterName] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [setValueInputs, setSetValueInputs] = useState<
+    Record<string, string>
+  >({});
 
   function invalidateAll() {
     queryClient.invalidateQueries({ queryKey: listQueryKey });
@@ -100,25 +108,14 @@ export default function CountersPage() {
 
   return (
     <div>
-      <PageHeader title="Counters" platforms={["twitch"]} />
-
-      <p className="mb-4 text-sm text-muted-foreground">
-        Use{" "}
-        <code className="rounded bg-surface-raised px-1.5 py-0.5">
-          {"{counter_name}"}
-        </code>{" "}
-        in command responses
-      </p>
-
-      <div className="space-y-6">
-        {/* Create new counter */}
+      <PageHeader title="Counters" platforms={["twitch"]}>
         {canManage && (
           <div className="flex items-center gap-2">
             <Input
               placeholder="Counter name..."
               value={newCounterName}
               onChange={(e) => setNewCounterName(e.target.value)}
-              className="w-64"
+              className="w-48"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newCounterName.trim()) {
                   createMutation.mutate({ name: newCounterName.trim() });
@@ -134,109 +131,172 @@ export default function CountersPage() {
               }}
               disabled={!newCounterName.trim() || createMutation.isPending}
             >
-              Create
+              <Plus className="size-3.5" />
+              Create Counter
             </Button>
           </div>
         )}
+      </PageHeader>
 
-        {/* Counters grid */}
-        {(counters?.length ?? 0) === 0 ? (
-          <EmptyState
-            icon={Hash}
-            title="No counters yet"
-            description="Create one above to start tracking."
-          />
-        ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {counters?.map((c) => (
-              <Card key={c.id} className="glass group relative">
-                <CardContent className="flex flex-col items-center gap-3 py-6">
-                  {/* Counter name */}
-                  <p className="text-xs font-medium text-muted-foreground">
-                    {c.name}
-                  </p>
+      <p className="mb-6 text-sm text-muted-foreground">
+        Use{" "}
+        <code className="rounded bg-surface-raised px-1.5 py-0.5 text-xs font-medium">
+          {"{counter_name}"}
+        </code>{" "}
+        in command responses to display the counter value.
+      </p>
 
-                  {/* Counter value */}
-                  <p className="text-3xl font-bold text-brand-main">
+      {(counters?.length ?? 0) === 0 ? (
+        <EmptyState
+          icon={Hash}
+          title="No counters yet"
+          description="Create one above to start tracking."
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {counters?.map((c) => (
+            <Card key={c.id} className="glass group relative overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Hash className="size-3.5 text-brand-main/60" />
+                  {c.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Large counter value */}
+                <div className="flex items-center justify-center py-2">
+                  <span className="font-heading text-5xl font-bold text-brand-main">
                     {c.value}
-                  </p>
+                  </span>
+                </div>
 
-                  {/* Increment / Decrement buttons */}
-                  {canManage && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon-xs"
-                        onClick={() =>
-                          updateMutation.mutate({
-                            id: c.id,
-                            value: c.value - 1,
-                          })
-                        }
-                        disabled={updateMutation.isPending}
-                        aria-label={`Decrement ${c.name}`}
-                      >
-                        <Minus className="size-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon-xs"
-                        onClick={() =>
-                          updateMutation.mutate({
-                            id: c.id,
-                            value: c.value + 1,
-                          })
-                        }
-                        disabled={updateMutation.isPending}
-                        aria-label={`Increment ${c.name}`}
-                      >
-                        <Plus className="size-3" />
-                      </Button>
-                    </div>
-                  )}
+                {/* Increment / Decrement buttons */}
+                {canManage && (
+                  <div className="flex items-center justify-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() =>
+                        updateMutation.mutate({
+                          id: c.id,
+                          value: c.value - 1,
+                        })
+                      }
+                      disabled={updateMutation.isPending}
+                      aria-label={`Decrement ${c.name}`}
+                      className="size-10 rounded-full"
+                    >
+                      <Minus className="size-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() =>
+                        updateMutation.mutate({
+                          id: c.id,
+                          value: c.value + 1,
+                        })
+                      }
+                      disabled={updateMutation.isPending}
+                      aria-label={`Increment ${c.name}`}
+                      className="size-10 rounded-full"
+                    >
+                      <Plus className="size-4" />
+                    </Button>
+                  </div>
+                )}
 
-                  {/* Delete button — top-right, visible on hover */}
-                  {canManage && (
-                    <div className="absolute right-2 top-2">
-                      {deleteConfirmId === c.id ? (
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="destructive"
-                            size="xs"
-                            onClick={() =>
-                              deleteMutation.mutate({ id: c.id })
-                            }
-                            disabled={deleteMutation.isPending}
-                          >
-                            {deleteMutation.isPending ? "..." : "Confirm"}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="xs"
-                            onClick={() => setDeleteConfirmId(null)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      ) : (
+                {/* Set value input */}
+                {canManage && (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Set value..."
+                      value={setValueInputs[c.id] ?? ""}
+                      onChange={(e) =>
+                        setSetValueInputs((prev) => ({
+                          ...prev,
+                          [c.id]: e.target.value,
+                        }))
+                      }
+                      className="text-center text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const val = parseInt(setValueInputs[c.id] ?? "");
+                          if (!isNaN(val)) {
+                            updateMutation.mutate({ id: c.id, value: val });
+                            setSetValueInputs((prev) => ({
+                              ...prev,
+                              [c.id]: "",
+                            }));
+                          }
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const val = parseInt(setValueInputs[c.id] ?? "");
+                        if (!isNaN(val)) {
+                          updateMutation.mutate({ id: c.id, value: val });
+                          setSetValueInputs((prev) => ({
+                            ...prev,
+                            [c.id]: "",
+                          }));
+                        }
+                      }}
+                      disabled={
+                        updateMutation.isPending ||
+                        isNaN(parseInt(setValueInputs[c.id] ?? ""))
+                      }
+                    >
+                      Set
+                    </Button>
+                  </div>
+                )}
+
+                {/* Delete button */}
+                {canManage && (
+                  <div className="absolute right-3 top-3">
+                    {deleteConfirmId === c.id ? (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="destructive"
+                          size="xs"
+                          onClick={() =>
+                            deleteMutation.mutate({ id: c.id })
+                          }
+                          disabled={deleteMutation.isPending}
+                        >
+                          {deleteMutation.isPending ? "..." : "Confirm"}
+                        </Button>
                         <Button
                           variant="ghost"
-                          size="icon-xs"
-                          className="text-muted-foreground transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                          onClick={() => setDeleteConfirmId(c.id)}
-                          aria-label={`Delete ${c.name}`}
+                          size="xs"
+                          onClick={() => setDeleteConfirmId(null)}
                         >
-                          <Trash2 className="size-3.5" />
+                          Cancel
                         </Button>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        className="text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                        onClick={() => setDeleteConfirmId(c.id)}
+                        aria-label={`Delete ${c.name}`}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
