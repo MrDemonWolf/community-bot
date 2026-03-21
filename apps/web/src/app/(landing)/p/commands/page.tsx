@@ -4,7 +4,7 @@ import { getBroadcasterUserId } from "@/lib/setup";
 import Link from "next/link";
 import type { Route } from "next";
 import type { Metadata } from "next";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Terminal } from "lucide-react";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 import CommandsTabs from "./commands-tabs";
 
@@ -80,21 +80,29 @@ export default async function CommandsPage() {
 
   return (
     <>
-      <div
-        className="animate-fade-in-up flex items-center gap-3"
-      >
+      {/* Header */}
+      <div className="animate-fade-in-up">
         <Link
           href={"/p" as Route}
-          className="text-muted-foreground transition-colors hover:text-foreground"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to profile
         </Link>
-        <h1 className="text-xl font-bold text-foreground">Chat Commands</h1>
-        <span className="rounded-md bg-surface-raised px-2 py-0.5 text-xs text-muted-foreground">
-          {totalCount}
-        </span>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-main/10">
+            <Terminal className="h-5 w-5 text-brand-main" />
+          </div>
+          <div>
+            <h1 className="font-heading text-xl font-bold text-foreground">Chat Commands</h1>
+            <p className="text-sm text-muted-foreground">
+              {totalCount} command{totalCount !== 1 ? "s" : ""} available
+            </p>
+          </div>
+        </div>
       </div>
 
+      {/* Commands */}
       <div
         className="animate-fade-in-up"
         style={{ animationDelay: "100ms" }}
@@ -105,6 +113,7 @@ export default async function CommandsPage() {
             response: cmd.response,
             accessLevel: cmd.accessLevel,
             aliases: cmd.aliases,
+            cooldown: cmd.cooldownSeconds,
           }))}
           defaultCommands={enabledDefaults}
         />
