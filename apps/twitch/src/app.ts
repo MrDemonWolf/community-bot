@@ -328,34 +328,55 @@ async function main() {
   logger.info("Twitch Bot", `Joining channels: ${channels.join(", ")}`);
 }
 
-main().catch((err) => {
-  const message = err instanceof Error ? err.message : String(err);
+const MAX_RETRIES = 3;
+const RETRY_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
-  // Provide a clear, actionable message based on the failure type
-  if (
-    message.includes("credentials") ||
-    message.includes("token") ||
-    message.includes("TwitchCredential")
-  ) {
-    logger.warn(
-      "Twitch Bot",
-      "Twitch credentials not found. Complete the setup wizard at the web dashboard, then restart the bot."
-    );
-  } else if (
-    message.includes("ECONNREFUSED") ||
-    message.includes("connect")
-  ) {
-    logger.error(
-      "Twitch Bot",
-      "Could not connect to a required service (database or Redis). Check that PostgreSQL and Redis are running.",
-      err
-    );
-  } else {
-    logger.error("Twitch Bot", "Startup failed", err);
+async function startWithRetry() {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      await main();
+      return; // success
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+
+      // Credential errors require user action — don't retry
+      if (
+        message.includes("credentials") ||
+        message.includes("token") ||
+        message.includes("TwitchCredential")
+      ) {
+        logger.warn(
+          "Twitch Bot",
+          "Twitch credentials not found. Complete the setup wizard at the web dashboard, then restart the bot."
+        );
+        logger.info(
+          "Twitch Bot",
+          "API server remains active for healthchecks. Chat features are unavailable until the issue is resolved."
+        );
+        return; // don't retry
+      }
+
+      // Connection errors — retry
+      logger.error(
+        "Twitch Bot",
+        `Startup attempt ${attempt}/${MAX_RETRIES} failed: ${message}`,
+        err
+      );
+
+      if (attempt < MAX_RETRIES) {
+        logger.info(
+          "Twitch Bot",
+          `Retrying in ${RETRY_INTERVAL_MS / 1000} seconds...`
+        );
+        await new Promise((r) => setTimeout(r, RETRY_INTERVAL_MS));
+      }
+    }
   }
 
-  logger.info(
+  logger.error(
     "Twitch Bot",
-    "API server remains active for healthchecks. Chat features are unavailable until the issue is resolved."
+    "All startup attempts exhausted. API server remains active for healthchecks."
   );
-});
+}
+
+startWithRetry();
