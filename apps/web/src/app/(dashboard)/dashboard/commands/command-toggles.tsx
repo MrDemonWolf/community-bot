@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Search } from "lucide-react";
 import { canControlBot } from "@/utils/roles";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -29,7 +31,11 @@ const ACCESS_LEVELS = [
 function formatAccessLevel(level: string): string {
   return level
     .split("_")
-    .map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w.charAt(0) + w.slice(1).toLowerCase()))
+    .map((w) =>
+      w.length <= 3 && w === w.toUpperCase()
+        ? w
+        : w.charAt(0) + w.slice(1).toLowerCase()
+    )
     .join(" ");
 }
 
@@ -43,6 +49,8 @@ export default function CommandToggles() {
   const { data: botStatus, isLoading } = useQuery(
     trpc.botChannel.getStatus.queryOptions()
   );
+
+  const [search, setSearch] = useState("");
 
   const toggleMutation = useMutation(
     trpc.botChannel.updateCommandToggles.mutationOptions({
@@ -101,10 +109,27 @@ export default function CommandToggles() {
   };
 
   const handleAccessChange = (commandName: string, accessLevel: string) => {
-    accessMutation.mutate({ commandName, accessLevel: accessLevel as typeof ACCESS_LEVELS[number] });
+    accessMutation.mutate({
+      commandName,
+      accessLevel: accessLevel as (typeof ACCESS_LEVELS)[number],
+    });
   };
 
-  const pendingToggleCmd = toggleMutation.isPending ? "toggle" : accessMutation.isPending ? accessMutation.variables?.commandName : null;
+  const pendingToggleCmd = toggleMutation.isPending
+    ? "toggle"
+    : accessMutation.isPending
+      ? accessMutation.variables?.commandName
+      : null;
+
+  const filteredDefaults = DEFAULT_COMMANDS.filter((cmd) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      cmd.name.includes(q) ||
+      cmd.description.toLowerCase().includes(q) ||
+      cmd.aliases.some((a) => a.includes(q))
+    );
+  });
 
   return (
     <div className="space-y-4">
@@ -117,95 +142,199 @@ export default function CommandToggles() {
         </p>
       </div>
 
-      <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Command
-              </th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Description
-              </th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Access Level
-              </th>
-              <th className="px-4 py-2.5 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Enabled
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {DEFAULT_COMMANDS.map((cmd) => {
-              const isDisabled = disabledCommands.has(cmd.name);
-              const currentAccess = overrides.get(cmd.name) ?? cmd.accessLevel;
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search default commands..."
+          className="pl-8"
+        />
+      </div>
 
-              return (
-                <tr
-                  key={cmd.name}
-                  className={`transition-colors hover:bg-surface-raised ${isDisabled ? "opacity-50" : ""}`}
-                >
-                  <td className="px-4 py-3 font-mono text-sm text-brand-main">
-                    !{cmd.name}
-                    {cmd.aliases.length > 0 && (
-                      <span className="ml-2 text-xs text-muted-foreground/70">
-                        {cmd.aliases.map((a) => `!${a}`).join(", ")}
+      {/* Desktop Table */}
+      <div className="hidden rounded-lg border border-border bg-card md:block">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Command
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Description
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Access Level
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Enabled
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filteredDefaults.map((cmd) => {
+                const isDisabled = disabledCommands.has(cmd.name);
+                const currentAccess =
+                  overrides.get(cmd.name) ?? cmd.accessLevel;
+                const isRowPending =
+                  pendingToggleCmd === "toggle" ||
+                  pendingToggleCmd === cmd.name;
+
+                return (
+                  <tr
+                    key={cmd.name}
+                    className={`transition-colors hover:bg-surface-raised ${isDisabled ? "opacity-50" : ""}`}
+                  >
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-sm text-brand-main">
+                        !{cmd.name}
                       </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">
-                    {cmd.description}
-                  </td>
-                  <td className="px-4 py-3">
-                    {(() => {
-                      const isRowPending = pendingToggleCmd === "toggle" || pendingToggleCmd === cmd.name;
-                      return canControl ? (
-                      <Select value={currentAccess} onValueChange={(v) => { if (v) handleAccessChange(cmd.name, v); }} disabled={isRowPending || isDisabled}>
-                        <SelectTrigger size="sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ACCESS_LEVELS.map((level) => (
-                            <SelectItem key={level} value={level}>
-                              {formatAccessLevel(level)}
-                              {level === cmd.accessLevel ? " (default)" : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        {formatAccessLevel(currentAccess)}
-                      </span>
-                    );
-                    })()}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    {(() => {
-                      const isRowPending = pendingToggleCmd === "toggle" || pendingToggleCmd === cmd.name;
-                      return canControl ? (
-                      isRowPending ? (
-                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                      {cmd.aliases.length > 0 && (
+                        <span className="ml-2 text-xs text-muted-foreground/70">
+                          {cmd.aliases.map((a) => `!${a}`).join(", ")}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
+                      {cmd.description}
+                    </td>
+                    <td className="px-4 py-3">
+                      {canControl ? (
+                        <Select
+                          value={currentAccess}
+                          onValueChange={(v) => {
+                            if (v) handleAccessChange(cmd.name, v);
+                          }}
+                          disabled={isRowPending || isDisabled}
+                        >
+                          <SelectTrigger size="sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ACCESS_LEVELS.map((level) => (
+                              <SelectItem key={level} value={level}>
+                                {formatAccessLevel(level)}
+                                {level === cmd.accessLevel
+                                  ? " (default)"
+                                  : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       ) : (
-                        <Switch
-                          checked={!isDisabled}
-                          onCheckedChange={() => handleToggle(cmd.name)}
-                          disabled={isRowPending}
-                          aria-label={`Toggle ${cmd.name}`}
-                        />
-                      )
-                    ) : (
-                      <span className={`text-xs ${!isDisabled ? "text-green-500" : "text-muted-foreground"}`}>
-                        {!isDisabled ? "On" : "Off"}
-                      </span>
-                    );
-                    })()}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                        <span className="text-xs text-muted-foreground">
+                          {formatAccessLevel(currentAccess)}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {canControl ? (
+                        isRowPending ? (
+                          <Loader2 className="mx-auto size-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Switch
+                            checked={!isDisabled}
+                            onCheckedChange={() => handleToggle(cmd.name)}
+                            disabled={isRowPending}
+                            aria-label={`Toggle ${cmd.name}`}
+                          />
+                        )
+                      ) : (
+                        <span
+                          className={`text-xs ${!isDisabled ? "text-green-500" : "text-muted-foreground"}`}
+                        >
+                          {!isDisabled ? "On" : "Off"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Mobile Card Layout */}
+      <div className="grid gap-3 md:hidden">
+        {filteredDefaults.map((cmd) => {
+          const isDisabled = disabledCommands.has(cmd.name);
+          const currentAccess = overrides.get(cmd.name) ?? cmd.accessLevel;
+          const isRowPending =
+            pendingToggleCmd === "toggle" || pendingToggleCmd === cmd.name;
+
+          return (
+            <div
+              key={cmd.name}
+              className={`rounded-lg border border-border bg-card p-4 transition-opacity ${isDisabled ? "opacity-50" : ""}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <span className="font-mono text-sm font-medium text-brand-main">
+                    !{cmd.name}
+                  </span>
+                  {cmd.aliases.length > 0 && (
+                    <p className="mt-0.5 text-xs text-muted-foreground/70">
+                      Aliases: {cmd.aliases.map((a) => `!${a}`).join(", ")}
+                    </p>
+                  )}
+                </div>
+                {canControl ? (
+                  isRowPending ? (
+                    <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Switch
+                      checked={!isDisabled}
+                      onCheckedChange={() => handleToggle(cmd.name)}
+                      disabled={isRowPending}
+                      aria-label={`Toggle ${cmd.name}`}
+                    />
+                  )
+                ) : (
+                  <span
+                    className={`text-xs ${!isDisabled ? "text-green-500" : "text-muted-foreground"}`}
+                  >
+                    {!isDisabled ? "On" : "Off"}
+                  </span>
+                )}
+              </div>
+
+              <p className="mt-2 text-sm text-muted-foreground">
+                {cmd.description}
+              </p>
+
+              <div className="mt-3 border-t border-border pt-3">
+                {canControl ? (
+                  <Select
+                    value={currentAccess}
+                    onValueChange={(v) => {
+                      if (v) handleAccessChange(cmd.name, v);
+                    }}
+                    disabled={isRowPending || isDisabled}
+                  >
+                    <SelectTrigger size="sm" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACCESS_LEVELS.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {formatAccessLevel(level)}
+                          {level === cmd.accessLevel ? " (default)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    Access: {formatAccessLevel(currentAccess)}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

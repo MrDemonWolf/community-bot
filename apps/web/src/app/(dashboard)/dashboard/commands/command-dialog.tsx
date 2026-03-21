@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { X, ChevronDown } from "lucide-react";
@@ -182,7 +183,7 @@ export default function CommandDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogPopup className="max-h-[90vh] overflow-y-auto">
+      <DialogPopup className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogCloseButton />
         <DialogTitle>{isEdit ? "Edit Command" : "Create Command"}</DialogTitle>
 
@@ -207,7 +208,7 @@ export default function CommandDialog({
           {/* Response */}
           <div className="space-y-1.5">
             <Label htmlFor="cmd-response">Response</Label>
-            <textarea
+            <Textarea
               id="cmd-response"
               value={response}
               onChange={(e) => setResponse(e.target.value)}
@@ -215,7 +216,6 @@ export default function CommandDialog({
               required
               maxLength={500}
               rows={3}
-              className="dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-xl border bg-transparent px-2.5 py-1.5 text-xs transition-colors focus-visible:ring-1 placeholder:text-muted-foreground outline-none resize-none"
             />
           </div>
 
