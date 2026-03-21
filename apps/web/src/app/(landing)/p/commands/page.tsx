@@ -113,7 +113,7 @@ export default async function CommandsPage() {
             response: cmd.response,
             accessLevel: cmd.accessLevel,
             aliases: cmd.aliases,
-            cooldown: cmd.cooldownSeconds,
+            cooldown: cmd.globalCooldown,
           }))}
           defaultCommands={enabledDefaults}
         />
