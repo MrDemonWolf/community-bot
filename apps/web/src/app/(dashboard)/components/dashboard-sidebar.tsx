@@ -19,12 +19,7 @@ import {
   Hash,
   Timer,
   Shield,
-  Gavel,
-  Flag,
   Music,
-  ListMusic,
-  Gift,
-  BarChart3,
   ChevronRight,
   FileText,
   Clock,
@@ -32,9 +27,14 @@ import {
   Sparkles,
   Bell,
   Coins,
-  FlaskConical,
+  Gift,
+  BarChart3,
+  ListMusic,
+  Gavel,
+  Flag,
   ShieldAlert,
   Download,
+  FlaskConical,
   Type,
 } from "lucide-react";
 
@@ -75,43 +75,59 @@ export function SidebarContent({
   const discordDot = (
     <span
       className={`ml-auto h-2 w-2 rounded-full ${
-        botStatus?.hasDiscordLinked ? "bg-brand-discord" : "bg-muted-foreground/30"
+        botStatus?.hasDiscordLinked
+          ? "bg-brand-discord"
+          : "bg-muted-foreground/30"
       }`}
     />
   );
 
   const groups: NavGroup[] = [
     {
-      key: "chat",
-      label: "Chat",
+      key: "twitch",
+      label: "Twitch",
       links: [
+        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
         { href: "/dashboard/commands", label: "Commands", icon: Terminal },
         { href: "/dashboard/keywords", label: "Keywords", icon: Sparkles },
         { href: "/dashboard/regulars", label: "Regulars", icon: Users },
-        { href: "/dashboard/moderation", label: "Spam Filter", icon: Shield, exact: true },
-        { href: "/dashboard/moderation/automod", label: "AutoMod", icon: ShieldAlert },
         { href: "/dashboard/quotes", label: "Quotes", icon: Quote },
-      ],
-    },
-    {
-      key: "interactive",
-      label: "Interactive",
-      links: [
+        { href: "/dashboard/counters", label: "Counters", icon: Hash },
+        { href: "/dashboard/timers", label: "Timers", icon: Timer },
         { href: "/dashboard/queue", label: "Queue", icon: ListOrdered },
+        { href: "/dashboard/song-requests", label: "Song Requests", icon: Music },
         { href: "/dashboard/channel-points", label: "Channel Points", icon: Coins },
         { href: "/dashboard/alerts", label: "Chat Alerts", icon: Bell },
         { href: "/dashboard/giveaways", label: "Giveaways", icon: Gift },
         { href: "/dashboard/polls", label: "Polls", icon: BarChart3 },
+        { href: "/dashboard/playlists", label: "Playlists", icon: ListMusic },
       ],
     },
     {
-      key: "features",
-      label: "Features",
+      key: "moderation",
+      label: "Moderation",
       links: [
-        { href: "/dashboard/counters", label: "Counters", icon: Hash },
-        { href: "/dashboard/timers", label: "Timers", icon: Timer },
-        { href: "/dashboard/song-requests", label: "Song Requests", icon: Music },
-        { href: "/dashboard/playlists", label: "Playlists", icon: ListMusic },
+        { href: "/dashboard/moderation", label: "Spam Filters", icon: Shield, exact: true },
+        { href: "/dashboard/moderation/automod", label: "AutoMod", icon: ShieldAlert },
+      ],
+    },
+    {
+      key: "discord",
+      label: "Discord",
+      links: [
+        {
+          href: "/dashboard/discord",
+          label: "Settings",
+          icon: MessageSquare,
+          exact: true,
+          suffix: discordDot,
+        },
+        { href: "/dashboard/discord/custom-commands", label: "Commands", icon: Terminal },
+        { href: "/dashboard/discord/moderation", label: "Moderation", icon: Gavel },
+        { href: "/dashboard/discord/roles", label: "Roles", icon: ShieldCheck },
+        { href: "/dashboard/discord/templates", label: "Templates", icon: FileText },
+        { href: "/dashboard/discord/scheduled", label: "Scheduled", icon: Clock },
+        { href: "/dashboard/discord/reports", label: "Reports", icon: Flag },
       ],
     },
     {
@@ -121,49 +137,6 @@ export function SidebarContent({
         { href: "/dashboard/tools/tester", label: "Config Tester", icon: FlaskConical },
         { href: "/dashboard/tools/title-generator", label: "Title Generator", icon: Type },
         { href: "/dashboard/settings", label: "Import / Export", icon: Download },
-      ],
-    },
-    {
-      key: "discord",
-      label: "Discord Bot",
-      links: [
-        {
-          href: "/dashboard/discord",
-          label: "Settings",
-          icon: MessageSquare,
-          exact: true,
-          suffix: discordDot,
-        },
-        {
-          href: "/dashboard/discord/templates",
-          label: "Templates",
-          icon: FileText,
-        },
-        {
-          href: "/dashboard/discord/scheduled",
-          label: "Scheduled",
-          icon: Clock,
-        },
-        {
-          href: "/dashboard/discord/roles",
-          label: "Role Panels",
-          icon: ShieldCheck,
-        },
-        {
-          href: "/dashboard/discord/moderation",
-          label: "Moderation",
-          icon: Gavel,
-        },
-        {
-          href: "/dashboard/discord/custom-commands",
-          label: "Custom Commands",
-          icon: Terminal,
-        },
-        {
-          href: "/dashboard/discord/reports",
-          label: "Reports",
-          icon: Flag,
-        },
       ],
     },
     ...(isBroadcaster
@@ -215,28 +188,12 @@ export function SidebarContent({
 
   return (
     <div className="flex h-full flex-col p-3">
-      {/* Dashboard link (standalone) */}
-      <nav className="mb-1 flex flex-col">
-        <Link
-          href={"/dashboard" as Route}
-          onClick={onNavigate}
-          className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
-            isActive("/dashboard", true)
-              ? "border-l-3 border-brand-main bg-brand-main/10 pl-2.5 font-medium text-brand-main"
-              : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
-          }`}
-        >
-          <LayoutDashboard className="size-4" />
-          Dashboard
-        </Link>
-      </nav>
-
       {/* Grouped sections */}
       <div className="flex flex-1 flex-col gap-1 overflow-y-auto">
         {groups.map((group) => {
           const expanded = isExpanded(group);
           return (
-            <div key={group.key} className="mt-2">
+            <div key={group.key} className="mt-2 first:mt-0">
               <button
                 type="button"
                 onClick={() => toggleGroup(group.key)}
@@ -304,7 +261,7 @@ export default function DashboardSidebar({
   session: typeof authClient.$Infer.Session;
 }) {
   return (
-    <aside className="glass-subtle hidden w-64 shrink-0 overflow-y-auto border-r border-border lg:block">
+    <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-border bg-sidebar dark:bg-brand-accent lg:block">
       <SidebarContent session={session} />
     </aside>
   );

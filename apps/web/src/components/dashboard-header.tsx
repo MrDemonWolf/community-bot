@@ -17,23 +17,29 @@ export default function DashboardHeader({
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="glass-subtle sticky top-0 z-50 flex h-14 items-center justify-between px-4 sm:px-5">
+    <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm sm:px-5">
       <div className="flex items-center gap-3">
         {session && (
           <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger aria-label="Open navigation menu" className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground lg:hidden">
+            <SheetTrigger
+              aria-label="Open navigation menu"
+              className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground lg:hidden"
+            >
               <Menu className="h-5 w-5" />
             </SheetTrigger>
             <SheetContent>
               {/* Drawer header */}
               <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
                 <Logo className="text-lg font-bold tracking-tight" />
-                <SheetClose aria-label="Close navigation menu" className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground">
+                <SheetClose
+                  aria-label="Close navigation menu"
+                  className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-raised hover:text-foreground"
+                >
                   <X className="h-4 w-4" />
                 </SheetClose>
               </div>
               {/* Scrollable nav */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto bg-sidebar dark:bg-brand-accent">
                 <SidebarContent
                   session={session}
                   onNavigate={() => setOpen(false)}
