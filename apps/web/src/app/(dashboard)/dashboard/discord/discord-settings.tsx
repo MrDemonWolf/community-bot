@@ -42,6 +42,7 @@ import {
   VolumeX,
   Shield,
   Link2,
+  Settings2,
 } from "lucide-react";
 import { ChannelSettingsDialog } from "./channel-settings-dialog";
 import { canControlBot } from "@/utils/roles";
@@ -137,7 +138,10 @@ export default function DiscordSettings({
       />
       <LoggingConfigCard canEdit={canEdit} />
       <MonitoredChannelsCard canEdit={canEdit} />
-      <TestNotificationCard hasChannel={!!guild.notificationChannelId} canEdit={canEdit} />
+      <TestNotificationCard
+        hasChannel={!!guild.notificationChannelId}
+        canEdit={canEdit}
+      />
     </div>
   );
 }
@@ -200,22 +204,22 @@ function LinkGuildSection({
   }
 
   return (
-    <Card className="glass">
+    <Card className="glass border-brand-discord/20">
       <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-brand-discord/15">
-          <DiscordIcon className="size-8 text-brand-discord" />
+        <div className="mb-4 flex size-20 items-center justify-center rounded-full bg-brand-discord/15">
+          <DiscordIcon className="size-10 text-brand-discord" />
         </div>
-        <h3 className="font-heading text-lg font-semibold text-foreground">
+        <h3 className="font-heading text-xl font-semibold text-foreground">
           Link your Discord server
         </h3>
-        <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
           Add the bot to your Discord server, then select it from the dropdown
           to link it to your dashboard.
         </p>
 
-        <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row">
+        <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row">
           <a href={authorizeUrl} target="_blank" rel="noopener noreferrer">
-            <Button className="bg-brand-discord hover:bg-brand-discord/80 text-white">
+            <Button className="bg-brand-discord text-white hover:bg-brand-discord/80">
               <ExternalLink className="size-4" />
               Add Bot to Server
             </Button>
@@ -249,7 +253,7 @@ function LinkGuildSection({
             </Select>
           )}
           <Button
-            className="bg-brand-discord hover:bg-brand-discord/80 text-white"
+            className="bg-brand-discord text-white hover:bg-brand-discord/80"
             disabled={
               linkMutation.isPending ||
               !selectedGuildId ||
@@ -292,7 +296,9 @@ function GuildInfoCard({
   const authorizeUrl = `https://discord.com/oauth2/authorize?client_id=${discordAppId}&scope=bot&permissions=${BOT_PERMISSIONS}`;
 
   return (
-    <Card className="glass">
+    <Card className="glass overflow-hidden">
+      {/* Discord-colored accent bar */}
+      <div className="h-1 bg-brand-discord" />
       <CardContent className="pt-6">
         <div className="flex items-center gap-4">
           {guild.icon ? (
@@ -504,7 +510,9 @@ function NotificationConfigCard({
   queryClient: ReturnType<typeof useQueryClient>;
   canEdit: boolean;
 }) {
-  const [channelId, setChannelId] = useState(guild.notificationChannelId ?? "");
+  const [channelId, setChannelId] = useState(
+    guild.notificationChannelId ?? ""
+  );
   const [roleId, setRoleId] = useState(guild.notificationRoleId ?? "");
 
   const {
@@ -583,7 +591,7 @@ function NotificationConfigCard({
             </Button>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="grid gap-6 sm:grid-cols-2">
             {/* Channel Selector */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -591,14 +599,14 @@ function NotificationConfigCard({
                 Notification Channel
               </label>
               {canEdit ? (
-                <div className="flex gap-3">
+                <div className="space-y-2">
                   <Select
                     value={channelId || "_none"}
                     onValueChange={(v) =>
                       setChannelId(v === "_none" ? "" : v ?? "")
                     }
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger>
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent>
@@ -612,25 +620,29 @@ function NotificationConfigCard({
                   </Select>
                   <Button
                     size="sm"
-                    className="bg-brand-discord hover:bg-brand-discord/80 text-white"
+                    className="w-full bg-brand-discord text-white hover:bg-brand-discord/80"
                     disabled={channelMutation.isPending}
                     onClick={() =>
                       channelMutation.mutate({
                         channelId:
-                          channelId && channelId !== "_none" ? channelId : null,
+                          channelId && channelId !== "_none"
+                            ? channelId
+                            : null,
                       })
                     }
                   >
                     {channelMutation.isPending && (
                       <Loader2 className="size-4 animate-spin" />
                     )}
-                    Save
+                    Save Channel
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="rounded-lg border border-border bg-surface-raised/50 px-3 py-2 text-sm text-muted-foreground">
                   {(() => {
-                    const selected = channels?.find((c) => c.id === channelId);
+                    const selected = channels?.find(
+                      (c) => c.id === channelId
+                    );
                     return selected ? `# ${selected.name}` : "Not set";
                   })()}
                 </p>
@@ -644,14 +656,14 @@ function NotificationConfigCard({
                 Notification Role
               </label>
               {canEdit ? (
-                <div className="flex gap-3">
+                <div className="space-y-2">
                   <Select
                     value={roleId || "_none"}
                     onValueChange={(v) =>
                       setRoleId(v === "_none" ? "" : v ?? "")
                     }
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger>
                       <SelectValue placeholder="None" />
                     </SelectTrigger>
                     <SelectContent>
@@ -666,12 +678,14 @@ function NotificationConfigCard({
                   </Select>
                   <Button
                     size="sm"
-                    className="bg-brand-discord hover:bg-brand-discord/80 text-white"
+                    className="w-full bg-brand-discord text-white hover:bg-brand-discord/80"
                     disabled={roleMutation.isPending}
                     onClick={() =>
                       roleMutation.mutate({
                         roleId:
-                          roleId && roleId !== "_none" && roleId !== ""
+                          roleId &&
+                          roleId !== "_none" &&
+                          roleId !== ""
                             ? roleId
                             : null,
                       })
@@ -680,11 +694,11 @@ function NotificationConfigCard({
                     {roleMutation.isPending && (
                       <Loader2 className="size-4 animate-spin" />
                     )}
-                    Save
+                    Save Role
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="rounded-lg border border-border bg-surface-raised/50 px-3 py-2 text-sm text-muted-foreground">
                   {(() => {
                     if (roleId === "everyone") return "@everyone";
                     const matchedRole = roles?.find((r) => r.id === roleId);
@@ -765,45 +779,61 @@ function RoleMappingCard({
           </div>
         ) : canEdit ? (
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">
-                Admin Role
-              </label>
-              <Select value={adminRoleId || "_none"} onValueChange={(v) => setAdminRoleId(v === "_none" ? "" : v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="None (use Discord permissions)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_none">None (use Discord permissions)</SelectItem>
-                  {roles?.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      @{r.name}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  Admin Role
+                </label>
+                <Select
+                  value={adminRoleId || "_none"}
+                  onValueChange={(v) =>
+                    setAdminRoleId(v === "_none" ? "" : v ?? "")
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="None (use Discord permissions)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">
+                      None (use Discord permissions)
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">
-                Mod Role
-              </label>
-              <Select value={modRoleId || "_none"} onValueChange={(v) => setModRoleId(v === "_none" ? "" : v ?? "")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="None (use Discord permissions)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_none">None (use Discord permissions)</SelectItem>
-                  {roles?.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      @{r.name}
+                    {roles?.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        @{r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  Mod Role
+                </label>
+                <Select
+                  value={modRoleId || "_none"}
+                  onValueChange={(v) =>
+                    setModRoleId(v === "_none" ? "" : v ?? "")
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="None (use Discord permissions)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">
+                      None (use Discord permissions)
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    {roles?.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        @{r.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <Button
               size="sm"
-              className="bg-brand-discord hover:bg-brand-discord/80 text-white"
+              className="bg-brand-discord text-white hover:bg-brand-discord/80"
               disabled={mutation.isPending}
               onClick={() =>
                 mutation.mutate({
@@ -819,19 +849,23 @@ function RoleMappingCard({
             </Button>
           </div>
         ) : (
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              Admin Role:{" "}
-              {roles?.find((r) => r.id === adminRoleId)
-                ? `@${roles.find((r) => r.id === adminRoleId)!.name}`
-                : "Not set"}
-            </p>
-            <p>
-              Mod Role:{" "}
-              {roles?.find((r) => r.id === modRoleId)
-                ? `@${roles.find((r) => r.id === modRoleId)!.name}`
-                : "Not set"}
-            </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-border bg-surface-raised/50 px-3 py-2">
+              <p className="text-xs text-muted-foreground">Admin Role</p>
+              <p className="text-sm font-medium text-foreground">
+                {roles?.find((r) => r.id === adminRoleId)
+                  ? `@${roles.find((r) => r.id === adminRoleId)!.name}`
+                  : "Not set"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface-raised/50 px-3 py-2">
+              <p className="text-xs text-muted-foreground">Mod Role</p>
+              <p className="text-sm font-medium text-foreground">
+                {roles?.find((r) => r.id === modRoleId)
+                  ? `@${roles.find((r) => r.id === modRoleId)!.name}`
+                  : "Not set"}
+              </p>
+            </div>
           </div>
         )}
       </CardContent>
@@ -858,7 +892,9 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
     trpc.discordGuild.addMonitoredChannel.mutationOptions({
       onSuccess: (data) => {
         setNewUsername("");
-        void queryClient.invalidateQueries({ queryKey: monitoredChannelsQueryKey });
+        void queryClient.invalidateQueries({
+          queryKey: monitoredChannelsQueryKey,
+        });
         toast.success(`Now monitoring ${data.displayName}.`);
       },
       onError: (err) => {
@@ -871,7 +907,9 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
     trpc.discordGuild.removeMonitoredChannel.mutationOptions({
       onSuccess: () => {
         setDeleteConfirmId(null);
-        void queryClient.invalidateQueries({ queryKey: monitoredChannelsQueryKey });
+        void queryClient.invalidateQueries({
+          queryKey: monitoredChannelsQueryKey,
+        });
         toast.success("Channel removed.");
       },
       onError: (err) => {
@@ -883,16 +921,19 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
   return (
     <Card className="glass">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <CardTitle className="font-heading">Monitored Channels</CardTitle>
+            <CardTitle className="flex items-center gap-2 font-heading">
+              <Radio className="size-5 text-brand-twitch" />
+              Monitored Channels
+            </CardTitle>
             <CardDescription>
               Twitch channels monitored for live stream notifications.
             </CardDescription>
           </div>
           {canEdit && (
             <form
-              className="flex gap-2"
+              className="flex shrink-0 gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
                 const trimmed = newUsername.trim();
@@ -908,7 +949,7 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
               <Button
                 type="submit"
                 size="sm"
-                className="bg-brand-discord hover:bg-brand-discord/80 text-white"
+                className="bg-brand-discord text-white hover:bg-brand-discord/80"
                 disabled={!newUsername.trim() || addMutation.isPending}
               >
                 {addMutation.isPending ? (
@@ -916,7 +957,7 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
                 ) : (
                   <Plus className="size-4" />
                 )}
-                Add Channel
+                Add
               </Button>
             </form>
           )}
@@ -948,42 +989,46 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
               No monitored channels yet
             </p>
             <p className="mt-1 text-xs text-muted-foreground/70">
-              {canEdit ? "Add a Twitch channel above to get started." : "A lead moderator can add channels."}
+              {canEdit
+                ? "Add a Twitch channel above to get started."
+                : "A lead moderator can add channels."}
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="grid gap-3 sm:grid-cols-2">
             {channels.map((ch) => (
               <div
                 key={ch.id}
-                className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
+                className="group flex items-center justify-between rounded-lg border border-border bg-surface-raised/30 px-4 py-3 transition-colors hover:bg-surface-raised/60"
               >
                 <div className="flex items-center gap-3">
                   {ch.profileImageUrl ? (
                     <img
                       src={ch.profileImageUrl}
                       alt={ch.displayName ?? ch.username ?? ""}
-                      className="size-8 rounded-full"
+                      className="size-10 rounded-full ring-2 ring-brand-twitch/20"
                     />
                   ) : (
-                    <span className="flex size-8 items-center justify-center rounded-full bg-brand-twitch text-xs font-bold text-white">
+                    <span className="flex size-10 items-center justify-center rounded-full bg-brand-twitch text-xs font-bold text-white">
                       {(ch.displayName ?? ch.username ?? "?")[0]}
                     </span>
                   )}
                   <div>
-                    <p className="text-sm font-medium text-brand-twitch">
+                    <p className="text-sm font-semibold text-brand-twitch">
                       {ch.displayName ?? ch.username}
                     </p>
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Radio
-                        className={`size-3 ${ch.isLive ? "text-green-500" : "text-muted-foreground"}`}
+                      <span
+                        className={`inline-block size-2 rounded-full ${
+                          ch.isLive ? "bg-green-500" : "bg-muted-foreground/40"
+                        }`}
                       />
                       {ch.isLive ? "Live" : "Offline"}
                       {(ch.notificationChannelId ||
                         ch.notificationRoleId ||
                         ch.useCustomMessage) && (
-                        <span className="ml-1.5 text-brand-discord">
-                          (overrides active)
+                        <span className="ml-1.5 rounded bg-brand-discord/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-discord">
+                          Overrides
                         </span>
                       )}
                     </div>
@@ -1001,7 +1046,9 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
                           variant="destructive"
                           size="sm"
                           disabled={removeMutation.isPending}
-                          onClick={() => removeMutation.mutate({ channelId: ch.id })}
+                          onClick={() =>
+                            removeMutation.mutate({ channelId: ch.id })
+                          }
                         >
                           {removeMutation.isPending && (
                             <Loader2 className="size-4 animate-spin" />
@@ -1019,8 +1066,8 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
                     ) : (
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className="text-red-400 hover:text-red-300"
+                        size="icon-xs"
+                        className="text-red-400 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 hover:text-red-300"
                         onClick={() => setDeleteConfirmId(ch.id)}
                       >
                         <Trash2 className="size-4" />
@@ -1040,10 +1087,9 @@ function MonitoredChannelsCard({ canEdit }: { canEdit: boolean }) {
 function LoggingConfigCard({ canEdit }: { canEdit: boolean }) {
   const queryClient = useQueryClient();
 
-  const {
-    data: logConfig,
-    isLoading: logLoading,
-  } = useQuery(trpc.discordGuild.getLogConfig.queryOptions());
+  const { data: logConfig, isLoading: logLoading } = useQuery(
+    trpc.discordGuild.getLogConfig.queryOptions()
+  );
 
   const {
     data: channels,
@@ -1084,21 +1130,18 @@ function LoggingConfigCard({ canEdit }: { canEdit: boolean }) {
     {
       label: "Moderation Logs",
       description: "Bans, kicks, warns, and mutes",
-      icon: ScrollText,
       value: moderationChannelId,
       onChange: setModerationChannelId,
     },
     {
       label: "Server Logs",
       description: "Channel and role changes",
-      icon: ScrollText,
       value: serverChannelId,
       onChange: setServerChannelId,
     },
     {
       label: "Voice Logs",
       description: "Voice channel joins, leaves, and moves",
-      icon: ScrollText,
       value: voiceChannelId,
       onChange: setVoiceChannelId,
     },
@@ -1138,33 +1181,39 @@ function LoggingConfigCard({ canEdit }: { canEdit: boolean }) {
           </div>
         ) : canEdit ? (
           <div className="space-y-4">
-            {channelOptions.map((opt) => (
-              <div key={opt.label} className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">
-                  {opt.label}
-                </label>
-                <p className="text-xs text-muted-foreground">{opt.description}</p>
-                <Select
-                  value={opt.value || "_none"}
-                  onValueChange={(v) => opt.onChange(v === "_none" ? "" : v ?? "")}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Disabled" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="_none">Disabled</SelectItem>
-                    {channels?.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        # {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+            <div className="grid gap-4 sm:grid-cols-3">
+              {channelOptions.map((opt) => (
+                <div key={opt.label} className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground">
+                    {opt.label}
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    {opt.description}
+                  </p>
+                  <Select
+                    value={opt.value || "_none"}
+                    onValueChange={(v) =>
+                      opt.onChange(v === "_none" ? "" : v ?? "")
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Disabled" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_none">Disabled</SelectItem>
+                      {channels?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          # {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
             <Button
               size="sm"
-              className="bg-brand-discord hover:bg-brand-discord/80 text-white"
+              className="bg-brand-discord text-white hover:bg-brand-discord/80"
               disabled={mutation.isPending}
               onClick={() =>
                 mutation.mutate({
@@ -1181,25 +1230,20 @@ function LoggingConfigCard({ canEdit }: { canEdit: boolean }) {
             </Button>
           </div>
         ) : (
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              Moderation Logs:{" "}
-              {channels?.find((c) => c.id === moderationChannelId)
-                ? `# ${channels.find((c) => c.id === moderationChannelId)!.name}`
-                : "Disabled"}
-            </p>
-            <p>
-              Server Logs:{" "}
-              {channels?.find((c) => c.id === serverChannelId)
-                ? `# ${channels.find((c) => c.id === serverChannelId)!.name}`
-                : "Disabled"}
-            </p>
-            <p>
-              Voice Logs:{" "}
-              {channels?.find((c) => c.id === voiceChannelId)
-                ? `# ${channels.find((c) => c.id === voiceChannelId)!.name}`
-                : "Disabled"}
-            </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {channelOptions.map((opt) => (
+              <div
+                key={opt.label}
+                className="rounded-lg border border-border bg-surface-raised/50 px-3 py-2"
+              >
+                <p className="text-xs text-muted-foreground">{opt.label}</p>
+                <p className="text-sm font-medium text-foreground">
+                  {channels?.find((c) => c.id === opt.value)
+                    ? `# ${channels.find((c) => c.id === opt.value)!.name}`
+                    : "Disabled"}
+                </p>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>
@@ -1207,7 +1251,13 @@ function LoggingConfigCard({ canEdit }: { canEdit: boolean }) {
   );
 }
 
-function TestNotificationCard({ hasChannel, canEdit }: { hasChannel: boolean; canEdit: boolean }) {
+function TestNotificationCard({
+  hasChannel,
+  canEdit,
+}: {
+  hasChannel: boolean;
+  canEdit: boolean;
+}) {
   const mutation = useMutation(
     trpc.discordGuild.testNotification.mutationOptions({
       onSuccess: () => {
@@ -1224,7 +1274,10 @@ function TestNotificationCard({ hasChannel, canEdit }: { hasChannel: boolean; ca
   return (
     <Card className="glass">
       <CardHeader>
-        <CardTitle className="font-heading">Test Notification</CardTitle>
+        <CardTitle className="flex items-center gap-2 font-heading">
+          <Send className="size-5 text-brand-discord" />
+          Test Notification
+        </CardTitle>
         <CardDescription>
           Send a test Twitch live notification to your notification channel. The
           bot will post a fake live embed, update the viewer count after 5
@@ -1237,14 +1290,13 @@ function TestNotificationCard({ hasChannel, canEdit }: { hasChannel: boolean; ca
             Only lead moderators can send test notifications.
           </p>
         ) : !hasChannel ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <AlertCircle className="size-4" />
+          <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-muted-foreground">
+            <AlertCircle className="size-4 text-amber-500" />
             <span>Set a notification channel first to send a test.</span>
           </div>
         ) : (
           <Button
-            variant="outline"
-            className="border-brand-discord/30 text-brand-discord hover:bg-brand-discord/10"
+            className="bg-brand-discord text-white hover:bg-brand-discord/80"
             disabled={mutation.isPending}
             onClick={() => mutation.mutate()}
           >
