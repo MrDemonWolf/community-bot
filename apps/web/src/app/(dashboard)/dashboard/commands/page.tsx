@@ -22,7 +22,7 @@ export default function CommandsPage() {
       <PageHeader title="Commands" platforms={["twitch"]} />
 
       {/* Tab bar */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-muted p-1">
+      <div className="mb-6 flex gap-1 rounded-lg border border-border bg-muted/50 p-1">
         <button
           onClick={() => setActiveTab("custom")}
           className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
