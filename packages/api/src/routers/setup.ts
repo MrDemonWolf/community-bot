@@ -123,6 +123,71 @@ export const setupRouter = router({
     }),
 
   /**
+   * Save branding settings to SystemConfig (key-value pairs).
+   * Called from the setup wizard branding step.
+   */
+  saveBranding: protectedProcedure
+    .input(
+      z.object({
+        brandName: z.string().optional(),
+        copyrightName: z.string().optional(),
+        copyrightUrl: z.string().optional(),
+        socialLinks: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const entries: { key: string; value: string }[] = [];
+
+      if (input.brandName !== undefined && input.brandName.trim() !== "") {
+        entries.push({ key: "brandName", value: input.brandName.trim() });
+      }
+      if (input.copyrightName !== undefined && input.copyrightName.trim() !== "") {
+        entries.push({ key: "copyrightName", value: input.copyrightName.trim() });
+      }
+      if (input.copyrightUrl !== undefined && input.copyrightUrl.trim() !== "") {
+        entries.push({ key: "copyrightUrl", value: input.copyrightUrl.trim() });
+      }
+      if (input.socialLinks !== undefined && input.socialLinks.trim() !== "") {
+        entries.push({ key: "socialLinks", value: input.socialLinks.trim() });
+      }
+
+      if (entries.length > 0) {
+        await db.transaction(async (tx) => {
+          for (const entry of entries) {
+            await tx
+              .insert(systemConfigs)
+              .values({ key: entry.key, value: entry.value })
+              .onConflictDoUpdate({
+                target: systemConfigs.key,
+                set: { value: entry.value },
+              });
+          }
+        });
+      }
+
+      return { success: true };
+    }),
+
+  /**
+   * Get saved branding settings from SystemConfig.
+   */
+  getBranding: protectedProcedure.query(async () => {
+    const keys = ["brandName", "copyrightName", "copyrightUrl", "socialLinks"];
+    const results: Record<string, string> = {};
+
+    for (const key of keys) {
+      const config = await db.query.systemConfigs.findFirst({
+        where: eq(systemConfigs.key, key),
+      });
+      if (config) {
+        results[key] = config.value;
+      }
+    }
+
+    return results;
+  }),
+
+  /**
    * Start Twitch Device Code Flow. Returns a user_code and verification_uri
    * that the user opens in a browser, signs in with the BOT's Twitch account
    * (not the broadcaster), and authorizes the requested scopes.
