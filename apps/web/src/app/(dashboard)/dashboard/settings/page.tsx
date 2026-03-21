@@ -4,54 +4,33 @@ import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
   Download,
   Upload,
   Loader2,
-  User,
   Sparkles,
-  LinkIcon,
+  FileJson,
+  Database,
+  Settings,
+  AlertTriangle,
 } from "lucide-react";
-import Image from "next/image";
-import { getRoleDisplay, canManageCommands } from "@/utils/roles";
+import { canManageCommands } from "@/utils/roles";
 import { PageHeader } from "@/components/page-header";
 import { Switch } from "@/components/ui/switch";
 
-const PROVIDER_INFO: Record<
-  string,
-  {
-    label: string;
-    className: string;
-    bgClassName: string;
-    borderClassName: string;
-  }
-> = {
-  twitch: {
-    label: "Twitch",
-    className: "text-brand-twitch",
-    bgClassName: "bg-brand-twitch/10",
-    borderClassName: "border-l-brand-twitch",
-  },
-  discord: {
-    label: "Discord",
-    className: "text-brand-discord",
-    bgClassName: "bg-brand-discord/10",
-    borderClassName: "border-l-brand-discord",
-  },
-};
-
-type Tab = "account" | "features" | "data";
-
-const TABS: { value: Tab; label: string }[] = [
-  { value: "account", label: "Account" },
-  { value: "features", label: "Features" },
-  { value: "data", label: "Data" },
-];
+type Tab = "general" | "import-export" | "data";
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("account");
+  const [activeTab, setActiveTab] = useState<Tab>("general");
   const { data: profile } = useQuery(trpc.user.getProfile.queryOptions());
   const canManage = canManageCommands(profile?.role ?? "USER");
 
@@ -59,156 +38,56 @@ export default function SettingsPage() {
     <div>
       <PageHeader title="Settings" />
 
-      {/* Pill-style tab bar */}
-      <div className="mb-6 flex gap-1 rounded-full bg-muted p-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab.value
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+      <Tabs>
+        <TabsList>
+          <TabsTrigger
+            active={activeTab === "general"}
+            onClick={() => setActiveTab("general")}
           >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+            <Settings className="mr-1.5 size-3.5" />
+            General
+          </TabsTrigger>
+          <TabsTrigger
+            active={activeTab === "import-export"}
+            onClick={() => setActiveTab("import-export")}
+          >
+            <FileJson className="mr-1.5 size-3.5" />
+            Import / Export
+          </TabsTrigger>
+          <TabsTrigger
+            active={activeTab === "data"}
+            onClick={() => setActiveTab("data")}
+          >
+            <Database className="mr-1.5 size-3.5" />
+            Data
+          </TabsTrigger>
+        </TabsList>
 
-      {activeTab === "account" ? (
-        <AccountTab />
-      ) : activeTab === "features" ? (
-        <FeaturesTab canManage={canManage} />
-      ) : (
-        <DataTab canImport={canManage} />
-      )}
-    </div>
-  );
-}
-
-function AccountTab() {
-  const { data: profile, isLoading } = useQuery(
-    trpc.user.getProfile.queryOptions()
-  );
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!profile) return null;
-
-  const roleInfo = getRoleDisplay(profile.role, profile.isChannelOwner);
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Profile card */}
-      <Card>
-        <CardContent className="flex items-center gap-5 py-6">
-          {profile.image ? (
-            <Image
-              src={profile.image}
-              alt={profile.name}
-              width={64}
-              height={64}
-              className="size-16 rounded-full ring-2 ring-border"
-              unoptimized
-            />
-          ) : (
-            <div className="flex size-16 items-center justify-center rounded-full bg-surface-overlay ring-2 ring-border">
-              <User className="size-8 text-muted-foreground" />
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2.5">
-              <h2 className="truncate text-lg font-bold text-foreground">
-                {profile.name}
-              </h2>
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${roleInfo.className}`}
-              >
-                {roleInfo.label}
-              </span>
-            </div>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Member since{" "}
-              {new Date(profile.createdAt).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Connected accounts */}
-      <div>
-        <div className="mb-3 flex items-center gap-2">
-          <LinkIcon className="size-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold text-foreground">
-            Connected Accounts
-          </h3>
-        </div>
-        {profile.connectedAccounts.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              No connected accounts.
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {profile.connectedAccounts.map((account) => {
-              const info = PROVIDER_INFO[account.provider] ?? {
-                label: account.provider,
-                className: "text-foreground",
-                bgClassName: "bg-muted",
-                borderClassName: "border-l-border",
-              };
-              return (
-                <Card
-                  key={account.provider}
-                  className={`border-l-4 ${info.borderClassName}`}
-                >
-                  <CardContent className="flex items-center gap-3 py-4">
-                    <div
-                      className={`flex size-10 items-center justify-center rounded-lg ${info.bgClassName}`}
-                    >
-                      <span
-                        className={`text-sm font-bold ${info.className}`}
-                      >
-                        {info.label.charAt(0)}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`text-sm font-semibold ${info.className}`}
-                      >
-                        {info.label}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        ID: {account.accountId}
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-medium text-green-500">
-                      Connected
-                    </span>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+        {activeTab === "general" && (
+          <TabsContent>
+            <GeneralTab canManage={canManage} />
+          </TabsContent>
         )}
-      </div>
+        {activeTab === "import-export" && (
+          <TabsContent>
+            <ImportExportTab canImport={canManage} />
+          </TabsContent>
+        )}
+        {activeTab === "data" && (
+          <TabsContent>
+            <DataTab />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }
 
-function FeaturesTab({ canManage }: { canManage: boolean }) {
+/* ------------------------------------------------------------------ */
+/*  General Tab                                                       */
+/* ------------------------------------------------------------------ */
+
+function GeneralTab({ canManage }: { canManage: boolean }) {
   const queryClient = useQueryClient();
   const { data: botStatus, isLoading } = useQuery(
     trpc.botChannel.getStatus.queryOptions()
@@ -239,25 +118,25 @@ function FeaturesTab({ canManage }: { canManage: boolean }) {
   const aiEnabled = botStatus?.botChannel?.aiShoutoutEnabled ?? false;
 
   return (
-    <div className="space-y-3 animate-fade-in">
-      {/* AI-Enhanced Shoutouts */}
+    <div className="space-y-4 animate-fade-in">
       <Card>
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-main/10">
-                <Sparkles className="size-5 text-brand-main" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-foreground">
-                  AI-Enhanced Shoutouts
-                </h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Generate personalized shoutout messages using AI when using
-                  !so. Requires GEMINI_API_KEY to be configured.
-                </p>
-              </div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-main/10">
+              <Sparkles className="size-4 text-brand-main" />
             </div>
+            AI-Enhanced Shoutouts
+          </CardTitle>
+          <CardDescription>
+            Generate personalized shoutout messages using AI when using !so.
+            Requires GEMINI_API_KEY to be configured on the server.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              {aiEnabled ? "Enabled" : "Disabled"}
+            </span>
             {canManage && botStatus?.botChannel?.enabled && (
               <Switch
                 checked={aiEnabled}
@@ -274,10 +153,19 @@ function FeaturesTab({ canManage }: { canManage: boolean }) {
   );
 }
 
-function DataTab({ canImport }: { canImport: boolean }) {
+/* ------------------------------------------------------------------ */
+/*  Import / Export Tab                                                */
+/* ------------------------------------------------------------------ */
+
+function ImportExportTab({ canImport }: { canImport: boolean }) {
   const queryClient = useQueryClient();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const nightbotFileRef = useRef<HTMLInputElement>(null);
+  const communityFileRef = useRef<HTMLInputElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportCommands, setExportCommands] = useState(true);
+  const [exportTimers, setExportTimers] = useState(true);
+  const [exportCounters, setExportCounters] = useState(true);
+  const [exportQuotes, setExportQuotes] = useState(true);
 
   const importMutation = useMutation(
     trpc.user.importStreamElements.mutationOptions({
@@ -293,13 +181,29 @@ function DataTab({ canImport }: { canImport: boolean }) {
     })
   );
 
-  const handleExport = async () => {
+  const handleExportJson = async () => {
     setIsExporting(true);
     try {
       const data = await queryClient.fetchQuery(
         trpc.user.exportData.queryOptions()
       );
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
+
+      // Filter based on checkboxes
+      const filtered: Record<string, unknown> = {};
+      if (exportCommands && "commands" in (data as object))
+        filtered.commands = (data as Record<string, unknown>).commands;
+      if (exportTimers && "timers" in (data as object))
+        filtered.timers = (data as Record<string, unknown>).timers;
+      if (exportCounters && "counters" in (data as object))
+        filtered.counters = (data as Record<string, unknown>).counters;
+      if (exportQuotes && "quotes" in (data as object))
+        filtered.quotes = (data as Record<string, unknown>).quotes;
+
+      // If nothing selected or data doesn't have those keys, export all
+      const exportPayload =
+        Object.keys(filtered).length > 0 ? filtered : data;
+
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
         type: "application/json",
       });
       const url = URL.createObjectURL(blob);
@@ -318,7 +222,10 @@ function DataTab({ canImport }: { canImport: boolean }) {
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileImport = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    ref: React.RefObject<HTMLInputElement | null>
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -326,7 +233,6 @@ function DataTab({ canImport }: { canImport: boolean }) {
       const text = await file.text();
       const parsed = JSON.parse(text);
 
-      // StreamElements export format: array of commands or { commands: [...] }
       const commands = Array.isArray(parsed)
         ? parsed
         : Array.isArray(parsed.commands)
@@ -335,7 +241,7 @@ function DataTab({ canImport }: { canImport: boolean }) {
 
       if (!commands) {
         toast.error(
-          "Invalid StreamElements export format. Expected an array of commands."
+          "Invalid import format. Expected an array of commands or { commands: [...] }."
         );
         return;
       }
@@ -344,72 +250,95 @@ function DataTab({ canImport }: { canImport: boolean }) {
     } catch {
       toast.error("Failed to parse JSON file.");
     } finally {
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+      if (ref.current) {
+        ref.current.value = "";
       }
     }
   };
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Export */}
+      {/* Export Section */}
       <Card>
-        <CardContent className="py-5">
-          <h3 className="text-sm font-semibold text-foreground">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="size-4 text-brand-main" />
             Export Data
-          </h3>
-          <p className="mt-1 mb-4 text-sm text-muted-foreground">
-            Download all your data including profile, commands, and settings as a
-            JSON file.
-          </p>
+          </CardTitle>
+          <CardDescription>
+            Select what to include in the export and download as a JSON file.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: "Commands", checked: exportCommands, set: setExportCommands },
+              { label: "Timers", checked: exportTimers, set: setExportTimers },
+              { label: "Counters", checked: exportCounters, set: setExportCounters },
+              { label: "Quotes", checked: exportQuotes, set: setExportQuotes },
+            ].map((item) => (
+              <label
+                key={item.label}
+                className="flex items-center gap-2 text-sm text-foreground cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={(e) => item.set(e.target.checked)}
+                  className="size-4 rounded border-border accent-brand-main"
+                />
+                {item.label}
+              </label>
+            ))}
+          </div>
           <Button
-            onClick={handleExport}
+            onClick={handleExportJson}
             disabled={isExporting}
             size="sm"
-            variant="outline"
           >
             {isExporting ? (
-              <Loader2 className="size-3.5 animate-spin" />
+              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
             ) : (
-              <Download className="size-3.5" />
+              <Download className="mr-1.5 size-3.5" />
             )}
-            Export Data
+            Export JSON
           </Button>
         </CardContent>
       </Card>
 
-      {/* StreamElements Import */}
+      {/* Import from Nightbot */}
       {canImport && (
         <Card>
-          <CardContent className="py-5">
-            <h3 className="text-sm font-semibold text-foreground">
-              Import from StreamElements
-            </h3>
-            <p className="mt-1 mb-4 text-sm text-muted-foreground">
-              Import commands from a StreamElements JSON export. Commands that
-              already exist will be skipped. Timers and spam filter import will be
-              available when those features are added.
-            </p>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="size-4 text-brand-main" />
+              Import from Nightbot
+            </CardTitle>
+            <CardDescription>
+              Upload a Nightbot JSON export file. Commands that already exist can
+              be skipped or overwritten.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <input
+              ref={nightbotFileRef}
+              type="file"
+              accept=".json"
+              onChange={(e) => handleFileImport(e, nightbotFileRef)}
+              className="hidden"
+              id="nightbot-import"
+            />
             <div className="flex items-center gap-3">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                onChange={handleFileChange}
-                className="hidden"
-                id="se-import"
-              />
               <Button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => nightbotFileRef.current?.click()}
                 disabled={importMutation.isPending}
                 size="sm"
                 variant="outline"
               >
                 {importMutation.isPending ? (
-                  <Loader2 className="size-3.5 animate-spin" />
+                  <Loader2 className="mr-1.5 size-3.5 animate-spin" />
                 ) : (
-                  <Upload className="size-3.5" />
+                  <Upload className="mr-1.5 size-3.5" />
                 )}
                 Choose File
               </Button>
@@ -417,6 +346,146 @@ function DataTab({ canImport }: { canImport: boolean }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Import Community Bot JSON */}
+      {canImport && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileJson className="size-4 text-brand-main" />
+              Import Community Bot JSON
+            </CardTitle>
+            <CardDescription>
+              Re-import a previously exported Community Bot JSON file to restore
+              commands, timers, and other data.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <input
+              ref={communityFileRef}
+              type="file"
+              accept=".json"
+              onChange={(e) => handleFileImport(e, communityFileRef)}
+              className="hidden"
+              id="community-import"
+            />
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => communityFileRef.current?.click()}
+                disabled={importMutation.isPending}
+                size="sm"
+                variant="outline"
+              >
+                {importMutation.isPending ? (
+                  <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                ) : (
+                  <Upload className="mr-1.5 size-3.5" />
+                )}
+                Choose File
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Data Tab                                                          */
+/* ------------------------------------------------------------------ */
+
+function DataTab() {
+  const [isExporting, setIsExporting] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleExportMyData = async () => {
+    setIsExporting(true);
+    try {
+      const data = await queryClient.fetchQuery(
+        trpc.user.exportData.queryOptions()
+      );
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `my-data-export-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Your data has been exported.");
+    } catch {
+      toast.error("Failed to export your data.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      {/* Export My Data */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="size-4 text-muted-foreground" />
+            Export My Data
+          </CardTitle>
+          <CardDescription>
+            Download a copy of all your personal data stored in Community Bot,
+            including your profile, settings, and activity.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleExportMyData}
+            disabled={isExporting}
+            size="sm"
+            variant="outline"
+          >
+            {isExporting ? (
+              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+            ) : (
+              <Download className="mr-1.5 size-3.5" />
+            )}
+            Export My Data
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Delete Account */}
+      <Card className="border-destructive/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="size-4" />
+            Delete Account
+          </CardTitle>
+          <CardDescription>
+            Permanently delete your account and all associated data. This action
+            cannot be undone.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 text-xs text-destructive/80">
+            Warning: This will permanently remove your profile, connected
+            accounts, and all activity history. You will not be able to recover
+            your data after deletion.
+          </p>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() =>
+              toast.error(
+                "Account deletion is not yet implemented. Contact an administrator."
+              )
+            }
+          >
+            Delete Account
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
