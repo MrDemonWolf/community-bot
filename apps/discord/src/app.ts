@@ -31,7 +31,6 @@ client.on(Events.ClientReady, async () => {
       "Error during client ready event",
       err
     );
-    process.exit(1);
   }
 });
 
@@ -122,49 +121,8 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
   if (embed) dispatchLog(client, guildId, "voice", embed);
 });
 
-client.login(env.DISCORD_APPLICATION_BOT_TOKEN);
-
 /**
- * Initialize BullMQ worker to handle background jobs.
- */
-import { Queue } from "bullmq";
-import worker from "./worker/index.js";
-
-const queueName = "community-bot-jobs";
-
-const queue = new Queue(queueName, {
-  connection: env.REDIS_URL
-    ? { url: env.REDIS_URL }
-    : { host: "localhost", port: 6379 },
-});
-
-worker(queue);
-
-/**
- * Verify Prisma connection on startup.
- */
-try {
-  await db.query.users.findFirst();
-  logger.database.connected("Drizzle");
-} catch (err) {
-  logger.database.error("Drizzle", err as Error);
-  process.exit(1);
-}
-
-/**
- * Load Redis connection and connect to Redis Server if failed to connect, throw error.
- */
-redis
-  .on("connect", () => {
-    logger.database.connected("Redis");
-  })
-  .on("error", (err: Error) => {
-    logger.database.error("Redis", err);
-    process.exit(1);
-  });
-
-/**
- * Start API server.
+ * Start API server immediately so health checks respond during startup retries.
  */
 listenWithFallback(api, {
   port: env.PORT,
@@ -173,161 +131,228 @@ listenWithFallback(api, {
 });
 
 /**
- * Initialize EventBus for real-time inter-service communication.
+ * Log Redis connection events — do NOT exit on error; ioredis retries automatically.
  */
-const eventBus = new EventBus(env.REDIS_URL);
+redis
+  .on("connect", () => {
+    logger.database.connected("Redis");
+  })
+  .on("error", (err: Error) => {
+    logger.database.error("Redis", err);
+  });
 
-eventBus.on("stream:online", (payload) => {
-  logger.info(
-    "EventBus",
-    `Stream online: ${payload.username} - ${payload.title}`
-  );
-});
+/**
+ * Main startup: verify DB, login to Discord, init BullMQ, subscribe to EventBus.
+ * Separated from module scope so it can be retried on infrastructure failures.
+ */
+import { Queue } from "bullmq";
+import worker from "./worker/index.js";
 
-eventBus.on("stream:offline", (payload) => {
-  logger.info("EventBus", `Stream offline: ${payload.username}`);
-});
+async function main() {
+  // Verify database connection
+  await db.query.users.findFirst();
+  logger.database.connected("Drizzle");
 
-eventBus.on("bot:status", (payload) => {
-  logger.info(
-    "EventBus",
-    `Bot status: ${payload.service} is ${payload.status}`
-  );
-});
+  // Login to Discord
+  await client.login(env.DISCORD_APPLICATION_BOT_TOKEN);
 
-eventBus.on("discord:settings-updated", async (payload) => {
-  const { clearGuildRoleCache } = await import("./utils/permissions.js");
-  clearGuildRoleCache(payload.guildId);
-  logger.info(
-    "EventBus",
-    `Discord settings updated for guild: ${payload.guildId}`
-  );
-});
+  // Initialize BullMQ worker
+  const queueName = "community-bot-jobs";
+  const queue = new Queue(queueName, {
+    connection: env.REDIS_URL
+      ? { url: env.REDIS_URL }
+      : { host: "localhost", port: 6379 },
+  });
+  worker(queue);
 
-eventBus.on("discord:log-config-updated", async (payload) => {
-  const { clearLogConfigCache } = await import("./utils/eventLogger.js");
-  clearLogConfigCache(payload.guildId);
-  logger.info(
-    "EventBus",
-    `Log config updated for guild: ${payload.guildId}`
-  );
-});
+  // Initialize EventBus for real-time inter-service communication
+  const eventBus = new EventBus(env.REDIS_URL);
 
-eventBus.on("discord:mute", async (payload) => {
-  logger.info(
-    "EventBus",
-    `Discord bot ${payload.muted ? "muted" : "unmuted"} for guild: ${payload.guildId}`
-  );
-});
-
-eventBus.on("discord:test-notification", async (payload) => {
-  try {
-    const { buildLiveEmbed, buildOfflineEmbed } = await import(
-      "./twitch/embeds.js"
+  eventBus.on("stream:online", (payload) => {
+    logger.info(
+      "EventBus",
+      `Stream online: ${payload.username} - ${payload.title}`
     );
-    const { TextChannel } = await import("discord.js");
+  });
 
-    const guild = await db.query.discordGuilds.findFirst({
-      where: eq(discordGuilds.guildId, payload.guildId),
-      with: { twitchChannels: { limit: 1 } },
-    });
+  eventBus.on("stream:offline", (payload) => {
+    logger.info("EventBus", `Stream offline: ${payload.username}`);
+  });
 
-    if (!guild?.notificationChannelId) return;
-
-    const discordChannel = await client.channels.fetch(
-      guild.notificationChannelId
+  eventBus.on("bot:status", (payload) => {
+    logger.info(
+      "EventBus",
+      `Bot status: ${payload.service} is ${payload.status}`
     );
-    if (!discordChannel || !(discordChannel instanceof TextChannel)) return;
+  });
 
-    const channel = guild.twitchChannels[0];
-    const username = channel?.username ?? "teststreamer";
-    const displayName = channel?.displayName ?? username;
-    const profileImageUrl = channel?.profileImageUrl ?? "";
+  eventBus.on("discord:settings-updated", async (payload) => {
+    const { clearGuildRoleCache } = await import("./utils/permissions.js");
+    clearGuildRoleCache(payload.guildId);
+    logger.info(
+      "EventBus",
+      `Discord settings updated for guild: ${payload.guildId}`
+    );
+  });
 
-    const now = new Date();
-    const fakeStream = {
-      id: "test-stream",
-      user_id: channel?.twitchChannelId ?? "0",
-      user_login: username,
-      user_name: displayName,
-      game_name: "Just Chatting",
-      title: "Test Stream - This is a test notification!",
-      viewer_count: 1234,
-      started_at: now.toISOString(),
-      thumbnail_url:
-        "https://static-cdn.jtvnw.net/previews-ttv/live_user_{width}x{height}.jpg",
-      type: "live" as const,
-    };
+  eventBus.on("discord:log-config-updated", async (payload) => {
+    const { clearLogConfigCache } = await import("./utils/eventLogger.js");
+    clearLogConfigCache(payload.guildId);
+    logger.info(
+      "EventBus",
+      `Log config updated for guild: ${payload.guildId}`
+    );
+  });
 
-    const roleMention = guild.notificationRoleId
-      ? guild.notificationRoleId === "everyone"
-        ? "@everyone"
-        : `<@&${guild.notificationRoleId}>`
-      : "";
+  eventBus.on("discord:mute", async (payload) => {
+    logger.info(
+      "EventBus",
+      `Discord bot ${payload.muted ? "muted" : "unmuted"} for guild: ${payload.guildId}`
+    );
+  });
 
-    const liveEmbed = buildLiveEmbed({
-      displayName,
-      username,
-      profileImageUrl,
-      stream: fakeStream,
-      startedAt: now,
-    });
+  eventBus.on("discord:test-notification", async (payload) => {
+    try {
+      const { buildLiveEmbed, buildOfflineEmbed } = await import(
+        "./twitch/embeds.js"
+      );
+      const { TextChannel } = await import("discord.js");
 
-    const message = await discordChannel.send({
-      content: roleMention || undefined,
-      embeds: [liveEmbed],
-    });
+      const guild = await db.query.discordGuilds.findFirst({
+        where: eq(discordGuilds.guildId, payload.guildId),
+        with: { twitchChannels: { limit: 1 } },
+      });
 
-    logger.info("EventBus", `Test notification sent for guild: ${payload.guildId}`);
+      if (!guild?.notificationChannelId) return;
 
-    // Update to viewer count change after 5s, then offline after 10s
-    setTimeout(async () => {
-      try {
-        fakeStream.viewer_count = 5678;
-        const updatedEmbed = buildLiveEmbed({
-          displayName,
-          username,
-          profileImageUrl,
-          stream: fakeStream,
-          startedAt: now,
-        });
-        await message.edit({
-          content: roleMention || undefined,
-          embeds: [updatedEmbed],
-        });
-      } catch (err) {
-        logger.error("EventBus", "Failed to update test notification", err);
+      const discordChannel = await client.channels.fetch(
+        guild.notificationChannelId
+      );
+      if (!discordChannel || !(discordChannel instanceof TextChannel)) return;
+
+      const channel = guild.twitchChannels[0];
+      const username = channel?.username ?? "teststreamer";
+      const displayName = channel?.displayName ?? username;
+      const profileImageUrl = channel?.profileImageUrl ?? "";
+
+      const now = new Date();
+      const fakeStream = {
+        id: "test-stream",
+        user_id: channel?.twitchChannelId ?? "0",
+        user_login: username,
+        user_name: displayName,
+        game_name: "Just Chatting",
+        title: "Test Stream - This is a test notification!",
+        viewer_count: 1234,
+        started_at: now.toISOString(),
+        thumbnail_url:
+          "https://static-cdn.jtvnw.net/previews-ttv/live_user_{width}x{height}.jpg",
+        type: "live" as const,
+      };
+
+      const roleMention = guild.notificationRoleId
+        ? guild.notificationRoleId === "everyone"
+          ? "@everyone"
+          : `<@&${guild.notificationRoleId}>`
+        : "";
+
+      const liveEmbed = buildLiveEmbed({
+        displayName,
+        username,
+        profileImageUrl,
+        stream: fakeStream,
+        startedAt: now,
+      });
+
+      const message = await discordChannel.send({
+        content: roleMention || undefined,
+        embeds: [liveEmbed],
+      });
+
+      logger.info("EventBus", `Test notification sent for guild: ${payload.guildId}`);
+
+      // Update to viewer count change after 5s, then offline after 10s
+      setTimeout(async () => {
+        try {
+          fakeStream.viewer_count = 5678;
+          const updatedEmbed = buildLiveEmbed({
+            displayName,
+            username,
+            profileImageUrl,
+            stream: fakeStream,
+            startedAt: now,
+          });
+          await message.edit({
+            content: roleMention || undefined,
+            embeds: [updatedEmbed],
+          });
+        } catch (err) {
+          logger.error("EventBus", "Failed to update test notification", err);
+        }
+      }, 5000);
+
+      setTimeout(async () => {
+        try {
+          const offlineAt = new Date();
+          const offlineEmbed = buildOfflineEmbed({
+            displayName,
+            username,
+            profileImageUrl,
+            title: fakeStream.title,
+            gameName: fakeStream.game_name,
+            startedAt: now,
+            offlineAt,
+          });
+          await message.edit({
+            content: roleMention || undefined,
+            embeds: [offlineEmbed],
+          });
+        } catch (err) {
+          logger.error("EventBus", "Failed to edit test to offline", err);
+        }
+      }, 10000);
+    } catch (err) {
+      logger.error("EventBus", "Error handling test notification", err);
+    }
+  });
+
+  await eventBus.publish("bot:status", {
+    service: "discord",
+    status: "connecting",
+  });
+}
+
+const MAX_RETRIES = 3;
+const RETRY_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+async function startWithRetry() {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      await main();
+      return; // success
+    } catch (err) {
+      logger.error(
+        "Discord Bot",
+        `Startup attempt ${attempt}/${MAX_RETRIES} failed`,
+        err
+      );
+
+      if (attempt < MAX_RETRIES) {
+        logger.info(
+          "Discord Bot",
+          `Retrying in ${RETRY_INTERVAL_MS / 1000} seconds...`
+        );
+        await new Promise((r) => setTimeout(r, RETRY_INTERVAL_MS));
       }
-    }, 5000);
-
-    setTimeout(async () => {
-      try {
-        const offlineAt = new Date();
-        const offlineEmbed = buildOfflineEmbed({
-          displayName,
-          username,
-          profileImageUrl,
-          title: fakeStream.title,
-          gameName: fakeStream.game_name,
-          startedAt: now,
-          offlineAt,
-        });
-        await message.edit({
-          content: roleMention || undefined,
-          embeds: [offlineEmbed],
-        });
-      } catch (err) {
-        logger.error("EventBus", "Failed to edit test to offline", err);
-      }
-    }, 10000);
-  } catch (err) {
-    logger.error("EventBus", "Error handling test notification", err);
+    }
   }
-});
 
-eventBus.publish("bot:status", {
-  service: "discord",
-  status: "connecting",
-});
+  logger.error(
+    "Discord Bot",
+    "All startup attempts exhausted. API server remains active for health checks."
+  );
+}
+
+startWithRetry();
 
 export default client;
