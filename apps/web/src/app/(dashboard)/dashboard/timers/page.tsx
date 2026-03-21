@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -16,6 +22,8 @@ import {
   Pencil,
   Timer,
   Info,
+  Clock,
+  MessageSquare,
 } from "lucide-react";
 import { canManageCommands } from "@/utils/roles";
 import { PageHeader } from "@/components/page-header";
@@ -194,40 +202,60 @@ export default function TimersPage() {
     <div>
       <PageHeader title="Timers" platforms={["twitch"]}>
         {canManage && !showForm && (
-          <Button size="sm" onClick={() => { setForm(emptyForm); setEditingId(null); setShowForm(true); }}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setForm(emptyForm);
+              setEditingId(null);
+              setShowForm(true);
+            }}
+          >
             <Plus className="size-3.5" />
-            New Timer
+            Create Timer
           </Button>
         )}
       </PageHeader>
 
       {/* Hint text */}
-      <div className="glass-subtle mb-4 flex items-center gap-2 rounded-lg px-3 py-2">
+      <div className="glass-subtle mb-6 flex items-center gap-2 rounded-lg px-3 py-2">
         <Info className="size-4 shrink-0 text-brand-main" />
         <p className="text-xs text-muted-foreground">
-          Timers only fire when stream is live. Chat lines threshold requires a minimum number of chat messages between posts.
+          Timers post recurring messages to chat. Chat lines threshold requires
+          a minimum number of chat messages between posts.
         </p>
       </div>
 
       <div className="space-y-4">
         {/* Create/Edit Form */}
         {showForm && canManage && (
-          <Card>
-            <CardContent className="space-y-3 pt-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+          <Card className="glass border-brand-main/20">
+            <CardHeader>
+              <CardTitle className="font-heading text-base">
+                {editingId ? "Edit Timer" : "New Timer"}
+              </CardTitle>
+              <CardDescription>
+                {editingId
+                  ? "Update the timer configuration below."
+                  : "Configure a new recurring chat message."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
                     Name
                   </label>
                   <Input
                     placeholder="Timer name"
                     value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, name: e.target.value })
+                    }
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">
                       Interval (min)
                     </label>
                     <Input
@@ -243,8 +271,8 @@ export default function TimersPage() {
                       }
                     />
                   </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">
                       Min chat lines
                     </label>
                     <Input
@@ -262,61 +290,153 @@ export default function TimersPage() {
                   </div>
                 </div>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
                   Message
                 </label>
                 <Input
                   placeholder="Timer message (supports variables like {uptime}, {game}, etc.)"
                   value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, message: e.target.value })
+                  }
                 />
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Online Interval (seconds)</label>
-                  <Input type="number" min={30} max={86400} value={form.onlineIntervalSeconds} onChange={(e) => setForm({ ...form, onlineIntervalSeconds: parseInt(e.target.value) || 300 })} />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Online Interval (seconds)
+                  </label>
+                  <Input
+                    type="number"
+                    min={30}
+                    max={86400}
+                    value={form.onlineIntervalSeconds}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        onlineIntervalSeconds:
+                          parseInt(e.target.value) || 300,
+                      })
+                    }
+                  />
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">Offline Interval (seconds, optional)</label>
-                  <Input type="number" min={30} max={86400} placeholder="Same as online" value={form.offlineIntervalSeconds ?? ""} onChange={(e) => setForm({ ...form, offlineIntervalSeconds: e.target.value ? parseInt(e.target.value) : null })} />
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Offline Interval (seconds, optional)
+                  </label>
+                  <Input
+                    type="number"
+                    min={30}
+                    max={86400}
+                    placeholder="Same as online"
+                    value={form.offlineIntervalSeconds ?? ""}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        offlineIntervalSeconds: e.target.value
+                          ? parseInt(e.target.value)
+                          : null,
+                      })
+                    }
+                  />
                 </div>
               </div>
-              <div className="flex flex-wrap gap-4">
+
+              <div className="flex flex-wrap gap-6">
                 <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <Switch checked={form.enabledWhenOnline} onCheckedChange={(v) => setForm({ ...form, enabledWhenOnline: v })} />
+                  <Switch
+                    checked={form.enabledWhenOnline}
+                    onCheckedChange={(v) =>
+                      setForm({ ...form, enabledWhenOnline: v })
+                    }
+                  />
                   Fire when online
                 </label>
                 <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <Switch checked={form.enabledWhenOffline} onCheckedChange={(v) => setForm({ ...form, enabledWhenOffline: v })} />
+                  <Switch
+                    checked={form.enabledWhenOffline}
+                    onCheckedChange={(v) =>
+                      setForm({ ...form, enabledWhenOffline: v })
+                    }
+                  />
                   Fire when offline
                 </label>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Game Filter (fire only for these games)</label>
-                <div className="flex flex-wrap gap-1 mb-1">
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Game Filter (fire only for these games)
+                </label>
+                <div className="mb-1 flex flex-wrap gap-1">
                   {form.gameFilter.map((g, i) => (
-                    <span key={i} className="flex items-center gap-1 rounded-full bg-brand-main/10 px-2 py-0.5 text-xs text-brand-main">
+                    <span
+                      key={i}
+                      className="flex items-center gap-1 rounded-full bg-brand-main/10 px-2 py-0.5 text-xs text-brand-main"
+                    >
                       {g}
-                      <button type="button" onClick={() => removeTag("gameFilter", i)} className="ml-0.5 text-brand-main/60 hover:text-brand-main">×</button>
+                      <button
+                        type="button"
+                        onClick={() => removeTag("gameFilter", i)}
+                        className="ml-0.5 text-brand-main/60 hover:text-brand-main"
+                      >
+                        x
+                      </button>
                     </span>
                   ))}
                 </div>
-                <Input placeholder="Add game name, press Enter" onKeyDown={(e) => { if (e.key === "Enter") { addTag("gameFilter", (e.target as HTMLInputElement).value); (e.target as HTMLInputElement).value = ""; }}} />
+                <Input
+                  placeholder="Add game name, press Enter"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      addTag(
+                        "gameFilter",
+                        (e.target as HTMLInputElement).value
+                      );
+                      (e.target as HTMLInputElement).value = "";
+                    }
+                  }}
+                />
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Title Keywords (fire only when title contains)</label>
-                <div className="flex flex-wrap gap-1 mb-1">
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Title Keywords (fire only when title contains)
+                </label>
+                <div className="mb-1 flex flex-wrap gap-1">
                   {form.titleKeywords.map((kw, i) => (
-                    <span key={i} className="flex items-center gap-1 rounded-full bg-brand-main/10 px-2 py-0.5 text-xs text-brand-main">
+                    <span
+                      key={i}
+                      className="flex items-center gap-1 rounded-full bg-brand-main/10 px-2 py-0.5 text-xs text-brand-main"
+                    >
                       {kw}
-                      <button type="button" onClick={() => removeTag("titleKeywords", i)} className="ml-0.5 text-brand-main/60 hover:text-brand-main">×</button>
+                      <button
+                        type="button"
+                        onClick={() => removeTag("titleKeywords", i)}
+                        className="ml-0.5 text-brand-main/60 hover:text-brand-main"
+                      >
+                        x
+                      </button>
                     </span>
                   ))}
                 </div>
-                <Input placeholder="Add title keyword, press Enter" onKeyDown={(e) => { if (e.key === "Enter") { addTag("titleKeywords", (e.target as HTMLInputElement).value); (e.target as HTMLInputElement).value = ""; }}} />
+                <Input
+                  placeholder="Add title keyword, press Enter"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      addTag(
+                        "titleKeywords",
+                        (e.target as HTMLInputElement).value
+                      );
+                      (e.target as HTMLInputElement).value = "";
+                    }
+                  }}
+                />
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex items-center gap-2 border-t border-border pt-4">
                 <Button
                   size="sm"
                   onClick={handleSubmit}
@@ -345,7 +465,7 @@ export default function TimersPage() {
           </Card>
         )}
 
-        {/* Timers Table */}
+        {/* Timer Cards */}
         {(timers?.length ?? 0) === 0 ? (
           <EmptyState
             icon={Timer}
@@ -353,67 +473,84 @@ export default function TimersPage() {
             description="Timers post recurring messages to chat at set intervals."
           />
         ) : (
-          <div className="glass overflow-x-auto rounded-lg border border-border bg-card">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Name
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Message
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Interval
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Min Chat Lines
-                  </th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Enabled
-                  </th>
-                  {canManage && (
-                    <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Actions
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {timers?.map((t) => (
-                  <tr
-                    key={t.id}
-                    className="transition-colors hover:bg-surface-raised"
-                  >
-                    <td className="px-4 py-3 text-sm font-semibold text-foreground">
-                      {t.name}
-                    </td>
-                    <td className="max-w-xs px-4 py-3 text-sm text-muted-foreground">
-                      <span className="line-clamp-1">{t.message}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-full bg-brand-main/10 px-2 py-0.5 text-xs font-medium text-brand-main">
-                        {t.intervalMinutes}m
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                        {t.chatLines || "0"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {timers?.map((t) => (
+              <Card
+                key={t.id}
+                className={`glass group relative overflow-hidden transition-all ${
+                  t.enabled
+                    ? "border-l-4 border-l-brand-main"
+                    : "border-l-4 border-l-transparent opacity-75"
+                }`}
+              >
+                <CardContent className="py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    {/* Timer info */}
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-heading text-sm font-semibold text-foreground">
+                          {t.name}
+                        </h3>
+                        {t.enabled ? (
+                          <span className="inline-flex items-center rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-medium text-green-500">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            Disabled
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Message preview */}
+                      <div className="flex items-start gap-2">
+                        <MessageSquare className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/60" />
+                        <p className="line-clamp-2 text-sm text-muted-foreground">
+                          {t.message}
+                        </p>
+                      </div>
+
+                      {/* Stats row */}
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="size-3" />
+                          Every {t.intervalMinutes}m
+                        </span>
+                        {t.chatLines > 0 && (
+                          <span className="flex items-center gap-1">
+                            <MessageSquare className="size-3" />
+                            {t.chatLines} chat lines
+                          </span>
+                        )}
+                        {t.enabledWhenOnline && (
+                          <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-green-600 dark:text-green-400">
+                            Online
+                          </span>
+                        )}
+                        {t.enabledWhenOffline && (
+                          <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-600 dark:text-amber-400">
+                            Offline
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex shrink-0 items-center gap-2">
                       <Switch
                         checked={t.enabled}
                         onCheckedChange={() => {
-                          if (canManage) toggleMutation.mutate({ id: t.id });
+                          if (canManage)
+                            toggleMutation.mutate({ id: t.id });
                         }}
                         disabled={!canManage || toggleMutation.isPending}
-                        aria-label={t.enabled ? "Disable timer" : "Enable timer"}
+                        aria-label={
+                          t.enabled ? "Disable timer" : "Enable timer"
+                        }
                       />
-                    </td>
-                    {canManage && (
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1">
+
+                      {canManage && (
+                        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                           <Button
                             variant="ghost"
                             size="icon-xs"
@@ -432,7 +569,9 @@ export default function TimersPage() {
                                 }
                                 disabled={deleteMutation.isPending}
                               >
-                                {deleteMutation.isPending ? "..." : "Confirm"}
+                                {deleteMutation.isPending
+                                  ? "..."
+                                  : "Confirm"}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -453,12 +592,12 @@ export default function TimersPage() {
                             </Button>
                           )}
                         </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </div>
