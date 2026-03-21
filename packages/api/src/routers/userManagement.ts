@@ -239,4 +239,44 @@ export const userManagementRouter = router({
 
       return { success: true };
     }),
+
+  delete: broadcasterProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.userId === ctx.session.user.id) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot delete yourself.",
+        });
+      }
+
+      const target = await db.query.users.findFirst({
+        where: eq(users.id, input.userId),
+      });
+
+      if (!target) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found." });
+      }
+
+      if (target.role === "BROADCASTER") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot delete the broadcaster.",
+        });
+      }
+
+      await db.delete(users).where(eq(users.id, input.userId));
+
+      await logAudit({
+        userId: ctx.session.user.id,
+        userName: ctx.session.user.name,
+        userImage: ctx.session.user.image,
+        action: "user.delete",
+        resourceType: "User",
+        resourceId: input.userId,
+        metadata: { targetName: target.name },
+      });
+
+      return { success: true };
+    }),
 });
