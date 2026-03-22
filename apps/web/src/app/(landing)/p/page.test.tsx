@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   db: {
+    select: vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue([{ value: 0 }]),
+      }),
+    }),
     query: {
       users: { findFirst: vi.fn() },
       twitchChannels: { findFirst: vi.fn() },
