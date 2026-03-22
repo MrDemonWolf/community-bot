@@ -195,6 +195,19 @@ async function main() {
     );
   });
 
+  await eventBus.on("discord:presence-updated", async (payload) => {
+    try {
+      const setActivity = (await import("./worker/jobs/setActivity.js")).default;
+      await setActivity(client);
+      logger.info(
+        "EventBus",
+        `Presence updated for guild: ${payload.guildId}`
+      );
+    } catch (err) {
+      logger.error("EventBus", "Failed to update presence", err);
+    }
+  });
+
   await eventBus.on("discord:log-config-updated", async (payload) => {
     const { clearLogConfigCache } = await import("./utils/eventLogger.js");
     clearLogConfigCache(payload.guildId);
