@@ -14,6 +14,7 @@ COPY packages/events/package.json packages/events/
 COPY packages/server/package.json packages/server/
 COPY packages/api/package.json packages/api/
 COPY packages/auth/package.json packages/auth/
+COPY packages/logging/package.json packages/logging/
 COPY apps/discord/package.json apps/discord/
 COPY apps/twitch/package.json apps/twitch/
 COPY apps/web/package.json apps/web/
@@ -34,6 +35,7 @@ COPY packages/config ./packages/config
 COPY packages/env ./packages/env
 COPY packages/events ./packages/events
 COPY packages/server ./packages/server
+COPY packages/logging ./packages/logging
 COPY apps/discord ./apps/discord
 COPY turbo.json tsconfig.json ./
 
