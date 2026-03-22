@@ -83,6 +83,9 @@ export interface EventMap {
   // Discord custom commands updated
   "discord:commands-updated": { guildId: string };
 
+  // Discord presence updated
+  "discord:presence-updated": { guildId: string };
+
   // Discord log config updated
   "discord:log-config-updated": { guildId: string };
 

@@ -26,6 +26,9 @@ export const discordGuilds = pgTable(
       .$onUpdate(() => new Date()),
     adminRoleId: text("adminRoleId"),
     modRoleId: text("modRoleId"),
+    activityText: text("activityText"),
+    activityType: text("activityType").default("CUSTOM"),
+    activityUrl: text("activityUrl"),
   },
   (t) => [index("DiscordGuild_userId_idx").on(t.userId)]
 );

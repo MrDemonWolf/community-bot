@@ -606,6 +606,69 @@ export const discordGuildRouter = router({
       return { success: true };
     }),
 
+  getPresence: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const guild = await db.query.discordGuilds.findFirst({
+      where: eq(discordGuilds.userId, userId),
+    });
+
+    if (!guild) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No Discord server linked.",
+      });
+    }
+
+    return {
+      activityText: guild.activityText ?? null,
+      activityType: guild.activityType ?? "CUSTOM",
+      activityUrl: guild.activityUrl ?? null,
+    };
+  }),
+
+  setPresence: leadModProcedure
+    .input(
+      z.object({
+        activityText: z.string().max(128).nullable(),
+        activityType: z.enum(["PLAYING", "STREAMING", "LISTENING", "WATCHING", "COMPETING", "CUSTOM"]).default("CUSTOM"),
+        activityUrl: z.string().url().nullable().or(z.literal("")),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      const guild = await db.query.discordGuilds.findFirst({
+        where: eq(discordGuilds.userId, userId),
+      });
+
+      if (!guild) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No Discord server linked.",
+        });
+      }
+
+      const before = {
+        activityText: guild.activityText,
+        activityType: guild.activityType,
+        activityUrl: guild.activityUrl,
+      };
+
+      await db.update(discordGuilds).set({
+        activityText: input.activityText,
+        activityType: input.activityType,
+        activityUrl: input.activityUrl || null,
+      }).where(eq(discordGuilds.id, guild.id));
+
+      await applyMutationEffects(ctx, {
+        event: { name: "discord:presence-updated", payload: { guildId: guild.guildId } },
+        audit: { action: "discord.set-presence", resourceType: "DiscordGuild", resourceId: guild.id, metadata: { before, after: input } },
+      });
+
+      return { success: true };
+    }),
+
   testNotification: leadModProcedure.mutation(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
