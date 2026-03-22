@@ -225,7 +225,7 @@ Everything the bot can do, at a glance.
 | Component | Description |
 |-----------|-------------|
 | Monorepo | Turborepo with shared packages (DB, env, events, auth, API, server) |
-| Database | PostgreSQL via Prisma (shared schema across all services) |
+| Database | PostgreSQL via Drizzle ORM (shared schema across all services) |
 | Redis | EventBus pub/sub + BullMQ job queue |
 | Auth | Discord + Twitch OAuth via better-auth |
 | Role hierarchy | User < Moderator < Lead Moderator < Broadcaster (Admin) |

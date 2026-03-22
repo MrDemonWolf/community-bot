@@ -7,9 +7,8 @@ node_modules
 **/dist/
 *.tsbuildinfo
 
-# Prisma generated client
+# Generated files
 **/src/generated/
-**/prisma/generated/
 
 # Environment variables
 *.env

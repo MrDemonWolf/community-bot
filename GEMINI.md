@@ -65,4 +65,4 @@ This file provides the necessary context for Gemini CLI to understand and intera
 - **UI**: Shadcn UI, Radix UI.
 
 ## Important Note on README Discrepancies
-The root `README.md` might mention **Prisma** or **pnpm**. As of the latest updates, the project has migrated to **Drizzle ORM** and **Bun**. Always prioritize the actual code (`packages/db/drizzle.config.ts` and `bun.lock`) over outdated documentation.
+The root `README.md` might mention **pnpm**. As of the latest updates, the project uses **Drizzle ORM** and **Bun**. Always prioritize the actual code (`packages/db/drizzle.config.ts` and `bun.lock`) over outdated documentation.

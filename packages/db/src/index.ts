@@ -18,15 +18,12 @@ if (!databaseUrl) {
 const client = postgres(databaseUrl);
 export const db = drizzle(client, { schema });
 
-// Backwards-compatible alias
-export const prisma = db;
-
 export default db;
 
 // Re-export everything from schema (tables, enums, relations)
 export * from "./schema/index";
 
-// Re-export model type aliases (drop-in for Prisma-generated types)
+// Re-export model type aliases
 export * from "./types";
 
 // Re-export drizzle utilities consumers need for queries

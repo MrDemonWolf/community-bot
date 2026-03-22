@@ -1,5 +1,5 @@
 /**
- * Model type aliases — drop-in replacements for Prisma-generated types.
+ * Model type aliases derived from Drizzle schema tables.
  * Usage: import type { User, BotChannel } from "@community-bot/db";
  */
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";

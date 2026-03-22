@@ -5,7 +5,7 @@ node_modules
 out
 dist
 *.tgz
-/prisma/generated
+
 
 # code coverage
 coverage
