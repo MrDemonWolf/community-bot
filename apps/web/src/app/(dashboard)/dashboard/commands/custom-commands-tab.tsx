@@ -335,8 +335,7 @@ export default function CustomCommandsTab() {
                       </span>
                       <span
                         className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                          ACCESS_LEVEL_COLORS[cmd.accessLevel] ??
-                          "bg-muted text-muted-foreground"
+                          accessLevelColor(cmd.accessLevel)
                         }`}
                       >
                         {formatAccessLevel(cmd.accessLevel)}
