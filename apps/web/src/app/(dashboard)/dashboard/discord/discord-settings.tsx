@@ -43,6 +43,8 @@ import {
   Shield,
   Link2,
   Settings2,
+  Activity,
+  Gamepad2,
 } from "lucide-react";
 import { ChannelSettingsDialog } from "./channel-settings-dialog";
 import { canControlBot } from "@/utils/roles";
@@ -137,6 +139,7 @@ export default function DiscordSettings({
         canEdit={canEdit}
       />
       <LoggingConfigCard canEdit={canEdit} />
+      <BotPresenceCard canEdit={canEdit} />
       <MonitoredChannelsCard canEdit={canEdit} />
       <TestNotificationCard
         hasChannel={!!guild.notificationChannelId}
@@ -866,6 +869,164 @@ function RoleMappingCard({
                   : "Not set"}
               </p>
             </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+const ACTIVITY_TYPES = [
+  { value: "PLAYING", label: "Playing" },
+  { value: "STREAMING", label: "Streaming" },
+  { value: "LISTENING", label: "Listening to" },
+  { value: "WATCHING", label: "Watching" },
+  { value: "COMPETING", label: "Competing in" },
+  { value: "CUSTOM", label: "Custom" },
+] as const;
+
+function BotPresenceCard({ canEdit }: { canEdit: boolean }) {
+  const { data: presence, isLoading } = useQuery(
+    trpc.discordGuild.getPresence.queryOptions()
+  );
+
+  const [activityText, setActivityText] = useState("");
+  const [activityType, setActivityType] = useState("CUSTOM");
+  const [activityUrl, setActivityUrl] = useState("");
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    if (presence && !initialized) {
+      setActivityText(presence.activityText ?? "");
+      setActivityType(presence.activityType ?? "CUSTOM");
+      setActivityUrl(presence.activityUrl ?? "");
+      setInitialized(true);
+    }
+  }, [presence, initialized]);
+
+  const mutation = useMutation(
+    trpc.discordGuild.setPresence.mutationOptions({
+      onSuccess: () => {
+        toast.success("Bot presence updated.");
+      },
+      onError: (err) => {
+        toast.error(err.message);
+      },
+    })
+  );
+
+  return (
+    <Card className="glass">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 font-heading">
+          <Gamepad2 className="size-5 text-brand-discord" />
+          Bot Presence
+        </CardTitle>
+        <CardDescription>
+          Configure the bot&apos;s activity status shown in Discord (e.g.
+          &quot;Watching over the Wolf Lair&quot;).
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Activity Type */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Activity className="size-4 text-brand-discord/70" />
+                  Activity Type
+                </label>
+                {canEdit ? (
+                  <Select
+                    value={activityType}
+                    onValueChange={(v) => setActivityType(v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACTIVITY_TYPES.map((t) => (
+                        <SelectItem key={t.value} value={t.value}>
+                          {t.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="rounded-lg border border-border bg-surface-raised/50 px-3 py-2 text-sm text-muted-foreground">
+                    {ACTIVITY_TYPES.find((t) => t.value === activityType)
+                      ?.label ?? "Custom"}
+                  </p>
+                )}
+              </div>
+
+              {/* Activity Text */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <Settings2 className="size-4 text-brand-discord/70" />
+                  Activity Text
+                </label>
+                {canEdit ? (
+                  <Input
+                    value={activityText}
+                    onChange={(e) => setActivityText(e.target.value)}
+                    placeholder="e.g. Watching over the Wolf Lair"
+                    maxLength={128}
+                  />
+                ) : (
+                  <p className="rounded-lg border border-border bg-surface-raised/50 px-3 py-2 text-sm text-muted-foreground">
+                    {activityText || "Not set"}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Stream URL - only shown when type is STREAMING */}
+            {activityType === "STREAMING" && (
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <ExternalLink className="size-4 text-brand-discord/70" />
+                  Stream URL
+                </label>
+                {canEdit ? (
+                  <Input
+                    value={activityUrl}
+                    onChange={(e) => setActivityUrl(e.target.value)}
+                    placeholder="https://twitch.tv/username"
+                    type="url"
+                  />
+                ) : (
+                  <p className="rounded-lg border border-border bg-surface-raised/50 px-3 py-2 text-sm text-muted-foreground">
+                    {activityUrl || "Not set"}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {canEdit && (
+              <Button
+                className="w-full bg-brand-discord text-white hover:bg-brand-discord/80 sm:w-auto"
+                disabled={mutation.isPending}
+                onClick={() =>
+                  mutation.mutate({
+                    activityText: activityText || null,
+                    activityType: activityType as "PLAYING" | "STREAMING" | "LISTENING" | "WATCHING" | "COMPETING" | "CUSTOM",
+                    activityUrl: activityUrl || null,
+                  })
+                }
+              >
+                {mutation.isPending && (
+                  <Loader2 className="size-4 animate-spin" />
+                )}
+                Save Presence
+              </Button>
+            )}
           </div>
         )}
       </CardContent>
