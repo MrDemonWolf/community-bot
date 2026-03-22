@@ -13,9 +13,9 @@ const mocks = vi.hoisted(() => {
     return p;
   };
   return {
+    getBotChannelId: vi.fn(),
     db: {
       query: {
-        botChannels: { findFirst: vi.fn() },
         twitchCounters: { findFirst: vi.fn() },
       },
       insert: vi.fn(() => chainProxy()),
@@ -25,6 +25,10 @@ const mocks = vi.hoisted(() => {
     },
   };
 });
+
+vi.mock("../services/broadcasterCache.js", () => ({
+  getBotChannelId: mocks.getBotChannelId,
+}));
 
 vi.mock("@community-bot/db", () => ({
   db: mocks.db,
@@ -75,20 +79,20 @@ describe("counter command", () => {
   });
 
   it("shows usage when no name given", async () => {
-    mocks.db.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+    mocks.getBotChannelId.mockReturnValue("bc-1");
     await counter.execute(client, "#channel", "user", [], makeMockMsg());
     expect(say).toHaveBeenCalledWith("#channel", expect.stringContaining("!counter"));
   });
 
   it("says not configured when no bot channel", async () => {
-    mocks.db.query.botChannels.findFirst.mockResolvedValue(null);
+    mocks.getBotChannelId.mockReturnValue(undefined);
     await counter.execute(client, "#channel", "user", ["deaths"], makeMockMsg());
     expect(say).toHaveBeenCalledWith("#channel", expect.stringContaining("not configured"));
   });
 
   describe("with bot channel", () => {
     beforeEach(() => {
-      mocks.db.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+      mocks.getBotChannelId.mockReturnValue("bc-1");
     });
 
     it("creates a counter", async () => {
