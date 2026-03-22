@@ -21,6 +21,7 @@ import {
 import { canManageCommands } from "@/utils/roles";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { ACCESS_LEVELS } from "@/lib/format";
 
 interface KeywordFormState {
   name: string;
@@ -49,8 +50,6 @@ const emptyForm: KeywordFormState = {
   stopProcessing: false,
   caseSensitive: false,
 };
-
-const ACCESS_LEVELS = ["EVERYONE", "SUBSCRIBER", "REGULAR", "VIP", "MODERATOR", "LEAD_MODERATOR", "BROADCASTER"] as const;
 
 export default function KeywordsPage() {
   const queryClient = useQueryClient();
