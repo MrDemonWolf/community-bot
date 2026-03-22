@@ -123,7 +123,7 @@ describe("PublicPage", () => {
       const html = JSON.stringify(result);
       expect(html).toContain("TestStreamer");
       expect(html).toContain("Live");
-      expect(html).toContain("hello");
+      expect(html).toContain("2 chat commands available");
       expect(html).toContain("player1");
       expect(html).toContain("Song A");
       expect(html).toContain("Famous quote");
