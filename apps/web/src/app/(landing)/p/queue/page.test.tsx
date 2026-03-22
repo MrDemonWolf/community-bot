@@ -70,7 +70,7 @@ describe("QueuePage", () => {
 
       const result = await QueuePage();
       const html = JSON.stringify(result);
-      expect(html).toContain("No one in the queue yet");
+      expect(html).toContain("Queue is empty");
     });
 
     it("renders closed queue message", async () => {
@@ -80,7 +80,7 @@ describe("QueuePage", () => {
 
       const result = await QueuePage();
       const html = JSON.stringify(result);
-      expect(html).toContain("The queue is currently closed");
+      expect(html).toContain("Queue is closed");
     });
 
     it("calls notFound when no broadcaster", async () => {

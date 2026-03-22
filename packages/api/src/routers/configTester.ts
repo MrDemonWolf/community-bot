@@ -8,6 +8,7 @@ import { db, eq, and, spamFilters, keywords, twitchChatCommands } from "@communi
 import { protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { getUserBotChannel } from "../utils/botChannel";
+import { accessLevelEnum } from "../schemas/common";
 
 const accessLevelRank: Record<string, number> = {
   EVERYONE: 0,
@@ -86,15 +87,7 @@ export const configTesterRouter = router({
       z.object({
         message: z.string().min(1).max(500),
         username: z.string().min(1).max(100),
-        accessLevel: z.enum([
-          "EVERYONE",
-          "SUBSCRIBER",
-          "REGULAR",
-          "VIP",
-          "MODERATOR",
-          "LEAD_MODERATOR",
-          "BROADCASTER",
-        ]),
+        accessLevel: accessLevelEnum,
         isLive: z.boolean(),
         dryRun: z.boolean().default(true),
       })

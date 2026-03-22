@@ -6,10 +6,11 @@ import {
   eq,
   and,
 } from "@community-bot/db";
-import { botChannels, twitchChatCommands } from "@community-bot/db";
+import { twitchChatCommands } from "@community-bot/db";
 import { TwitchCommand } from "../types/command.js";
 import { commandCache } from "../services/commandCache.js";
 import { commands } from "./index.js";
+import { getBotChannelId } from "../services/broadcasterCache.js";
 
 // Names that cannot be used for DB commands
 function isBuiltInName(name: string): boolean {
@@ -18,18 +19,6 @@ function isBuiltInName(name: string): boolean {
 
 function stripBang(name: string): string {
   return name.startsWith("!") ? name.slice(1) : name;
-}
-
-function stripHash(channel: string): string {
-  return channel.startsWith("#") ? channel.slice(1) : channel;
-}
-
-async function getBotChannelId(channel: string): Promise<string | null> {
-  const username = stripHash(channel).toLowerCase();
-  const botChannel = await db.query.botChannels.findFirst({
-    where: eq(botChannels.twitchUsername, username),
-  });
-  return botChannel?.id ?? null;
 }
 
 const VALID_ACCESS_LEVELS: Record<string, TwitchAccessLevel> = {
@@ -392,7 +381,7 @@ export const command: TwitchCommand = {
 
     const say = (text: string) => client.say(channel, text);
     const subcommand = args[0]?.toLowerCase();
-    const botChannelId = await getBotChannelId(channel);
+    const botChannelId = getBotChannelId(channel);
 
     if (!botChannelId) {
       await say(`@${user} Bot channel not configured for this channel.`);

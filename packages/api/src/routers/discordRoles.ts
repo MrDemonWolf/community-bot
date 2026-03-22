@@ -2,7 +2,7 @@ import { db, eq, and, asc, discordGuilds, discordRolePanels, discordRoleButtons 
 import { leadModProcedure, protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 
 async function requireGuild(userId: string) {
   const guild = await db.query.discordGuilds.findFirst({
@@ -95,14 +95,8 @@ export const discordRolesRouter = router({
         createdBy: ctx.session.user.id,
       }).returning();
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.role-panel.create",
-        resourceType: "DiscordRolePanel",
-        resourceId: panel!.id,
-        metadata: { name, useMenu: input.useMenu },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.role-panel.create", resourceType: "DiscordRolePanel", resourceId: panel!.id, metadata: { name, useMenu: input.useMenu } },
       });
 
       // Return panel with empty buttons array for consistency
@@ -145,14 +139,8 @@ export const discordRolesRouter = router({
         orderBy: asc(discordRoleButtons.position),
       });
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.role-panel.update",
-        resourceType: "DiscordRolePanel",
-        resourceId: input.id,
-        metadata: { name: panel.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.role-panel.update", resourceType: "DiscordRolePanel", resourceId: input.id, metadata: { name: panel.name } },
       });
 
       return { ...updated, buttons };
@@ -176,14 +164,8 @@ export const discordRolesRouter = router({
 
       await db.delete(discordRolePanels).where(eq(discordRolePanels.id, input.id));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.role-panel.delete",
-        resourceType: "DiscordRolePanel",
-        resourceId: input.id,
-        metadata: { name: panel.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.role-panel.delete", resourceType: "DiscordRolePanel", resourceId: input.id, metadata: { name: panel.name } },
       });
 
       return { success: true };
@@ -238,14 +220,8 @@ export const discordRolesRouter = router({
         position: panel.buttons.length,
       }).returning();
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.role-button.add",
-        resourceType: "DiscordRoleButton",
-        resourceId: button!.id,
-        metadata: { panelName: panel.name, roleId: input.roleId },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.role-button.add", resourceType: "DiscordRoleButton", resourceId: button!.id, metadata: { panelName: panel.name, roleId: input.roleId } },
       });
 
       return button;
@@ -270,14 +246,8 @@ export const discordRolesRouter = router({
 
       await db.delete(discordRoleButtons).where(eq(discordRoleButtons.id, input.id));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.role-button.remove",
-        resourceType: "DiscordRoleButton",
-        resourceId: input.id,
-        metadata: { panelName: button.panel.name, roleId: button.roleId },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.role-button.remove", resourceType: "DiscordRoleButton", resourceId: input.id, metadata: { panelName: button.panel.name, roleId: button.roleId } },
       });
 
       return { success: true };
@@ -310,14 +280,8 @@ export const discordRolesRouter = router({
         )
       );
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.role-panel.reorder",
-        resourceType: "DiscordRolePanel",
-        resourceId: input.panelId,
-        metadata: { name: panel.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.role-panel.reorder", resourceType: "DiscordRolePanel", resourceId: input.panelId, metadata: { name: panel.name } },
       });
 
       return { success: true };

@@ -2,7 +2,7 @@ import { db, eq, and, asc, discordGuilds, discordMessageTemplates } from "@commu
 import { leadModProcedure, protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 
 async function requireGuild(userId: string) {
   const guild = await db.query.discordGuilds.findFirst({
@@ -104,14 +104,8 @@ export const discordTemplatesRouter = router({
         createdBy: ctx.session.user.id,
       }).returning();
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.template.create",
-        resourceType: "DiscordMessageTemplate",
-        resourceId: template!.id,
-        metadata: { name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.template.create", resourceType: "DiscordMessageTemplate", resourceId: template!.id, metadata: { name } },
       });
 
       return template!;
@@ -155,14 +149,8 @@ export const discordTemplatesRouter = router({
         ...(input.embedJson !== undefined && { embedJson: input.embedJson }),
       }).where(eq(discordMessageTemplates.id, input.id)).returning();
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.template.update",
-        resourceType: "DiscordMessageTemplate",
-        resourceId: input.id,
-        metadata: { name: template.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.template.update", resourceType: "DiscordMessageTemplate", resourceId: input.id, metadata: { name: template.name } },
       });
 
       return updated;
@@ -186,14 +174,8 @@ export const discordTemplatesRouter = router({
 
       await db.delete(discordMessageTemplates).where(eq(discordMessageTemplates.id, input.id));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.template.delete",
-        resourceType: "DiscordMessageTemplate",
-        resourceId: input.id,
-        metadata: { name: template.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.template.delete", resourceType: "DiscordMessageTemplate", resourceId: input.id, metadata: { name: template.name } },
       });
 
       return { success: true };

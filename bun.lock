@@ -24,6 +24,7 @@
         "@community-bot/db": "workspace:*",
         "@community-bot/env": "workspace:*",
         "@community-bot/events": "workspace:*",
+        "@community-bot/logging": "workspace:*",
         "@community-bot/server": "workspace:*",
         "@discordjs/core": "^2.4.0",
         "@discordjs/rest": "^2.6.0",
@@ -84,6 +85,7 @@
         "@community-bot/db": "workspace:*",
         "@community-bot/env": "workspace:*",
         "@community-bot/events": "workspace:*",
+        "@community-bot/logging": "workspace:*",
         "@community-bot/server": "workspace:*",
         "@twurple/api": "^7.2.0",
         "@twurple/auth": "^7.2.0",
@@ -226,6 +228,18 @@
         "typescript": "^5",
       },
     },
+    "packages/logging": {
+      "name": "@community-bot/logging",
+      "version": "0.0.0",
+      "dependencies": {
+        "consola": "^3.4.2",
+      },
+      "devDependencies": {
+        "@community-bot/config": "workspace:*",
+        "@types/node": "^25.0.3",
+        "typescript": "^5",
+      },
+    },
     "packages/server": {
       "name": "@community-bot/server",
       "version": "0.0.0",
@@ -356,6 +370,8 @@
     "@community-bot/env": ["@community-bot/env@workspace:packages/env"],
 
     "@community-bot/events": ["@community-bot/events@workspace:packages/events"],
+
+    "@community-bot/logging": ["@community-bot/logging@workspace:packages/logging"],
 
     "@community-bot/server": ["@community-bot/server@workspace:packages/server"],
 
@@ -2819,6 +2835,8 @@
 
     "@community-bot/events/@types/node": ["@types/node@25.5.0", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw=="],
 
+    "@community-bot/logging/@types/node": ["@types/node@25.5.0", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw=="],
+
     "@community-bot/server/@types/node": ["@types/node@25.5.0", "", { "dependencies": { "undici-types": "~7.18.0" } }, "sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw=="],
 
     "@d-fischer/cross-fetch/node-fetch": ["node-fetch@2.7.0", "", { "dependencies": { "whatwg-url": "^5.0.0" }, "peerDependencies": { "encoding": "^0.1.0" }, "optionalPeers": ["encoding"] }, "sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A=="],
@@ -3106,6 +3124,8 @@
     "wsl-utils/is-wsl": ["is-wsl@3.1.1", "", { "dependencies": { "is-inside-container": "^1.0.0" } }, "sha512-e6rvdUCiQCAuumZslxRJWR/Doq4VpPR82kqclvcS0efgt430SlGIk05vdCN58+VrzgtIcfNODjozVielycD4Sw=="],
 
     "@community-bot/events/@types/node/undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
+
+    "@community-bot/logging/@types/node/undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
 
     "@community-bot/server/@types/node/undici-types": ["undici-types@7.18.2", "", {}, "sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w=="],
 

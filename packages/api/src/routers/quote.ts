@@ -2,8 +2,9 @@ import { db, eq, and, asc, desc, ilike, quotes } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
-import { getUserBotChannel } from "../utils/botChannel";
+import { applyMutationEffects } from "../utils/mutation";
+import { getUserBotChannel, assertOwnership } from "../utils/botChannel";
+import { idInput } from "../schemas/common";
 
 export const quoteRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -74,24 +75,16 @@ export const quoteRouter = router({
         botChannelId: botChannel.id,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("quote:created", { quoteId: quote!.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "quote.add",
-        resourceType: "Quote",
-        resourceId: quote!.id,
-        metadata: { quoteNumber, text: input.text },
+      await applyMutationEffects(ctx, {
+        event: { name: "quote:created", payload: { quoteId: quote!.id } },
+        audit: { action: "quote.add", resourceType: "Quote", resourceId: quote!.id, metadata: { quoteNumber, text: input.text } },
       });
 
       return quote!;
     }),
 
   remove: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -99,23 +92,13 @@ export const quoteRouter = router({
         where: eq(quotes.id, input.id),
       });
 
-      if (!quote || quote.botChannelId !== botChannel.id) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Quote not found." });
-      }
+      assertOwnership(quote, botChannel, "Quote");
 
       await db.delete(quotes).where(eq(quotes.id, input.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("quote:deleted", { quoteId: input.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "quote.remove",
-        resourceType: "Quote",
-        resourceId: input.id,
-        metadata: { quoteNumber: quote.quoteNumber },
+      await applyMutationEffects(ctx, {
+        event: { name: "quote:deleted", payload: { quoteId: input.id } },
+        audit: { action: "quote.remove", resourceType: "Quote", resourceId: input.id, metadata: { quoteNumber: quote.quoteNumber } },
       });
 
       return { success: true };

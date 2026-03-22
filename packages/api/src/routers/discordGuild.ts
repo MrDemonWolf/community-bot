@@ -2,7 +2,7 @@ import { db, eq, and, asc, desc, isNull, discordGuilds, twitchChannels, twitchNo
 import { protectedProcedure, leadModProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 import {
   discordFetch,
   type DiscordChannel,
@@ -129,19 +129,9 @@ export const discordGuildRouter = router({
 
       const [updated] = await db.update(discordGuilds).set({ userId }).where(eq(discordGuilds.id, guild.id)).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("discord:settings-updated", {
-        guildId: input.guildId,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.link",
-        resourceType: "DiscordGuild",
-        resourceId: updated!.id,
-        metadata: { guildId: input.guildId },
+      await applyMutationEffects(ctx, {
+        event: { name: "discord:settings-updated", payload: { guildId: input.guildId } },
+        audit: { action: "discord.link", resourceType: "DiscordGuild", resourceId: updated!.id, metadata: { guildId: input.guildId } },
       });
 
       return {
@@ -178,19 +168,9 @@ export const discordGuildRouter = router({
 
       await db.update(discordGuilds).set({ notificationChannelId: input.channelId }).where(eq(discordGuilds.id, guild.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("discord:settings-updated", {
-        guildId: guild.guildId,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.set-channel",
-        resourceType: "DiscordGuild",
-        resourceId: guild.id,
-        metadata: { before, after: input.channelId },
+      await applyMutationEffects(ctx, {
+        event: { name: "discord:settings-updated", payload: { guildId: guild.guildId } },
+        audit: { action: "discord.set-channel", resourceType: "DiscordGuild", resourceId: guild.id, metadata: { before, after: input.channelId } },
       });
 
       return { success: true };
@@ -216,19 +196,9 @@ export const discordGuildRouter = router({
 
       await db.update(discordGuilds).set({ notificationRoleId: input.roleId }).where(eq(discordGuilds.id, guild.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("discord:settings-updated", {
-        guildId: guild.guildId,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.set-role",
-        resourceType: "DiscordGuild",
-        resourceId: guild.id,
-        metadata: { before, after: input.roleId },
+      await applyMutationEffects(ctx, {
+        event: { name: "discord:settings-updated", payload: { guildId: guild.guildId } },
+        audit: { action: "discord.set-role", resourceType: "DiscordGuild", resourceId: guild.id, metadata: { before, after: input.roleId } },
       });
 
       return { success: true };
@@ -265,19 +235,9 @@ export const discordGuildRouter = router({
         modRoleId: input.modRoleId,
       }).where(eq(discordGuilds.id, guild.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("discord:settings-updated", {
-        guildId: guild.guildId,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.set-role-mapping",
-        resourceType: "DiscordGuild",
-        resourceId: guild.id,
-        metadata: { before, after: input },
+      await applyMutationEffects(ctx, {
+        event: { name: "discord:settings-updated", payload: { guildId: guild.guildId } },
+        audit: { action: "discord.set-role-mapping", resourceType: "DiscordGuild", resourceId: guild.id, metadata: { before, after: input } },
       });
 
       return { success: true };
@@ -299,18 +259,9 @@ export const discordGuildRouter = router({
 
     await db.update(discordGuilds).set({ enabled: true }).where(eq(discordGuilds.id, guild.id));
 
-    const { eventBus } = await import("../events");
-    await eventBus.publish("discord:settings-updated", {
-      guildId: guild.guildId,
-    });
-
-    await logAudit({
-      userId,
-      userName: ctx.session.user.name,
-      userImage: ctx.session.user.image,
-      action: "discord.enable",
-      resourceType: "DiscordGuild",
-      resourceId: guild.id,
+    await applyMutationEffects(ctx, {
+      event: { name: "discord:settings-updated", payload: { guildId: guild.guildId } },
+      audit: { action: "discord.enable", resourceType: "DiscordGuild", resourceId: guild.id },
     });
 
     return { success: true };
@@ -332,18 +283,9 @@ export const discordGuildRouter = router({
 
     await db.update(discordGuilds).set({ enabled: false }).where(eq(discordGuilds.id, guild.id));
 
-    const { eventBus } = await import("../events");
-    await eventBus.publish("discord:settings-updated", {
-      guildId: guild.guildId,
-    });
-
-    await logAudit({
-      userId,
-      userName: ctx.session.user.name,
-      userImage: ctx.session.user.image,
-      action: "discord.disable",
-      resourceType: "DiscordGuild",
-      resourceId: guild.id,
+    await applyMutationEffects(ctx, {
+      event: { name: "discord:settings-updated", payload: { guildId: guild.guildId } },
+      audit: { action: "discord.disable", resourceType: "DiscordGuild", resourceId: guild.id },
     });
 
     return { success: true };
@@ -437,19 +379,9 @@ export const discordGuildRouter = router({
 
       await db.update(twitchChannels).set(data).where(eq(twitchChannels.id, channel.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("discord:settings-updated", {
-        guildId: guild.guildId,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.channel-settings",
-        resourceType: "TwitchChannel",
-        resourceId: channel.id,
-        metadata: { channelName: channel.displayName ?? channel.username, ...data },
+      await applyMutationEffects(ctx, {
+        event: { name: "discord:settings-updated", payload: { guildId: guild.guildId } },
+        audit: { action: "discord.channel-settings", resourceType: "TwitchChannel", resourceId: channel.id, metadata: { channelName: channel.displayName ?? channel.username, ...data } },
       });
 
       return { success: true };
@@ -510,19 +442,9 @@ export const discordGuildRouter = router({
         guildId: guild.id,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("discord:settings-updated", {
-        guildId: guild.guildId,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.add-channel",
-        resourceType: "TwitchChannel",
-        resourceId: channel!.id,
-        metadata: { channelName: twitchUser.display_name },
+      await applyMutationEffects(ctx, {
+        event: { name: "discord:settings-updated", payload: { guildId: guild.guildId } },
+        audit: { action: "discord.add-channel", resourceType: "TwitchChannel", resourceId: channel!.id, metadata: { channelName: twitchUser.display_name } },
       });
 
       return { id: channel!.id, displayName: twitchUser.display_name };
@@ -559,19 +481,9 @@ export const discordGuildRouter = router({
 
       await db.delete(twitchChannels).where(eq(twitchChannels.id, channel.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("discord:settings-updated", {
-        guildId: guild.guildId,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.remove-channel",
-        resourceType: "TwitchChannel",
-        resourceId: channel.id,
-        metadata: { channelName: channel.displayName ?? channel.username },
+      await applyMutationEffects(ctx, {
+        event: { name: "discord:settings-updated", payload: { guildId: guild.guildId } },
+        audit: { action: "discord.remove-channel", resourceType: "TwitchChannel", resourceId: channel.id, metadata: { channelName: channel.displayName ?? channel.username } },
       });
 
       return { success: true };
@@ -593,19 +505,9 @@ export const discordGuildRouter = router({
 
     await db.update(discordGuilds).set({ muted: true }).where(eq(discordGuilds.id, guild.id));
 
-    const { eventBus } = await import("../events");
-    await eventBus.publish("discord:mute", {
-      guildId: guild.guildId,
-      muted: true,
-    });
-
-    await logAudit({
-      userId,
-      userName: ctx.session.user.name,
-      userImage: ctx.session.user.image,
-      action: "discord.mute",
-      resourceType: "DiscordGuild",
-      resourceId: guild.id,
+    await applyMutationEffects(ctx, {
+      event: { name: "discord:mute", payload: { guildId: guild.guildId, muted: true } },
+      audit: { action: "discord.mute", resourceType: "DiscordGuild", resourceId: guild.id },
     });
 
     return { success: true };
@@ -627,19 +529,9 @@ export const discordGuildRouter = router({
 
     await db.update(discordGuilds).set({ muted: false }).where(eq(discordGuilds.id, guild.id));
 
-    const { eventBus } = await import("../events");
-    await eventBus.publish("discord:mute", {
-      guildId: guild.guildId,
-      muted: false,
-    });
-
-    await logAudit({
-      userId,
-      userName: ctx.session.user.name,
-      userImage: ctx.session.user.image,
-      action: "discord.unmute",
-      resourceType: "DiscordGuild",
-      resourceId: guild.id,
+    await applyMutationEffects(ctx, {
+      event: { name: "discord:mute", payload: { guildId: guild.guildId, muted: false } },
+      audit: { action: "discord.unmute", resourceType: "DiscordGuild", resourceId: guild.id },
     });
 
     return { success: true };
@@ -706,19 +598,9 @@ export const discordGuildRouter = router({
         },
       });
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("discord:log-config-updated", {
-        guildId: guild.guildId,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.set-log-config",
-        resourceType: "DiscordLogConfig",
-        resourceId: guild.guildId,
-        metadata: input,
+      await applyMutationEffects(ctx, {
+        event: { name: "discord:log-config-updated", payload: { guildId: guild.guildId } },
+        audit: { action: "discord.set-log-config", resourceType: "DiscordLogConfig", resourceId: guild.guildId, metadata: input },
       });
 
       return { success: true };
@@ -746,9 +628,7 @@ export const discordGuildRouter = router({
     }
 
     const { eventBus } = await import("../events");
-    await eventBus.publish("discord:test-notification", {
-      guildId: guild.guildId,
-    });
+    await eventBus.publish("discord:test-notification", { guildId: guild.guildId });
 
     return { success: true };
   }),

@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   db: {
+    select: vi.fn().mockImplementation(() => ({
+      from: vi.fn().mockImplementation(() => ({
+        where: vi.fn().mockResolvedValue([{ value: 0 }]),
+      })),
+    })),
     query: {
       users: { findFirst: vi.fn() },
       twitchChannels: { findFirst: vi.fn() },
@@ -23,6 +28,7 @@ vi.mock("@community-bot/db", () => ({
   eq: vi.fn(),
   asc: vi.fn(),
   desc: vi.fn(),
+  count: vi.fn(),
   users: {},
   twitchChannels: {},
   botChannels: {},
@@ -71,6 +77,11 @@ function setupProfileMocks(overrides: Record<string, any> = {}) {
     ...overrides,
   };
 
+  mocks.db.select.mockImplementation(() => ({
+    from: vi.fn().mockImplementation(() => ({
+      where: vi.fn().mockResolvedValue([{ value: 0 }]),
+    })),
+  }));
   mocks.getBroadcasterUserId.mockResolvedValue("user-1");
   mocks.db.query.users.findFirst.mockResolvedValue(defaults.user);
   mocks.db.query.twitchChannels.findFirst.mockResolvedValue(defaults.twitchChannel);
@@ -112,7 +123,7 @@ describe("PublicPage", () => {
       const html = JSON.stringify(result);
       expect(html).toContain("TestStreamer");
       expect(html).toContain("Live");
-      expect(html).toContain("hello");
+      expect(html).toContain("2 chat commands available");
       expect(html).toContain("player1");
       expect(html).toContain("Song A");
       expect(html).toContain("Famous quote");
