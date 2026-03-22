@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { withToast } from "@/hooks/use-toast-mutation";
 import {
   AlertCircle,
   Loader2,
@@ -49,34 +49,29 @@ export default function CountersPage() {
   }
 
   const createMutation = useMutation(
-    trpc.counter.create.mutationOptions({
-      onSuccess: (data) => {
-        toast.success(`Counter "${data.name}" created.`);
+    withToast(trpc.counter.create.mutationOptions({
+      onSuccess: () => {
         setNewCounterName("");
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Counter created.")
   );
 
   const updateMutation = useMutation(
-    trpc.counter.update.mutationOptions({
+    withToast(trpc.counter.update.mutationOptions({
       onSuccess: () => {
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Counter updated.")
   );
 
   const deleteMutation = useMutation(
-    trpc.counter.delete.mutationOptions({
+    withToast(trpc.counter.delete.mutationOptions({
       onSuccess: () => {
-        toast.success("Counter deleted.");
         setDeleteConfirmId(null);
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Counter deleted.")
   );
 
   if (!botStatus?.botChannel?.enabled) {

@@ -1,4 +1,12 @@
 import express from "express";
+
+export {
+  createHealthRouter,
+  type CheckStatus,
+  type CheckResult,
+  type CheckFn,
+  type HealthRouterOptions,
+} from "./health";
 import type { Application, Request } from "express";
 import morgan from "morgan";
 import helmet from "helmet";

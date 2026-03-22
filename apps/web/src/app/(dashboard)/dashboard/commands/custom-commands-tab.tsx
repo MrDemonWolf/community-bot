@@ -19,7 +19,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
+import { withToast } from "@/hooks/use-toast-mutation";
 import {
   AlertCircle,
   Clock,
@@ -90,23 +90,20 @@ export default function CustomCommandsTab() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const toggleMutation = useMutation(
-    trpc.chatCommand.toggleEnabled.mutationOptions({
+    withToast(trpc.chatCommand.toggleEnabled.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: listQueryKey });
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Command toggled.")
   );
 
   const deleteMutation = useMutation(
-    trpc.chatCommand.delete.mutationOptions({
+    withToast(trpc.chatCommand.delete.mutationOptions({
       onSuccess: () => {
-        toast.success("Command deleted.");
         queryClient.invalidateQueries({ queryKey: listQueryKey });
         setDeleteConfirmId(null);
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Command deleted.")
   );
 
   if (!botStatus?.botChannel?.enabled) {

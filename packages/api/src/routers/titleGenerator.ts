@@ -7,7 +7,7 @@ import {
 import { env } from "@community-bot/env/server";
 import { leadModProcedure, router } from "../index";
 import { z } from "zod";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 import { generateTitles } from "../utils/geminiTitles";
 import { getChannelInfo, patchTwitchChannel } from "../utils/twitch";
 
@@ -50,16 +50,8 @@ export const titleGeneratorRouter = router({
           set: { brandingPrompt: input.brandingPrompt },
         });
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "title-generator.settings-update",
-        resourceType: "TitleGeneratorSettings",
-        resourceId: botChannel.id,
-        metadata: {
-          brandingPromptLength: input.brandingPrompt.length,
-        },
+      await applyMutationEffects(ctx, {
+        audit: { action: "title-generator.settings-update", resourceType: "TitleGeneratorSettings", resourceId: botChannel.id, metadata: { brandingPromptLength: input.brandingPrompt.length } },
       });
 
       return { success: true };
@@ -99,14 +91,8 @@ export const titleGeneratorRouter = router({
         userContext: input.context,
       });
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "title-generator.generate",
-        resourceType: "TitleGeneratorSettings",
-        resourceId: botChannel.id,
-        metadata: { titleCount: result.titles.length },
+      await applyMutationEffects(ctx, {
+        audit: { action: "title-generator.generate", resourceType: "TitleGeneratorSettings", resourceId: botChannel.id, metadata: { titleCount: result.titles.length } },
       });
 
       return {
@@ -132,14 +118,8 @@ export const titleGeneratorRouter = router({
         title: input.title,
       });
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "title-generator.set-title",
-        resourceType: "TitleGeneratorSettings",
-        resourceId: botChannel.id,
-        metadata: { title: input.title },
+      await applyMutationEffects(ctx, {
+        audit: { action: "title-generator.set-title", resourceType: "TitleGeneratorSettings", resourceId: botChannel.id, metadata: { title: input.title } },
       });
 
       return { success: true };

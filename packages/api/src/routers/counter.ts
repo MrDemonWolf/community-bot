@@ -2,8 +2,9 @@ import { db, eq, and, asc, twitchCounters } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
-import { getUserBotChannel } from "../utils/botChannel";
+import { getUserBotChannel, assertOwnership } from "../utils/botChannel";
+import { applyMutationEffects } from "../utils/mutation";
+import { idInput, nameField } from "../schemas/common";
 
 export const counterRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -16,15 +17,7 @@ export const counterRouter = router({
   }),
 
   create: moderatorProcedure
-    .input(
-      z.object({
-        name: z
-          .string()
-          .min(1)
-          .max(50)
-          .regex(/^[a-zA-Z0-9_-]+$/, "Name must be alphanumeric, underscore, or hyphen"),
-      })
-    )
+    .input(z.object({ name: nameField }))
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
       const name = input.name.toLowerCase();
@@ -45,32 +38,16 @@ export const counterRouter = router({
         botChannelId: botChannel.id,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("counter:updated", {
-        counterName: name,
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "counter.create",
-        resourceType: "TwitchCounter",
-        resourceId: counter!.id,
-        metadata: { name },
+      await applyMutationEffects(ctx, {
+        event: { name: "counter:updated", payload: { counterName: name, channelId: botChannel.id } },
+        audit: { action: "counter.create", resourceType: "TwitchCounter", resourceId: counter!.id, metadata: { name } },
       });
 
       return counter!;
     }),
 
   update: moderatorProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        value: z.number().int(),
-      })
-    )
+    .input(idInput.extend({ value: z.number().int() }))
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -78,36 +55,20 @@ export const counterRouter = router({
         where: eq(twitchCounters.id, input.id),
       });
 
-      if (!counter || counter.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Counter not found.",
-        });
-      }
+      assertOwnership(counter, botChannel, "Counter");
 
       const [updated] = await db.update(twitchCounters).set({ value: input.value }).where(eq(twitchCounters.id, input.id)).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("counter:updated", {
-        counterName: counter.name,
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "counter.update",
-        resourceType: "TwitchCounter",
-        resourceId: input.id,
-        metadata: { name: counter.name, value: input.value },
+      await applyMutationEffects(ctx, {
+        event: { name: "counter:updated", payload: { counterName: counter.name, channelId: botChannel.id } },
+        audit: { action: "counter.update", resourceType: "TwitchCounter", resourceId: input.id, metadata: { name: counter.name, value: input.value } },
       });
 
       return updated;
     }),
 
   delete: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -115,29 +76,13 @@ export const counterRouter = router({
         where: eq(twitchCounters.id, input.id),
       });
 
-      if (!counter || counter.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Counter not found.",
-        });
-      }
+      assertOwnership(counter, botChannel, "Counter");
 
       await db.delete(twitchCounters).where(eq(twitchCounters.id, input.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("counter:updated", {
-        counterName: counter.name,
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "counter.delete",
-        resourceType: "TwitchCounter",
-        resourceId: input.id,
-        metadata: { name: counter.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "counter:updated", payload: { counterName: counter.name, channelId: botChannel.id } },
+        audit: { action: "counter.delete", resourceType: "TwitchCounter", resourceId: input.id, metadata: { name: counter.name } },
       });
 
       return { success: true };

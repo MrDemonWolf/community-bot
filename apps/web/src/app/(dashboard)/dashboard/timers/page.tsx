@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
+import { withToast } from "@/hooks/use-toast-mutation";
 import {
   AlertCircle,
   Loader2,
@@ -79,49 +79,41 @@ export default function TimersPage() {
   }
 
   const createMutation = useMutation(
-    trpc.timer.create.mutationOptions({
+    withToast(trpc.timer.create.mutationOptions({
       onSuccess: () => {
-        toast.success("Timer created.");
         setForm(emptyForm);
         setShowForm(false);
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Timer created.")
   );
 
   const updateMutation = useMutation(
-    trpc.timer.update.mutationOptions({
+    withToast(trpc.timer.update.mutationOptions({
       onSuccess: () => {
-        toast.success("Timer updated.");
         setForm(emptyForm);
         setEditingId(null);
         setShowForm(false);
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Timer updated.")
   );
 
   const deleteMutation = useMutation(
-    trpc.timer.delete.mutationOptions({
+    withToast(trpc.timer.delete.mutationOptions({
       onSuccess: () => {
-        toast.success("Timer deleted.");
         setDeleteConfirmId(null);
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Timer deleted.")
   );
 
   const toggleMutation = useMutation(
-    trpc.timer.toggleEnabled.mutationOptions({
-      onSuccess: (data) => {
-        toast.success(`Timer ${data.enabled ? "enabled" : "disabled"}.`);
+    withToast(trpc.timer.toggleEnabled.mutationOptions({
+      onSuccess: () => {
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Timer toggled.")
   );
 
   function handleSubmit() {

@@ -1,19 +1,8 @@
 import { TwitchCommand } from "../types/command.js";
 import { db, eq, and, count, desc } from "@community-bot/db";
-import { botChannels, quotes } from "@community-bot/db";
+import { quotes } from "@community-bot/db";
 import { getGame } from "../services/streamStatusManager.js";
-
-function stripHash(channel: string): string {
-  return channel.startsWith("#") ? channel.slice(1) : channel;
-}
-
-async function getBotChannelId(channel: string): Promise<string | null> {
-  const username = stripHash(channel).toLowerCase();
-  const botChannel = await db.query.botChannels.findFirst({
-    where: eq(botChannels.twitchUsername, username),
-  });
-  return botChannel?.id ?? null;
-}
+import { getBotChannelId } from "../services/broadcasterCache.js";
 
 async function getNextQuoteNumber(botChannelId: string): Promise<number> {
   const last = await db.query.quotes.findFirst({
@@ -28,7 +17,7 @@ export const quote: TwitchCommand = {
   name: "quote",
   description: "View, add, or remove quotes.",
   async execute(client, channel, user, args, msg) {
-    const botChannelId = await getBotChannelId(channel);
+    const botChannelId = getBotChannelId(channel);
     if (!botChannelId) {
       await client.say(channel, `@${user}, bot channel not configured.`);
       return;

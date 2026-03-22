@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "sonner";
+import { withToast } from "@/hooks/use-toast-mutation";
 import { X, ChevronDown } from "lucide-react";
 import {
   Select,
@@ -123,25 +123,21 @@ export default function CommandDialog({
   }, [open, command]);
 
   const createMutation = useMutation(
-    trpc.chatCommand.create.mutationOptions({
+    withToast(trpc.chatCommand.create.mutationOptions({
       onSuccess: () => {
-        toast.success("Command created.");
         queryClient.invalidateQueries({ queryKey: listQueryKey });
         onOpenChange(false);
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Command created.")
   );
 
   const updateMutation = useMutation(
-    trpc.chatCommand.update.mutationOptions({
+    withToast(trpc.chatCommand.update.mutationOptions({
       onSuccess: () => {
-        toast.success("Command updated.");
         queryClient.invalidateQueries({ queryKey: listQueryKey });
         onOpenChange(false);
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Command updated.")
   );
 
   const isPending = createMutation.isPending || updateMutation.isPending;

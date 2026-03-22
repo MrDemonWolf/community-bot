@@ -6,7 +6,7 @@ import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { withToast } from "@/hooks/use-toast-mutation";
 import {
   AlertCircle,
   Loader2,
@@ -84,45 +84,37 @@ export default function QueuePage() {
   }
 
   const setStatusMutation = useMutation(
-    trpc.queue.setStatus.mutationOptions({
-      onSuccess: (data) => {
-        toast.success(`Queue is now ${data.status.toLowerCase()}.`);
+    withToast(trpc.queue.setStatus.mutationOptions({
+      onSuccess: () => {
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Queue status updated.")
   );
 
   const removeEntryMutation = useMutation(
-    trpc.queue.removeEntry.mutationOptions({
+    withToast(trpc.queue.removeEntry.mutationOptions({
       onSuccess: () => {
-        toast.success("Entry removed from queue.");
         invalidateAll();
         setDeleteConfirmId(null);
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Entry removed from queue.")
   );
 
   const pickEntryMutation = useMutation(
-    trpc.queue.pickEntry.mutationOptions({
-      onSuccess: (data) => {
-        toast.success(`Picked: ${data.twitchUsername}`);
+    withToast(trpc.queue.pickEntry.mutationOptions({
+      onSuccess: () => {
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Entry picked from queue.")
   );
 
   const clearMutation = useMutation(
-    trpc.queue.clear.mutationOptions({
-      onSuccess: (data) => {
-        toast.success(`Cleared ${data.cleared} entries from queue.`);
+    withToast(trpc.queue.clear.mutationOptions({
+      onSuccess: () => {
         invalidateAll();
         setClearConfirm(false);
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Queue cleared.")
   );
 
   if (!botStatus?.botChannel?.enabled) {

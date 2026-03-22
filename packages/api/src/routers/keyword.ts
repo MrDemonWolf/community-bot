@@ -2,26 +2,14 @@ import { db, eq, and, asc, keywords } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
-import { getUserBotChannel } from "../utils/botChannel";
+import { applyMutationEffects } from "../utils/mutation";
+import { getUserBotChannel, assertOwnership } from "../utils/botChannel";
+import { idInput, nameField, accessLevelEnum, responseTypeEnum, streamStatusEnum } from "../schemas/common";
 
 const phraseGroupsSchema = z
   .array(z.array(z.string().min(1).max(300)).min(1).max(20))
   .min(1)
   .max(10);
-
-const accessLevelEnum = z.enum([
-  "EVERYONE",
-  "SUBSCRIBER",
-  "REGULAR",
-  "VIP",
-  "MODERATOR",
-  "LEAD_MODERATOR",
-  "BROADCASTER",
-]);
-
-const responseTypeEnum = z.enum(["SAY", "MENTION", "REPLY"]);
-const streamStatusEnum = z.enum(["ONLINE", "OFFLINE", "BOTH"]);
 
 export const keywordRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -36,11 +24,7 @@ export const keywordRouter = router({
   create: moderatorProcedure
     .input(
       z.object({
-        name: z
-          .string()
-          .min(1)
-          .max(50)
-          .regex(/^[a-zA-Z0-9_-]+$/, "Name must be alphanumeric, underscore, or hyphen"),
+        name: nameField,
         phraseGroups: phraseGroupsSchema,
         response: z.string().min(1).max(500),
         responseType: responseTypeEnum.default("SAY"),
@@ -86,17 +70,9 @@ export const keywordRouter = router({
         })
         .returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("keyword:created", { keywordId: keyword!.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "keyword.create",
-        resourceType: "Keyword",
-        resourceId: keyword!.id,
-        metadata: { name },
+      await applyMutationEffects(ctx, {
+        event: { name: "keyword:created", payload: { keywordId: keyword!.id } },
+        audit: { action: "keyword.create", resourceType: "Keyword", resourceId: keyword!.id, metadata: { name } },
       });
 
       return keyword!;
@@ -104,14 +80,8 @@ export const keywordRouter = router({
 
   update: moderatorProcedure
     .input(
-      z.object({
-        id: z.string().uuid(),
-        name: z
-          .string()
-          .min(1)
-          .max(50)
-          .regex(/^[a-zA-Z0-9_-]+$/)
-          .optional(),
+      idInput.extend({
+        name: nameField.optional(),
         phraseGroups: phraseGroupsSchema.optional(),
         response: z.string().min(1).max(500).optional(),
         responseType: responseTypeEnum.optional(),
@@ -131,9 +101,7 @@ export const keywordRouter = router({
         where: eq(keywords.id, input.id),
       });
 
-      if (!keyword || keyword.botChannelId !== botChannel.id) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Keyword not found." });
-      }
+      assertOwnership(keyword, botChannel, "Keyword");
 
       const { id, name, ...rest } = input;
 
@@ -143,24 +111,16 @@ export const keywordRouter = router({
         .where(eq(keywords.id, id))
         .returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("keyword:updated", { keywordId: id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "keyword.update",
-        resourceType: "Keyword",
-        resourceId: id,
-        metadata: { name: updated!.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "keyword:updated", payload: { keywordId: id } },
+        audit: { action: "keyword.update", resourceType: "Keyword", resourceId: id, metadata: { name: updated!.name } },
       });
 
       return updated!;
     }),
 
   delete: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -168,30 +128,20 @@ export const keywordRouter = router({
         where: eq(keywords.id, input.id),
       });
 
-      if (!keyword || keyword.botChannelId !== botChannel.id) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Keyword not found." });
-      }
+      assertOwnership(keyword, botChannel, "Keyword");
 
       await db.delete(keywords).where(eq(keywords.id, input.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("keyword:deleted", { keywordId: input.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "keyword.delete",
-        resourceType: "Keyword",
-        resourceId: input.id,
-        metadata: { name: keyword.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "keyword:deleted", payload: { keywordId: input.id } },
+        audit: { action: "keyword.delete", resourceType: "Keyword", resourceId: input.id, metadata: { name: keyword.name } },
       });
 
       return { success: true };
     }),
 
   toggleEnabled: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -199,9 +149,7 @@ export const keywordRouter = router({
         where: eq(keywords.id, input.id),
       });
 
-      if (!keyword || keyword.botChannelId !== botChannel.id) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Keyword not found." });
-      }
+      assertOwnership(keyword, botChannel, "Keyword");
 
       const [updated] = await db
         .update(keywords)
@@ -209,17 +157,9 @@ export const keywordRouter = router({
         .where(eq(keywords.id, input.id))
         .returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("keyword:updated", { keywordId: input.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "keyword.toggle",
-        resourceType: "Keyword",
-        resourceId: input.id,
-        metadata: { name: keyword.name, enabled: updated!.enabled },
+      await applyMutationEffects(ctx, {
+        event: { name: "keyword:updated", payload: { keywordId: input.id } },
+        audit: { action: "keyword.toggle", resourceType: "Keyword", resourceId: input.id, metadata: { name: keyword.name, enabled: updated!.enabled } },
       });
 
       return updated!;

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { withToast } from "@/hooks/use-toast-mutation";
 import {
   AlertCircle,
   ChevronDown,
@@ -109,48 +110,40 @@ export default function SongRequestsPage() {
   }
 
   const updateSettingsMutation = useMutation(
-    trpc.songRequest.updateSettings.mutationOptions({
+    withToast(trpc.songRequest.updateSettings.mutationOptions({
       onSuccess: async () => {
-        toast.success("Settings saved.");
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: listQueryKey }),
           queryClient.invalidateQueries({ queryKey: settingsQueryKey }),
         ]);
         setSettingsForm(null);
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Settings saved.")
   );
 
   const skipMutation = useMutation(
-    trpc.songRequest.skip.mutationOptions({
+    withToast(trpc.songRequest.skip.mutationOptions({
       onSuccess: () => {
-        toast.success("Song skipped.");
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Song skipped.")
   );
 
   const removeMutation = useMutation(
-    trpc.songRequest.remove.mutationOptions({
+    withToast(trpc.songRequest.remove.mutationOptions({
       onSuccess: () => {
-        toast.success("Song removed.");
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Song removed.")
   );
 
   const clearMutation = useMutation(
-    trpc.songRequest.clear.mutationOptions({
+    withToast(trpc.songRequest.clear.mutationOptions({
       onSuccess: () => {
-        toast.success("Queue cleared.");
         invalidateAll();
         setClearConfirm(false);
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Queue cleared.")
   );
 
   function handleSaveSettings() {

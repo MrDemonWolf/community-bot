@@ -3,7 +3,8 @@ import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { getTwitchUserByLogin, getTwitchUserById } from "../utils/twitch";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
+import { idInput } from "../schemas/common";
 
 export const regularRouter = router({
   list: protectedProcedure.query(async () => {
@@ -66,23 +67,9 @@ export const regularRouter = router({
         addedBy: ctx.session.user.name,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("regular:created", {
-        twitchUserId: twitchUser.id,
-        discordUserId: input.discordUserId,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "regular.add",
-        resourceType: "Regular",
-        resourceId: regular!.id,
-        metadata: {
-          twitchUsername: twitchUser.display_name,
-          discordUserId: input.discordUserId,
-        },
+      await applyMutationEffects(ctx, {
+        event: { name: "regular:created", payload: { twitchUserId: twitchUser.id, discordUserId: input.discordUserId } },
+        audit: { action: "regular.add", resourceType: "Regular", resourceId: regular!.id, metadata: { twitchUsername: twitchUser.display_name, discordUserId: input.discordUserId } },
       });
 
       return regular!;
@@ -124,24 +111,15 @@ export const regularRouter = router({
         discordUsername: input.discordUsername ?? null,
       }).where(eq(regulars.id, input.id)).returning();
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "regular.link-discord",
-        resourceType: "Regular",
-        resourceId: input.id,
-        metadata: {
-          discordUserId: input.discordUserId,
-          twitchUsername: regular.twitchUsername,
-        },
+      await applyMutationEffects(ctx, {
+        audit: { action: "regular.link-discord", resourceType: "Regular", resourceId: input.id, metadata: { discordUserId: input.discordUserId, twitchUsername: regular.twitchUsername } },
       });
 
       return updated;
     }),
 
   remove: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const regular = await db.query.regulars.findFirst({
         where: eq(regulars.id, input.id),
@@ -156,20 +134,9 @@ export const regularRouter = router({
 
       await db.delete(regulars).where(eq(regulars.id, input.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("regular:deleted", {
-        twitchUserId: regular.twitchUserId ?? undefined,
-        discordUserId: regular.discordUserId ?? undefined,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "regular.remove",
-        resourceType: "Regular",
-        resourceId: input.id,
-        metadata: { twitchUsername: regular.twitchUsername },
+      await applyMutationEffects(ctx, {
+        event: { name: "regular:deleted", payload: { twitchUserId: regular.twitchUserId ?? undefined, discordUserId: regular.discordUserId ?? undefined } },
+        audit: { action: "regular.remove", resourceType: "Regular", resourceId: input.id, metadata: { twitchUsername: regular.twitchUsername } },
       });
 
       return { success: true };

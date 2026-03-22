@@ -13,9 +13,9 @@ const mocks = vi.hoisted(() => {
     return p;
   };
   return {
+    getBotChannelId: vi.fn(),
     db: {
       query: {
-        botChannels: { findFirst: vi.fn() },
         quotes: { findFirst: vi.fn(), findMany: vi.fn() },
       },
       insert: vi.fn(() => chainProxy()),
@@ -25,6 +25,10 @@ const mocks = vi.hoisted(() => {
     getGame: vi.fn(),
   };
 });
+
+vi.mock("../services/broadcasterCache.js", () => ({
+  getBotChannelId: mocks.getBotChannelId,
+}));
 
 vi.mock("@community-bot/db", () => ({
   db: mocks.db,
@@ -72,14 +76,14 @@ describe("quote command", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("says no bot channel when not configured", async () => {
-    mocks.db.query.botChannels.findFirst.mockResolvedValue(null);
+    mocks.getBotChannelId.mockReturnValue(undefined);
     await quote.execute(client, "#channel", "user", [], makeMockMsg());
     expect(say).toHaveBeenCalledWith("#channel", "@user, bot channel not configured.");
   });
 
   describe("with bot channel", () => {
     beforeEach(() => {
-      mocks.db.query.botChannels.findFirst.mockResolvedValue({ id: "bc-1" });
+      mocks.getBotChannelId.mockReturnValue("bc-1");
     });
 
     it("shows random quote", async () => {

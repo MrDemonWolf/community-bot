@@ -168,25 +168,25 @@ async function main() {
   // Initialize EventBus for real-time inter-service communication
   const eventBus = new EventBus(env.REDIS_URL);
 
-  eventBus.on("stream:online", (payload) => {
+  await eventBus.on("stream:online", (payload) => {
     logger.info(
       "EventBus",
       `Stream online: ${payload.username} - ${payload.title}`
     );
   });
 
-  eventBus.on("stream:offline", (payload) => {
+  await eventBus.on("stream:offline", (payload) => {
     logger.info("EventBus", `Stream offline: ${payload.username}`);
   });
 
-  eventBus.on("bot:status", (payload) => {
+  await eventBus.on("bot:status", (payload) => {
     logger.info(
       "EventBus",
       `Bot status: ${payload.service} is ${payload.status}`
     );
   });
 
-  eventBus.on("discord:settings-updated", async (payload) => {
+  await eventBus.on("discord:settings-updated", async (payload) => {
     const { clearGuildRoleCache } = await import("./utils/permissions.js");
     clearGuildRoleCache(payload.guildId);
     logger.info(
@@ -195,7 +195,7 @@ async function main() {
     );
   });
 
-  eventBus.on("discord:log-config-updated", async (payload) => {
+  await eventBus.on("discord:log-config-updated", async (payload) => {
     const { clearLogConfigCache } = await import("./utils/eventLogger.js");
     clearLogConfigCache(payload.guildId);
     logger.info(
@@ -204,14 +204,14 @@ async function main() {
     );
   });
 
-  eventBus.on("discord:mute", async (payload) => {
+  await eventBus.on("discord:mute", async (payload) => {
     logger.info(
       "EventBus",
       `Discord bot ${payload.muted ? "muted" : "unmuted"} for guild: ${payload.guildId}`
     );
   });
 
-  eventBus.on("discord:test-notification", async (payload) => {
+  await eventBus.on("discord:test-notification", async (payload) => {
     try {
       const { buildLiveEmbed, buildOfflineEmbed } = await import(
         "./twitch/embeds.js"

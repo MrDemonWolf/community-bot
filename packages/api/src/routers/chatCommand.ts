@@ -3,8 +3,9 @@ import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
-import { getUserBotChannel } from "../utils/botChannel";
+import { applyMutationEffects } from "../utils/mutation";
+import { getUserBotChannel, assertOwnership } from "../utils/botChannel";
+import { idInput, commandNameField, accessLevelEnum, responseTypeEnum, streamStatusEnum } from "../schemas/common";
 
 const DEFAULT_COMMAND_NAMES = new Set(DEFAULT_COMMANDS.map((c) => c.name));
 
@@ -23,27 +24,13 @@ export const chatCommandRouter = router({
   create: moderatorProcedure
     .input(
       z.object({
-        name: z
-          .string()
-          .min(1)
-          .max(50)
-          .regex(/^[a-zA-Z0-9_]+$/, "Name must be alphanumeric or underscore"),
+        name: commandNameField,
         response: z.string().min(1).max(500),
-        responseType: z.enum(["SAY", "MENTION", "REPLY"]).default("SAY"),
-        accessLevel: z
-          .enum([
-            "EVERYONE",
-            "SUBSCRIBER",
-            "REGULAR",
-            "VIP",
-            "MODERATOR",
-            "LEAD_MODERATOR",
-            "BROADCASTER",
-          ])
-          .default("EVERYONE"),
+        responseType: responseTypeEnum.default("SAY"),
+        accessLevel: accessLevelEnum.default("EVERYONE"),
         globalCooldown: z.number().int().min(0).max(3600).default(0),
         userCooldown: z.number().int().min(0).max(3600).default(0),
-        streamStatus: z.enum(["ONLINE", "OFFLINE", "BOTH"]).default("BOTH"),
+        streamStatus: streamStatusEnum.default("BOTH"),
         aliases: z.array(z.string().max(50)).max(10).default([]),
         hidden: z.boolean().default(false),
         expiresAt: z.string().datetime().nullable().optional(),
@@ -86,17 +73,9 @@ export const chatCommandRouter = router({
         botChannelId: botChannel.id,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("command:created", { commandId: command!.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "command.create",
-        resourceType: "TwitchChatCommand",
-        resourceId: command!.id,
-        metadata: { name },
+      await applyMutationEffects(ctx, {
+        event: { name: "command:created", payload: { commandId: command!.id } },
+        audit: { action: "command.create", resourceType: "TwitchChatCommand", resourceId: command!.id, metadata: { name } },
       });
 
       return command!;
@@ -104,30 +83,14 @@ export const chatCommandRouter = router({
 
   update: moderatorProcedure
     .input(
-      z.object({
-        id: z.string().uuid(),
-        name: z
-          .string()
-          .min(1)
-          .max(50)
-          .regex(/^[a-zA-Z0-9_]+$/, "Name must be alphanumeric or underscore")
-          .optional(),
+      idInput.extend({
+        name: commandNameField.optional(),
         response: z.string().min(1).max(500).optional(),
-        responseType: z.enum(["SAY", "MENTION", "REPLY"]).optional(),
-        accessLevel: z
-          .enum([
-            "EVERYONE",
-            "SUBSCRIBER",
-            "REGULAR",
-            "VIP",
-            "MODERATOR",
-            "LEAD_MODERATOR",
-            "BROADCASTER",
-          ])
-          .optional(),
+        responseType: responseTypeEnum.optional(),
+        accessLevel: accessLevelEnum.optional(),
         globalCooldown: z.number().int().min(0).max(3600).optional(),
         userCooldown: z.number().int().min(0).max(3600).optional(),
-        streamStatus: z.enum(["ONLINE", "OFFLINE", "BOTH"]).optional(),
+        streamStatus: streamStatusEnum.optional(),
         aliases: z.array(z.string().max(50)).max(10).optional(),
         hidden: z.boolean().optional(),
         expiresAt: z.string().datetime().nullable().optional(),
@@ -140,12 +103,7 @@ export const chatCommandRouter = router({
         where: eq(twitchChatCommands.id, input.id),
       });
 
-      if (!command || command.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Command not found.",
-        });
-      }
+      assertOwnership(command, botChannel, "Command");
 
       const { id, expiresAt, aliases, name, ...rest } = input;
 
@@ -160,24 +118,16 @@ export const chatCommandRouter = router({
           : {}),
       }).where(eq(twitchChatCommands.id, id)).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("command:updated", { commandId: id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "command.update",
-        resourceType: "TwitchChatCommand",
-        resourceId: id,
-        metadata: { name: command_updated!.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "command:updated", payload: { commandId: id } },
+        audit: { action: "command.update", resourceType: "TwitchChatCommand", resourceId: id, metadata: { name: command_updated!.name } },
       });
 
       return command_updated!;
     }),
 
   delete: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -185,33 +135,20 @@ export const chatCommandRouter = router({
         where: eq(twitchChatCommands.id, input.id),
       });
 
-      if (!command || command.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Command not found.",
-        });
-      }
+      assertOwnership(command, botChannel, "Command");
 
       await db.delete(twitchChatCommands).where(eq(twitchChatCommands.id, input.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("command:deleted", { commandId: input.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "command.delete",
-        resourceType: "TwitchChatCommand",
-        resourceId: input.id,
-        metadata: { name: command.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "command:deleted", payload: { commandId: input.id } },
+        audit: { action: "command.delete", resourceType: "TwitchChatCommand", resourceId: input.id, metadata: { name: command.name } },
       });
 
       return { success: true };
     }),
 
   toggleEnabled: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -219,26 +156,13 @@ export const chatCommandRouter = router({
         where: eq(twitchChatCommands.id, input.id),
       });
 
-      if (!command || command.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Command not found.",
-        });
-      }
+      assertOwnership(command, botChannel, "Command");
 
       const [updated] = await db.update(twitchChatCommands).set({ enabled: !command.enabled }).where(eq(twitchChatCommands.id, input.id)).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("command:updated", { commandId: input.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "command.toggle",
-        resourceType: "TwitchChatCommand",
-        resourceId: input.id,
-        metadata: { name: command.name, enabled: updated!.enabled },
+      await applyMutationEffects(ctx, {
+        event: { name: "command:updated", payload: { commandId: input.id } },
+        audit: { action: "command.toggle", resourceType: "TwitchChatCommand", resourceId: input.id, metadata: { name: command.name, enabled: updated!.enabled } },
       });
 
       return updated!;

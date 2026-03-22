@@ -2,7 +2,7 @@ import { db, eq, and, or, asc, desc, ilike, count, discordGuilds, discordCases, 
 import { moderatorProcedure, leadModProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 
 async function requireGuild(userId: string) {
   const guild = await db.query.discordGuilds.findFirst({ where: eq(discordGuilds.userId, userId) });
@@ -185,14 +185,8 @@ export const discordModerationRouter = router({
         content: input.content,
       });
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.case-note",
-        resourceType: "DiscordCase",
-        resourceId: modCase.id,
-        metadata: { caseNumber: input.caseNumber },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.case-note", resourceType: "DiscordCase", resourceId: modCase.id, metadata: { caseNumber: input.caseNumber } },
       });
 
       return { success: true };
@@ -245,14 +239,8 @@ export const discordModerationRouter = router({
         },
       });
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.threshold-set",
-        resourceType: "DiscordWarnThreshold",
-        resourceId: guild.guildId,
-        metadata: input,
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.threshold-set", resourceType: "DiscordWarnThreshold", resourceId: guild.guildId, metadata: input },
       });
 
       return { success: true };
@@ -277,14 +265,8 @@ export const discordModerationRouter = router({
         });
       }
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.threshold-delete",
-        resourceType: "DiscordWarnThreshold",
-        resourceId: guild.guildId,
-        metadata: { count: input.count },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.threshold-delete", resourceType: "DiscordWarnThreshold", resourceId: guild.guildId, metadata: { count: input.count } },
       });
 
       return { success: true };

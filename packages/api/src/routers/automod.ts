@@ -1,7 +1,7 @@
 import { db, eq, automodSettings } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 import { getUserBotChannel } from "../utils/botChannel";
 
 export const automodRouter = router({
@@ -41,17 +41,9 @@ export const automodRouter = router({
         })
         .returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("automod:settings-updated", { channelId: botChannel.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "automod.settings-update",
-        resourceType: "AutomodSettings",
-        resourceId: result!.id,
-        metadata: { fields: Object.keys(input) },
+      await applyMutationEffects(ctx, {
+        event: { name: "automod:settings-updated", payload: { channelId: botChannel.id } },
+        audit: { action: "automod.settings-update", resourceType: "AutomodSettings", resourceId: result!.id, metadata: { fields: Object.keys(input) } },
       });
 
       return result!;
@@ -60,22 +52,10 @@ export const automodRouter = router({
   approveHeldMessage: moderatorProcedure
     .input(z.object({ messageId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "automod.approve",
-        resourceType: "AutomodHeldMessage",
-        resourceId: input.messageId,
-        metadata: {},
-      });
-
-      const { eventBus } = await import("../events");
       const botChannel = await getUserBotChannel(ctx.session.user.id);
-      await eventBus.publish("automod:resolved", {
-        channelId: botChannel.id,
-        messageId: input.messageId,
-        action: "approved",
+      await applyMutationEffects(ctx, {
+        event: { name: "automod:resolved", payload: { channelId: botChannel.id, messageId: input.messageId, action: "approved" } },
+        audit: { action: "automod.approve", resourceType: "AutomodHeldMessage", resourceId: input.messageId, metadata: {} },
       });
 
       return { success: true };
@@ -84,22 +64,10 @@ export const automodRouter = router({
   denyHeldMessage: moderatorProcedure
     .input(z.object({ messageId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "automod.deny",
-        resourceType: "AutomodHeldMessage",
-        resourceId: input.messageId,
-        metadata: {},
-      });
-
-      const { eventBus } = await import("../events");
       const botChannel = await getUserBotChannel(ctx.session.user.id);
-      await eventBus.publish("automod:resolved", {
-        channelId: botChannel.id,
-        messageId: input.messageId,
-        action: "denied",
+      await applyMutationEffects(ctx, {
+        event: { name: "automod:resolved", payload: { channelId: botChannel.id, messageId: input.messageId, action: "denied" } },
+        audit: { action: "automod.deny", resourceType: "AutomodHeldMessage", resourceId: input.messageId, metadata: {} },
       });
 
       return { success: true };

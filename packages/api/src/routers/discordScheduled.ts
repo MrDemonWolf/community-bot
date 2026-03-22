@@ -2,7 +2,7 @@ import { db, eq, and, asc, discordGuilds, discordScheduledMessages, discordMessa
 import { leadModProcedure, protectedProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 
 async function requireGuild(userId: string) {
   const guild = await db.query.discordGuilds.findFirst({
@@ -131,20 +131,9 @@ export const discordScheduledRouter = router({
         createdBy: ctx.session.user.id,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("discord:scheduled-send", {
-        scheduledMessageId: schedule!.id,
-        guildId: guild.guildId,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.schedule.create",
-        resourceType: "DiscordScheduledMessage",
-        resourceId: schedule!.id,
-        metadata: { name, type: input.type },
+      await applyMutationEffects(ctx, {
+        event: { name: "discord:scheduled-send", payload: { scheduledMessageId: schedule!.id, guildId: guild.guildId } },
+        audit: { action: "discord.schedule.create", resourceType: "DiscordScheduledMessage", resourceId: schedule!.id, metadata: { name, type: input.type } },
       });
 
       return schedule!;
@@ -210,14 +199,8 @@ export const discordScheduledRouter = router({
         }),
       }).where(eq(discordScheduledMessages.id, input.id)).returning();
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.schedule.update",
-        resourceType: "DiscordScheduledMessage",
-        resourceId: input.id,
-        metadata: { name: schedule.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.schedule.update", resourceType: "DiscordScheduledMessage", resourceId: input.id, metadata: { name: schedule.name } },
       });
 
       return updated;
@@ -246,16 +229,8 @@ export const discordScheduledRouter = router({
 
       const [updated] = await db.update(discordScheduledMessages).set({ enabled: input.enabled }).where(eq(discordScheduledMessages.id, input.id)).returning();
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: input.enabled
-          ? "discord.schedule.enable"
-          : "discord.schedule.disable",
-        resourceType: "DiscordScheduledMessage",
-        resourceId: input.id,
-        metadata: { name: schedule.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: input.enabled ? "discord.schedule.enable" : "discord.schedule.disable", resourceType: "DiscordScheduledMessage", resourceId: input.id, metadata: { name: schedule.name } },
       });
 
       return updated;
@@ -279,14 +254,8 @@ export const discordScheduledRouter = router({
 
       await db.delete(discordScheduledMessages).where(eq(discordScheduledMessages.id, input.id));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.schedule.delete",
-        resourceType: "DiscordScheduledMessage",
-        resourceId: input.id,
-        metadata: { name: schedule.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.schedule.delete", resourceType: "DiscordScheduledMessage", resourceId: input.id, metadata: { name: schedule.name } },
       });
 
       return { success: true };

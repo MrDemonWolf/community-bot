@@ -13,7 +13,7 @@ import {
   DialogDescription,
   DialogCloseButton,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { withToast } from "@/hooks/use-toast-mutation";
 import {
   AlertCircle,
   Loader2,
@@ -52,53 +52,43 @@ export default function RegularsPage() {
   const [linkDiscordName, setLinkDiscordName] = useState("");
 
   const addMutation = useMutation(
-    trpc.regular.add.mutationOptions({
-      onSuccess: (data) => {
-        toast.success(`Added ${data.twitchUsername} as a regular.`);
+    withToast(trpc.regular.add.mutationOptions({
+      onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: listQueryKey });
         setDialogOpen(false);
         setNewUsername("");
         setNewDiscordUserId("");
         setNewDiscordUsername("");
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Regular added.")
   );
 
   const removeMutation = useMutation(
-    trpc.regular.remove.mutationOptions({
+    withToast(trpc.regular.remove.mutationOptions({
       onSuccess: () => {
-        toast.success("Regular removed.");
         queryClient.invalidateQueries({ queryKey: listQueryKey });
         setDeleteConfirmId(null);
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Regular removed.")
   );
 
   const refreshMutation = useMutation(
-    trpc.regular.refreshUsernames.mutationOptions({
-      onSuccess: (data) => {
-        toast.success(
-          `Refreshed ${data.updated} of ${data.total} usernames.`
-        );
+    withToast(trpc.regular.refreshUsernames.mutationOptions({
+      onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: listQueryKey });
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Usernames refreshed.")
   );
 
   const linkDiscordMutation = useMutation(
-    trpc.regular.linkDiscord.mutationOptions({
+    withToast(trpc.regular.linkDiscord.mutationOptions({
       onSuccess: () => {
-        toast.success("Discord account linked.");
         queryClient.invalidateQueries({ queryKey: listQueryKey });
         setLinkDiscordId(null);
         setLinkDiscordValue("");
         setLinkDiscordName("");
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Discord account linked.")
   );
 
   if (!botStatus?.botChannel?.enabled) {

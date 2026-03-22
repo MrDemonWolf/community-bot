@@ -2,8 +2,9 @@ import { db, eq, and, asc, sql, systemConfigs, botChannels, songRequests, songRe
 import { publicProcedure, protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
-import { getUserBotChannel } from "../utils/botChannel";
+import { applyMutationEffects } from "../utils/mutation";
+import { getUserBotChannel, assertOwnership } from "../utils/botChannel";
+import { idInput, accessLevelEnum } from "../schemas/common";
 
 async function getBroadcasterBotChannelId(): Promise<string | null> {
   const config = await db.query.systemConfigs.findFirst({
@@ -78,24 +79,16 @@ export const songRequestRouter = router({
       );
     });
 
-    const { eventBus } = await import("../events");
-    await eventBus.publish("song-request:updated", { channelId: botChannel.id });
-
-    await logAudit({
-      userId: ctx.session.user.id,
-      userName: ctx.session.user.name,
-      userImage: ctx.session.user.image,
-      action: "song-request.skip",
-      resourceType: "SongRequest",
-      resourceId: entry.id,
-      metadata: { title: entry.title },
+    await applyMutationEffects(ctx, {
+      event: { name: "song-request:updated", payload: { channelId: botChannel.id } },
+      audit: { action: "song-request.skip", resourceType: "SongRequest", resourceId: entry.id, metadata: { title: entry.title } },
     });
 
     return { success: true };
   }),
 
   remove: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -103,12 +96,7 @@ export const songRequestRouter = router({
         where: eq(songRequests.id, input.id),
       });
 
-      if (!entry || entry.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Song request not found.",
-        });
-      }
+      assertOwnership(entry, botChannel, "Song request");
 
       await db.transaction(async (tx) => {
         await tx.delete(songRequests).where(eq(songRequests.id, input.id));
@@ -117,17 +105,9 @@ export const songRequestRouter = router({
         );
       });
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("song-request:updated", { channelId: botChannel.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "song-request.remove",
-        resourceType: "SongRequest",
-        resourceId: input.id,
-        metadata: { title: entry.title },
+      await applyMutationEffects(ctx, {
+        event: { name: "song-request:updated", payload: { channelId: botChannel.id } },
+        audit: { action: "song-request.remove", resourceType: "SongRequest", resourceId: input.id, metadata: { title: entry.title } },
       });
 
       return { success: true };
@@ -138,16 +118,9 @@ export const songRequestRouter = router({
 
     await db.delete(songRequests).where(eq(songRequests.botChannelId, botChannel.id));
 
-    const { eventBus } = await import("../events");
-    await eventBus.publish("song-request:updated", { channelId: botChannel.id });
-
-    await logAudit({
-      userId: ctx.session.user.id,
-      userName: ctx.session.user.name,
-      userImage: ctx.session.user.image,
-      action: "song-request.clear",
-      resourceType: "SongRequest",
-      resourceId: botChannel.id,
+    await applyMutationEffects(ctx, {
+      event: { name: "song-request:updated", payload: { channelId: botChannel.id } },
+      audit: { action: "song-request.clear", resourceType: "SongRequest", resourceId: botChannel.id },
     });
 
     return { success: true };
@@ -181,17 +154,7 @@ export const songRequestRouter = router({
         enabled: z.boolean().optional(),
         maxQueueSize: z.number().int().min(1).max(500).optional(),
         maxPerUser: z.number().int().min(1).max(100).optional(),
-        minAccessLevel: z
-          .enum([
-            "EVERYONE",
-            "SUBSCRIBER",
-            "REGULAR",
-            "VIP",
-            "MODERATOR",
-            "LEAD_MODERATOR",
-            "BROADCASTER",
-          ])
-          .optional(),
+        minAccessLevel: accessLevelEnum.optional(),
         maxDuration: z.number().int().min(1).max(36000).nullable().optional(),
         autoPlayEnabled: z.boolean().optional(),
         activePlaylistId: z.string().uuid().nullable().optional(),
@@ -217,19 +180,9 @@ export const songRequestRouter = router({
         set: input,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("song-request:settings-updated", {
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "song-request.settings-update",
-        resourceType: "SongRequestSettings",
-        resourceId: settings!.id,
-        metadata: input,
+      await applyMutationEffects(ctx, {
+        event: { name: "song-request:settings-updated", payload: { channelId: botChannel.id } },
+        audit: { action: "song-request.settings-update", resourceType: "SongRequestSettings", resourceId: settings!.id, metadata: input },
       });
 
       return settings;
@@ -270,21 +223,15 @@ export const songRequestRouter = router({
         })
         .returning();
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "song-request.ban-track",
-        resourceType: "BannedTrack",
-        resourceId: track!.id,
-        metadata: { videoId: input.videoId, title: input.title },
+      await applyMutationEffects(ctx, {
+        audit: { action: "song-request.ban-track", resourceType: "BannedTrack", resourceId: track!.id, metadata: { videoId: input.videoId, title: input.title } },
       });
 
       return track!;
     }),
 
   unbanTrack: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -292,20 +239,12 @@ export const songRequestRouter = router({
         where: eq(bannedTracks.id, input.id),
       });
 
-      if (!track || track.botChannelId !== botChannel.id) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Banned track not found." });
-      }
+      assertOwnership(track, botChannel, "Banned track");
 
       await db.delete(bannedTracks).where(eq(bannedTracks.id, input.id));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "song-request.unban-track",
-        resourceType: "BannedTrack",
-        resourceId: input.id,
-        metadata: { videoId: track.videoId, title: track.title },
+      await applyMutationEffects(ctx, {
+        audit: { action: "song-request.unban-track", resourceType: "BannedTrack", resourceId: input.id, metadata: { videoId: track.videoId, title: track.title } },
       });
 
       return { success: true };

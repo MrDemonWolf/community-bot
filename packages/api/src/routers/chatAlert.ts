@@ -2,7 +2,7 @@ import { db, eq, and, chatAlerts } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 import { getUserBotChannel } from "../utils/botChannel";
 
 const ALERT_TYPES = [
@@ -58,17 +58,9 @@ export const chatAlertRouter = router({
         result = created!;
       }
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("alert:updated", { channelId: botChannel.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: fields.enabled !== undefined ? "alert.toggle" : "alert.update",
-        resourceType: "ChatAlert",
-        resourceId: result.id,
-        metadata: { alertType },
+      await applyMutationEffects(ctx, {
+        event: { name: "alert:updated", payload: { channelId: botChannel.id } },
+        audit: { action: fields.enabled !== undefined ? "alert.toggle" : "alert.update", resourceType: "ChatAlert", resourceId: result.id, metadata: { alertType } },
       });
 
       return result;
@@ -107,17 +99,9 @@ export const chatAlertRouter = router({
         result = created!;
       }
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("alert:updated", { channelId: botChannel.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "alert.toggle",
-        resourceType: "ChatAlert",
-        resourceId: result.id,
-        metadata: { alertType: input.alertType, enabled: result.enabled },
+      await applyMutationEffects(ctx, {
+        event: { name: "alert:updated", payload: { channelId: botChannel.id } },
+        audit: { action: "alert.toggle", resourceType: "ChatAlert", resourceId: result.id, metadata: { alertType: input.alertType, enabled: result.enabled } },
       });
 
       return result;

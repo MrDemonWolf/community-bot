@@ -19,6 +19,7 @@
     "@community-bot/db": "workspace:*",
     "@community-bot/env": "workspace:*",
     "@community-bot/events": "workspace:*",
+    "@community-bot/logging": "workspace:*",
     "@community-bot/server": "workspace:*",
     "@twurple/api": "^7.2.0",
     "@twurple/auth": "^7.2.0",

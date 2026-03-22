@@ -7,7 +7,7 @@ import {
 } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 
 async function requireGuild(userId: string) {
   const guild = await db.query.discordGuilds.findFirst({ where: eq(discordGuilds.userId, userId) });
@@ -84,14 +84,8 @@ export const discordCustomCommandsRouter = router({
         createdBy: ctx.session.user.id,
       }).returning();
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.custom-command-create",
-        resourceType: "DiscordCustomCommand",
-        resourceId: cmd!.id,
-        metadata: { name: input.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.custom-command-create", resourceType: "DiscordCustomCommand", resourceId: cmd!.id, metadata: { name: input.name } },
       });
 
       return { id: cmd!.id, name: cmd!.name };
@@ -130,14 +124,8 @@ export const discordCustomCommandsRouter = router({
 
       await db.update(discordCustomCommands).set(data).where(eq(discordCustomCommands.id, cmd.id));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.custom-command-update",
-        resourceType: "DiscordCustomCommand",
-        resourceId: cmd.id,
-        metadata: { name: cmd.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.custom-command-update", resourceType: "DiscordCustomCommand", resourceId: cmd.id, metadata: { name: cmd.name } },
       });
 
       return { success: true };
@@ -161,14 +149,8 @@ export const discordCustomCommandsRouter = router({
 
       await db.delete(discordCustomCommands).where(eq(discordCustomCommands.id, cmd.id));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.custom-command-delete",
-        resourceType: "DiscordCustomCommand",
-        resourceId: cmd.id,
-        metadata: { name: cmd.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.custom-command-delete", resourceType: "DiscordCustomCommand", resourceId: cmd.id, metadata: { name: cmd.name } },
       });
 
       return { success: true };
@@ -192,14 +174,8 @@ export const discordCustomCommandsRouter = router({
 
       await db.update(discordCustomCommands).set({ enabled: !cmd.enabled }).where(eq(discordCustomCommands.id, cmd.id));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.custom-command-toggle",
-        resourceType: "DiscordCustomCommand",
-        resourceId: cmd.id,
-        metadata: { name: cmd.name, enabled: !cmd.enabled },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.custom-command-toggle", resourceType: "DiscordCustomCommand", resourceId: cmd.id, metadata: { name: cmd.name, enabled: !cmd.enabled } },
       });
 
       return { enabled: !cmd.enabled };
@@ -288,14 +264,8 @@ export const discordCustomCommandsRouter = router({
           : {}),
       }).where(eq(discordReports.id, report.id));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "discord.report-update",
-        resourceType: "DiscordReport",
-        resourceId: report.id,
-        metadata: { status: input.status },
+      await applyMutationEffects(ctx, {
+        audit: { action: "discord.report-update", resourceType: "DiscordReport", resourceId: report.id, metadata: { status: input.status } },
       });
 
       return { success: true };

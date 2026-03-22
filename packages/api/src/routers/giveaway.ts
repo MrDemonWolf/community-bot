@@ -2,8 +2,9 @@ import { db, eq, and, desc, count, giveaways, giveawayEntries } from "@community
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
-import { getUserBotChannel } from "../utils/botChannel";
+import { applyMutationEffects } from "../utils/mutation";
+import { getUserBotChannel, assertOwnership } from "../utils/botChannel";
+import { idInput } from "../schemas/common";
 
 export const giveawayRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -35,7 +36,7 @@ export const giveawayRouter = router({
   }),
 
   get: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .query(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -44,9 +45,7 @@ export const giveawayRouter = router({
         with: { entries: true },
       });
 
-      if (!giveaway || giveaway.botChannelId !== botChannel.id) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Giveaway not found" });
-      }
+      assertOwnership(giveaway, botChannel, "Giveaway");
 
       // Sort entries by createdAt ascending
       giveaway.entries.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
@@ -68,20 +67,9 @@ export const giveawayRouter = router({
         keyword: input.keyword.toLowerCase(),
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("giveaway:started", {
-        giveawayId: giveaway!.id,
-        channelId: botChannel.twitchUserId,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "giveaway.create",
-        resourceType: "Giveaway",
-        resourceId: giveaway!.id,
-        metadata: { title: input.title, keyword: input.keyword },
+      await applyMutationEffects(ctx, {
+        event: { name: "giveaway:started", payload: { giveawayId: giveaway!.id, channelId: botChannel.twitchUserId } },
+        audit: { action: "giveaway.create", resourceType: "Giveaway", resourceId: giveaway!.id, metadata: { title: input.title, keyword: input.keyword } },
       });
 
       return giveaway!;
@@ -107,27 +95,16 @@ export const giveawayRouter = router({
 
     await db.update(giveaways).set({ winnerName: winner!.twitchUsername }).where(eq(giveaways.id, giveaway.id));
 
-    const { eventBus } = await import("../events");
-    await eventBus.publish("giveaway:winner", {
-      giveawayId: giveaway.id,
-      channelId: botChannel.twitchUserId,
-    });
-
-    await logAudit({
-      userId: ctx.session.user.id,
-      userName: ctx.session.user.name,
-      userImage: ctx.session.user.image,
-      action: "giveaway.draw",
-      resourceType: "Giveaway",
-      resourceId: giveaway.id,
-      metadata: { winner: winner!.twitchUsername },
+    await applyMutationEffects(ctx, {
+      event: { name: "giveaway:winner", payload: { giveawayId: giveaway.id, channelId: botChannel.twitchUserId } },
+      audit: { action: "giveaway.draw", resourceType: "Giveaway", resourceId: giveaway.id, metadata: { winner: winner!.twitchUsername } },
     });
 
     return { winner: winner!.twitchUsername };
   }),
 
   delete: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -135,20 +112,12 @@ export const giveawayRouter = router({
         where: eq(giveaways.id, input.id),
       });
 
-      if (!giveaway || giveaway.botChannelId !== botChannel.id) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Giveaway not found." });
-      }
+      assertOwnership(giveaway, botChannel, "Giveaway");
 
       await db.delete(giveaways).where(eq(giveaways.id, input.id));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "giveaway.delete",
-        resourceType: "Giveaway",
-        resourceId: input.id,
-        metadata: { title: giveaway.title },
+      await applyMutationEffects(ctx, {
+        audit: { action: "giveaway.delete", resourceType: "Giveaway", resourceId: input.id, metadata: { title: giveaway.title } },
       });
 
       return { success: true };
@@ -170,19 +139,9 @@ export const giveawayRouter = router({
 
     await db.update(giveaways).set({ isActive: false }).where(eq(giveaways.id, giveaway.id));
 
-    const { eventBus } = await import("../events");
-    await eventBus.publish("giveaway:ended", {
-      giveawayId: giveaway.id,
-      channelId: botChannel.twitchUserId,
-    });
-
-    await logAudit({
-      userId: ctx.session.user.id,
-      userName: ctx.session.user.name,
-      userImage: ctx.session.user.image,
-      action: "giveaway.end",
-      resourceType: "Giveaway",
-      resourceId: giveaway.id,
+    await applyMutationEffects(ctx, {
+      event: { name: "giveaway:ended", payload: { giveawayId: giveaway.id, channelId: botChannel.twitchUserId } },
+      audit: { action: "giveaway.end", resourceType: "Giveaway", resourceId: giveaway.id },
     });
 
     return { success: true };

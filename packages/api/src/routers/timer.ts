@@ -2,8 +2,9 @@ import { db, eq, and, asc, twitchTimers } from "@community-bot/db";
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
-import { getUserBotChannel } from "../utils/botChannel";
+import { applyMutationEffects } from "../utils/mutation";
+import { getUserBotChannel, assertOwnership } from "../utils/botChannel";
+import { idInput, nameField } from "../schemas/common";
 
 export const timerRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -18,11 +19,7 @@ export const timerRouter = router({
   create: moderatorProcedure
     .input(
       z.object({
-        name: z
-          .string()
-          .min(1)
-          .max(50)
-          .regex(/^[a-zA-Z0-9_-]+$/, "Name must be alphanumeric, underscore, or hyphen"),
+        name: nameField,
         message: z.string().min(1).max(500),
         intervalMinutes: z.number().int().min(1).max(1440).default(5),
         chatLines: z.number().int().min(0).max(1000).default(0),
@@ -63,17 +60,9 @@ export const timerRouter = router({
         botChannelId: botChannel.id,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("timer:updated", { channelId: botChannel.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "timer.create",
-        resourceType: "TwitchTimer",
-        resourceId: timer!.id,
-        metadata: { name },
+      await applyMutationEffects(ctx, {
+        event: { name: "timer:updated", payload: { channelId: botChannel.id } },
+        audit: { action: "timer.create", resourceType: "TwitchTimer", resourceId: timer!.id, metadata: { name } },
       });
 
       return timer!;
@@ -81,14 +70,8 @@ export const timerRouter = router({
 
   update: moderatorProcedure
     .input(
-      z.object({
-        id: z.string().uuid(),
-        name: z
-          .string()
-          .min(1)
-          .max(50)
-          .regex(/^[a-zA-Z0-9_-]+$/, "Name must be alphanumeric, underscore, or hyphen")
-          .optional(),
+      idInput.extend({
+        name: nameField.optional(),
         message: z.string().min(1).max(500).optional(),
         intervalMinutes: z.number().int().min(1).max(1440).optional(),
         chatLines: z.number().int().min(0).max(1000).optional(),
@@ -107,12 +90,7 @@ export const timerRouter = router({
         where: eq(twitchTimers.id, input.id),
       });
 
-      if (!timer || timer.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Timer not found.",
-        });
-      }
+      assertOwnership(timer, botChannel, "Timer");
 
       const { id, name, ...rest } = input;
 
@@ -121,24 +99,16 @@ export const timerRouter = router({
         ...(name !== undefined ? { name: name.toLowerCase() } : {}),
       }).where(eq(twitchTimers.id, id)).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("timer:updated", { channelId: botChannel.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "timer.update",
-        resourceType: "TwitchTimer",
-        resourceId: id,
-        metadata: { name: updated!.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "timer:updated", payload: { channelId: botChannel.id } },
+        audit: { action: "timer.update", resourceType: "TwitchTimer", resourceId: id, metadata: { name: updated!.name } },
       });
 
       return updated!;
     }),
 
   delete: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -146,33 +116,20 @@ export const timerRouter = router({
         where: eq(twitchTimers.id, input.id),
       });
 
-      if (!timer || timer.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Timer not found.",
-        });
-      }
+      assertOwnership(timer, botChannel, "Timer");
 
       await db.delete(twitchTimers).where(eq(twitchTimers.id, input.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("timer:updated", { channelId: botChannel.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "timer.delete",
-        resourceType: "TwitchTimer",
-        resourceId: input.id,
-        metadata: { name: timer.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "timer:updated", payload: { channelId: botChannel.id } },
+        audit: { action: "timer.delete", resourceType: "TwitchTimer", resourceId: input.id, metadata: { name: timer.name } },
       });
 
       return { success: true };
     }),
 
   toggleEnabled: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -180,26 +137,13 @@ export const timerRouter = router({
         where: eq(twitchTimers.id, input.id),
       });
 
-      if (!timer || timer.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Timer not found.",
-        });
-      }
+      assertOwnership(timer, botChannel, "Timer");
 
       const [updated] = await db.update(twitchTimers).set({ enabled: !timer.enabled }).where(eq(twitchTimers.id, input.id)).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("timer:updated", { channelId: botChannel.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "timer.toggle",
-        resourceType: "TwitchTimer",
-        resourceId: input.id,
-        metadata: { name: timer.name, enabled: updated!.enabled },
+      await applyMutationEffects(ctx, {
+        event: { name: "timer:updated", payload: { channelId: botChannel.id } },
+        audit: { action: "timer.toggle", resourceType: "TwitchTimer", resourceId: input.id, metadata: { name: timer.name, enabled: updated!.enabled } },
       });
 
       return updated!;
