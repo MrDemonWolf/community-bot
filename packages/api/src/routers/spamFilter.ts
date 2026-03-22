@@ -1,8 +1,9 @@
 import { db, eq, spamFilters } from "@community-bot/db";
 import { moderatorProcedure, protectedProcedure, router } from "../index";
 import { z } from "zod";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 import { getUserBotChannel } from "../utils/botChannel";
+import { accessLevelEnum } from "../schemas/common";
 
 export const spamFilterRouter = router({
   get: protectedProcedure.query(async ({ ctx }) => {
@@ -51,15 +52,7 @@ export const spamFilterRouter = router({
         repetitionMaxRepeat: z.number().int().min(2).max(100).optional(),
         bannedWordsEnabled: z.boolean().optional(),
         bannedWords: z.array(z.string().min(1).max(100)).max(500).optional(),
-        exemptLevel: z.enum([
-          "EVERYONE",
-          "SUBSCRIBER",
-          "REGULAR",
-          "VIP",
-          "MODERATOR",
-          "LEAD_MODERATOR",
-          "BROADCASTER",
-        ]).optional(),
+        exemptLevel: accessLevelEnum.optional(),
         timeoutDuration: z.number().int().min(1).max(86400).optional(),
         warningMessage: z.string().min(1).max(300).optional(),
       })
@@ -75,17 +68,9 @@ export const spamFilterRouter = router({
         set: input,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("spam-filter:updated", { channelId: botChannel.id });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "spam-filter.update",
-        resourceType: "SpamFilter",
-        resourceId: result!.id,
-        metadata: { filters: Object.keys(input) },
+      await applyMutationEffects(ctx, {
+        event: { name: "spam-filter:updated", payload: { channelId: botChannel.id } },
+        audit: { action: "spam-filter.update", resourceType: "SpamFilter", resourceId: result!.id, metadata: { filters: Object.keys(input) } },
       });
 
       return result!;

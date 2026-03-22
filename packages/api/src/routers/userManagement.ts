@@ -2,7 +2,7 @@ import { db, eq, or, and, desc, count, ilike, users } from "@community-bot/db";
 import { broadcasterProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 
 export const userManagementRouter = router({
   list: broadcasterProcedure
@@ -141,18 +141,8 @@ export const userManagementRouter = router({
 
       await db.update(users).set({ role: input.role }).where(eq(users.id, input.userId));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "user.role-change",
-        resourceType: "User",
-        resourceId: input.userId,
-        metadata: {
-          targetName: target.name,
-          previousRole,
-          newRole: input.role,
-        },
+      await applyMutationEffects(ctx, {
+        audit: { action: "user.role-change", resourceType: "User", resourceId: input.userId, metadata: { targetName: target.name, previousRole, newRole: input.role } },
       });
 
       return { success: true };
@@ -194,17 +184,8 @@ export const userManagementRouter = router({
         banReason: input.reason ?? null,
       }).where(eq(users.id, input.userId));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "user.ban",
-        resourceType: "User",
-        resourceId: input.userId,
-        metadata: {
-          targetName: target.name,
-          reason: input.reason ?? null,
-        },
+      await applyMutationEffects(ctx, {
+        audit: { action: "user.ban", resourceType: "User", resourceId: input.userId, metadata: { targetName: target.name, reason: input.reason ?? null } },
       });
 
       return { success: true };
@@ -227,14 +208,8 @@ export const userManagementRouter = router({
         banReason: null,
       }).where(eq(users.id, input.userId));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "user.unban",
-        resourceType: "User",
-        resourceId: input.userId,
-        metadata: { targetName: target.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "user.unban", resourceType: "User", resourceId: input.userId, metadata: { targetName: target.name } },
       });
 
       return { success: true };
@@ -267,14 +242,8 @@ export const userManagementRouter = router({
 
       await db.delete(users).where(eq(users.id, input.userId));
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "user.delete",
-        resourceType: "User",
-        resourceId: input.userId,
-        metadata: { targetName: target.name },
+      await applyMutationEffects(ctx, {
+        audit: { action: "user.delete", resourceType: "User", resourceId: input.userId, metadata: { targetName: target.name } },
       });
 
       return { success: true };

@@ -30,7 +30,7 @@ function toStreamStatus(value?: string, fallback: StreamStatus = "BOTH"): Stream
 
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 import { getUserBotChannel } from "../utils/botChannel";
 
 /** Nightbot command shape (CSV/JSON from export) */
@@ -103,14 +103,8 @@ export const importExportRouter = router({
         });
       }
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "export.all",
-        resourceType: "Export",
-        resourceId: botChannel.id,
-        metadata: { include: input.include },
+      await applyMutationEffects(ctx, {
+        audit: { action: "export.all", resourceType: "Export", resourceId: botChannel.id, metadata: { include: input.include } },
       });
 
       return result;
@@ -175,14 +169,8 @@ export const importExportRouter = router({
         }
       }
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "import.nightbot",
-        resourceType: "TwitchChatCommand",
-        resourceId: botChannel.id,
-        metadata: { created, skipped, overwritten },
+      await applyMutationEffects(ctx, {
+        audit: { action: "import.nightbot", resourceType: "TwitchChatCommand", resourceId: botChannel.id, metadata: { created, skipped, overwritten } },
       });
 
       return { created, skipped, overwritten };
@@ -329,14 +317,8 @@ export const importExportRouter = router({
         }
       }
 
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "import.community-bot",
-        resourceType: "Import",
-        resourceId: botChannel.id,
-        metadata: stats,
+      await applyMutationEffects(ctx, {
+        audit: { action: "import.community-bot", resourceType: "Import", resourceId: botChannel.id, metadata: stats },
       });
 
       return stats;

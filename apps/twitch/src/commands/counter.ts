@@ -1,18 +1,7 @@
 import { TwitchCommand } from "../types/command.js";
 import { db, eq, and, sql } from "@community-bot/db";
-import { botChannels, twitchCounters } from "@community-bot/db";
-
-function stripHash(channel: string): string {
-  return channel.startsWith("#") ? channel.slice(1) : channel;
-}
-
-async function getBotChannelId(channel: string): Promise<string | null> {
-  const username = stripHash(channel).toLowerCase();
-  const botChannel = await db.query.botChannels.findFirst({
-    where: eq(botChannels.twitchUsername, username),
-  });
-  return botChannel?.id ?? null;
-}
+import { twitchCounters } from "@community-bot/db";
+import { getBotChannelId } from "../services/broadcasterCache.js";
 
 export const counter: TwitchCommand = {
   name: "counter",
@@ -22,7 +11,7 @@ export const counter: TwitchCommand = {
       return;
     }
 
-    const botChannelId = await getBotChannelId(channel);
+    const botChannelId = getBotChannelId(channel);
     if (!botChannelId) {
       await client.say(channel, `@${user}, bot channel not configured.`);
       return;

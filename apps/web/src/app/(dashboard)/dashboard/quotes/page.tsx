@@ -14,6 +14,7 @@ import {
   DialogCloseButton,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { withToast } from "@/hooks/use-toast-mutation";
 import {
   AlertCircle,
   Loader2,
@@ -52,27 +53,23 @@ export default function QuotesPage() {
   }
 
   const addMutation = useMutation(
-    trpc.quote.add.mutationOptions({
-      onSuccess: (data) => {
-        toast.success(`Quote #${data.quoteNumber} added.`);
+    withToast(trpc.quote.add.mutationOptions({
+      onSuccess: () => {
         setNewQuoteText("");
         setNewQuoteGame("");
         setDialogOpen(false);
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Quote added.")
   );
 
   const removeMutation = useMutation(
-    trpc.quote.remove.mutationOptions({
+    withToast(trpc.quote.remove.mutationOptions({
       onSuccess: () => {
-        toast.success("Quote removed.");
         setDeleteConfirmId(null);
         invalidateAll();
       },
-      onError: (err) => toast.error(err.message),
-    })
+    }), "Quote removed.")
   );
 
   function copyQuote(text: string, quoteNumber: number) {

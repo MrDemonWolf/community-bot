@@ -2,7 +2,7 @@ import { db, eq, and, users, botChannels, twitchChatCommands } from "@community-
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
 
 const SE_ACCESS_LEVEL_MAP: Record<number, string> = {
   100: "EVERYONE",
@@ -194,14 +194,8 @@ export const userRouter = router({
         }
       }
 
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "import.streamelements",
-        resourceType: "BotChannel",
-        resourceId: botChannel.id,
-        metadata: { imported, skipped },
+      await applyMutationEffects(ctx, {
+        audit: { action: "import.streamelements", resourceType: "BotChannel", resourceId: botChannel.id, metadata: { imported, skipped } },
       });
 
       return { imported, skipped };

@@ -2,7 +2,8 @@ import { db, eq, and, count, accounts, users, botChannels, defaultCommandOverrid
 import { protectedProcedure, leadModProcedure, router } from "../index";
 import { z } from "zod";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
-import { logAudit } from "../utils/audit";
+import { applyMutationEffects } from "../utils/mutation";
+import { accessLevelEnum } from "../schemas/common";
 
 export const botChannelRouter = router({
   /** Get the current user's bot channel status and linked Twitch account */
@@ -84,21 +85,10 @@ export const botChannelRouter = router({
       },
     }).returning();
 
-    // Publish event — lazy import to avoid circular deps at module level
-    const { eventBus } = await import("../events");
-    await eventBus.publish("channel:join", {
-      channelId: botChannel!.twitchUserId,
-      username: botChannel!.twitchUsername,
-    });
-
-    await logAudit({
-      userId,
-      userName: ctx.session.user.name,
-      userImage: ctx.session.user.image,
-      action: "bot.enable",
-      resourceType: "BotChannel",
-      resourceId: botChannel!.id,
-      metadata: { twitchUsername: botChannel!.twitchUsername },
+    // Publish event and audit log
+    await applyMutationEffects(ctx, {
+      event: { name: "channel:join", payload: { channelId: botChannel!.twitchUserId, username: botChannel!.twitchUsername } },
+      audit: { action: "bot.enable", resourceType: "BotChannel", resourceId: botChannel!.id, metadata: { twitchUsername: botChannel!.twitchUsername } },
     });
 
     return { success: true, botChannel };
@@ -118,20 +108,9 @@ export const botChannelRouter = router({
 
     await db.update(botChannels).set({ enabled: false }).where(eq(botChannels.userId, userId));
 
-    const { eventBus } = await import("../events");
-    await eventBus.publish("channel:leave", {
-      channelId: botChannel.twitchUserId,
-      username: botChannel.twitchUsername,
-    });
-
-    await logAudit({
-      userId,
-      userName: ctx.session.user.name,
-      userImage: ctx.session.user.image,
-      action: "bot.disable",
-      resourceType: "BotChannel",
-      resourceId: botChannel.id,
-      metadata: { twitchUsername: botChannel.twitchUsername },
+    await applyMutationEffects(ctx, {
+      event: { name: "channel:leave", payload: { channelId: botChannel.twitchUserId, username: botChannel.twitchUsername } },
+      audit: { action: "bot.disable", resourceType: "BotChannel", resourceId: botChannel.id, metadata: { twitchUsername: botChannel.twitchUsername } },
     });
 
     return { success: true };
@@ -153,21 +132,9 @@ export const botChannelRouter = router({
 
       await db.update(botChannels).set({ muted: input.muted }).where(eq(botChannels.userId, userId));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("bot:mute", {
-        channelId: botChannel.twitchUserId,
-        username: botChannel.twitchUsername,
-        muted: input.muted,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: input.muted ? "bot.mute" : "bot.unmute",
-        resourceType: "BotChannel",
-        resourceId: botChannel.id,
-        metadata: { muted: input.muted },
+      await applyMutationEffects(ctx, {
+        event: { name: "bot:mute", payload: { channelId: botChannel.twitchUserId, username: botChannel.twitchUsername, muted: input.muted } },
+        audit: { action: input.muted ? "bot.mute" : "bot.unmute", resourceType: "BotChannel", resourceId: botChannel.id, metadata: { muted: input.muted } },
       });
 
       return { success: true, muted: input.muted };
@@ -198,19 +165,9 @@ export const botChannelRouter = router({
 
       await db.update(botChannels).set({ disabledCommands: input.disabledCommands }).where(eq(botChannels.userId, userId));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("commands:defaults-updated", {
-        channelId: botChannel.twitchUserId,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "bot.command-toggles",
-        resourceType: "BotChannel",
-        resourceId: botChannel.id,
-        metadata: { disabledCommands: input.disabledCommands },
+      await applyMutationEffects(ctx, {
+        event: { name: "commands:defaults-updated", payload: { channelId: botChannel.twitchUserId } },
+        audit: { action: "bot.command-toggles", resourceType: "BotChannel", resourceId: botChannel.id, metadata: { disabledCommands: input.disabledCommands } },
       });
 
       return { success: true };
@@ -232,14 +189,8 @@ export const botChannelRouter = router({
 
       await db.update(botChannels).set({ aiShoutoutEnabled: input.enabled }).where(eq(botChannels.userId, userId));
 
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: input.enabled ? "bot.ai-shoutout-enable" : "bot.ai-shoutout-disable",
-        resourceType: "BotChannel",
-        resourceId: botChannel.id,
-        metadata: { aiShoutoutEnabled: input.enabled },
+      await applyMutationEffects(ctx, {
+        audit: { action: input.enabled ? "bot.ai-shoutout-enable" : "bot.ai-shoutout-disable", resourceType: "BotChannel", resourceId: botChannel.id, metadata: { aiShoutoutEnabled: input.enabled } },
       });
 
       return { success: true, aiShoutoutEnabled: input.enabled };
@@ -250,15 +201,7 @@ export const botChannelRouter = router({
     .input(
       z.object({
         commandName: z.string(),
-        accessLevel: z.enum([
-          "EVERYONE",
-          "SUBSCRIBER",
-          "REGULAR",
-          "VIP",
-          "MODERATOR",
-          "LEAD_MODERATOR",
-          "BROADCASTER",
-        ]),
+        accessLevel: accessLevelEnum,
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -304,19 +247,9 @@ export const botChannelRouter = router({
         });
       }
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("commands:defaults-updated", {
-        channelId: botChannel.twitchUserId,
-      });
-
-      await logAudit({
-        userId,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "bot.command-access-level",
-        resourceType: "BotChannel",
-        resourceId: botChannel.id,
-        metadata: { commandName: input.commandName, accessLevel: input.accessLevel },
+      await applyMutationEffects(ctx, {
+        event: { name: "commands:defaults-updated", payload: { channelId: botChannel.twitchUserId } },
+        audit: { action: "bot.command-access-level", resourceType: "BotChannel", resourceId: botChannel.id, metadata: { commandName: input.commandName, accessLevel: input.accessLevel } },
       });
 
       return { success: true };

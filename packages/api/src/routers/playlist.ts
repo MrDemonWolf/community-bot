@@ -2,8 +2,9 @@ import { db, eq, and, desc, count, sql, playlists, playlistEntries, songRequestS
 import { protectedProcedure, moderatorProcedure, router } from "../index";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { logAudit } from "../utils/audit";
-import { getUserBotChannel } from "../utils/botChannel";
+import { applyMutationEffects } from "../utils/mutation";
+import { getUserBotChannel, assertOwnership } from "../utils/botChannel";
+import { idInput } from "../schemas/common";
 
 export const playlistRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -41,7 +42,7 @@ export const playlistRouter = router({
   }),
 
   get: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .query(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -52,12 +53,7 @@ export const playlistRouter = router({
         },
       });
 
-      if (!playlist || playlist.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Playlist not found.",
-        });
-      }
+      assertOwnership(playlist, botChannel, "Playlist");
 
       // Sort entries by position ascending
       playlist.entries.sort((a, b) => a.position - b.position);
@@ -86,20 +82,9 @@ export const playlistRouter = router({
         botChannelId: botChannel.id,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("playlist:created", {
-        playlistId: playlist!.id,
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "playlist.create",
-        resourceType: "Playlist",
-        resourceId: playlist!.id,
-        metadata: { name: input.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "playlist:created", payload: { playlistId: playlist!.id, channelId: botChannel.id } },
+        audit: { action: "playlist.create", resourceType: "Playlist", resourceId: playlist!.id, metadata: { name: input.name } },
       });
 
       return playlist!;
@@ -107,8 +92,7 @@ export const playlistRouter = router({
 
   rename: moderatorProcedure
     .input(
-      z.object({
-        id: z.string().uuid(),
+      idInput.extend({
         name: z.string().min(1).max(100).trim(),
       })
     )
@@ -119,12 +103,7 @@ export const playlistRouter = router({
         where: eq(playlists.id, input.id),
       });
 
-      if (!playlist || playlist.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Playlist not found.",
-        });
-      }
+      assertOwnership(playlist, botChannel, "Playlist");
 
       // Check name uniqueness
       const existing = await db.query.playlists.findFirst({
@@ -140,27 +119,16 @@ export const playlistRouter = router({
 
       const [updated] = await db.update(playlists).set({ name: input.name }).where(eq(playlists.id, input.id)).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("playlist:updated", {
-        playlistId: input.id,
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "playlist.update",
-        resourceType: "Playlist",
-        resourceId: input.id,
-        metadata: { oldName: playlist.name, newName: input.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "playlist:updated", payload: { playlistId: input.id, channelId: botChannel.id } },
+        audit: { action: "playlist.update", resourceType: "Playlist", resourceId: input.id, metadata: { oldName: playlist.name, newName: input.name } },
       });
 
       return updated;
     }),
 
   delete: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -168,12 +136,7 @@ export const playlistRouter = router({
         where: eq(playlists.id, input.id),
       });
 
-      if (!playlist || playlist.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Playlist not found.",
-        });
-      }
+      assertOwnership(playlist, botChannel, "Playlist");
 
       // Clear activePlaylistId if this playlist is active
       const settings = await db.query.songRequestSettings.findFirst({
@@ -185,20 +148,9 @@ export const playlistRouter = router({
 
       await db.delete(playlists).where(eq(playlists.id, input.id));
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("playlist:deleted", {
-        playlistId: input.id,
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "playlist.delete",
-        resourceType: "Playlist",
-        resourceId: input.id,
-        metadata: { name: playlist.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "playlist:deleted", payload: { playlistId: input.id, channelId: botChannel.id } },
+        audit: { action: "playlist.delete", resourceType: "Playlist", resourceId: input.id, metadata: { name: playlist.name } },
       });
 
       return { success: true };
@@ -222,12 +174,7 @@ export const playlistRouter = router({
         where: eq(playlists.id, input.playlistId),
       });
 
-      if (!playlist || playlist.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Playlist not found.",
-        });
-      }
+      assertOwnership(playlist, botChannel, "Playlist");
 
       // Get next position
       const last = await db.query.playlistEntries.findFirst({
@@ -246,27 +193,16 @@ export const playlistRouter = router({
         playlistId: input.playlistId,
       }).returning();
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("playlist:updated", {
-        playlistId: input.playlistId,
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "playlist.add-entry",
-        resourceType: "PlaylistEntry",
-        resourceId: entry!.id,
-        metadata: { title: input.title, playlistName: playlist.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "playlist:updated", payload: { playlistId: input.playlistId, channelId: botChannel.id } },
+        audit: { action: "playlist.add-entry", resourceType: "PlaylistEntry", resourceId: entry!.id, metadata: { title: input.title, playlistName: playlist.name } },
       });
 
       return entry!;
     }),
 
   removeEntry: moderatorProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(idInput)
     .mutation(async ({ ctx, input }) => {
       const botChannel = await getUserBotChannel(ctx.session.user.id);
 
@@ -289,20 +225,9 @@ export const playlistRouter = router({
         );
       });
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("playlist:updated", {
-        playlistId: entry.playlistId,
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "playlist.remove-entry",
-        resourceType: "PlaylistEntry",
-        resourceId: input.id,
-        metadata: { title: entry.title },
+      await applyMutationEffects(ctx, {
+        event: { name: "playlist:updated", payload: { playlistId: entry.playlistId, channelId: botChannel.id } },
+        audit: { action: "playlist.remove-entry", resourceType: "PlaylistEntry", resourceId: input.id, metadata: { title: entry.title } },
       });
 
       return { success: true };
@@ -322,12 +247,7 @@ export const playlistRouter = router({
         where: eq(playlists.id, input.playlistId),
       });
 
-      if (!playlist || playlist.botChannelId !== botChannel.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Playlist not found.",
-        });
-      }
+      assertOwnership(playlist, botChannel, "Playlist");
 
       // Update positions in a transaction
       await db.transaction(async (tx) => {
@@ -336,20 +256,9 @@ export const playlistRouter = router({
         }
       });
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("playlist:updated", {
-        playlistId: input.playlistId,
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "playlist.reorder",
-        resourceType: "Playlist",
-        resourceId: input.playlistId,
-        metadata: { name: playlist.name },
+      await applyMutationEffects(ctx, {
+        event: { name: "playlist:updated", payload: { playlistId: input.playlistId, channelId: botChannel.id } },
+        audit: { action: "playlist.reorder", resourceType: "Playlist", resourceId: input.playlistId, metadata: { name: playlist.name } },
       });
 
       return { success: true };
@@ -368,12 +277,7 @@ export const playlistRouter = router({
         const playlist = await db.query.playlists.findFirst({
           where: eq(playlists.id, input.playlistId),
         });
-        if (!playlist || playlist.botChannelId !== botChannel.id) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Playlist not found.",
-          });
-        }
+        assertOwnership(playlist, botChannel, "Playlist");
       }
 
       await db.insert(songRequestSettings).values({
@@ -384,20 +288,9 @@ export const playlistRouter = router({
         set: { activePlaylistId: input.playlistId },
       });
 
-      const { eventBus } = await import("../events");
-      await eventBus.publish("playlist:activated", {
-        playlistId: input.playlistId,
-        channelId: botChannel.id,
-      });
-
-      await logAudit({
-        userId: ctx.session.user.id,
-        userName: ctx.session.user.name,
-        userImage: ctx.session.user.image,
-        action: "playlist.activate",
-        resourceType: "Playlist",
-        resourceId: input.playlistId ?? "none",
-        metadata: { active: !!input.playlistId },
+      await applyMutationEffects(ctx, {
+        event: { name: "playlist:activated", payload: { playlistId: input.playlistId, channelId: botChannel.id } },
+        audit: { action: "playlist.activate", resourceType: "Playlist", resourceId: input.playlistId ?? "none", metadata: { active: !!input.playlistId } },
       });
 
       return { success: true };

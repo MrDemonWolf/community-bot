@@ -19,6 +19,7 @@
     "@community-bot/db": "workspace:*",
     "@community-bot/env": "workspace:*",
     "@community-bot/events": "workspace:*",
+    "@community-bot/logging": "workspace:*",
     "@community-bot/server": "workspace:*",
     "@discordjs/core": "^2.4.0",
     "@discordjs/rest": "^2.6.0",

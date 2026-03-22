@@ -6,7 +6,7 @@ import { trpc } from "@/utils/trpc";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { withToast } from "@/hooks/use-toast-mutation";
 import { AlertCircle, Loader2, Search } from "lucide-react";
 import { canControlBot } from "@/utils/roles";
 import { Switch } from "@/components/ui/switch";
@@ -53,27 +53,19 @@ export default function CommandToggles() {
   const [search, setSearch] = useState("");
 
   const toggleMutation = useMutation(
-    trpc.botChannel.updateCommandToggles.mutationOptions({
+    withToast(trpc.botChannel.updateCommandToggles.mutationOptions({
       onSuccess: () => {
-        toast.success("Command toggles updated.");
         queryClient.invalidateQueries({ queryKey });
       },
-      onError: (err) => {
-        toast.error(err.message);
-      },
-    })
+    }), "Command toggles updated.")
   );
 
   const accessMutation = useMutation(
-    trpc.botChannel.updateCommandAccessLevel.mutationOptions({
+    withToast(trpc.botChannel.updateCommandAccessLevel.mutationOptions({
       onSuccess: () => {
-        toast.success("Access level updated.");
         queryClient.invalidateQueries({ queryKey });
       },
-      onError: (err) => {
-        toast.error(err.message);
-      },
-    })
+    }), "Access level updated.")
   );
 
   if (isLoading) return null;
