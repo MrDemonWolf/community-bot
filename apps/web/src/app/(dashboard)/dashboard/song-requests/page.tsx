@@ -214,7 +214,25 @@ export default function SongRequestsPage() {
       </PageHeader>
 
       <div className="space-y-6">
-        {/* Now Playing Hero Card */}
+        {/* Disabled Banner */}
+        {!currentSettings?.enabled && (
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardContent className="flex items-center gap-3">
+              <AlertCircle className="size-5 shrink-0 text-amber-500" />
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Song requests are disabled
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Enable song requests to allow viewers to request songs via the !sr command.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Now Playing / Queue / Actions — muted when disabled */}
+        <div className={!currentSettings?.enabled ? "opacity-50 pointer-events-none" : ""}>
         <Card className="overflow-hidden">
           <CardContent className="p-0">
             {currentSong ? (
@@ -317,6 +335,7 @@ export default function SongRequestsPage() {
             </div>
           )}
         </Card>
+        </div>
 
         {/* Settings Card */}
         {canManage && currentSettings && (
@@ -505,6 +524,8 @@ export default function SongRequestsPage() {
           </Card>
         )}
 
+        {/* Queue / Actions — muted when disabled */}
+        <div className={`space-y-6${!currentSettings?.enabled ? " opacity-50 pointer-events-none" : ""}`}>
         {/* Queue Actions */}
         {canManage && requestCount > 0 && (
           <Card>
@@ -751,6 +772,7 @@ export default function SongRequestsPage() {
             : ""}
           Song requests are managed via chat commands (!sr) or this dashboard.
         </p>
+        </div>
       </div>
     </div>
   );
