@@ -77,6 +77,11 @@ function setupProfileMocks(overrides: Record<string, any> = {}) {
     ...overrides,
   };
 
+  mocks.db.select.mockImplementation(() => ({
+    from: vi.fn().mockImplementation(() => ({
+      where: vi.fn().mockResolvedValue([{ value: 0 }]),
+    })),
+  }));
   mocks.getBroadcasterUserId.mockResolvedValue("user-1");
   mocks.db.query.users.findFirst.mockResolvedValue(defaults.user);
   mocks.db.query.twitchChannels.findFirst.mockResolvedValue(defaults.twitchChannel);
