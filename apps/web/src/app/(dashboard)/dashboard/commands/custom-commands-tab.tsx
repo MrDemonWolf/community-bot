@@ -36,37 +36,7 @@ import CommandDialog from "./command-dialog";
 import { canManageCommands } from "@/utils/roles";
 import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/empty-state";
-
-function formatAccessLevel(level: string): string {
-  return level
-    .split("_")
-    .map((w) =>
-      w.length <= 3 && w === w.toUpperCase()
-        ? w
-        : w.charAt(0) + w.slice(1).toLowerCase()
-    )
-    .join(" ");
-}
-
-const ACCESS_LEVEL_COLORS: Record<string, string> = {
-  EVERYONE: "bg-green-500/10 text-green-600 dark:text-green-400",
-  SUBSCRIBER: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  REGULAR: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
-  VIP: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  MODERATOR: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
-  LEAD_MODERATOR: "bg-purple-600/10 text-purple-700 dark:text-purple-300",
-  BROADCASTER: "bg-red-500/10 text-red-600 dark:text-red-400",
-};
-
-const ACCESS_LEVELS = [
-  "EVERYONE",
-  "SUBSCRIBER",
-  "REGULAR",
-  "VIP",
-  "MODERATOR",
-  "LEAD_MODERATOR",
-  "BROADCASTER",
-] as const;
+import { formatAccessLevel, accessLevelColor, ACCESS_LEVELS } from "@/lib/format";
 
 export default function CustomCommandsTab() {
   const queryClient = useQueryClient();
@@ -274,8 +244,7 @@ export default function CustomCommandsTab() {
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            ACCESS_LEVEL_COLORS[cmd.accessLevel] ??
-                            "bg-muted text-muted-foreground"
+                            accessLevelColor(cmd.accessLevel)
                           }`}
                         >
                           {formatAccessLevel(cmd.accessLevel)}

@@ -34,16 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const ACCESS_LEVELS = [
-  "EVERYONE",
-  "SUBSCRIBER",
-  "REGULAR",
-  "VIP",
-  "MODERATOR",
-  "LEAD_MODERATOR",
-  "BROADCASTER",
-] as const;
+import { ACCESS_LEVELS } from "@/lib/format";
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);

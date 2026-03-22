@@ -17,27 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const ACCESS_LEVELS = [
-  "EVERYONE",
-  "SUBSCRIBER",
-  "REGULAR",
-  "VIP",
-  "MODERATOR",
-  "LEAD_MODERATOR",
-  "BROADCASTER",
-] as const;
-
-function formatAccessLevel(level: string): string {
-  return level
-    .split("_")
-    .map((w) =>
-      w.length <= 3 && w === w.toUpperCase()
-        ? w
-        : w.charAt(0) + w.slice(1).toLowerCase()
-    )
-    .join(" ");
-}
+import { formatAccessLevel, ACCESS_LEVELS } from "@/lib/format";
 
 export default function CommandToggles() {
   const queryClient = useQueryClient();

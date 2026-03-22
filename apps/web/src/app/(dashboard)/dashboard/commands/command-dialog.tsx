@@ -23,26 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const ACCESS_LEVELS = [
-  "EVERYONE",
-  "SUBSCRIBER",
-  "REGULAR",
-  "VIP",
-  "MODERATOR",
-  "LEAD_MODERATOR",
-  "BROADCASTER",
-] as const;
-
-const RESPONSE_TYPES = ["SAY", "MENTION", "REPLY"] as const;
-const STREAM_STATUSES = ["BOTH", "ONLINE", "OFFLINE"] as const;
-
-function formatLabel(val: string): string {
-  return val
-    .split("_")
-    .map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w.charAt(0) + w.slice(1).toLowerCase()))
-    .join(" ");
-}
+import { formatLabel, ACCESS_LEVELS, RESPONSE_TYPES, STREAM_STATUSES } from "@/lib/format";
 
 interface CommandData {
   id: string;

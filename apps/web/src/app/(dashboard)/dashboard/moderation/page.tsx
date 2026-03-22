@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatAccessLevel, ACCESS_LEVELS } from "@/lib/format";
 
 interface FilterState {
   capsEnabled: boolean;
@@ -52,27 +53,10 @@ interface FilterState {
   warningMessage: string;
 }
 
-const ACCESS_LEVELS = [
-  "EVERYONE",
-  "SUBSCRIBER",
-  "REGULAR",
-  "VIP",
-  "MODERATOR",
-  "LEAD_MODERATOR",
-  "BROADCASTER",
-] as const;
-
 type ExemptLevel = FilterState["exemptLevel"];
 
 function isValidExemptLevel(value: string): value is ExemptLevel {
   return (ACCESS_LEVELS as readonly string[]).includes(value);
-}
-
-function formatAccessLevel(level: string): string {
-  return level
-    .split("_")
-    .map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w.charAt(0) + w.slice(1).toLowerCase()))
-    .join(" ");
 }
 
 function isFormDirty(form: FilterState | null, original: FilterState | null): boolean {

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
 import type { DefaultCommandMeta } from "@community-bot/db/defaultCommands";
+import { formatAccessLevel, accessLevelColor } from "@/lib/format";
 
 interface CustomCommand {
   name: string;
@@ -10,23 +11,6 @@ interface CustomCommand {
   accessLevel: string;
   aliases: string[];
   cooldown: number;
-}
-
-function formatAccessLevel(level: string) {
-  return level
-    .split("_")
-    .map((w) => (w.length <= 3 && w === w.toUpperCase() ? w : w.charAt(0) + w.slice(1).toLowerCase()))
-    .join(" ");
-}
-
-function accessLevelBadgeColor(level: string) {
-  const l = level.toLowerCase();
-  if (l === "everyone") return "bg-green-500/10 text-green-600 dark:text-green-400";
-  if (l.includes("subscriber") || l.includes("sub")) return "bg-brand-twitch/10 text-brand-twitch";
-  if (l.includes("mod")) return "bg-blue-500/10 text-blue-600 dark:text-blue-400";
-  if (l.includes("vip")) return "bg-pink-500/10 text-pink-600 dark:text-pink-400";
-  if (l.includes("broadcaster") || l.includes("owner")) return "bg-amber-500/10 text-amber-600 dark:text-amber-400";
-  return "bg-surface-raised text-muted-foreground";
 }
 
 function formatCooldown(seconds: number) {
@@ -63,7 +47,7 @@ function CommandCard({
             </p>
           )}
         </div>
-        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${accessLevelBadgeColor(accessLevel)}`}>
+        <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${accessLevelColor(accessLevel)}`}>
           {formatAccessLevel(accessLevel)}
         </span>
       </div>
@@ -229,7 +213,7 @@ export default function CommandsTabs({
                           {formatCooldown(cmd.cooldown)}
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${accessLevelBadgeColor(cmd.accessLevel)}`}>
+                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${accessLevelColor(cmd.accessLevel)}`}>
                             {formatAccessLevel(cmd.accessLevel)}
                           </span>
                         </td>
@@ -254,7 +238,7 @@ export default function CommandsTabs({
                           <span className="line-clamp-2">{cmd.description}</span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${accessLevelBadgeColor(cmd.accessLevel)}`}>
+                          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${accessLevelColor(cmd.accessLevel)}`}>
                             {formatAccessLevel(cmd.accessLevel)}
                           </span>
                         </td>
