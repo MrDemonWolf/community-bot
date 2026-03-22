@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-// CommandCache.load() depends on prisma, so we test the pure lookup logic
+// CommandCache.load() depends on the database, so we test the pure lookup logic
 // by constructing a minimal cache that mirrors the source implementation.
 
 function stripHash(channel: string): string {

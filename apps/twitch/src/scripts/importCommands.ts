@@ -27,7 +27,7 @@ interface CommandEntry {
 }
 
 async function main() {
-  const filePath = process.argv[2] || resolve(__dirname, "../../prisma/commands.json");
+  const filePath = process.argv[2] || resolve(__dirname, "../../data/commands.json");
   const raw = readFileSync(filePath, "utf-8");
   const commands: CommandEntry[] = JSON.parse(raw);
 

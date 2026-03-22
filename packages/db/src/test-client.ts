@@ -24,7 +24,7 @@ const testDatabaseUrl =
 const client = postgres(testDatabaseUrl);
 export const testDb = drizzle(client, { schema });
 
-// Backwards-compatible alias
+// Backwards-compatible alias — will be removed once all tests are updated
 export const testPrisma = testDb;
 
 /**

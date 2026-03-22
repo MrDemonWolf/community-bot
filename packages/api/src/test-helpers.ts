@@ -103,29 +103,3 @@ export function createMockDb(vi: { fn: (...args: any[]) => any }) {
   return db;
 }
 
-/**
- * @deprecated Use createMockDb instead. Kept for backwards compatibility.
- */
-export function createMockPrisma(vi: { fn: (...args: any[]) => any }) {
-  const handler: ProxyHandler<Record<string, any>> = {
-    get(target, prop: string) {
-      if (!target[prop]) {
-        if (prop === "$transaction") {
-          target[prop] = vi.fn();
-          target[prop].mockImplementation?.(async (ops: unknown[]) => Promise.all(ops));
-        } else if (prop === "$executeRawUnsafe") {
-          target[prop] = vi.fn();
-        } else {
-          target[prop] = new Proxy({} as Record<string, any>, {
-            get(model, method: string) {
-              if (!model[method]) model[method] = vi.fn();
-              return model[method];
-            },
-          });
-        }
-      }
-      return target[prop];
-    },
-  };
-  return new Proxy({} as Record<string, any>, handler);
-}
