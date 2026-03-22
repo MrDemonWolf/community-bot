@@ -78,7 +78,7 @@ describe("SongRequestsPage", () => {
 
       const result = await SongRequestsPage();
       const html = JSON.stringify(result);
-      expect(html).toContain("No songs in the queue");
+      expect(html).toContain("No songs in queue");
     });
 
     it("renders disabled state", async () => {

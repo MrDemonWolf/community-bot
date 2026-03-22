@@ -23,6 +23,7 @@ vi.mock("@community-bot/db", () => ({
   eq: vi.fn(),
   asc: vi.fn(),
   desc: vi.fn(),
+  count: vi.fn(),
   users: {},
   twitchChannels: {},
   botChannels: {},
