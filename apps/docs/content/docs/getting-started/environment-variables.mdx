@@ -97,18 +97,37 @@ APPLE_WEATHERKIT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE
 | `TWITCH_APPLICATION_CLIENT_SECRET` | string | — | Yes | Twitch application client secret |
 | `REDIS_URL` | string | — | Yes | Redis connection URL (for EventBus pub/sub) |
 | `DISCORD_BOT_TOKEN` | string | — | Yes | Discord bot token (for fetching guild channels/roles via REST API) |
-| `NEXT_PUBLIC_PRIVACY_POLICY_URL` | string | — | No | Privacy Policy page URL (shown in cookie banner and footer) |
-| `NEXT_PUBLIC_TERMS_OF_SERVICE_URL` | string | — | No | Terms of Service page URL (shown in cookie banner and footer) |
-| `NEXT_PUBLIC_CHANNEL_URL` | string | — | No | Channel URL to link to on the landing page |
-| `NEXT_PUBLIC_CHANNEL_NAME` | string | — | No | Channel display name for landing page copy |
-| `NEXT_PUBLIC_LOGO_URL` | string | — | No | Logo image URL (light mode or default) |
-| `NEXT_PUBLIC_LOGO_DARK_URL` | string | — | No | Logo image URL for dark mode (falls back to LOGO_URL) |
+| `NEXT_PUBLIC_COMPANY_NAME` | string | `"Community Bot"` | No | Company/brand name used on TOS and Privacy Policy pages |
+| `NEXT_PUBLIC_PRIVACY_POLICY_URL` | string | — | No | External Privacy Policy URL. If set, footer links open this instead of the built-in `/privacy` page |
+| `NEXT_PUBLIC_TERMS_OF_SERVICE_URL` | string | — | No | External Terms of Service URL. If set, footer links open this instead of the built-in `/terms` page |
 | `NEXT_PUBLIC_COPYRIGHT_NAME` | string | — | No | Copyright holder name shown in footer |
 | `NEXT_PUBLIC_COPYRIGHT_URL` | string | — | No | URL the copyright name links to |
-| `NEXT_PUBLIC_SOCIAL_LINKS` | string | — | No | Comma-separated social URLs (icons auto-detected from hostname: twitter, github, twitch, youtube) |
+| `NEXT_PUBLIC_SOCIAL_LINKS` | string | — | No | Comma-separated social URLs (icons auto-detected from hostname — see below) |
 | `NODE_ENV` | enum | `"development"` | No | Environment |
 
 The broadcaster is configured automatically by the [setup wizard](/docs/getting-started/setup-wizard) — no env var needed. On first startup, the web app logs a setup URL to the console.
+
+The **channel name** and **channel URL** on the landing page are derived automatically from the broadcaster's Twitch username (set during setup). No env var is needed.
+
+The **logo** is served from a local asset at `/logo-white-border.png` in `apps/web/public/`. Replace this file to change the logo.
+
+### Supported Social Link Platforms
+
+When you set `NEXT_PUBLIC_SOCIAL_LINKS`, icons are automatically detected from the URL hostname:
+
+| Platform | Detected Hostnames | Icon |
+|----------|--------------------|------|
+| Twitter / X | `twitter.com`, `x.com` | Twitter icon |
+| GitHub | `github.com` | GitHub icon |
+| Twitch | `twitch.tv` | Twitch icon |
+| YouTube | `youtube.com`, `youtu.be` | YouTube icon |
+| Other | Any other URL | Globe icon |
+
+Example:
+
+```bash
+NEXT_PUBLIC_SOCIAL_LINKS="https://twitter.com/you,https://github.com/you,https://twitch.tv/you"
+```
 
 ### Finding Your Web Dashboard Values
 
