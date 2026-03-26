@@ -1,4 +1,8 @@
-/** Format any UPPER_SNAKE_CASE enum value to Title Case */
+/**
+ * Shared formatting utilities for enum display values.
+ */
+
+/** Format any UPPER_SNAKE_CASE enum value to Title Case (e.g. "LEAD_MODERATOR" → "Lead Moderator"). */
 export function formatLabel(value: string): string {
   return value
     .split("_")
@@ -6,8 +10,10 @@ export function formatLabel(value: string): string {
     .join(" ");
 }
 
+/** Format access level enums for display. Alias for formatLabel. */
 export const formatAccessLevel = formatLabel;
 
+/** All Twitch access level enum values in order of privilege. */
 export const ACCESS_LEVELS = [
   "EVERYONE",
   "SUBSCRIBER",
@@ -18,9 +24,13 @@ export const ACCESS_LEVELS = [
   "BROADCASTER",
 ] as const;
 
+/** All Twitch response type enum values. */
 export const RESPONSE_TYPES = ["SAY", "MENTION", "REPLY"] as const;
-export const STREAM_STATUSES = ["BOTH", "ONLINE", "OFFLINE"] as const;
 
+/** All Twitch stream status enum values (matches DB enum order). */
+export const STREAM_STATUSES = ["ONLINE", "OFFLINE", "BOTH"] as const;
+
+/** Semantic color classes for access level badges. */
 export function accessLevelColor(level: string): string {
   const colors: Record<string, string> = {
     EVERYONE: "bg-green-500/10 text-green-600 dark:text-green-400",

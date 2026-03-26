@@ -42,7 +42,7 @@ export default async (client: Client) => {
       logger.warn(
         "Discord - Activity",
         "Failed to read presence config from database, falling back to env vars",
-        err
+        err as Record<string, unknown>
       );
     }
 
