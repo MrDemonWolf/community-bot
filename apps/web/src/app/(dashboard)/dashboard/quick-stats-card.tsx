@@ -2,7 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
-import { Terminal, BookOpen, ListOrdered, Activity } from "lucide-react";
+import {
+  Terminal,
+  BookOpen,
+  ListOrdered,
+  Activity,
+  Users,
+  Hash,
+  Timer,
+  Music,
+  Gift,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
@@ -50,6 +60,8 @@ function QueueBadge({ status }: { status: string }) {
   );
 }
 
+const SKELETON_COUNT = 9;
+
 export default function QuickStatsStrip() {
   const { data: botStatus, isLoading: loadingBot } = useQuery({
     ...trpc.botChannel.getStatus.queryOptions(),
@@ -72,8 +84,8 @@ export default function QuickStatsStrip() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
           <Card key={i}>
             <CardContent className="flex items-center gap-3 p-4">
               <Skeleton className="size-10 rounded-lg" />
@@ -93,22 +105,19 @@ export default function QuickStatsStrip() {
   const queueStatus = queueState?.status ?? "CLOSED";
 
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {/* Commands count */}
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
       <StatCard
         icon={Terminal}
         label="Commands"
         value={commands?.length ?? 0}
       />
 
-      {/* Quotes count */}
       <StatCard
         icon={BookOpen}
         label="Quotes"
         value={stats?.quotes ?? 0}
       />
 
-      {/* Queue status */}
       <Card>
         <CardContent className="flex items-center gap-3 p-4">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-main/10">
@@ -121,12 +130,41 @@ export default function QuickStatsStrip() {
         </CardContent>
       </Card>
 
-      {/* Bot health */}
       <StatCard
         icon={Activity}
         label="Bot Status"
         value={isHealthy ? "Healthy" : "Unhealthy"}
         iconClass={isHealthy ? "text-green-500" : "text-amber-500"}
+      />
+
+      <StatCard
+        icon={Users}
+        label="Regulars"
+        value={stats?.regulars ?? 0}
+      />
+
+      <StatCard
+        icon={Hash}
+        label="Counters"
+        value={stats?.counters ?? 0}
+      />
+
+      <StatCard
+        icon={Timer}
+        label="Timers"
+        value={stats?.timers ?? 0}
+      />
+
+      <StatCard
+        icon={Music}
+        label="Song Requests"
+        value={stats?.songRequests ?? 0}
+      />
+
+      <StatCard
+        icon={Gift}
+        label="Giveaways"
+        value={stats?.giveaways ?? 0}
       />
     </div>
   );

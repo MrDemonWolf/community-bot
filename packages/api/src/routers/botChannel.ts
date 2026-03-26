@@ -1,4 +1,4 @@
-import { db, eq, and, count, accounts, users, botChannels, defaultCommandOverrides, quotes, twitchCounters, twitchTimers, songRequests, giveaways } from "@community-bot/db";
+import { db, eq, and, count, accounts, users, botChannels, defaultCommandOverrides, quotes, twitchCounters, twitchTimers, songRequests, giveaways, regulars } from "@community-bot/db";
 import { protectedProcedure, leadModProcedure, router } from "../index";
 import { z } from "zod";
 import { DEFAULT_COMMANDS } from "@community-bot/db/defaultCommands";
@@ -264,17 +264,18 @@ export const botChannelRouter = router({
     });
 
     if (!botChannel || !botChannel.enabled) {
-      return { quotes: 0, counters: 0, timers: 0, songRequests: 0, giveaways: 0 };
+      return { quotes: 0, counters: 0, timers: 0, songRequests: 0, giveaways: 0, regulars: 0 };
     }
 
-    const [quotesResult, countersResult, timersResult, songRequestsResult, giveawaysResult] = await Promise.all([
+    const [quotesResult, countersResult, timersResult, songRequestsResult, giveawaysResult, regularsResult] = await Promise.all([
       db.select({ value: count() }).from(quotes).where(eq(quotes.botChannelId, botChannel.id)),
       db.select({ value: count() }).from(twitchCounters).where(eq(twitchCounters.botChannelId, botChannel.id)),
       db.select({ value: count() }).from(twitchTimers).where(and(eq(twitchTimers.botChannelId, botChannel.id), eq(twitchTimers.enabled, true))),
       db.select({ value: count() }).from(songRequests).where(eq(songRequests.botChannelId, botChannel.id)),
       db.select({ value: count() }).from(giveaways).where(eq(giveaways.botChannelId, botChannel.id)),
+      db.select({ value: count() }).from(regulars),
     ]);
 
-    return { quotes: quotesResult[0]?.value ?? 0, counters: countersResult[0]?.value ?? 0, timers: timersResult[0]?.value ?? 0, songRequests: songRequestsResult[0]?.value ?? 0, giveaways: giveawaysResult[0]?.value ?? 0 };
+    return { quotes: quotesResult[0]?.value ?? 0, counters: countersResult[0]?.value ?? 0, timers: timersResult[0]?.value ?? 0, songRequests: songRequestsResult[0]?.value ?? 0, giveaways: giveawaysResult[0]?.value ?? 0, regulars: regularsResult[0]?.value ?? 0 };
   }),
 });

@@ -255,12 +255,16 @@ describe("botChannelRouter", () => {
       const makeSelectChain = (val: number) => ({
         from: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([{ value: val }]) }),
       });
+      const makeSelectChainNoWhere = (val: number) => ({
+        from: vi.fn().mockResolvedValue([{ value: val }]),
+      });
       mocks.db.select
         .mockReturnValueOnce(makeSelectChain(10))
         .mockReturnValueOnce(makeSelectChain(3))
         .mockReturnValueOnce(makeSelectChain(2))
         .mockReturnValueOnce(makeSelectChain(5))
-        .mockReturnValueOnce(makeSelectChain(1));
+        .mockReturnValueOnce(makeSelectChain(1))
+        .mockReturnValueOnce(makeSelectChainNoWhere(7));
 
       const result = await caller.stats();
       expect(result).toEqual({
@@ -268,7 +272,8 @@ describe("botChannelRouter", () => {
         counters: 3,
         timers: 2,
         songRequests: 5,
-        giveaways: 1 });
+        giveaways: 1,
+        regulars: 7 });
     });
 
     it("returns zeros when bot not enabled", async () => {
@@ -281,7 +286,8 @@ describe("botChannelRouter", () => {
         counters: 0,
         timers: 0,
         songRequests: 0,
-        giveaways: 0 });
+        giveaways: 0,
+        regulars: 0 });
     });
   });
 });

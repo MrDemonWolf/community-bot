@@ -945,7 +945,7 @@ function BotPresenceCard({ canEdit }: { canEdit: boolean }) {
                 {canEdit ? (
                   <Select
                     value={activityType}
-                    onValueChange={(v) => setActivityType(v)}
+                    onValueChange={(v) => setActivityType(v ?? "CUSTOM")}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select type..." />

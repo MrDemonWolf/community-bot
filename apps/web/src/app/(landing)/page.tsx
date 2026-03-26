@@ -63,7 +63,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-background px-6 pb-20 pt-24 sm:pb-32 sm:pt-32">
+      <section className="relative overflow-hidden px-6 pb-20 pt-24 sm:pb-32 sm:pt-32">
         <div className="absolute inset-0 bg-gradient-to-b from-brand-main/5 via-transparent to-transparent" />
         <div className="relative mx-auto max-w-4xl text-center">
           <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-brand-main/20 bg-brand-main/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-brand-main">

@@ -194,11 +194,11 @@ export default function BotControlsCard() {
         {/* Active */}
         {hasTwitch && isEnabled && !isMuted && (
           <div className="flex items-start gap-3">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-main/10">
-              <CheckCircle2 className="size-4 text-brand-main" />
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-green-500/10">
+              <CheckCircle2 className="size-4 text-green-500" />
             </div>
             <div className="flex-1 space-y-2">
-              <p className="text-sm font-medium text-brand-main">Active</p>
+              <p className="text-sm font-medium text-green-500">Active</p>
               <p className="text-xs text-muted-foreground">
                 Connected to{" "}
                 <a

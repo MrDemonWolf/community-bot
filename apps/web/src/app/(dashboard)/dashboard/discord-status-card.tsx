@@ -60,7 +60,7 @@ export default function DiscordStatusCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="font-heading">Discord</CardTitle>
+          <CardTitle className="font-heading">Discord Bot</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-start gap-3">
@@ -80,7 +80,7 @@ export default function DiscordStatusCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="font-heading">Discord</CardTitle>
+          <CardTitle className="font-heading">Discord Bot</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-start gap-3">
@@ -112,7 +112,7 @@ export default function DiscordStatusCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-heading">Discord</CardTitle>
+        <CardTitle className="font-heading">Discord Bot</CardTitle>
       </CardHeader>
       <CardContent>
         {/* Muted state */}
