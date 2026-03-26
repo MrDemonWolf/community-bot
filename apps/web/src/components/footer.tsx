@@ -1,11 +1,13 @@
+import Link from "next/link";
 import { Github, Twitter, Twitch, Youtube, Globe } from "lucide-react";
+import { env } from "@community-bot/env/web";
 
-const privacyUrl = process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL;
-const termsUrl = process.env.NEXT_PUBLIC_TERMS_OF_SERVICE_URL;
-const copyrightName = process.env.NEXT_PUBLIC_COPYRIGHT_NAME;
-const copyrightUrl = process.env.NEXT_PUBLIC_COPYRIGHT_URL;
-const socialLinks = process.env.NEXT_PUBLIC_SOCIAL_LINKS
-  ? process.env.NEXT_PUBLIC_SOCIAL_LINKS.split(",").map((s) => s.trim()).filter(Boolean)
+const privacyUrl = env.NEXT_PUBLIC_PRIVACY_POLICY_URL;
+const termsUrl = env.NEXT_PUBLIC_TERMS_OF_SERVICE_URL;
+const copyrightName = env.NEXT_PUBLIC_COPYRIGHT_NAME;
+const copyrightUrl = env.NEXT_PUBLIC_COPYRIGHT_URL;
+const socialLinks = env.NEXT_PUBLIC_SOCIAL_LINKS
+  ? env.NEXT_PUBLIC_SOCIAL_LINKS.split(",").map((s) => s.trim()).filter(Boolean)
   : [];
 
 function getSocialIcon(url: string) {
@@ -31,11 +33,6 @@ function getSocialLabel(url: string) {
 }
 
 export default function Footer() {
-  const privacyHref = privacyUrl || "/privacy";
-  const termsHref = termsUrl || "/terms";
-  const isPrivacyExternal = !!privacyUrl;
-  const isTermsExternal = !!termsUrl;
-
   return (
     <footer className="border-t border-border bg-background">
       <div className="mx-auto max-w-5xl px-6 py-8">
@@ -93,24 +90,34 @@ export default function Footer() {
 
           {/* Legal Links */}
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <a
-              href={privacyHref}
-              {...(isPrivacyExternal
-                ? { target: "_blank", rel: "noopener noreferrer" }
-                : {})}
-              className="transition-colors hover:text-foreground"
-            >
-              Privacy Policy
-            </a>
-            <a
-              href={termsHref}
-              {...(isTermsExternal
-                ? { target: "_blank", rel: "noopener noreferrer" }
-                : {})}
-              className="transition-colors hover:text-foreground"
-            >
-              Terms of Service
-            </a>
+            {privacyUrl ? (
+              <a
+                href={privacyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-foreground"
+              >
+                Privacy Policy
+              </a>
+            ) : (
+              <Link href="/privacy" className="transition-colors hover:text-foreground">
+                Privacy Policy
+              </Link>
+            )}
+            {termsUrl ? (
+              <a
+                href={termsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-foreground"
+              >
+                Terms of Service
+              </a>
+            ) : (
+              <Link href="/terms" className="transition-colors hover:text-foreground">
+                Terms of Service
+              </Link>
+            )}
           </div>
         </div>
       </div>

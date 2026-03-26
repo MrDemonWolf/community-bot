@@ -233,9 +233,9 @@
 
 ### E5. Landing Page
 
-- [ ] "View Profile" button visible in hero section when `NEXT_PUBLIC_CHANNEL_NAME` is set
-- [ ] "View Profile" button links to `/p`
-- [ ] Button does not render when `NEXT_PUBLIC_CHANNEL_NAME` is not set
+- [ ] "Visit Channel" button visible in hero section when broadcaster has a Twitch username
+- [ ] "Visit Channel" button links to `https://twitch.tv/{username}`
+- [ ] Button does not render when no broadcaster is configured
 
 ## F. Auth, Permissions & User Management (Phase 5)
 
