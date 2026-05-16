@@ -12,9 +12,9 @@
     "generate-pwa-assets": "pwa-assets-generator"
   },
   "dependencies": {
-    "@community-bot-scaffold-tmp/api": "workspace:*",
-    "@community-bot-scaffold-tmp/env": "workspace:*",
-    "@community-bot-scaffold-tmp/ui": "workspace:*",
+    "@community-bot/api": "workspace:*",
+    "@community-bot/env": "workspace:*",
+    "@community-bot/ui": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-form": "^1.28.0",
@@ -34,7 +34,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@community-bot-scaffold-tmp/config": "workspace:*",
+    "@community-bot/config": "workspace:*",
     "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/react-router-devtools": "^1.166.13",
     "@tanstack/router-plugin": "^1.167.22",

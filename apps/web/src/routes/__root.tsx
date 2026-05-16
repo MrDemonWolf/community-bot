@@ -1,4 +1,4 @@
-import { Toaster } from "@community-bot-scaffold-tmp/ui/components/sonner";
+import { Toaster } from "@community-bot/ui/components/sonner";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { HeadContent, Outlet, createRootRouteWithContext } from "@tanstack/react-router";
@@ -20,11 +20,11 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
       {
-        title: "community-bot-scaffold-tmp",
+        title: "community-bot",
       },
       {
         name: "description",
-        content: "community-bot-scaffold-tmp is a web application",
+        content: "community-bot is a web application",
       },
     ],
     links: [

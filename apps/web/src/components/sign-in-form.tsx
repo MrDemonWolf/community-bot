@@ -1,6 +1,6 @@
-import { Button } from "@community-bot-scaffold-tmp/ui/components/button";
-import { Input } from "@community-bot-scaffold-tmp/ui/components/input";
-import { Label } from "@community-bot-scaffold-tmp/ui/components/label";
+import { Button } from "@community-bot/ui/components/button";
+import { Input } from "@community-bot/ui/components/input";
+import { Label } from "@community-bot/ui/components/label";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";

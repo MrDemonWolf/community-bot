@@ -1,0 +1,92 @@
+# 17 — Operations
+
+How to run this thing day-to-day.
+
+## On-call
+
+Single-streamer self-hosted bot → Nathanial is on-call. Discord webhook alerts to a private channel for critical events.
+
+## Common runbook entries
+
+### Bot won't connect to Twitch chat
+
+1. Check Twitch token validity in `/dashboard/integrations`. Re-auth if expired.
+2. Check IRC capability subscriptions in logs.
+3. Verify bot account isn't banned/timed out from broadcaster's channel.
+
+### Discord bot offline
+
+1. `dokploy logs community-bot:discord --tail 100`
+2. Verify gateway intents toggled in Discord Dev Portal (Members, MessageContent, Presences)
+3. Verify bot token valid
+
+### EventSub WS disconnects repeatedly
+
+1. Check Twitch auth token scopes — missing scope causes silent revocation
+2. Verify network egress isn't blocked
+3. Inspect `events` table for last event timestamp — if old, something's wrong
+
+### Migration fails mid-deploy
+
+1. Dokploy rollback to last image
+2. SSH in, restore DB to last backup
+3. Reproduce migration locally against staging
+4. Fix forward in a new migration; never edit applied migrations
+
+### `audit_logs` is huge
+
+1. Partition exists? (Phase 9 ships partitioning). Drop oldest partition.
+2. Otherwise: extend `auditLogsDays` retention purposely; OR archive old rows to cold storage.
+
+### Key rotation (quarterly)
+
+1. Generate new `ENCRYPTION_KEY_V2` (32 random bytes base64)
+2. Add to env alongside `ENCRYPTION_KEY` (which is v1)
+3. Deploy with code change: `KEY_VERSION = 2`
+4. Run background job: re-encrypt all secret columns
+5. After verification, remove v1 key from env
+
+### Restore-from-backup drill (quarterly)
+
+1. Spin up empty Supabase project
+2. Pull latest backup from S3
+3. Restore + apply migrations
+4. Verify schema + sample data
+5. Document time-to-restore in `docs/restore-drill-log.md`
+
+## Releases
+
+`develop` is the working branch. Phase work merges in via PR.
+
+When a phase is complete + tested:
+
+1. PR `develop` → `main`
+2. Squash-merge after review (or self-review for solo work)
+3. GitHub Actions builds + pushes images to GHCR
+4. Dokploy webhook redeploys
+5. Verify via smoke test
+
+Solo Main Protection ruleset on `MrDemonWolf/community-bot`:
+
+- `main` requires status checks pass
+- `main` admin-bypassable (Nathanial can override)
+- `develop` requires PR (helps avoid yolo commits)
+
+## Disaster recovery RPO/RTO
+
+- **RPO** (acceptable data loss): 24h (daily backup window)
+- **RTO** (recovery time): 4h (Supabase restore + Dokploy redeploy)
+
+If unacceptable: enable Supabase PITR (Point-in-Time Recovery) on a paid tier.
+
+## Environment variables
+
+All env vars validated at boot via Zod schemas in `apps/*/src/config.ts`. Missing/invalid → app refuses to start with a clear error.
+
+`docs/env-vars.md` is the canonical list. Generated from `apps/server/src/config.ts` Zod schema.
+
+## Logs viewing
+
+- Local: `bun --filter=server dev` shows logs inline
+- Dokploy: web dashboard → service → "Logs" tab (last 1000 lines + tail)
+- Long-term: Logs are NOT archived. Audit log is the long-term record.

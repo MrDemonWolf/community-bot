@@ -5,5 +5,5 @@ export default defineConfig({
   format: "esm",
   outDir: "./dist",
   clean: true,
-  noExternal: [/@community-bot-scaffold-tmp\/.*/],
+  noExternal: [/@community-bot\/.*/],
 });

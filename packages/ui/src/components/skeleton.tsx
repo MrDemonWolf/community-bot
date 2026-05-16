@@ -1,4 +1,4 @@
-import { cn } from "@community-bot-scaffold-tmp/ui/lib/utils";
+import { cn } from "@community-bot/ui/lib/utils";
 
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (

@@ -1,4 +1,4 @@
-import { cn } from "@community-bot-scaffold-tmp/ui/lib/utils";
+import { cn } from "@community-bot/ui/lib/utils";
 import * as React from "react";
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {

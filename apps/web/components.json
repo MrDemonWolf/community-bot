@@ -13,8 +13,8 @@
   "iconLibrary": "lucide",
   "aliases": {
     "components": "@/components",
-    "utils": "@community-bot-scaffold-tmp/ui/lib/utils",
-    "ui": "@community-bot-scaffold-tmp/ui/components",
+    "utils": "@community-bot/ui/lib/utils",
+    "ui": "@community-bot/ui/components",
     "lib": "@/lib",
     "hooks": "@/hooks"
   },

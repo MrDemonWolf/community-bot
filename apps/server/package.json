@@ -10,10 +10,10 @@
     "start": "bun run dist/index.mjs"
   },
   "dependencies": {
-    "@community-bot-scaffold-tmp/api": "workspace:*",
-    "@community-bot-scaffold-tmp/auth": "workspace:*",
-    "@community-bot-scaffold-tmp/db": "workspace:*",
-    "@community-bot-scaffold-tmp/env": "workspace:*",
+    "@community-bot/api": "workspace:*",
+    "@community-bot/auth": "workspace:*",
+    "@community-bot/db": "workspace:*",
+    "@community-bot/env": "workspace:*",
     "@hono/trpc-server": "^0.4.0",
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",
@@ -22,7 +22,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@community-bot-scaffold-tmp/config": "workspace:*",
+    "@community-bot/config": "workspace:*",
     "@types/bun": "catalog:",
     "tsdown": "^0.21.9",
     "typescript": "catalog:"
