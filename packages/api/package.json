@@ -1,0 +1,27 @@
+{
+  "name": "@community-bot-scaffold-tmp/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@community-bot-scaffold-tmp/auth": "workspace:*",
+    "@community-bot-scaffold-tmp/db": "workspace:*",
+    "@community-bot-scaffold-tmp/env": "workspace:*",
+    "@trpc/client": "catalog:",
+    "@trpc/server": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@community-bot-scaffold-tmp/config": "workspace:*",
+    "hono": "catalog:",
+    "typescript": "catalog:"
+  }
+}
