@@ -1,5 +1,5 @@
-import type { AppRouter } from "@community-bot-scaffold-tmp/api/routers/index";
-import { env } from "@community-bot-scaffold-tmp/env/web";
+import type { AppRouter } from "@community-bot/api/routers/index";
+import { env } from "@community-bot/env/web";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";

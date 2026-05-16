@@ -1,5 +1,5 @@
 {
-  "name": "community-bot-scaffold-tmp",
+  "name": "community-bot",
   "private": true,
   "workspaces": {
     "packages": [
@@ -21,23 +21,28 @@
   },
   "type": "module",
   "scripts": {
+    "preinstall": "npx -y only-allow bun",
     "dev": "turbo dev",
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
-    "db:push": "turbo -F @community-bot-scaffold-tmp/db db:push",
-    "db:studio": "turbo -F @community-bot-scaffold-tmp/db db:studio",
-    "db:generate": "turbo -F @community-bot-scaffold-tmp/db db:generate",
-    "db:migrate": "turbo -F @community-bot-scaffold-tmp/db db:migrate"
+    "db:push": "turbo -F @community-bot/db db:push",
+    "db:studio": "turbo -F @community-bot/db db:studio",
+    "db:generate": "turbo -F @community-bot/db db:generate",
+    "db:migrate": "turbo -F @community-bot/db db:migrate"
+  },
+  "engines": {
+    "bun": ">=1.1.0",
+    "node": ">=20"
   },
   "dependencies": {
-    "@community-bot-scaffold-tmp/env": "workspace:*",
+    "@community-bot/env": "workspace:*",
     "dotenv": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@community-bot-scaffold-tmp/config": "workspace:*",
+    "@community-bot/config": "workspace:*",
     "@types/bun": "catalog:",
     "turbo": "^2.8.12",
     "typescript": "catalog:"

@@ -12,11 +12,11 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@community-bot-scaffold-tmp/ui/components",
-    "utils": "@community-bot-scaffold-tmp/ui/lib/utils",
-    "hooks": "@community-bot-scaffold-tmp/ui/hooks",
-    "lib": "@community-bot-scaffold-tmp/ui/lib",
-    "ui": "@community-bot-scaffold-tmp/ui/components"
+    "components": "@community-bot/ui/components",
+    "utils": "@community-bot/ui/lib/utils",
+    "hooks": "@community-bot/ui/hooks",
+    "lib": "@community-bot/ui/lib",
+    "ui": "@community-bot/ui/components"
   },
   "menuColor": "default",
   "menuAccent": "subtle",

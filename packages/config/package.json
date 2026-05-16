@@ -1,5 +1,5 @@
 {
-  "name": "@community-bot-scaffold-tmp/config",
+  "name": "@community-bot/config",
   "version": "0.0.0",
   "private": true
 }

@@ -49,3 +49,24 @@ coverage
 .cache
 tmp
 temp
+
+# Bun
+.bun/
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Drizzle ephemeral
+drizzle/
+
+# Sentry
+.sentryclirc
+
+# Playwright / E2E
+playwright-report/
+test-results/
+
+# Local working notes
+.notes/
+scratch/

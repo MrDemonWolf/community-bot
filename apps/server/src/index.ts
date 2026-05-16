@@ -1,7 +1,7 @@
-import { createContext } from "@community-bot-scaffold-tmp/api/context";
-import { appRouter } from "@community-bot-scaffold-tmp/api/routers/index";
-import { auth } from "@community-bot-scaffold-tmp/auth";
-import { env } from "@community-bot-scaffold-tmp/env/server";
+import { createContext } from "@community-bot/api/context";
+import { appRouter } from "@community-bot/api/routers/index";
+import { auth } from "@community-bot/auth";
+import { env } from "@community-bot/env/server";
 import { trpcServer } from "@hono/trpc-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";

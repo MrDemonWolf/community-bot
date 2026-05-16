@@ -1,3 +1,13 @@
+/*
+  Mobile-first only. Start with no breakpoint (mobile defaults),
+  then sm: / md: / lg: for larger viewports. Never the other way around.
+
+  Brand colors:
+    --brand-navy: #091533
+    --brand-cyan: #0FACED
+  Tailwind v4 classes: bg-brand-navy, text-brand-cyan, border-brand-cyan, etc.
+*/
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -6,7 +16,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme inline {
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-cyan: var(--brand-cyan);
+}
+
 :root {
+  --brand-navy: #091533;
+  --brand-cyan: #0FACED;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

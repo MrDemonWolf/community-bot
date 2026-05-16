@@ -1,6 +1,6 @@
-import { createDb } from "@community-bot-scaffold-tmp/db";
-import * as schema from "@community-bot-scaffold-tmp/db/schema/auth";
-import { env } from "@community-bot-scaffold-tmp/env/server";
+import { createDb } from "@community-bot/db";
+import * as schema from "@community-bot/db/schema/auth";
+import { env } from "@community-bot/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 

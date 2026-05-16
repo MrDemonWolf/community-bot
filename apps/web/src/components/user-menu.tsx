@@ -1,4 +1,4 @@
-import { Button } from "@community-bot-scaffold-tmp/ui/components/button";
+import { Button } from "@community-bot/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,8 +7,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@community-bot-scaffold-tmp/ui/components/dropdown-menu";
-import { Skeleton } from "@community-bot-scaffold-tmp/ui/components/skeleton";
+} from "@community-bot/ui/components/dropdown-menu";
+import { Skeleton } from "@community-bot/ui/components/skeleton";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";

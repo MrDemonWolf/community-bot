@@ -1,4 +1,4 @@
-import { env } from "@community-bot-scaffold-tmp/env/web";
+import { env } from "@community-bot/env/web";
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({

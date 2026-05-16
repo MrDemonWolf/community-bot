@@ -1,5 +1,5 @@
 {
-  "name": "@community-bot-scaffold-tmp/db",
+  "name": "@community-bot/db",
   "type": "module",
   "exports": {
     ".": {
@@ -16,14 +16,14 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "@community-bot-scaffold-tmp/env": "workspace:*",
+    "@community-bot/env": "workspace:*",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
     "pg": "^8.17.1",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@community-bot-scaffold-tmp/config": "workspace:*",
+    "@community-bot/config": "workspace:*",
     "@types/pg": "^8.16.0",
     "drizzle-kit": "^0.31.8",
     "typescript": "catalog:"

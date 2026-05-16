@@ -1,10 +1,10 @@
-import { Button } from "@community-bot-scaffold-tmp/ui/components/button";
+import { Button } from "@community-bot/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@community-bot-scaffold-tmp/ui/components/dropdown-menu";
+} from "@community-bot/ui/components/dropdown-menu";
 import { Moon, Sun } from "lucide-react";
 
 import { useTheme } from "@/components/theme-provider";

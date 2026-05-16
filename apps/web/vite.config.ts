@@ -21,9 +21,9 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "community-bot-scaffold-tmp",
-        short_name: "community-bot-scaffold-tmp",
-        description: "community-bot-scaffold-tmp - PWA Application",
+        name: "community-bot",
+        short_name: "community-bot",
+        description: "community-bot - PWA Application",
         theme_color: "#0c0c0c",
       },
       pwaAssets: { disabled: false, config: true },

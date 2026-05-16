@@ -1,5 +1,5 @@
 {
-  "name": "@community-bot-scaffold-tmp/env",
+  "name": "@community-bot/env",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@community-bot-scaffold-tmp/config": "workspace:*",
+    "@community-bot/config": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
   }
