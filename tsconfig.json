@@ -1,0 +1,3 @@
+{
+  "extends": "@community-bot-scaffold-tmp/config/tsconfig.base.json"
+}
