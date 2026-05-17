@@ -2,14 +2,21 @@ import { createContext } from "@community-bot/api/context";
 import { appRouter } from "@community-bot/api/routers/index";
 import { auth } from "@community-bot/auth";
 import { env } from "@community-bot/env/server";
+import { logger } from "@community-bot/logger";
 import { trpcServer } from "@hono/trpc-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 
 const app = new Hono();
 
-app.use(logger());
+app.use("*", async (c, next) => {
+  const start = Date.now();
+  const reqId = crypto.randomUUID();
+  const log = logger.child({ reqId, method: c.req.method, path: c.req.path });
+  await next();
+  log.info({ status: c.res.status, durationMs: Date.now() - start }, "request");
+});
+
 app.use(
   "/*",
   cors({
