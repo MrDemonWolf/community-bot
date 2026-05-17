@@ -2,15 +2,15 @@
 
 ## Currently planned
 
-| Integration | Phase | Auth | Notes |
-|---|---|---|---|
-| Twitch (Helix + EventSub + Chat) | 1/2 | OAuth | Refresh tokens encrypted |
-| Discord (gateway + REST) | 1 | Bot token | Token encrypted |
-| Supabase (DB + Realtime + Storage + Auth via Better-Auth) | -1 | Service role key | Self-hosted via Dokploy |
-| Apple WeatherKit | 2+ Later | JWT (ES256) | 500K req/mo (Nathanial's ADC) |
-| Google Gemini | 8 | API key | Paid tier from day 1 |
-| GitHub | release | Personal access token | For releases / GHCR push |
-| Sentry | 9 (optional) | DSN | Error tracking |
+| Integration                                               | Phase        | Auth                  | Notes                         |
+| --------------------------------------------------------- | ------------ | --------------------- | ----------------------------- |
+| Twitch (Helix + EventSub + Chat)                          | 1/2          | OAuth                 | Refresh tokens encrypted      |
+| Discord (gateway + REST)                                  | 1            | Bot token             | Token encrypted               |
+| Supabase (DB + Realtime + Storage + Auth via Better-Auth) | -1           | Service role key      | Self-hosted via Dokploy       |
+| Apple WeatherKit                                          | 2+ Later     | JWT (ES256)           | 500K req/mo (Nathanial's ADC) |
+| Google Gemini                                             | 8            | API key               | Paid tier from day 1          |
+| GitHub                                                    | release      | Personal access token | For releases / GHCR push      |
+| Sentry                                                    | 9 (optional) | DSN                   | Error tracking                |
 
 ## Explicitly excluded
 

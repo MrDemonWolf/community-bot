@@ -5,15 +5,15 @@
 ## Intents
 
 ```ts
-import { GatewayIntentBits, Partials } from 'discord.js';
+import { GatewayIntentBits, Partials } from "discord.js";
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,         // privileged — toggle in Dev Portal
+    GatewayIntentBits.GuildMembers, // privileged — toggle in Dev Portal
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,       // privileged — toggle in Dev Portal
-    GatewayIntentBits.GuildPresences,       // privileged — toggle in Dev Portal
+    GatewayIntentBits.MessageContent, // privileged — toggle in Dev Portal
+    GatewayIntentBits.GuildPresences, // privileged — toggle in Dev Portal
     GatewayIntentBits.DirectMessages,
   ],
   partials: [Partials.Message, Partials.Channel, Partials.User],
@@ -97,13 +97,9 @@ On `stream.offline` → edit to "Stream ended", duration, VOD link.
 ## Graceful shutdown
 
 ```ts
-process.on('SIGTERM', async () => {
+process.on("SIGTERM", async () => {
   isShuttingDown = true;
-  await Promise.all([
-    ...workers.map(w => w.stop()),
-    realtime.unsubscribe(),
-    client.destroy(),
-  ]);
+  await Promise.all([...workers.map((w) => w.stop()), realtime.unsubscribe(), client.destroy()]);
   process.exit(0);
 });
 ```

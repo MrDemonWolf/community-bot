@@ -26,13 +26,13 @@ packages/db/src/schema/
 ## Roles enum
 
 ```ts
-export const role = pgEnum('role', [
-  'broadcaster',
-  'editor',
-  'moderator',
-  'vip',
-  'subscriber',
-  'viewer'
+export const role = pgEnum("role", [
+  "broadcaster",
+  "editor",
+  "moderator",
+  "vip",
+  "subscriber",
+  "viewer",
 ]);
 ```
 
@@ -45,40 +45,47 @@ CREATE UNIQUE INDEX one_broadcaster ON "user" (role) WHERE role = 'broadcaster';
 ## userMeta
 
 ```ts
-export const userMeta = pgTable('user_meta', {
-  userId: text('user_id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),
-  brainCells: integer('brain_cells').notNull().default(0),
-  watchMinutes: integer('watch_minutes').notNull().default(0),
-  followedAt: timestamp('followed_at', { withTimezone: true }),
-  firstSeenAt: timestamp('first_seen_at', { withTimezone: true }).notNull().defaultNow(),
-  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
-  aiOptOut: boolean('ai_opt_out').notNull().default(false),
-  exportRequestedAt: timestamp('export_requested_at', { withTimezone: true }),
-  forgetMeAt: timestamp('forget_me_at', { withTimezone: true }),
-  notes: text('notes'),
+export const userMeta = pgTable("user_meta", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  brainCells: integer("brain_cells").notNull().default(0),
+  watchMinutes: integer("watch_minutes").notNull().default(0),
+  followedAt: timestamp("followed_at", { withTimezone: true }),
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).notNull().defaultNow(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+  aiOptOut: boolean("ai_opt_out").notNull().default(false),
+  exportRequestedAt: timestamp("export_requested_at", { withTimezone: true }),
+  forgetMeAt: timestamp("forget_me_at", { withTimezone: true }),
+  notes: text("notes"),
 });
 ```
 
 ## commands
 
 ```ts
-export const commands = pgTable('commands', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull().unique(),
-  aliases: text('aliases').array().notNull().default(sql`'{}'::text[]`),
-  response: text('response').notNull(),                // template string
-  responsePlatform: jsonb('response_platform'),         // optional per-platform override { twitch: '...', discord: '...' }
-  cooldownSec: integer('cooldown_sec').notNull().default(5),
-  userCooldownSec: integer('user_cooldown_sec').notNull().default(0),
-  minRole: role('min_role').notNull().default('viewer'),
-  enabled: boolean('enabled').notNull().default(true),
-  hidden: boolean('hidden').notNull().default(false),   // hide from public /commands page
-  platform: jsonb('platform').notNull().default(sql`'{"twitch":true,"discord":false}'::jsonb`),
-  category: text('category'),                           // 'info' | 'mod' | 'fun' | 'loyalty' | 'meta'
-  description: text('description'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-  createdBy: text('created_by').references(() => user.id),
+export const commands = pgTable("commands", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  aliases: text("aliases")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  response: text("response").notNull(), // template string
+  responsePlatform: jsonb("response_platform"), // optional per-platform override { twitch: '...', discord: '...' }
+  cooldownSec: integer("cooldown_sec").notNull().default(5),
+  userCooldownSec: integer("user_cooldown_sec").notNull().default(0),
+  minRole: role("min_role").notNull().default("viewer"),
+  enabled: boolean("enabled").notNull().default(true),
+  hidden: boolean("hidden").notNull().default(false), // hide from public /commands page
+  platform: jsonb("platform")
+    .notNull()
+    .default(sql`'{"twitch":true,"discord":false}'::jsonb`),
+  category: text("category"), // 'info' | 'mod' | 'fun' | 'loyalty' | 'meta'
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: text("created_by").references(() => user.id),
 });
 ```
 
@@ -87,37 +94,39 @@ Index: `(name)`, `(enabled, hidden) WHERE NOT hidden` (for public page).
 ## timers
 
 ```ts
-export const timers = pgTable('timers', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  messages: text('messages').array().notNull(),        // rotates through
-  intervalSec: integer('interval_sec').notNull(),
-  minChatLines: integer('min_chat_lines').notNull().default(5),
-  rotation: text('rotation').notNull().default('round-robin'), // 'random' | 'round-robin'
-  platform: jsonb('platform').notNull().default(sql`'{"twitch":true,"discord":false}'::jsonb`),
-  enabled: boolean('enabled').notNull().default(true),
-  rotationIndex: integer('rotation_index').notNull().default(0),
-  lastFiredAt: timestamp('last_fired_at', { withTimezone: true }),
-  nextFireAt: timestamp('next_fire_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+export const timers = pgTable("timers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  messages: text("messages").array().notNull(), // rotates through
+  intervalSec: integer("interval_sec").notNull(),
+  minChatLines: integer("min_chat_lines").notNull().default(5),
+  rotation: text("rotation").notNull().default("round-robin"), // 'random' | 'round-robin'
+  platform: jsonb("platform")
+    .notNull()
+    .default(sql`'{"twitch":true,"discord":false}'::jsonb`),
+  enabled: boolean("enabled").notNull().default(true),
+  rotationIndex: integer("rotation_index").notNull().default(0),
+  lastFiredAt: timestamp("last_fired_at", { withTimezone: true }),
+  nextFireAt: timestamp("next_fire_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 ```
 
 ## auditLogs (append-only)
 
 ```ts
-export const auditLogs = pgTable('audit_logs', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
-  actorId: text('actor_id').references(() => user.id),
-  actorRole: role('actor_role'),
-  action: text('action').notNull(),                    // 'command.create' | 'mod.ban' | 'flow.publish' etc.
-  targetType: text('target_type'),
-  targetId: text('target_id'),
-  reason: text('reason'),
-  metadata: jsonb('metadata'),
-  correlationId: text('correlation_id'),
-  ipHash: text('ip_hash'),                              // SHA256(ip + salt) — not raw IP
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  actorId: text("actor_id").references(() => user.id),
+  actorRole: role("actor_role"),
+  action: text("action").notNull(), // 'command.create' | 'mod.ban' | 'flow.publish' etc.
+  targetType: text("target_type"),
+  targetId: text("target_id"),
+  reason: text("reason"),
+  metadata: jsonb("metadata"),
+  correlationId: text("correlation_id"),
+  ipHash: text("ip_hash"), // SHA256(ip + salt) — not raw IP
 });
 ```
 

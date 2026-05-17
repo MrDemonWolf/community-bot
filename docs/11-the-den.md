@@ -23,15 +23,15 @@ A subscriber-and-VIP-only page on the public dashboard. Phase 6 ships an MVP.
 ## Schema (Phase 6)
 
 ```ts
-export const denPosts = pgTable('den_posts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  title: text('title').notNull(),
-  body: text('body').notNull(),               // markdown
-  publishedAt: timestamp('published_at', { withTimezone: true }),
-  scheduledFor: timestamp('scheduled_for', { withTimezone: true }),
-  authorId: text('author_id').references(() => user.id),
-  pinned: boolean('pinned').notNull().default(false),
-  category: text('category'),                 // 'sneak-peek' | 'schedule' | 'poll' | 'meta'
+export const denPosts = pgTable("den_posts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  body: text("body").notNull(), // markdown
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
+  authorId: text("author_id").references(() => user.id),
+  pinned: boolean("pinned").notNull().default(false),
+  category: text("category"), // 'sneak-peek' | 'schedule' | 'poll' | 'meta'
 });
 ```
 
