@@ -1,0 +1,10 @@
+bun.lock
+**/dist/**
+**/build/**
+**/.next/**
+**/.turbo/**
+**/node_modules/**
+**/drizzle/**
+**/supabase/.branches/**
+**/supabase/.temp/**
+CHANGELOG.md
