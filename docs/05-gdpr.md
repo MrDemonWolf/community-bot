@@ -4,14 +4,14 @@ Single-streamer self-hosted bot. **Streamer (Nathanial) is the data controller.*
 
 ## Lawful bases
 
-| Processing | Lawful basis | Article |
-|---|---|---|
-| Chat commands + viewer counters | Legitimate interest (running a chat bot is core to streaming) | Art. 6(1)(f) |
-| Loyalty (Brain Cells) | Legitimate interest + opt-out | Art. 6(1)(f) |
-| Discord role sync | Consent (explicit account link) | Art. 6(1)(a) |
-| AI features targeting named viewer | Consent (explicit opt-in) | Art. 6(1)(a) |
-| Mod actions + audit log | Legitimate interest (community safety) | Art. 6(1)(f) |
-| GDPR data subject responses | Legal obligation | Art. 6(1)(c) |
+| Processing                         | Lawful basis                                                  | Article      |
+| ---------------------------------- | ------------------------------------------------------------- | ------------ |
+| Chat commands + viewer counters    | Legitimate interest (running a chat bot is core to streaming) | Art. 6(1)(f) |
+| Loyalty (Brain Cells)              | Legitimate interest + opt-out                                 | Art. 6(1)(f) |
+| Discord role sync                  | Consent (explicit account link)                               | Art. 6(1)(a) |
+| AI features targeting named viewer | Consent (explicit opt-in)                                     | Art. 6(1)(a) |
+| Mod actions + audit log            | Legitimate interest (community safety)                        | Art. 6(1)(f) |
+| GDPR data subject responses        | Legal obligation                                              | Art. 6(1)(c) |
 
 ## Data subject rights — implemented
 

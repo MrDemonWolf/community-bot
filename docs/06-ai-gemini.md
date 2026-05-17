@@ -141,20 +141,20 @@ Each call estimates cost from input/output tokens × per-model price. Cumulative
 
 ## 12 AI feature ideas — Phase 8 cut
 
-| # | Feature | Phase | Reason |
-|---|---|---|---|
-| 1 | End-of-stream auto recap | 8 | killer; cheap |
-| 2 | Clip title suggester | 8 | mod tool; high value |
-| 3 | Moderation severity scorer | NEVER | DPIA risk; killed |
-| 4 | Chat vibe → category suggester | NEVER | killed |
-| 5 | Personalised raid message | LATER | nice; not killer |
-| 6 | Sub/cheer/gift hype | 8 | killer |
-| 7 | On-demand chat translate | NEVER | killed |
-| 8 | Weekly community digest | NEVER | killed |
-| 9 | FAQ answerer | NEVER | killed |
-| 10 | New-follower welcome personaliser | NEVER | killed (consent + spam risk) |
-| 11 | Emote usage weekly insights | NEVER | killed |
-| 12 | Content warning guardrail | 8 | not optional |
+| #   | Feature                           | Phase | Reason                       |
+| --- | --------------------------------- | ----- | ---------------------------- |
+| 1   | End-of-stream auto recap          | 8     | killer; cheap                |
+| 2   | Clip title suggester              | 8     | mod tool; high value         |
+| 3   | Moderation severity scorer        | NEVER | DPIA risk; killed            |
+| 4   | Chat vibe → category suggester    | NEVER | killed                       |
+| 5   | Personalised raid message         | LATER | nice; not killer             |
+| 6   | Sub/cheer/gift hype               | 8     | killer                       |
+| 7   | On-demand chat translate          | NEVER | killed                       |
+| 8   | Weekly community digest           | NEVER | killed                       |
+| 9   | FAQ answerer                      | NEVER | killed                       |
+| 10  | New-follower welcome personaliser | NEVER | killed (consent + spam risk) |
+| 11  | Emote usage weekly insights       | NEVER | killed                       |
+| 12  | Content warning guardrail         | 8     | not optional                 |
 
 ## Cost model
 

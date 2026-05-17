@@ -14,25 +14,25 @@ Less to run. Less to break. One backup covers everything. `pgmq` + `pg_cron` are
 
 ## Services
 
-| Service | Path | Public? | Notes |
-|---|---|---|---|
-| Web | `apps/web` | Yes (`bot.mrdemonwolf.com`) | TanStack Router, Tailwind, shadcn/ui, PWA |
-| API | `apps/server` | Yes (`bot-api.mrdemonwolf.com`) | Hono + tRPC + Better-Auth |
-| Docs | `apps/docs` | Yes (GitHub Pages) | Fumadocs |
-| Twitch worker | `apps/twitch` | No (internal health on `bot-twitch.mrdemonwolf.com`) | @twurple v8, IRC chat, EventSub WS |
-| Discord worker | `apps/discord` | No (internal health on `bot-discord.mrdemonwolf.com`) | discord.js v14, gateway |
+| Service        | Path           | Public?                                               | Notes                                     |
+| -------------- | -------------- | ----------------------------------------------------- | ----------------------------------------- |
+| Web            | `apps/web`     | Yes (`bot.mrdemonwolf.com`)                           | TanStack Router, Tailwind, shadcn/ui, PWA |
+| API            | `apps/server`  | Yes (`bot-api.mrdemonwolf.com`)                       | Hono + tRPC + Better-Auth                 |
+| Docs           | `apps/docs`    | Yes (GitHub Pages)                                    | Fumadocs                                  |
+| Twitch worker  | `apps/twitch`  | No (internal health on `bot-twitch.mrdemonwolf.com`)  | @twurple v8, IRC chat, EventSub WS        |
+| Discord worker | `apps/discord` | No (internal health on `bot-discord.mrdemonwolf.com`) | discord.js v14, gateway                   |
 
 ## Packages
 
-| Package | Purpose | Owner phase |
-|---|---|---|
-| `db` | Drizzle schemas + migrations + seeds | -1 |
-| `shared` | Zod, template engine, helpers, types | -1 |
-| `jobs` | pgmq wrappers, worker base, retry/DLQ | -1 |
-| `flow-engine` | Graph type, runtime executor | 5A |
-| `sandbox` | QuickJS host wrapper | 5B |
-| `ai` | Gemini client, prompts, guardrail | 8 |
-| `plugins` | Plugin loader + APIs for `roll-dice`, etc. | 3 |
+| Package       | Purpose                                    | Owner phase |
+| ------------- | ------------------------------------------ | ----------- |
+| `db`          | Drizzle schemas + migrations + seeds       | -1          |
+| `shared`      | Zod, template engine, helpers, types       | -1          |
+| `jobs`        | pgmq wrappers, worker base, retry/DLQ      | -1          |
+| `flow-engine` | Graph type, runtime executor               | 5A          |
+| `sandbox`     | QuickJS host wrapper                       | 5B          |
+| `ai`          | Gemini client, prompts, guardrail          | 8           |
+| `plugins`     | Plugin loader + APIs for `roll-dice`, etc. | 3           |
 
 ## Data flow examples
 

@@ -30,21 +30,21 @@ Store in env:
 `packages/shared/src/integrations/weatherkit/jwt.ts`:
 
 ```ts
-import { SignJWT, importPKCS8 } from 'jose';
+import { SignJWT, importPKCS8 } from "jose";
 
 export async function generateWeatherKitJWT(): Promise<string> {
-  const privateKey = await importPKCS8(env.WEATHERKIT_PRIVATE_KEY, 'ES256');
+  const privateKey = await importPKCS8(env.WEATHERKIT_PRIVATE_KEY, "ES256");
   const now = Math.floor(Date.now() / 1000);
   return await new SignJWT({})
     .setProtectedHeader({
-      alg: 'ES256',
+      alg: "ES256",
       kid: env.WEATHERKIT_KEY_ID,
       id: `${env.WEATHERKIT_TEAM_ID}.${env.WEATHERKIT_SERVICE_ID}`,
     })
     .setIssuer(env.WEATHERKIT_TEAM_ID)
     .setSubject(env.WEATHERKIT_SERVICE_ID)
     .setIssuedAt(now)
-    .setExpirationTime(now + 60 * 60)  // 1 hour
+    .setExpirationTime(now + 60 * 60) // 1 hour
     .sign(privateKey);
 }
 ```

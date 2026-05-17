@@ -26,7 +26,7 @@
 - [ ] tRPC router skeleton with role-based middleware (`broadcasterOnly`, `modOrAbove`, `authenticated`)
 - [ ] Solo Main Protection ruleset applied via `gh-solo-main-protection` skill
 - [ ] CI workflow: typecheck, lint, test, build (matrix: bun-latest on ubuntu-latest)
-- [ ] CI requires: green on PR to develop and main
+- [ ] CI requires: green on PR to main (trunk-based, no `develop`)
 - [ ] CODEOWNERS file pointing to broadcaster
 - [ ] Issue templates: bug, feature, security
 - [ ] Pull request template with checklist
@@ -51,8 +51,8 @@
 5. `bun db:migrate` applies cleanly to a fresh Supabase instance
 6. Audit log trigger test: attempting `UPDATE audit_logs` raises; `INSERT` succeeds; `SELECT` succeeds
 7. Encryption helper round-trips a string with both v1 and v2 keys (key versioning works)
-8. PR to develop triggers CI; CI green required to merge
-9. Direct push to main is blocked by branch ruleset
+8. PR to main triggers CI; CI green required to merge
+9. Direct push to main is blocked by Solo Main Protection ruleset (admin bypass required for self-merge)
 
 ---
 
@@ -124,7 +124,7 @@ Phase -1 doesn't have a "running app" yet. The exit signal is: foundation is sol
 
 ## Definition of Done
 
-PR titled `feat(foundation): phase -1 complete` opened against develop. PR description checks off every item above. CI green. Self-merge after waiting 1 hour (review-myself rule from `gh-solo-main-protection`). Then merge develop → main via PR (also self-merge).
+PR titled `feat(foundation): phase -1 complete` opened against `main`. PR description checks off every item above. CI green. Self-merge after waiting 1 hour (review-myself rule from `gh-solo-main-protection`). Tag immediately after merge.
 
 After merge:
 

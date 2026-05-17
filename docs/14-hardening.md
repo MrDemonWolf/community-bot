@@ -37,25 +37,27 @@ Master key `ENCRYPTION_KEY` from env (32 random bytes base64). App refuses to st
 `packages/shared/src/crypto.ts`:
 
 ```ts
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
 const KEY_VERSION = 1;
-const ALGO = 'aes-256-gcm';
+const ALGO = "aes-256-gcm";
 
 export function encrypt(plaintext: string): string {
   const iv = randomBytes(12);
   const cipher = createCipheriv(ALGO, getKey(KEY_VERSION), iv);
-  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
-  return `v${KEY_VERSION}.${iv.toString('base64')}.${tag.toString('base64')}.${encrypted.toString('base64')}`;
+  return `v${KEY_VERSION}.${iv.toString("base64")}.${tag.toString("base64")}.${encrypted.toString("base64")}`;
 }
 
 export function decrypt(blob: string): string {
-  const [versionPart, ivB64, tagB64, encB64] = blob.split('.');
-  const version = Number(versionPart.replace('v', ''));
-  const decipher = createDecipheriv(ALGO, getKey(version), Buffer.from(ivB64, 'base64'));
-  decipher.setAuthTag(Buffer.from(tagB64, 'base64'));
-  return Buffer.concat([decipher.update(Buffer.from(encB64, 'base64')), decipher.final()]).toString('utf8');
+  const [versionPart, ivB64, tagB64, encB64] = blob.split(".");
+  const version = Number(versionPart.replace("v", ""));
+  const decipher = createDecipheriv(ALGO, getKey(version), Buffer.from(ivB64, "base64"));
+  decipher.setAuthTag(Buffer.from(tagB64, "base64"));
+  return Buffer.concat([decipher.update(Buffer.from(encB64, "base64")), decipher.final()]).toString(
+    "utf8",
+  );
 }
 ```
 

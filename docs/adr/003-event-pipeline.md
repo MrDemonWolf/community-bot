@@ -21,8 +21,9 @@ Workers are dumb. Each handles one action type. Add new effects by adding new ac
 
 ## Consequences
 
-+ Replayable: re-run normalizer on raw events to recompute actions
-+ Testable: each stage isolated
-+ Observable: every step queryable in DB
-- More DB writes per event (~5x raw)
-- Latency added: event → action is ~100ms p95
+- Replayable: re-run normalizer on raw events to recompute actions
+- Testable: each stage isolated
+- Observable: every step queryable in DB
+
+* More DB writes per event (~5x raw)
+* Latency added: event → action is ~100ms p95

@@ -21,9 +21,10 @@ Better-Auth stores users + sessions + OAuth links to Twitch + Discord in its own
 
 ## Consequences
 
-+ Single source of truth for identity
-+ Better-Auth handles 2FA, role changes, session invalidation
-+ Easier compliance — one place to enforce session policies
-+ Supabase RLS unused (we enforce auth at the tRPC layer)
-- Have to set `JWT_SECRET` on Supabase to a random value we don't use (since clients never hit Supabase directly)
-- Slight friction if we ever want to use Supabase RLS — would need a Better-Auth → Supabase JWT bridge
+- Single source of truth for identity
+- Better-Auth handles 2FA, role changes, session invalidation
+- Easier compliance — one place to enforce session policies
+- Supabase RLS unused (we enforce auth at the tRPC layer)
+
+* Have to set `JWT_SECRET` on Supabase to a random value we don't use (since clients never hit Supabase directly)
+* Slight friction if we ever want to use Supabase RLS — would need a Better-Auth → Supabase JWT bridge
