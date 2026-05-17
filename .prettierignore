@@ -3,8 +3,12 @@ bun.lock
 **/build/**
 **/.next/**
 **/.turbo/**
+**/.source/**
 **/node_modules/**
 **/drizzle/**
 **/supabase/.branches/**
 **/supabase/.temp/**
+**/routeTree.gen.ts
 CHANGELOG.md
+TODO.md
+NEXT-SESSION.md

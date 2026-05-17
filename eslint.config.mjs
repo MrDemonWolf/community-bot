@@ -13,6 +13,7 @@ export default tseslint.config(
       "**/.source/**",
       "**/node_modules/**",
       "**/drizzle/**",
+      "**/routeTree.gen.ts",
       "**/.husky/**",
       "**/supabase/.branches/**",
       "**/supabase/.temp/**",
