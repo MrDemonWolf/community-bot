@@ -5,10 +5,17 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./roles": "./src/roles.ts",
+    "./errors": "./src/errors.ts",
+    "./crypto": "./src/crypto/encrypt.ts",
+    "./zod": "./src/zod/common.ts",
     "./integrations/weatherkit/attribution": "./src/integrations/weatherkit/attribution.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@community-bot/config": "workspace:*",

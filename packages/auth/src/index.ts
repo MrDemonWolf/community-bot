@@ -17,6 +17,16 @@ export function createAuth() {
     emailAndPassword: {
       enabled: true,
     },
+    socialProviders:
+      env.TWITCH_CLIENT_ID && env.TWITCH_CLIENT_SECRET
+        ? {
+            twitch: {
+              clientId: env.TWITCH_CLIENT_ID,
+              clientSecret: env.TWITCH_CLIENT_SECRET,
+              scope: ["user:read:email"],
+            },
+          }
+        : {},
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     advanced: {
