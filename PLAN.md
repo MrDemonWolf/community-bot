@@ -2,11 +2,11 @@
 
 > **Status legend:** 🔴 not started · 🟡 in progress · 🟢 done · ⏸ blocked
 >
-> **The deal:** every phase is a PR cycle. Open PR against `develop`. Green CI. Self-merge after 1 hour cool-down. Tag a version. Update this file.
+> **The deal:** main-only trunk. Every phase is a PR cycle: open a feature branch off `main`, PR back into `main`, green CI, self-merge after a 1-hour cool-down, then tag a version and update this file. Solo Main Protection ruleset is deferred to a follow-up; until then, treat PR-only as project policy. No `develop` branch.
 
 ---
 
-## Phase -1 — Foundation hardening 🔴
+## Phase -1 — Foundation hardening 🟡
 
 See `docs/phases/phase--1-foundation.md`
 
@@ -219,8 +219,8 @@ See `docs/20-roadmap.md`. Scope one phase at a time.
 
 ## Process notes
 
-- One phase per branch off `develop`.
-- PR to `develop` → squash-merge after CI green and 1-hour cool-down.
-- When phase tagged, merge `develop` → `main` via PR (also self-merge).
-- Solo Main Protection rejects direct pushes to main.
+- Trunk-based: one feature branch per phase off `main`.
+- PR to `main` → squash-merge after CI green and the 1-hour cool-down.
+- Solo Main Protection direct-push rejection is planned in a follow-up; until then, treat PR-only as project policy.
+- Tag at end of each phase (`git tag vX.Y.Z-name && git push --tags`).
 - Always update this file when status changes. Commit message: `docs(plan): mark phase N <status>`.

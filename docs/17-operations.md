@@ -56,21 +56,22 @@ Single-streamer self-hosted bot → Nathanial is on-call. Discord webhook alerts
 
 ## Releases
 
-`develop` is the working branch. Phase work merges in via PR.
+`main` is the trunk branch. Phase work merges in via PR from feature branches. No `develop` branch.
 
 When a phase is complete + tested:
 
-1. PR `develop` → `main`
-2. Squash-merge after review (or self-review for solo work)
+1. PR `phase-X/<feature>` → `main`
+2. Squash-merge after CI green + 1-hour cool-down (self-review for solo work)
 3. GitHub Actions builds + pushes images to GHCR
 4. Dokploy webhook redeploys
 5. Verify via smoke test
+6. Tag `vX.Y.Z-<name>` on `main` after merge
 
-Solo Main Protection ruleset on `MrDemonWolf/community-bot`:
+Solo Main Protection ruleset on `MrDemonWolf/community-bot` (planned; not yet applied):
 
 - `main` requires status checks pass
-- `main` admin-bypassable (Nathanial can override)
-- `develop` requires PR (helps avoid yolo commits)
+- `main` requires PR (no direct push)
+- `main` admin-bypassable (Nathanial can override for self-merge after cool-down)
 
 ## Disaster recovery RPO/RTO
 
@@ -90,3 +91,32 @@ All env vars validated at boot via Zod schemas in `apps/*/src/config.ts`. Missin
 - Local: `bun --filter=server dev` shows logs inline
 - Dokploy: web dashboard → service → "Logs" tab (last 1000 lines + tail)
 - Long-term: Logs are NOT archived. Audit log is the long-term record.
+
+## Supabase local dev (Phase -1)
+
+We use the Supabase CLI for local Postgres + Auth/Storage emulation. The `supabase/` directory at the repo root holds the project config.
+
+### Prerequisites
+
+- Docker Desktop running. On Apple Silicon prefer Docker Desktop 4.30+ or OrbStack; older Docker versions occasionally hang on pulling the `supabase/postgres` image.
+
+### Day-to-day
+
+```bash
+bun supabase:start    # spin up containers (first run pulls images, ~5min)
+bun supabase:status   # show URLs and keys
+bun supabase:stop     # tear down
+bun supabase:reset    # nuke and re-apply migrations (data loss)
+```
+
+`bun supabase:start` prints a local `DATABASE_URL` (port 54322 by default). Copy it into `apps/server/.env`.
+
+### Apple Silicon troubleshooting
+
+If `supabase:start` hangs on `Starting database...`:
+
+1. `docker system prune --volumes`
+2. `bunx supabase stop --no-backup` to clear residual containers
+3. Restart Docker Desktop, retry
+
+If the pull fails on a flaky network, run `docker pull supabase/postgres:15.8.1.060` manually then retry.

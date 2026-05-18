@@ -14,7 +14,8 @@ Audit log integrity matters for: GDPR accountability, internal trust between bro
 
 ## Consequences
 
-+ Cannot be tampered with even by SQL injection on the app
-+ Compliance: data subject access requests can include immutable audit history
-- Have to use partitions for retention (more DB schema complexity)
-- A truly compromised DB superuser could drop the trigger; deferred to physical-DB-access threat model (out of scope for app)
+- Cannot be tampered with even by SQL injection on the app
+- Compliance: data subject access requests can include immutable audit history
+
+* Have to use partitions for retention (more DB schema complexity)
+* A truly compromised DB superuser could drop the trigger; deferred to physical-DB-access threat model (out of scope for app)

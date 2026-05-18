@@ -17,8 +17,7 @@
  * mark (image) and link to the legal page in a tooltip/footer.
  */
 
-export const APPLE_WEATHER_ATTRIBUTION_URL =
-  "https://weatherkit.apple.com/legal-attribution.html";
+export const APPLE_WEATHER_ATTRIBUTION_URL = "https://weatherkit.apple.com/legal-attribution.html";
 
 export const APPLE_WEATHER_TEXT_SUFFIX = "via Apple Weather";
 
@@ -73,9 +72,10 @@ export type WeatherKitMetadata = {
   version: number;
 };
 
-export function extractAttributionFromResponse(
-  metadata: WeatherKitMetadata,
-): { attributionUrl: string; readTime: string } {
+export function extractAttributionFromResponse(metadata: WeatherKitMetadata): {
+  attributionUrl: string;
+  readTime: string;
+} {
   return {
     attributionUrl: metadata.attributionURL,
     readTime: metadata.readTime,

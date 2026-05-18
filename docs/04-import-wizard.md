@@ -39,22 +39,22 @@ No public management API. Manual JSON paste only. Document where in their dashbo
 
 ## Variable compat matrix
 
-| SE variable | Nightbot | Fossabot | community-bot | Notes |
-|---|---|---|---|---|
-| `${user}` | `$(user)` | `${user}` | `${user}` | Sender display name |
-| `${touser}` | `$(touser)` | `${touser}` | `${touser}` | Argument after command |
-| `${1}`, `${2}` | `$(1)`, `$(2)` | `${1}`, `${2}` | `${1}`, `${2}` | Positional args |
-| `${random.1.100}` | `$(random.1.100)` | `${random.1.100}` | `${random.1.100}` | Random N..M |
-| `${customapi}` | `$(customapi)` | — | `${url.<url>}` | Phase 3+, sandboxed |
-| `${urlfetch}` | `$(urlfetch)` | `${url.<url>}` | `${url.<url>}` | Same |
-| `${count}` | `$(count)` | `${count}` | `${count.<name>}` | Counter, named |
-| `${chatters}` | — | `${chatters}` | `${chatters}` | Helix-backed |
-| `${uptime}` | `$(uptime)` | `${uptime}` | `${uptime}` | Helix-backed |
-| `${user.points}` | `$(user.points)` | `${user.points}` | `${user.brain_cells}` | Loyalty currency |
-| `${followage}` | `$(followage)` | `${followage}` | `${followage}` | Helix-backed |
-| `${twitch}` | `$(twitch)` | — | `${twitch}` | Streamer display |
-| `${weather}` | — | `${weather}` | `${weather.<location>}` | WeatherKit Phase 2+ |
-| `${lasttweet}` | — | — | UNSUPPORTED | X API explicitly disabled |
+| SE variable       | Nightbot          | Fossabot          | community-bot           | Notes                     |
+| ----------------- | ----------------- | ----------------- | ----------------------- | ------------------------- |
+| `${user}`         | `$(user)`         | `${user}`         | `${user}`               | Sender display name       |
+| `${touser}`       | `$(touser)`       | `${touser}`       | `${touser}`             | Argument after command    |
+| `${1}`, `${2}`    | `$(1)`, `$(2)`    | `${1}`, `${2}`    | `${1}`, `${2}`          | Positional args           |
+| `${random.1.100}` | `$(random.1.100)` | `${random.1.100}` | `${random.1.100}`       | Random N..M               |
+| `${customapi}`    | `$(customapi)`    | —                 | `${url.<url>}`          | Phase 3+, sandboxed       |
+| `${urlfetch}`     | `$(urlfetch)`     | `${url.<url>}`    | `${url.<url>}`          | Same                      |
+| `${count}`        | `$(count)`        | `${count}`        | `${count.<name>}`       | Counter, named            |
+| `${chatters}`     | —                 | `${chatters}`     | `${chatters}`           | Helix-backed              |
+| `${uptime}`       | `$(uptime)`       | `${uptime}`       | `${uptime}`             | Helix-backed              |
+| `${user.points}`  | `$(user.points)`  | `${user.points}`  | `${user.brain_cells}`   | Loyalty currency          |
+| `${followage}`    | `$(followage)`    | `${followage}`    | `${followage}`          | Helix-backed              |
+| `${twitch}`       | `$(twitch)`       | —                 | `${twitch}`             | Streamer display          |
+| `${weather}`      | —                 | `${weather}`      | `${weather.<location>}` | WeatherKit Phase 2+       |
+| `${lasttweet}`    | —                 | —                 | UNSUPPORTED             | X API explicitly disabled |
 
 After import: any command containing `${lasttweet}` is imported with `enabled: false` and a warning in the compat report.
 
@@ -85,16 +85,16 @@ Each import gets a UUID `importId`. All created rows tagged with `importId` in m
 ## Schema for import tracking
 
 ```ts
-export const imports = pgTable('imports', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  source: text('source').notNull(),  // 'streamelements' | 'nightbot' | 'fossabot'
-  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
-  completedAt: timestamp('completed_at', { withTimezone: true }),
-  createdCount: integer('created_count').notNull().default(0),
-  updatedCount: integer('updated_count').notNull().default(0),
-  skippedCount: integer('skipped_count').notNull().default(0),
-  compatReport: jsonb('compat_report'),
-  rawPayload: text('raw_payload'),   // encrypted (might contain JWTs)
-  initiatedBy: text('initiated_by').references(() => user.id),
+export const imports = pgTable("imports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  source: text("source").notNull(), // 'streamelements' | 'nightbot' | 'fossabot'
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdCount: integer("created_count").notNull().default(0),
+  updatedCount: integer("updated_count").notNull().default(0),
+  skippedCount: integer("skipped_count").notNull().default(0),
+  compatReport: jsonb("compat_report"),
+  rawPayload: text("raw_payload"), // encrypted (might contain JWTs)
+  initiatedBy: text("initiated_by").references(() => user.id),
 });
 ```

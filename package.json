@@ -25,12 +25,32 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "check-types": "turbo check-types",
+    "typecheck": "turbo check-types",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "bun test",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
     "db:push": "turbo -F @community-bot/db db:push",
     "db:studio": "turbo -F @community-bot/db db:studio",
     "db:generate": "turbo -F @community-bot/db db:generate",
-    "db:migrate": "turbo -F @community-bot/db db:migrate"
+    "db:migrate": "turbo -F @community-bot/db db:migrate",
+    "supabase:start": "bunx supabase start",
+    "supabase:stop": "bunx supabase stop",
+    "supabase:status": "bunx supabase status",
+    "supabase:reset": "bunx supabase db reset",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "engines": {
     "bun": ">=1.1.0",
@@ -42,10 +62,21 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@commitlint/cli": "21.0.1",
+    "@commitlint/config-conventional": "21.0.1",
     "@community-bot/config": "workspace:*",
+    "@eslint/js": "^9",
     "@types/bun": "catalog:",
+    "eslint": "^9",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-turbo": "2.9.14",
+    "husky": "9.1.7",
+    "lint-staged": "17.0.5",
+    "prettier": "3.8.3",
     "turbo": "^2.8.12",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "typescript-eslint": "8.59.3"
   },
   "packageManager": "bun@1.3.14"
 }

@@ -6,6 +6,7 @@ node_modules
 # Build outputs
 dist
 build
+.output
 *.tsbuildinfo
 
 # Environment variables
@@ -70,3 +71,5 @@ test-results/
 # Local working notes
 .notes/
 scratch/
+TODO.md
+NEXT-SESSION.md

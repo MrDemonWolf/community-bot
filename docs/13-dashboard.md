@@ -67,7 +67,7 @@ CSS variables in `packages/ui/src/styles/globals.css`:
 ```css
 :root {
   --brand-navy: #091533;
-  --brand-cyan: #0FACED;
+  --brand-cyan: #0faced;
   /* shadcn tokens map onto these where appropriate */
 }
 ```
