@@ -21,4 +21,21 @@ export const env = createEnv({
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
+  createFinalSchema: (shape) =>
+    z.object(shape).superRefine((v, ctx) => {
+      if (!!v.ENCRYPTION_KEYS !== !!v.ENCRYPTION_KEY_VERSION) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "ENCRYPTION_KEYS and ENCRYPTION_KEY_VERSION must be set together",
+          path: ["ENCRYPTION_KEYS"],
+        });
+      }
+      if (!!v.TWITCH_CLIENT_ID !== !!v.TWITCH_CLIENT_SECRET) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET must be set together",
+          path: ["TWITCH_CLIENT_ID"],
+        });
+      }
+    }),
 });

@@ -59,6 +59,7 @@ export function decrypt(payload: string): string {
   const key = keys[version];
   if (!key) throw new Error(`no key for version '${version}'`);
   const iv = Buffer.from(ivB64, "base64");
+  if (iv.length !== IV_LEN) throw new Error("iv length invalid");
   const tag = Buffer.from(tagB64, "base64");
   if (tag.length !== TAG_LEN) throw new Error("auth tag length invalid");
   const ct = Buffer.from(ctB64, "base64");

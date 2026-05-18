@@ -1,5 +1,14 @@
 import { sql } from "drizzle-orm";
-import { customType, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  check,
+  customType,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 const inet = customType<{ data: string }>({
   dataType: () => "inet",
@@ -23,5 +32,6 @@ export const auditLogs = pgTable(
   (t) => [
     index("audit_actor_created_idx").on(t.actorUserId, t.createdAt),
     index("audit_target_idx").on(t.targetType, t.targetId),
+    check("audit_logs_action_format_check", sql`${t.action} ~ '^[a-z0-9_]+\.[a-z0-9_]+$'`),
   ],
 );

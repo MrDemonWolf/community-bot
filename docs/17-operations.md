@@ -56,21 +56,22 @@ Single-streamer self-hosted bot → Nathanial is on-call. Discord webhook alerts
 
 ## Releases
 
-`develop` is the working branch. Phase work merges in via PR.
+`main` is the trunk branch. Phase work merges in via PR from feature branches. No `develop` branch.
 
 When a phase is complete + tested:
 
-1. PR `develop` → `main`
-2. Squash-merge after review (or self-review for solo work)
+1. PR `phase-X/<feature>` → `main`
+2. Squash-merge after CI green + 1-hour cool-down (self-review for solo work)
 3. GitHub Actions builds + pushes images to GHCR
 4. Dokploy webhook redeploys
 5. Verify via smoke test
+6. Tag `vX.Y.Z-<name>` on `main` after merge
 
-Solo Main Protection ruleset on `MrDemonWolf/community-bot`:
+Solo Main Protection ruleset on `MrDemonWolf/community-bot` (planned; not yet applied):
 
 - `main` requires status checks pass
-- `main` admin-bypassable (Nathanial can override)
-- `develop` requires PR (helps avoid yolo commits)
+- `main` requires PR (no direct push)
+- `main` admin-bypassable (Nathanial can override for self-merge after cool-down)
 
 ## Disaster recovery RPO/RTO
 

@@ -11,6 +11,7 @@ export default tseslint.config(
       "**/.next/**",
       "**/.turbo/**",
       "**/.source/**",
+      "**/.output/**",
       "**/node_modules/**",
       "**/drizzle/**",
       "**/routeTree.gen.ts",

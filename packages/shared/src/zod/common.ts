@@ -10,4 +10,4 @@ export const IsoDateSchema = z.string().datetime({ offset: true });
 
 export const NonEmptyStringSchema = z.string().min(1);
 
-export const Base64Schema = z.string().regex(/^[A-Za-z0-9+/=]+$/, "must be base64");
+export const Base64Schema = z.base64();

@@ -2,7 +2,7 @@
 
 > **Status legend:** 🔴 not started · 🟡 in progress · 🟢 done · ⏸ blocked
 >
-> **The deal:** main-only trunk. Every phase is a PR cycle: open a feature branch off `main`, PR back into `main`, green CI, self-merge after the 1-hour Solo Main Protection cool-down (admin bypass), then tag a version and update this file. No `develop` branch.
+> **The deal:** main-only trunk. Every phase is a PR cycle: open a feature branch off `main`, PR back into `main`, green CI, self-merge after a 1-hour cool-down, then tag a version and update this file. Solo Main Protection ruleset is deferred to a follow-up; until then, treat PR-only as project policy. No `develop` branch.
 
 ---
 
@@ -220,7 +220,7 @@ See `docs/20-roadmap.md`. Scope one phase at a time.
 ## Process notes
 
 - Trunk-based: one feature branch per phase off `main`.
-- PR to `main` → squash-merge after CI green and the 1-hour cool-down. Admin bypass per Solo Main Protection allows self-merge.
-- Solo Main Protection rejects direct pushes to `main` — always go through a PR.
+- PR to `main` → squash-merge after CI green and the 1-hour cool-down.
+- Solo Main Protection direct-push rejection is planned in a follow-up; until then, treat PR-only as project policy.
 - Tag at end of each phase (`git tag vX.Y.Z-name && git push --tags`).
 - Always update this file when status changes. Commit message: `docs(plan): mark phase N <status>`.

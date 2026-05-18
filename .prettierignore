@@ -4,6 +4,7 @@ bun.lock
 **/.next/**
 **/.turbo/**
 **/.source/**
+**/.output/**
 **/node_modules/**
 **/drizzle/**
 **/supabase/.branches/**

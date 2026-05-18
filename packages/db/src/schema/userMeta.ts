@@ -1,6 +1,8 @@
-import { relations } from "drizzle-orm";
-import { index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import { check, index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "./auth";
+
+const ALLOWED_ROLES = ["guest", "viewer", "sub", "vip", "mod", "broadcaster"] as const;
 
 export const userMeta = pgTable(
   "user_meta",
@@ -23,6 +25,13 @@ export const userMeta = pgTable(
     uniqueIndex("user_meta_twitch_idx").on(t.twitchUserId),
     uniqueIndex("user_meta_discord_idx").on(t.discordUserId),
     index("user_meta_role_idx").on(t.role),
+    check(
+      "user_meta_role_check",
+      sql`${t.role} IN (${sql.join(
+        ALLOWED_ROLES.map((r) => sql`${r}`),
+        sql`, `,
+      )})`,
+    ),
   ],
 );
 

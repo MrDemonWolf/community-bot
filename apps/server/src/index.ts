@@ -13,8 +13,11 @@ app.use("*", async (c, next) => {
   const start = Date.now();
   const reqId = crypto.randomUUID();
   const log = logger.child({ reqId, method: c.req.method, path: c.req.path });
-  await next();
-  log.info({ status: c.res.status, durationMs: Date.now() - start }, "request");
+  try {
+    await next();
+  } finally {
+    log.info({ status: c.res.status, durationMs: Date.now() - start }, "request");
+  }
 });
 
 app.use(
