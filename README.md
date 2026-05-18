@@ -219,7 +219,7 @@ community-bot/
 
 ## License
 
-![GitHub license](https://img.shields.io/github/license/mrdemonwolf/community-bot.svg?style=for-the-badge&logo=github)
+[![GitHub license](https://img.shields.io/github/license/mrdemonwolf/community-bot.svg?style=for-the-badge&logo=github)](https://github.com/mrdemonwolf)
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
