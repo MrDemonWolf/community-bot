@@ -65,7 +65,7 @@
     "@commitlint/cli": "21.0.1",
     "@commitlint/config-conventional": "21.0.1",
     "@community-bot/config": "workspace:*",
-    "@eslint/js": "^9",
+    "@eslint/js": "^10",
     "@types/bun": "catalog:",
     "eslint": "^9",
     "eslint-config-prettier": "10.1.8",
