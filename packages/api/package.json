@@ -14,9 +14,11 @@
     "@community-bot/auth": "workspace:*",
     "@community-bot/db": "workspace:*",
     "@community-bot/env": "workspace:*",
+    "@community-bot/shared": "workspace:*",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
     "dotenv": "catalog:",
+    "drizzle-orm": "^0.45.1",
     "zod": "catalog:"
   },
   "devDependencies": {

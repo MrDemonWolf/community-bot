@@ -14,6 +14,7 @@
     "@community-bot/auth": "workspace:*",
     "@community-bot/db": "workspace:*",
     "@community-bot/env": "workspace:*",
+    "@community-bot/logger": "workspace:*",
     "@hono/trpc-server": "^0.4.0",
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",

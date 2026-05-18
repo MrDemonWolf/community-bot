@@ -95,29 +95,29 @@ Mobile: editor is desktop-first; mobile shows read-only list of flows + enable/d
 ## Schema
 
 ```ts
-export const flows = pgTable('flows', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  description: text('description'),
-  enabled: boolean('enabled').notNull().default(false),
-  graph: jsonb('graph').notNull(),    // { nodes: Node[], edges: Edge[] }
-  triggerType: text('trigger_type').notNull(),
-  triggerConfig: jsonb('trigger_config').notNull(),
-  version: integer('version').notNull().default(1),
-  lastFiredAt: timestamp('last_fired_at', { withTimezone: true }),
-  fireCount: integer('fire_count').notNull().default(0),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  createdBy: text('created_by').references(() => user.id),
+export const flows = pgTable("flows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  description: text("description"),
+  enabled: boolean("enabled").notNull().default(false),
+  graph: jsonb("graph").notNull(), // { nodes: Node[], edges: Edge[] }
+  triggerType: text("trigger_type").notNull(),
+  triggerConfig: jsonb("trigger_config").notNull(),
+  version: integer("version").notNull().default(1),
+  lastFiredAt: timestamp("last_fired_at", { withTimezone: true }),
+  fireCount: integer("fire_count").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdBy: text("created_by").references(() => user.id),
 });
 
-export const flowTraces = pgTable('flow_traces', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'cascade' }),
-  firedAt: timestamp('fired_at', { withTimezone: true }).notNull().defaultNow(),
-  triggerPayload: jsonb('trigger_payload'),
-  steps: jsonb('steps').notNull(),    // array of { nodeId, pass, vars, durationMs, error? }
-  totalDurationMs: integer('total_duration_ms'),
-  outcome: text('outcome').notNull(), // 'completed' | 'short-circuited' | 'error'
+export const flowTraces = pgTable("flow_traces", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  flowId: uuid("flow_id").references(() => flows.id, { onDelete: "cascade" }),
+  firedAt: timestamp("fired_at", { withTimezone: true }).notNull().defaultNow(),
+  triggerPayload: jsonb("trigger_payload"),
+  steps: jsonb("steps").notNull(), // array of { nodeId, pass, vars, durationMs, error? }
+  totalDurationMs: integer("total_duration_ms"),
+  outcome: text("outcome").notNull(), // 'completed' | 'short-circuited' | 'error'
 });
 ```
 

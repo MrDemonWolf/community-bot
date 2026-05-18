@@ -69,39 +69,39 @@ Full documentation lives in `docs/` (planning pack) and `apps/docs/` (public Fum
 
 Default Twitch commands ship with the `!` prefix.
 
-| Command | Role | Description |
-|---------|------|-------------|
-| `!uptime` | Viewer | Current stream uptime |
-| `!followage` | Viewer | How long the caller has followed |
-| `!accountage` | Viewer | Twitch account age |
-| `!game` | Viewer | Current Twitch category |
-| `!title` | Viewer | Current stream title |
-| `!commands` | Viewer | Link to the public commands page |
-| `!addcom` | Moderator | Add a custom command |
-| `!editcom` | Moderator | Edit a custom command |
-| `!delcom` | Moderator | Delete a custom command |
-| `!marker` | Moderator | Create a Twitch stream marker |
-| `!clip` | Moderator | Create a 30-second clip |
-| `!commercial` | Broadcaster | Run a commercial break |
-| `!vanish` | Viewer | Self-purge from chat |
-| `!ping` | Moderator | Health check |
+| Command       | Role        | Description                      |
+| ------------- | ----------- | -------------------------------- |
+| `!uptime`     | Viewer      | Current stream uptime            |
+| `!followage`  | Viewer      | How long the caller has followed |
+| `!accountage` | Viewer      | Twitch account age               |
+| `!game`       | Viewer      | Current Twitch category          |
+| `!title`      | Viewer      | Current stream title             |
+| `!commands`   | Viewer      | Link to the public commands page |
+| `!addcom`     | Moderator   | Add a custom command             |
+| `!editcom`    | Moderator   | Edit a custom command            |
+| `!delcom`     | Moderator   | Delete a custom command          |
+| `!marker`     | Moderator   | Create a Twitch stream marker    |
+| `!clip`       | Moderator   | Create a 30-second clip          |
+| `!commercial` | Broadcaster | Run a commercial break           |
+| `!vanish`     | Viewer      | Self-purge from chat             |
+| `!ping`       | Moderator   | Health check                     |
 
 Discord slash commands.
 
-| Command | Role | Description |
-|---------|------|-------------|
-| `/ping` | Everyone | Bot latency |
-| `/links` | Everyone | Project links |
-| `/uptime` | Everyone | Bot uptime |
-| `/about` | Everyone | Bot version and source |
-| `/timeout` | Moderator | Timeout a member |
-| `/ban` | Moderator | Ban a member |
-| `/kick` | Moderator | Kick a member |
-| `/warn` | Moderator | Warn a member |
+| Command     | Role      | Description                |
+| ----------- | --------- | -------------------------- |
+| `/ping`     | Everyone  | Bot latency                |
+| `/links`    | Everyone  | Project links              |
+| `/uptime`   | Everyone  | Bot uptime                 |
+| `/about`    | Everyone  | Bot version and source     |
+| `/timeout`  | Moderator | Timeout a member           |
+| `/ban`      | Moderator | Ban a member               |
+| `/kick`     | Moderator | Kick a member              |
+| `/warn`     | Moderator | Warn a member              |
 | `/warnings` | Moderator | List warnings for a member |
-| `/purge` | Moderator | Delete recent messages |
-| `/slowmode` | Moderator | Set channel slowmode |
-| `/link` | Everyone | Link Twitch to Discord |
+| `/purge`    | Moderator | Delete recent messages     |
+| `/slowmode` | Moderator | Set channel slowmode       |
+| `/link`     | Everyone  | Link Twitch to Discord     |
 
 Additional commands ship disabled by default and are documented in
 `docs/02-database.md` and `packages/db/src/seed/default-commands.ts`.
@@ -109,30 +109,30 @@ The broadcaster enables them via the dashboard once the relevant phase ships.
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Runtime | Bun |
-| Language | TypeScript (strict) |
-| Frontend | TanStack Router, React, Tailwind CSS v4, shadcn/ui |
-| Backend | Hono, tRPC |
-| Database | PostgreSQL (Supabase) |
-| ORM | Drizzle |
-| Auth | Better-Auth (Twitch and Discord OAuth) |
-| Queues | Supabase pgmq |
-| Cron | Supabase pg_cron |
-| Realtime | Supabase Realtime |
-| Twitch | @twurple v8 (api, auth, eventsub-ws, chat) |
-| Discord | discord.js v14 |
-| Flow builder | @xyflow/react v12 |
-| JS sandbox | quickjs-emscripten |
-| AI | @google/genai (Gemini 3 Flash and Flash-Lite) |
-| Weather | Apple WeatherKit |
-| Docs | Fumadocs |
-| Monorepo | Turborepo |
-| Deploy | Dokploy on VPS |
-| CI | GitHub Actions |
-| Errors | Sentry |
-| Logging | Pino |
+| Layer        | Technology                                         |
+| ------------ | -------------------------------------------------- |
+| Runtime      | Bun                                                |
+| Language     | TypeScript (strict)                                |
+| Frontend     | TanStack Router, React, Tailwind CSS v4, shadcn/ui |
+| Backend      | Hono, tRPC                                         |
+| Database     | PostgreSQL (Supabase)                              |
+| ORM          | Drizzle                                            |
+| Auth         | Better-Auth (Twitch and Discord OAuth)             |
+| Queues       | Supabase pgmq                                      |
+| Cron         | Supabase pg_cron                                   |
+| Realtime     | Supabase Realtime                                  |
+| Twitch       | @twurple v8 (api, auth, eventsub-ws, chat)         |
+| Discord      | discord.js v14                                     |
+| Flow builder | @xyflow/react v12                                  |
+| JS sandbox   | quickjs-emscripten                                 |
+| AI           | @google/genai (Gemini 3 Flash and Flash-Lite)      |
+| Weather      | Apple WeatherKit                                   |
+| Docs         | Fumadocs                                           |
+| Monorepo     | Turborepo                                          |
+| Deploy       | Dokploy on VPS                                     |
+| CI           | GitHub Actions                                     |
+| Errors       | Sentry                                             |
+| Logging      | Pino                                               |
 
 ## Development
 

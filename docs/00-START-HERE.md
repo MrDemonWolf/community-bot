@@ -29,21 +29,21 @@ A **self-hosted** Twitch + Discord community bot for ONE streamer (Nathanial / `
 
 ## The phases (in order)
 
-| # | Phase | What ships | Doc |
-|---|---|---|---|
-| -1 | **Foundation** | ADRs, CI, secrets, RBAC, audit log, backups | `phases/phase--1-foundation.md` |
-| 0 | **Setup wizard** | First-run flow → broadcaster locks in | `phases/phase-00-setup-wizard.md` |
-| 1 | **Discord MVP** | `apps/discord` + public `/commands` page | `phases/phase-01-discord-mvp.md` |
-| 2 | **Twitch MVP** | `apps/twitch` + commands/timers + 12 MVP commands | `phases/phase-02-twitch-mvp.md` |
-| 3 | **Moderation & quotes & counters** | Filters, quotes, counters, plugin scaffold | `phases/phase-03-moderation.md` |
-| 4 | **Loyalty (Brain Cells)** | Currency, leaderboard, ledger | `phases/phase-04-loyalty.md` |
-| 5A | **Flow builder — declarative** | Visual graph editor with safe nodes only | `phases/phase-05a-flows-declarative.md` |
-| 5B | **Flow builder — JS sandbox** | QuickJS sandbox for custom JS nodes | `phases/phase-05b-flows-sandbox.md` |
-| 6 | **Role sync + Discord activity** | Twitch sub → Discord role, activity rotation, The Den | `phases/phase-06-role-sync.md` |
-| 7 | **Import wizard** | SE + Nightbot + Fossabot importers | `phases/phase-07-import.md` |
-| 8 | **AI (Gemini)** | Shoutout / title gen / recap / hype + guardrail | `phases/phase-08-ai.md` |
-| 9 | **GDPR + release polish** | `!forgetme`, `!mydata`, retention, sub-processors | `phases/phase-09-gdpr-release.md` |
-| 10+ | **Roadmap** | Song requests, giveaways, raid AI, etc. | `phases/phase-10-plus-roadmap.md` |
+| #   | Phase                              | What ships                                            | Doc                                     |
+| --- | ---------------------------------- | ----------------------------------------------------- | --------------------------------------- |
+| -1  | **Foundation**                     | ADRs, CI, secrets, RBAC, audit log, backups           | `phases/phase--1-foundation.md`         |
+| 0   | **Setup wizard**                   | First-run flow → broadcaster locks in                 | `phases/phase-00-setup-wizard.md`       |
+| 1   | **Discord MVP**                    | `apps/discord` + public `/commands` page              | `phases/phase-01-discord-mvp.md`        |
+| 2   | **Twitch MVP**                     | `apps/twitch` + commands/timers + 12 MVP commands     | `phases/phase-02-twitch-mvp.md`         |
+| 3   | **Moderation & quotes & counters** | Filters, quotes, counters, plugin scaffold            | `phases/phase-03-moderation.md`         |
+| 4   | **Loyalty (Brain Cells)**          | Currency, leaderboard, ledger                         | `phases/phase-04-loyalty.md`            |
+| 5A  | **Flow builder — declarative**     | Visual graph editor with safe nodes only              | `phases/phase-05a-flows-declarative.md` |
+| 5B  | **Flow builder — JS sandbox**      | QuickJS sandbox for custom JS nodes                   | `phases/phase-05b-flows-sandbox.md`     |
+| 6   | **Role sync + Discord activity**   | Twitch sub → Discord role, activity rotation, The Den | `phases/phase-06-role-sync.md`          |
+| 7   | **Import wizard**                  | SE + Nightbot + Fossabot importers                    | `phases/phase-07-import.md`             |
+| 8   | **AI (Gemini)**                    | Shoutout / title gen / recap / hype + guardrail       | `phases/phase-08-ai.md`                 |
+| 9   | **GDPR + release polish**          | `!forgetme`, `!mydata`, retention, sub-processors     | `phases/phase-09-gdpr-release.md`       |
+| 10+ | **Roadmap**                        | Song requests, giveaways, raid AI, etc.               | `phases/phase-10-plus-roadmap.md`       |
 
 ## How to work each phase
 

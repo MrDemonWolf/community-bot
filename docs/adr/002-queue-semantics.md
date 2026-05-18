@@ -23,12 +23,13 @@ Workers in Bun apps poll their queues with `read_with_poll` (long-polling).
 
 ## Consequences
 
-+ Operational simplicity: one DB to back up
-+ Atomic enqueue with the row that triggered it (transactional outbox)
-+ No Redis to operate
-- Higher latency vs Redis (~50ms p95 vs ~1ms) — fine for our use case
-- Throughput limited by Postgres connection pool (~100s/sec) — fine for one streamer
-- Lock contention possible if many workers poll the same queue (mitigated by visibility timeout)
+- Operational simplicity: one DB to back up
+- Atomic enqueue with the row that triggered it (transactional outbox)
+- No Redis to operate
+
+* Higher latency vs Redis (~50ms p95 vs ~1ms) — fine for our use case
+* Throughput limited by Postgres connection pool (~100s/sec) — fine for one streamer
+* Lock contention possible if many workers poll the same queue (mitigated by visibility timeout)
 
 ## At-least-once semantics
 

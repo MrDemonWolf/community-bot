@@ -7,7 +7,7 @@
 `RefreshingAuthProvider` from `@twurple/auth`. Refresh tokens stored encrypted in `twitchTokens` table. Refresh handler updates DB + audits.
 
 ```ts
-import { RefreshingAuthProvider } from '@twurple/auth';
+import { RefreshingAuthProvider } from "@twurple/auth";
 
 const authProvider = new RefreshingAuthProvider({
   clientId: env.TWITCH_CLIENT_ID,
@@ -15,13 +15,16 @@ const authProvider = new RefreshingAuthProvider({
 });
 
 authProvider.onRefresh(async (userId, newTokenData) => {
-  await db.update(twitchTokens).set({
-    accessToken: encrypt(newTokenData.accessToken),
-    refreshToken: encrypt(newTokenData.refreshToken),
-    expiresAt: new Date(newTokenData.expiresIn ? Date.now() + newTokenData.expiresIn * 1000 : 0),
-    scope: newTokenData.scope,
-  }).where(eq(twitchTokens.userId, userId));
-  await auditLog.write({ action: 'twitch.token.refresh', actorId: userId });
+  await db
+    .update(twitchTokens)
+    .set({
+      accessToken: encrypt(newTokenData.accessToken),
+      refreshToken: encrypt(newTokenData.refreshToken),
+      expiresAt: new Date(newTokenData.expiresIn ? Date.now() + newTokenData.expiresIn * 1000 : 0),
+      scope: newTokenData.scope,
+    })
+    .where(eq(twitchTokens.userId, userId));
+  await auditLog.write({ action: "twitch.token.refresh", actorId: userId });
 });
 ```
 
@@ -44,7 +47,7 @@ Mod auth (separate flow): `chat:read` `chat:edit` `moderator:manage:banned_users
 ## Chat (apps/twitch/src/chat)
 
 ```ts
-import { ChatClient } from '@twurple/chat';
+import { ChatClient } from "@twurple/chat";
 
 const chatClient = new ChatClient({
   authProvider,
@@ -63,14 +66,14 @@ Rate limit: 20 messages per 30s for non-mods, ~100/30s for mods/broadcaster. Bot
 ## EventSub WS (apps/twitch/src/events)
 
 ```ts
-import { EventSubWsListener } from '@twurple/eventsub-ws';
+import { EventSubWsListener } from "@twurple/eventsub-ws";
 
 const listener = new EventSubWsListener({ apiClient });
 listener.start();
 
-listener.onStreamOnline(broadcasterId, async e => {
-  await writeRawEvent({ type: 'stream.online', payload: e });
-  await enqueueAction('stream.online', { broadcasterId });
+listener.onStreamOnline(broadcasterId, async (e) => {
+  await writeRawEvent({ type: "stream.online", payload: e });
+  await enqueueAction("stream.online", { broadcasterId });
 });
 ```
 
@@ -119,10 +122,10 @@ Bot can be the broadcaster's own account (chats as themselves) OR a separate bot
 ## Graceful shutdown
 
 ```ts
-process.on('SIGTERM', async () => {
+process.on("SIGTERM", async () => {
   isShuttingDown = true;
   await Promise.all([
-    ...workers.map(w => w.stop()),
+    ...workers.map((w) => w.stop()),
     listener.stop(),
     chatClient.quit(),
     realtime.unsubscribe(),

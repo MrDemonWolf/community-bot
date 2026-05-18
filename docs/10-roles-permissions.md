@@ -2,52 +2,52 @@
 
 Six-role hierarchy. Stored as Postgres enum on `user.role`.
 
-| Role | Who | What they can do |
-|---|---|---|
-| 🎬 **broadcaster** | Nathanial. Exactly one. Cannot be removed. | Everything. |
-| ✏️ **editor** | Trusted team (none at launch). | Almost everything. Cannot: manage other editors, change billing, delete instance, see broadcaster tokens. |
-| 🛡️ **moderator** | Twitch mods, Discord mods. | Mod actions, edit commands/timers/quotes/counters, view audit. Cannot: change settings, manage integrations/roles, run imports, change AI budget. |
-| ⭐ **vip** | Promoted by broadcaster. | No dashboard. Chat filter exemption, cooldown bypass. |
-| 💜 **subscriber** | Auto-synced from Twitch. | No dashboard. Chat perks per config. |
-| 👀 **viewer** | Default. | Public `/commands`, `/leaderboard`, `/privacy/me`, `/den` (if also sub) only. |
+| Role               | Who                                        | What they can do                                                                                                                                  |
+| ------------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🎬 **broadcaster** | Nathanial. Exactly one. Cannot be removed. | Everything.                                                                                                                                       |
+| ✏️ **editor**      | Trusted team (none at launch).             | Almost everything. Cannot: manage other editors, change billing, delete instance, see broadcaster tokens.                                         |
+| 🛡️ **moderator**   | Twitch mods, Discord mods.                 | Mod actions, edit commands/timers/quotes/counters, view audit. Cannot: change settings, manage integrations/roles, run imports, change AI budget. |
+| ⭐ **vip**         | Promoted by broadcaster.                   | No dashboard. Chat filter exemption, cooldown bypass.                                                                                             |
+| 💜 **subscriber**  | Auto-synced from Twitch.                   | No dashboard. Chat perks per config.                                                                                                              |
+| 👀 **viewer**      | Default.                                   | Public `/commands`, `/leaderboard`, `/privacy/me`, `/den` (if also sub) only.                                                                     |
 
 "The Den" = subscriber/VIP-only Discord-linked page at `/den`.
 
 ## Permissions matrix — dashboard routes
 
-| Route | broadcaster | editor | moderator | vip+ |
-|---|:---:|:---:|:---:|:---:|
-| `/setup` | one-time | ❌ | ❌ | ❌ |
-| `/dashboard` | ✅ | ✅ | partial | ❌ |
-| `/dashboard/commands` | ✅ | ✅ | ✅ | ❌ |
-| `/dashboard/timers` | ✅ | ✅ | ✅ | ❌ |
-| `/dashboard/moderation` | ✅ | ✅ | ✅ | ❌ |
-| `/dashboard/audit` | ✅ | ✅ | ✅ (own actions only) | ❌ |
-| `/dashboard/flows` | ✅ | ✅ | ❌ | ❌ |
-| `/dashboard/import` | ✅ | ✅ | ❌ | ❌ |
-| `/dashboard/addons/ai` | ✅ | ❌ | ❌ | ❌ |
-| `/dashboard/discord/*` | ✅ | ✅ | ❌ | ❌ |
-| `/dashboard/roles` | ✅ | ❌ | ❌ | ❌ |
-| `/dashboard/settings` | ✅ | ❌ | ❌ | ❌ |
-| `/dashboard/integrations` | ✅ | ❌ | ❌ | ❌ |
-| `/privacy/me` | ✅ | ✅ | ✅ | ✅ |
-| `/commands` (public) | ✅ | ✅ | ✅ | ✅ |
-| `/leaderboard` (public, Phase 4) | ✅ | ✅ | ✅ | ✅ |
-| `/den` | ✅ | ✅ (if also sub) | ✅ (if also sub) | ✅ (if sub) |
+| Route                            | broadcaster |      editor      |       moderator       |    vip+     |
+| -------------------------------- | :---------: | :--------------: | :-------------------: | :---------: |
+| `/setup`                         |  one-time   |        ❌        |          ❌           |     ❌      |
+| `/dashboard`                     |     ✅      |        ✅        |        partial        |     ❌      |
+| `/dashboard/commands`            |     ✅      |        ✅        |          ✅           |     ❌      |
+| `/dashboard/timers`              |     ✅      |        ✅        |          ✅           |     ❌      |
+| `/dashboard/moderation`          |     ✅      |        ✅        |          ✅           |     ❌      |
+| `/dashboard/audit`               |     ✅      |        ✅        | ✅ (own actions only) |     ❌      |
+| `/dashboard/flows`               |     ✅      |        ✅        |          ❌           |     ❌      |
+| `/dashboard/import`              |     ✅      |        ✅        |          ❌           |     ❌      |
+| `/dashboard/addons/ai`           |     ✅      |        ❌        |          ❌           |     ❌      |
+| `/dashboard/discord/*`           |     ✅      |        ✅        |          ❌           |     ❌      |
+| `/dashboard/roles`               |     ✅      |        ❌        |          ❌           |     ❌      |
+| `/dashboard/settings`            |     ✅      |        ❌        |          ❌           |     ❌      |
+| `/dashboard/integrations`        |     ✅      |        ❌        |          ❌           |     ❌      |
+| `/privacy/me`                    |     ✅      |        ✅        |          ✅           |     ✅      |
+| `/commands` (public)             |     ✅      |        ✅        |          ✅           |     ✅      |
+| `/leaderboard` (public, Phase 4) |     ✅      |        ✅        |          ✅           |     ✅      |
+| `/den`                           |     ✅      | ✅ (if also sub) |   ✅ (if also sub)    | ✅ (if sub) |
 
 ## Permissions matrix — bot/chat actions
 
-| Action | broadcaster | editor | moderator | vip | sub | viewer |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| `!addcom` / `!editcom` / `!delcom` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| `!marker <text>` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| `!clip` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| `!commercial <s>` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| `!vanish` (self) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `!points` / `!braincells` (self) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `!addpoints` / `!removepoints` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Link/word/caps filter exemption | ✅ | ✅ | ✅ | ✅ (config) | ✅ (config) | ❌ |
-| Cooldown bypass | ✅ | ✅ | ✅ | ✅ (per cmd) | ❌ | ❌ |
+| Action                             | broadcaster | editor | moderator |     vip      |     sub     | viewer |
+| ---------------------------------- | :---------: | :----: | :-------: | :----------: | :---------: | :----: |
+| `!addcom` / `!editcom` / `!delcom` |     ✅      |   ✅   |    ✅     |      ❌      |     ❌      |   ❌   |
+| `!marker <text>`                   |     ✅      |   ✅   |    ✅     |      ❌      |     ❌      |   ❌   |
+| `!clip`                            |     ✅      |   ✅   |    ✅     |      ❌      |     ❌      |   ❌   |
+| `!commercial <s>`                  |     ✅      |   ✅   |    ❌     |      ❌      |     ❌      |   ❌   |
+| `!vanish` (self)                   |     ✅      |   ✅   |    ✅     |      ✅      |     ✅      |   ✅   |
+| `!points` / `!braincells` (self)   |     ✅      |   ✅   |    ✅     |      ✅      |     ✅      |   ✅   |
+| `!addpoints` / `!removepoints`     |     ✅      |   ✅   |    ✅     |      ❌      |     ❌      |   ❌   |
+| Link/word/caps filter exemption    |     ✅      |   ✅   |    ✅     | ✅ (config)  | ✅ (config) |   ❌   |
+| Cooldown bypass                    |     ✅      |   ✅   |    ✅     | ✅ (per cmd) |     ❌      |   ❌   |
 
 ## Implementation
 
@@ -78,9 +78,9 @@ CREATE UNIQUE INDEX idx_one_broadcaster ON "user" (role) WHERE role = 'broadcast
 `packages/shared/src/permissions.ts`:
 
 ```ts
-export type Role = 'broadcaster'|'editor'|'moderator'|'vip'|'subscriber'|'viewer';
+export type Role = "broadcaster" | "editor" | "moderator" | "vip" | "subscriber" | "viewer";
 
-const HIERARCHY: Role[] = ['broadcaster','editor','moderator','vip','subscriber','viewer'];
+const HIERARCHY: Role[] = ["broadcaster", "editor", "moderator", "vip", "subscriber", "viewer"];
 
 export function hasRoleAtLeast(role: Role, min: Role): boolean {
   return HIERARCHY.indexOf(role) <= HIERARCHY.indexOf(min);
@@ -88,9 +88,9 @@ export function hasRoleAtLeast(role: Role, min: Role): boolean {
 
 export function canExecute(action: string, role: Role): boolean {
   const requirements: Record<string, Role> = {
-    'commands.create': 'moderator',
-    'flows.publish': 'editor',
-    'ai.budget.change': 'broadcaster',
+    "commands.create": "moderator",
+    "flows.publish": "editor",
+    "ai.budget.change": "broadcaster",
     // ...
   };
   const req = requirements[action];
