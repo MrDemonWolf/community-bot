@@ -2,17 +2,18 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { authClient } from "@/lib/auth-client";
-import { trpc } from "@/utils/trpc";
+import { trpc, trpcClient } from "@/utils/trpc";
 
 export const Route = createFileRoute("/dashboard")({
   component: RouteComponent,
   beforeLoad: async () => {
     const session = await authClient.getSession();
     if (!session.data) {
-      redirect({
-        to: "/login",
-        throw: true,
-      });
+      throw redirect({ to: "/login" });
+    }
+    const firstRun = await trpcClient.setup.firstRun.query();
+    if (!firstRun.setupComplete) {
+      throw redirect({ to: "/setup" });
     }
     return { session };
   },

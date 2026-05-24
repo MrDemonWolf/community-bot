@@ -9,7 +9,8 @@
     "./errors": "./src/errors.ts",
     "./crypto": "./src/crypto/encrypt.ts",
     "./zod": "./src/zod/common.ts",
-    "./integrations/weatherkit/attribution": "./src/integrations/weatherkit/attribution.ts"
+    "./integrations/weatherkit/attribution": "./src/integrations/weatherkit/attribution.ts",
+    "./setup": "./src/setup/wizardSteps.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit"
