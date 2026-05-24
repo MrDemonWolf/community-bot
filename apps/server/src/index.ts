@@ -7,6 +7,9 @@ import { trpcServer } from "@hono/trpc-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
+import discordBotInvite from "./oauth/discordBotInvite";
+import twitchBot from "./oauth/twitchBot";
+
 const app = new Hono();
 
 app.use("*", async (c, next) => {
@@ -31,6 +34,9 @@ app.use(
 );
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
+
+app.route("/api/oauth/twitch-bot", twitchBot);
+app.route("/api/discord/bot-invite", discordBotInvite);
 
 app.use(
   "/trpc/*",

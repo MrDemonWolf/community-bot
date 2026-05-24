@@ -16,6 +16,10 @@ export const env = createEnv({
     TWITCH_CLIENT_ID: z.string().min(1).optional(),
     TWITCH_CLIENT_SECRET: z.string().min(1).optional(),
 
+    DISCORD_CLIENT_ID: z.string().min(1).optional(),
+    DISCORD_CLIENT_SECRET: z.string().min(1).optional(),
+    DISCORD_BOT_TOKEN: z.string().min(1).optional(),
+
     ENCRYPTION_KEYS: z.string().min(1).optional(),
     ENCRYPTION_KEY_VERSION: z.string().min(1).optional(),
   },
@@ -35,6 +39,13 @@ export const env = createEnv({
           code: z.ZodIssueCode.custom,
           message: "TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET must be set together",
           path: ["TWITCH_CLIENT_ID"],
+        });
+      }
+      if (!!v.DISCORD_CLIENT_ID !== !!v.DISCORD_CLIENT_SECRET) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET must be set together",
+          path: ["DISCORD_CLIENT_ID"],
         });
       }
     }),
