@@ -15,10 +15,12 @@
     "@community-bot/db": "workspace:*",
     "@community-bot/env": "workspace:*",
     "@community-bot/logger": "workspace:*",
+    "@community-bot/shared": "workspace:*",
     "@hono/trpc-server": "^0.4.0",
     "@trpc/server": "catalog:",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
+    "drizzle-orm": "^0.45.1",
     "hono": "catalog:",
     "zod": "catalog:"
   },

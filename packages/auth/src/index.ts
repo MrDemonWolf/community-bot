@@ -17,8 +17,8 @@ export function createAuth() {
     emailAndPassword: {
       enabled: true,
     },
-    socialProviders:
-      env.TWITCH_CLIENT_ID && env.TWITCH_CLIENT_SECRET
+    socialProviders: {
+      ...(env.TWITCH_CLIENT_ID && env.TWITCH_CLIENT_SECRET
         ? {
             twitch: {
               clientId: env.TWITCH_CLIENT_ID,
@@ -26,7 +26,17 @@ export function createAuth() {
               scope: ["user:read:email"],
             },
           }
-        : {},
+        : {}),
+      ...(env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET
+        ? {
+            discord: {
+              clientId: env.DISCORD_CLIENT_ID,
+              clientSecret: env.DISCORD_CLIENT_SECRET,
+              scope: ["identify", "guilds"],
+            },
+          }
+        : {}),
+    },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     advanced: {
