@@ -18,7 +18,7 @@
     "@tanstack/react-start": "1.167.65",
     "@tanstack/start-static-server-functions": "1.166.41",
     "fumadocs-core": "16.8.11",
-    "fumadocs-mdx": "15.0.5",
+    "fumadocs-mdx": "15.0.8",
     "fumadocs-ui": "16.8.11",
     "lucide-react": "^1.14.0",
     "react": "^19.2.6",
