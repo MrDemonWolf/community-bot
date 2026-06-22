@@ -9,6 +9,8 @@ import { protectedProcedure, router } from "../index";
 function toView(s: Awaited<ReturnType<typeof getSettings>>) {
   return {
     setupComplete: s.setupComplete,
+    botName: s.botName,
+    accentColor: s.accentColor,
     commandPrefix: s.commandPrefix,
     timezone: s.timezone,
     channelName: s.channelName,
@@ -34,6 +36,10 @@ export const settingsRouter = router({
   updateCore: protectedProcedure
     .input(
       z.object({
+        botName: z.string().min(1).max(40),
+        accentColor: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/, "Must be a hex color like #0FACED"),
         commandPrefix: z.string().min(1).max(5),
         timezone: z.string().min(1),
         channelName: z.string().min(1).max(64),

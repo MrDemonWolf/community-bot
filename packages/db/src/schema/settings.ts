@@ -8,6 +8,8 @@ export const settings = pgTable("settings", {
   setupComplete: boolean("setup_complete").default(false).notNull(),
 
   // Core
+  botName: text("bot_name").default("HowlBot").notNull(),
+  accentColor: text("accent_color").default("#0FACED").notNull(),
   commandPrefix: text("command_prefix").default("!").notNull(),
   timezone: text("timezone").default("UTC").notNull(),
   channelName: text("channel_name"),
