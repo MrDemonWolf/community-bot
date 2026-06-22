@@ -9,7 +9,8 @@
   --hb-sidebar: #091533;
   --hb-fg: #e9eefb;
   --hb-muted: #8a97b8;
-  --hb-subtle: #5d6a8c;
+  /* WCAG AA: #5d6a8c failed (3.25:1 on surface); #828fb0 = 5.41:1 */
+  --hb-subtle: #828fb0;
   --hb-border: rgba(255, 255, 255, 0.08);
   --hb-border-2: rgba(255, 255, 255, 0.14);
   --hb-accent: #0faced;
@@ -27,5 +28,15 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.hb-step {
+  animation: hb-fade 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hb-step {
+    animation: none;
   }
 }
