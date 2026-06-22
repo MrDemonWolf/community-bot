@@ -1,5 +1,5 @@
 {
-  "name": "worker",
+  "name": "twitch",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {

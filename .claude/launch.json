@@ -8,9 +8,9 @@
       "port": 3001
     },
     {
-      "name": "worker",
+      "name": "twitch",
       "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "dev:worker"],
+      "runtimeArgs": ["run", "dev:twitch"],
       "port": 0
     }
   ]
