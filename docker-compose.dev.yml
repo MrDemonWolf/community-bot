@@ -1,0 +1,30 @@
+# Local dev services (OrbStack/Docker). App runs via `bun dev` for hot reload.
+# Up:   bun run db:up      Down: bun run db:down      Logs: bun run db:logs
+#
+# ponytail: plain Postgres is all the MVP needs. Prod is Supabase (just swap
+# DATABASE_URL). Timers (M1.6) run in the persistent Bun worker, not pg_cron.
+# When events/overlays (Part 2 / M0.5) need Realtime + pgmq, run the full
+# Supabase stack via the `supabase` CLI instead of this single container.
+name: community-bot-dev
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: community-bot-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  db-data:
