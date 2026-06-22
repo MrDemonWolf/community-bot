@@ -1,1 +1,31 @@
 @import "@community-bot/ui/globals.css";
+
+/* HowlBot brand palette (from HowlBot.dc.html) — dark navy glass + cyan accent.
+   Used by the onboarding wizard via bg-[var(--hb-*)] utilities. */
+:root {
+  --hb-bg: #070d22;
+  --hb-surface: #0c1838;
+  --hb-surface-2: #0c1f4a;
+  --hb-sidebar: #091533;
+  --hb-fg: #e9eefb;
+  --hb-muted: #8a97b8;
+  --hb-subtle: #5d6a8c;
+  --hb-border: rgba(255, 255, 255, 0.08);
+  --hb-border-2: rgba(255, 255, 255, 0.14);
+  --hb-accent: #0faced;
+  --hb-accent-fg: #04121f;
+  --hb-accent-soft: rgba(15, 172, 237, 0.13);
+  --hb-twitch: #9146ff;
+  --hb-discord: #5865f2;
+}
+
+@keyframes hb-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
