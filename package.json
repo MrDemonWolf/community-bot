@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@community-bot/config": "workspace:*",
-    "@types/node": "^22.13.14",
+    "@types/node": "^26.0.0",
     "turbo": "^2.9.16",
     "typescript": "catalog:"
   },
