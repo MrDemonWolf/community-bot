@@ -10,16 +10,18 @@
       "dotenv": "^17.2.2",
       "zod": "^4.1.13",
       "typescript": "^6",
-      "@types/bun": "^1.3.4",
-      "hono": "^4.8.2",
-      "@trpc/server": "^11.16.0",
-      "better-auth": "1.6.11",
+      "lucide-react": "^0.546.0",
+      "next": "^16.2.0",
       "next-themes": "^0.4.6",
       "react": "^19.2.6",
       "react-dom": "^19.2.6",
+      "sonner": "^2.0.5",
+      "@trpc/server": "^11.16.0",
       "@trpc/client": "^11.16.0",
+      "better-auth": "1.6.11",
       "@types/react": "^19.2.15",
-      "@types/react-dom": "^19.2.3"
+      "@types/react-dom": "^19.2.3",
+      "tailwindcss": "^4.1.18"
     }
   },
   "type": "module",
@@ -28,21 +30,11 @@
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
-    "dev:server": "turbo -F server dev",
     "dev:worker": "turbo -F worker dev",
     "db:push": "turbo -F @community-bot/db db:push",
     "db:studio": "turbo -F @community-bot/db db:studio",
     "db:generate": "turbo -F @community-bot/db db:generate",
-    "db:migrate": "turbo -F @community-bot/db db:migrate",
-    "db:up": "docker compose -f docker-compose.dev.yml up -d",
-    "db:down": "docker compose -f docker-compose.dev.yml down",
-    "db:logs": "docker compose -f docker-compose.dev.yml logs -f",
-    "db:reset": "docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d",
-    "docker:build": "docker compose build",
-    "docker:up": "docker compose up -d --build",
-    "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f",
-    "prepare": "husky"
+    "db:migrate": "turbo -F @community-bot/db db:migrate"
   },
   "dependencies": {
     "@community-bot/env": "workspace:*",
@@ -51,14 +43,9 @@
   },
   "devDependencies": {
     "@community-bot/config": "workspace:*",
-    "@types/bun": "catalog:",
-    "husky": "^9.1.7",
-    "lint-staged": "^17.0.7",
+    "@types/node": "^22.13.14",
     "turbo": "^2.9.16",
     "typescript": "catalog:"
-  },
-  "lint-staged": {
-    "**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,vue,astro,svelte}": ""
   },
   "packageManager": "bun@1.3.14"
 }

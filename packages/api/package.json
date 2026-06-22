@@ -17,11 +17,11 @@
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
     "dotenv": "catalog:",
+    "next": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@community-bot/config": "workspace:*",
-    "hono": "catalog:",
     "typescript": "catalog:"
   }
 }

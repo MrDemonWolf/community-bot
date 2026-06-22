@@ -12,7 +12,6 @@ function toView(s: Awaited<ReturnType<typeof getSettings>>) {
     commandPrefix: s.commandPrefix,
     timezone: s.timezone,
     channelName: s.channelName,
-    // Whether the Twitch app credentials exist in env (gates the connect steps).
     twitchAppConfigured: Boolean(env.TWITCH_CLIENT_ID && env.TWITCH_CLIENT_SECRET),
     broadcaster: {
       connected: Boolean(s.broadcasterTokenEnc),
@@ -22,7 +21,6 @@ function toView(s: Awaited<ReturnType<typeof getSettings>>) {
       connected: Boolean(s.botTokenEnc),
       login: s.botLogin,
     },
-    // Booleans only — never leak secret values.
     discordConfigured: Boolean(s.discordTokenEnc),
     discordGuildId: s.discordGuildId,
     geminiConfigured: Boolean(s.geminiKeyEnc),

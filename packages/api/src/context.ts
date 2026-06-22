@@ -1,14 +1,10 @@
 import { auth } from "@community-bot/auth";
 import { db } from "@community-bot/db";
-import type { Context as HonoContext } from "hono";
+import type { NextRequest } from "next/server";
 
-export type CreateContextOptions = {
-  context: HonoContext;
-};
-
-export async function createContext({ context }: CreateContextOptions) {
+export async function createContext(req: NextRequest) {
   const session = await auth.api.getSession({
-    headers: context.req.raw.headers,
+    headers: req.headers,
   });
   return {
     db,
