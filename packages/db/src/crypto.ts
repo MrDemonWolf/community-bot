@@ -3,8 +3,8 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { env } from "@community-bot/env/server";
 
 // AES-256-GCM secret encryption at rest. Stored format: base64(iv | tag | ciphertext).
-// ponytail: app-side crypto (one key in env) instead of pgsodium — keeps dev
-// (plain postgres) and prod (Supabase) identical and avoids a DB extension dep.
+// ponytail: app-side crypto (one key in env) instead of pgsodium — keeps dev/prod
+// identical and avoids a DB-extension dependency.
 const KEY = Buffer.from(env.APP_ENCRYPTION_KEY, "base64");
 if (KEY.length !== 32) {
   throw new Error("APP_ENCRYPTION_KEY must decode to 32 bytes (openssl rand -base64 32)");

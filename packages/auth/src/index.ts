@@ -4,6 +4,7 @@ import { env } from "@community-bot/env/server";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { nextCookies } from "better-auth/next-js";
 
 export function createAuth() {
   const db = createDb();
@@ -35,14 +36,7 @@ export function createAuth() {
     },
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
-    advanced: {
-      // ponytail: secure cross-site cookies in prod; relax for http://localhost dev.
-      defaultCookieAttributes:
-        env.NODE_ENV === "production"
-          ? { sameSite: "none", secure: true, httpOnly: true }
-          : { sameSite: "lax", secure: false, httpOnly: true },
-    },
-    plugins: [],
+    plugins: [nextCookies()],
   });
 }
 

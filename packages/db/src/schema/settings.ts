@@ -17,7 +17,7 @@ export const settings = pgTable("settings", {
   broadcasterLogin: text("broadcaster_login"),
   broadcasterTokenEnc: text("broadcaster_token_enc"),
 
-  // Twitch bot — wolfaid (chat:read + chat:edit)
+  // Twitch bot — wolfaide (chat:read + chat:edit)
   botUserId: text("bot_user_id"),
   botLogin: text("bot_login"),
   botTokenEnc: text("bot_token_enc"),

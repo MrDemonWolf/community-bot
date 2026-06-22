@@ -17,7 +17,6 @@ export async function getSettings(): Promise<Settings> {
     .values({ id: SINGLETON })
     .onConflictDoNothing()
     .returning();
-  // onConflictDoNothing returns [] if a concurrent insert won the race.
   return created ?? (await getSettings());
 }
 
