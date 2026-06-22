@@ -1,0 +1,24 @@
+{
+  "name": "@community-bot/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@community-bot/db": "workspace:*",
+    "@community-bot/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@community-bot/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
