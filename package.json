@@ -30,7 +30,7 @@
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
-    "dev:worker": "turbo -F worker dev",
+    "dev:twitch": "turbo -F twitch dev",
     "db:push": "turbo -F @community-bot/db db:push",
     "db:studio": "turbo -F @community-bot/db db:studio",
     "db:generate": "turbo -F @community-bot/db db:generate",
