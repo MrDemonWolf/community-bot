@@ -46,7 +46,7 @@ function Btn({
   variant?: "primary" | "ghost" | "twitch" | "discord";
 }) {
   const base =
-    "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition-all disabled:opacity-50 disabled:pointer-events-none";
+    "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition-all disabled:opacity-50 disabled:pointer-events-none outline-none focus-visible:ring-2 focus-visible:ring-[var(--hb-accent)]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--hb-bg)]";
   const variants = {
     primary: "bg-[var(--hb-accent)] text-[var(--hb-accent-fg)] hover:brightness-110",
     ghost:
@@ -160,7 +160,9 @@ export default function SetupWizard() {
                 <li key={label} className="flex flex-1 items-center last:flex-none">
                   <button
                     onClick={() => setStep(i)}
-                    className="flex flex-col items-center gap-1.5"
+                    aria-current={active ? "step" : undefined}
+                    aria-label={`Step ${i + 1}: ${label}`}
+                    className="flex flex-col items-center gap-1.5 rounded-md p-1 outline-none focus-visible:ring-2 focus-visible:ring-[var(--hb-accent)]/70"
                   >
                     <span
                       className={cx(
@@ -197,11 +199,7 @@ export default function SetupWizard() {
 
         {/* step body */}
         <div className="flex flex-1 items-start justify-center px-6 py-10">
-          <div
-            key={step}
-            className="w-full max-w-[560px]"
-            style={{ animation: "hb-fade .25s ease" }}
-          >
+          <div key={step} className="hb-step w-full max-w-[560px]">
             {step === 0 && <Welcome onNext={() => setStep(1)} />}
             {step === 1 && (
               <ConnectStep
@@ -264,7 +262,10 @@ function Welcome({ onNext }: { onNext: () => void }) {
         <ul className="grid gap-2.5">
           {features.map((f) => (
             <li key={f} className="flex items-center gap-2.5 text-sm text-[var(--hb-muted)]">
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--hb-accent-soft)] text-[11px] text-[var(--hb-accent)]">
+              <span
+                aria-hidden
+                className="grid h-5 w-5 place-items-center rounded-full bg-[var(--hb-accent-soft)] text-[11px] text-[var(--hb-accent)]"
+              >
                 ✓
               </span>
               {f}
@@ -306,7 +307,7 @@ function ConnectStep({
 
   return (
     <GlassCard className="p-8">
-      <h2 className="text-2xl font-bold tracking-tight text-white">{title}</h2>
+      <h1 className="text-2xl font-bold tracking-tight text-white">{title}</h1>
       <p className="mt-2 text-sm leading-relaxed text-[var(--hb-muted)]">{subtitle}</p>
 
       <div className="mt-6">
@@ -391,7 +392,7 @@ function BrandStep({
 
   return (
     <GlassCard className="p-8">
-      <h2 className="text-2xl font-bold tracking-tight text-white">Make it yours</h2>
+      <h1 className="text-2xl font-bold tracking-tight text-white">Make it yours</h1>
       <p className="mt-2 text-sm text-[var(--hb-muted)]">
         Give your bot a name and look, then set your defaults. You can change any of this later.
       </p>
@@ -482,7 +483,7 @@ function AddonsStep({
 
   return (
     <GlassCard className="p-8">
-      <h2 className="text-2xl font-bold tracking-tight text-white">Add-ons</h2>
+      <h1 className="text-2xl font-bold tracking-tight text-white">Add-ons</h1>
       <p className="mt-2 text-sm text-[var(--hb-muted)]">
         Flip on any add-on you want to set up now. Everything here is optional and can wait.
       </p>
@@ -583,10 +584,13 @@ function DoneStep({
   ];
   return (
     <GlassCard className="p-8 text-center">
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#2dd4a7]/15 text-2xl text-[#2dd4a7]">
+      <div
+        aria-hidden
+        className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#2dd4a7]/15 text-2xl text-[#2dd4a7]"
+      >
         ✓
       </div>
-      <h2 className="mt-5 text-[26px] font-bold tracking-tight text-white">The pack is ready</h2>
+      <h1 className="mt-5 text-[26px] font-bold tracking-tight text-white">The pack is ready</h1>
       <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-[var(--hb-muted)]">
         <span className="text-white">{data.botName}</span> is set up. Jump in and add your first
         command, or head to the dashboard.
