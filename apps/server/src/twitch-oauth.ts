@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
 
 import { auth } from "@community-bot/auth";
-import { encrypt } from "@community-bot/db/crypto";
 import { updateSettings } from "@community-bot/db/settings";
+import { encodeToken } from "@community-bot/db/twitch";
 import { env } from "@community-bot/env/server";
 import { Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
@@ -106,14 +106,13 @@ twitchOAuth.get("/callback", async (c) => {
   const tUser = ((await userRes.json()) as { data: { id: string; login: string }[] }).data[0];
   if (!tUser) return c.text("no twitch user returned", 502);
 
-  const bundle = encrypt(
-    JSON.stringify({
-      accessToken: token.access_token,
-      refreshToken: token.refresh_token,
-      expiresAt: Date.now() + token.expires_in * 1000,
-      scopes: token.scope,
-    }),
-  );
+  const bundle = encodeToken({
+    accessToken: token.access_token,
+    refreshToken: token.refresh_token,
+    expiresIn: token.expires_in,
+    obtainmentTimestamp: Date.now(),
+    scope: token.scope,
+  });
 
   await updateSettings(
     role === "broadcaster"
