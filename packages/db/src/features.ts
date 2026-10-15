@@ -42,6 +42,7 @@ export async function savePlatformIdentity(
 ) {
   if (expected.provider !== input.provider) return null;
   return db.transaction(async (tx) => {
+    // Keep the user→settings lock order consistent; unlink invalidates the pending link under this user lock.
     const [owner] = await tx.select({ id: user.id }).from(user).where(eq(user.id, input.userId)).for("update");
     if (!owner) return null;
     const identifier = `identity-link:${input.userId}:${input.provider}`;
@@ -50,6 +51,7 @@ export async function savePlatformIdentity(
       if (!pending || pending.value !== expected.linkState || pending.expiresAt <= new Date()) return null;
     }
     const [current] = await tx.select().from(settings).where(eq(settings.id, "singleton")).for("update");
+    // The account was authorized for this exact app/server snapshot, not whichever configuration exists now.
     if (!current || (expected.provider === "twitch"
       ? current.twitchClientId !== expected.clientId || current.twitchClientSecretEnc !== expected.clientSecretEnc
       : current.discordApplicationId !== expected.clientId || current.discordClientSecretEnc !== expected.clientSecretEnc ||
@@ -72,6 +74,7 @@ export async function deletePlatformIdentity(userId: string, provider: "twitch" 
 }
 
 export async function replacePlatformIdentityToken(id: string, expectedTokenEnc: string, nextTokenEnc: string) {
+  // A refresh finishing after unlink/relink must not overwrite the newly verified identity's token.
   const rows = await db.update(platformIdentity).set({ tokenEnc: nextTokenEnc }).where(and(
     eq(platformIdentity.id, id), eq(platformIdentity.tokenEnc, expectedTokenEnc),
   )).returning({ id: platformIdentity.id });
@@ -122,6 +125,7 @@ export async function getRedemption(redemptionId: string, broadcasterId: string)
 
 export async function claimManualRedemption(redemptionId: string, broadcasterId: string) {
   return db.transaction(async (tx) => {
+    // Share the worker's processing state; sent/failed actions remain manually resolvable without resending chat.
     const [row] = await tx.select().from(redemption).where(and(eq(redemption.redemptionId, redemptionId), eq(redemption.broadcasterId, broadcasterId))).for("update");
     if (!row || row.status !== "pending" || row.actionState === "processing") return null;
     await tx.update(redemption).set({ actionState: "processing" }).where(eq(redemption.redemptionId, redemptionId));
@@ -143,6 +147,7 @@ export async function updateRedemptionStatus(redemptionId: string, broadcasterId
 }
 
 export async function claimRedemption(redemptionId: string) {
+  // Claim with one conditional write so duplicate EventSub deliveries or manual actions cannot execute twice.
   const [row] = await db.update(redemption).set({ actionState: "processing" }).where(and(
     eq(redemption.redemptionId, redemptionId), eq(redemption.actionState, "pending"), eq(redemption.status, "pending"),
   )).returning();

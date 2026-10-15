@@ -13,6 +13,7 @@ export interface Subject { owner: boolean; grants: Grant[] }
 
 const moderator: Capability[] = ["dashboard:view", "bot:mute", "redemptions:view", "redemptions:manage", "command:moderator"];
 const lead: Capability[] = [...moderator, "bot:connect", "command:lead_moderator"];
+// Membership badges unlock commands only; dashboard access starts at a mapped staff role.
 const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   viewer: [],
   subscriber: ["command:subscriber"],
@@ -24,6 +25,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
 
 export function canAccess(subject: Subject, capability: Capability, platform?: Platform): boolean {
   if (subject.owner || capability === "command:public") return true;
+  // A Twitch grant must never authorize a Discord action (or an unscoped staff action).
   if (!platform && capability !== "dashboard:view") return false;
   return subject.grants.some((grant) =>
     (!platform || grant.platform === platform) &&

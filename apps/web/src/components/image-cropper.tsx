@@ -40,6 +40,7 @@ export default function ImageCropper({ file, pending, error, onCancel, onSave }:
     if (!start || !image || pending) return;
     const side = Math.min(image.naturalWidth, image.naturalHeight) / zoom;
     const display = event.currentTarget.getBoundingClientRect().width;
+    // Convert preview pixels into normalized source offsets; moving the picture moves the crop origin oppositely.
     setPosition({
       x: image.naturalWidth > side ? clamp(start.horizontal - 2 * (event.clientX - start.x) * side / (display * (image.naturalWidth - side)), -1, 1) : 0,
       y: image.naturalHeight > side ? clamp(start.vertical - 2 * (event.clientY - start.y) * side / (display * (image.naturalHeight - side)), -1, 1) : 0,

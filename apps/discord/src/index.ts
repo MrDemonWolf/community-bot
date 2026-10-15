@@ -150,6 +150,7 @@ async function reconcile() {
     sessionStartLimit = gateway.session_start_limit;
     if (stopping) return;
     const latest = await getSettings();
+    // Settings may change during REST verification; never connect using credentials the owner just replaced.
     if (
       !latest.discordEnabled ||
       key !==
@@ -161,6 +162,7 @@ async function reconcile() {
     )
       return;
     const connection = new Client({
+      // Slash commands and presence need no privileged member, presence, or message-content intents.
       intents: [GatewayIntentBits.Guilds],
       presence: desiredPresence,
     });
@@ -215,6 +217,7 @@ async function reconcile() {
   const desiredCommandKey = JSON.stringify([guildId, registration]);
   commandsRegistered = commandKey === desiredCommandKey;
   if (ready() && !commandsRegistered && Date.now() >= nextCommandAttempt) {
+    // Retry failed registration without reconnecting the gateway or hammering Discord's REST API.
     nextCommandAttempt = Date.now() + 60_000;
     try {
       await client!.application!.commands.set(registration, guildId);

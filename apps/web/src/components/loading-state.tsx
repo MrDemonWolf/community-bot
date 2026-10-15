@@ -5,6 +5,7 @@ export function InlineSpinner() {
 }
 
 export function LoadingState({ label, kind = "cards" }: { label: string; kind?: "cards" | "form" }) {
+  // A busy live region can suppress its loading label until aria-busy clears, but this view unmounts when ready.
   return <section className="loading-state" role="status" aria-live="polite">
     <p className="loading-label"><InlineSpinner />{label}</p>
     <div className={`loading-preview loading-preview-${kind}`} aria-hidden="true" aria-busy="true">

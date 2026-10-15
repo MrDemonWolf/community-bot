@@ -20,6 +20,7 @@ async function view(user: { id: string; name: string }) {
 }
 
 async function providerImage(userId: string, source: "twitch" | "discord") {
+  // Always use the session user's linked bearer identity; bot credentials and caller-supplied IDs are unrelated.
   const [settings, identities] = await Promise.all([getSettings(), getPlatformIdentities(userId)]);
   const identity = identities.find((row) => row.provider === source);
   if (!identity) throw new TRPCError({ code: "BAD_REQUEST", message: `Link your own ${source === "discord" ? "Discord" : "Twitch"} account on My access first.` });
@@ -43,6 +44,7 @@ async function providerImage(userId: string, source: "twitch" | "discord") {
 }
 
 export const profileRouter = router({
+  // Staff may manage their own picture; workspace credentials remain behind separate owner procedures.
   get: protectedProcedure.query(({ ctx }) => view(ctx.session.user)),
   select: protectedProcedure.input(z.object({ source: z.enum(["default", "twitch", "discord", "custom"]) })).mutation(async ({ input, ctx }) => {
     let image: Buffer | undefined;

@@ -42,6 +42,7 @@ export async function usableToken(provider: Platform, encrypted: string, clientI
   const existing = refreshes.get(encrypted);
   if (existing) return existing;
   const work = (async () => {
+    // Share in-flight refreshes because providers may rotate refresh tokens; CAS still guards unlink/relink.
     const response = await fetch(provider === "twitch" ? "https://id.twitch.tv/oauth2/token" : "https://discord.com/api/v10/oauth2/token", {
       method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, signal: AbortSignal.timeout(10000),
       body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: token.refreshToken!, client_id: clientId, client_secret: decrypt(secretEnc) }),
@@ -120,6 +121,7 @@ async function syncEvidence(identities: Identity[], settings: Settings, mappings
       result.grants.push(...mappedGrants(provider, roles, mappings, new Date(Date.now() + 60000).toISOString()));
       result.sync[provider] = { state: "verified", checkedAt };
     } catch (error) {
+      // Do not reuse old grants when upstream verification fails; another verified platform can still grant access.
       const known = ["reconnect", "configure", "rate_limited", "unavailable"];
       result.sync[provider] = { state: error instanceof Error && known.includes(error.message) ? error.message : "unavailable", checkedAt: null };
     }
@@ -134,6 +136,7 @@ export async function resolveAccess(user: { id: string; email: string; emailVeri
   let evidence: Evidence = { grants: [], sync: { twitch: { state: initialState, checkedAt: null }, discord: { state: initialState, checkedAt: null } } };
   if (!owner && user.emailVerified) {
     const [settings, mappings] = await Promise.all([getSettings(), getPermissionMappings()]);
+    // Cache evidence, not authorization forever: credential/mapping changes invalidate it immediately, roles after 60s.
     const key = JSON.stringify([identities, mappings, settings.twitchClientId, settings.twitchClientSecretEnc,
       settings.broadcasterUserId, settings.broadcasterTokenEnc, settings.discordApplicationId,
       settings.discordClientSecretEnc, settings.discordGuildId, settings.permissionSyncTwitch,

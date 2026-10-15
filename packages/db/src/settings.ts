@@ -22,6 +22,7 @@ function matchesOwnerTwitchAttempt(row: { value: string; expiresAt: Date } | und
 export async function beginOwnerTwitchConnection(attempt: OwnerTwitchAttempt, clientId: string, secretEnc: string) {
   if (!attempt.state || !attempt.sessionId || !clientId || !secretEnc) throw new Error("OAuth state, session, and application are required");
   await db.transaction(async (tx) => {
+    // Begin, disconnect, and callback consume the same user lock: an old callback cannot undo Disconnect.
     const [owner] = await tx.select({ id: user.id }).from(user).where(eq(user.id, attempt.userId)).for("update");
     if (!owner) throw new Error("Twitch linking requires an existing user");
     const identifier = ownerTwitchIdentifier(attempt);
@@ -81,6 +82,7 @@ export async function replaceBotToken(
   expectedEncrypted: string,
   nextEncrypted: string,
 ) {
+  // Compare the old ciphertext atomically; refresh must not resurrect a cleared or replaced account.
   const rows = await db
     .update(settings)
     .set({ botTokenEnc: nextEncrypted })
@@ -98,6 +100,7 @@ export async function replaceBroadcasterToken(
   expectedEncrypted: string,
   nextEncrypted: string,
 ) {
+  // Web requests and the reward worker may refresh concurrently; only the current token may advance.
   const rows = await db
     .update(settings)
     .set({ broadcasterTokenEnc: nextEncrypted })
@@ -132,6 +135,7 @@ export async function saveTwitchConnection(
 ) {
   return db.transaction(async (tx) => {
     if (attempt) {
+      // Consume the nonce in the same transaction as credentials, preventing replay and superseded attempts.
       const [owner] = await tx.select({ id: user.id }).from(user).where(eq(user.id, attempt.userId)).for("update");
       if (!owner) return false;
       const [pending] = await tx.select().from(verification).where(eq(verification.identifier, ownerTwitchIdentifier(attempt)));

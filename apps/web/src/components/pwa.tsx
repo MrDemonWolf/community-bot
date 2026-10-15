@@ -9,6 +9,7 @@ export default function Pwa() {
     update();
     window.addEventListener("online", update);
     window.addEventListener("offline", update);
+    // Development must fetch fresh code instead of inheriting an offline shell during hot reload.
     if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
       void navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => {});
     }

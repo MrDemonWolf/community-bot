@@ -8,7 +8,7 @@ export const personalProfile = pgTable("personal_profile", {
   source: text("source").notNull().default("default"),
 }, (t) => [check("personal_profile_source", sql`${t.source} IN ('default','twitch','discord','custom')`)]);
 
-// Three bounded binary slots total at most 768 KiB per person, below the 1 MB budget.
+// Three binary slots total at most 768 KiB per person; bytea avoids base64's 33% storage overhead.
 export const personalAvatar = pgTable("personal_avatar", {
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   source: text("source").notNull(),

@@ -41,6 +41,7 @@ export const auth = betterAuth({
         }
       : {},
   databaseHooks: {
+    // A verified session permits linking personal accounts; protected procedures separately require staff access.
     user: {
       create: {
         before: async (user) => {

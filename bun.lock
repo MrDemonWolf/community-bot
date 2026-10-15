@@ -87,6 +87,7 @@
         "next": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",
+        "sharp": "0.34.5",
         "sonner": "catalog:",
         "zod": "catalog:",
       },

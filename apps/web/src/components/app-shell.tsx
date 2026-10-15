@@ -27,6 +27,7 @@ export default function AppShell({ children, userName, botName, access, publicPa
   const primary = navigation.filter((item) => item.section === "primary");
   const secondaryActive = navigation.some((item) => item.section !== "primary" && item.href === pathname);
 
+  // Server-rendered menu triggers stay disabled until their dialog handlers are hydrated.
   useEffect(() => { setReady(true); }, []);
   useEffect(() => { setMoreOpen(false); }, [pathname]);
   useEffect(() => {

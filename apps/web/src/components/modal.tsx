@@ -28,12 +28,14 @@ export function Modal({ open, onClose, labelledBy, className, children }: {
 
   function keepFocusInside(event: KeyboardEvent<HTMLDialogElement>) {
     if (event.key !== "Tab") return;
+    // Native dialogs can send boundary Tab presses to browser chrome; wrap within the current enabled controls.
     const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
       "a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]",
     )).filter((element) => element.tabIndex >= 0 && !element.matches(":disabled") && element.getClientRects().length > 0);
     const first = controls[0];
     const last = controls[controls.length - 1];
     if (!first || !last) {
+      // Uploads may disable every control. Keep keyboard focus in the modal until saving finishes.
       event.preventDefault();
       event.currentTarget.focus();
       return;
@@ -47,6 +49,7 @@ export function Modal({ open, onClose, labelledBy, className, children }: {
     }
   }
 
+  // Dismissal stays controlled so callers can reject Escape while saving. Ignore stale close events after reopening.
   return <dialog ref={dialog} tabIndex={-1} id={labelledBy + "-dialog"} className={className} aria-labelledby={labelledBy}
     onKeyDown={keepFocusInside} onCancel={(event) => { event.preventDefault(); onClose(); }}
     onClose={() => { if (!dialog.current?.open) onClose(); }}

@@ -2,6 +2,7 @@ import { env } from "@community-bot/env/server";
 import { devLoginEnabled } from "@community-bot/auth/dev-login";
 import Login from "./login";
 
+// OAuth availability comes from deployment-time environment values, not the image's build environment.
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {

@@ -17,6 +17,7 @@ export function profilePicture(profile: Awaited<ReturnType<typeof getPersonalPro
 export async function selectPersonalProfile(userId: string, source: ProfileSource, webp?: Buffer) {
   return db.transaction(async (tx) => {
     await tx.insert(personalProfile).values({ userId }).onConflictDoNothing();
+    // Serialize selection with snapshot replacement while retaining this person's other saved sources.
     await tx.select().from(personalProfile).where(eq(personalProfile.userId, userId)).for("update");
     if (source !== "default") {
       if (webp) await tx.insert(personalAvatar).values({ userId, source, webp, version: randomUUID() })

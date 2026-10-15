@@ -16,6 +16,7 @@ export default function Login({
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Avoid a clickable server-rendered sign-in button before its client handler can start authentication.
   useEffect(() => setReady(true), []);
   async function signIn(local: boolean) {
     setError("");

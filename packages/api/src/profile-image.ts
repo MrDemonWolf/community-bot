@@ -24,6 +24,7 @@ export async function sanitizeProfileImage(bytes: Buffer, cropped = false) {
 }
 
 export async function boundedFetch(url: string, init: RequestInit = {}, limit = 64 * 1024) {
+  // Count streamed bytes as well as Content-Length; redirects must not escape the provider CDN allowlist.
   const response = await fetch(url, { ...init, redirect: "error", signal: AbortSignal.timeout(10000) });
   if (!response.ok || !response.body) throw new Error("The provider could not return this image.");
   if (Number(response.headers.get("content-length")) > limit) { await response.body.cancel(); throw new Error("Provider response is too large."); }

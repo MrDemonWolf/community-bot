@@ -218,6 +218,7 @@ async function connect(settings: Settings) {
 async function reconcile() {
   const settings = await getSettings();
   const key = connectionKey(settings);
+  // A deliberate credential change should retry immediately; unchanged failures retain their backoff.
   if (key !== retryKey || !settings.twitchEnabled) {
     retryKey = key;
     failures = 0;

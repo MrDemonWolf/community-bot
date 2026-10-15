@@ -18,6 +18,7 @@ export class RewardRuntime {
     return JSON.stringify([settings.twitchClientId, settings.twitchClientSecretEnc, settings.broadcasterUserId]);
   }
   async reconcile(settings: Settings, send: (message: string) => Promise<boolean>) {
+    // Event collection can stay connected while chat is paused; action execution checks Join/Mute again below.
     const enabled = settings.channelPointsEnabled && featureEnabled("channel-points", await getFeatureConfigs(), "twitch");
     if (!enabled) { this.stop(); this.detail = "Channel Points are disabled."; return; }
     if (!settings.broadcasterTokenEnc) { this.stop(); this.detail = "Authorize the creator account for Channel Points."; return; }

@@ -87,6 +87,10 @@ jobs:
           done
       - name: Start isolated stack and run incremental migrations
         run: docker compose up -d --wait --wait-timeout 300 web production-web
+      - name: Both Next runtimes load the native image dependency through the API
+        run: |
+          docker compose exec -T web node -e "fetch('http://localhost:3001/api/trpc/settings.get',{signal:AbortSignal.timeout(60000)}).then(r=>{if(r.status!==401)throw Error('Development API expected 401, received '+r.status)}).catch(e=>{console.error(e);process.exit(1)})"
+          docker compose exec -T production-web node -e "fetch('http://localhost:3006/api/trpc/settings.get',{signal:AbortSignal.timeout(60000)}).then(r=>{if(r.status!==401)throw Error('Production API expected 401, received '+r.status)}).catch(e=>{console.error(e);process.exit(1)})"
       - name: PostgreSQL constraints and feature queue invariants
         run: |
           docker compose exec -T postgres psql -U community_bot -d community_bot -v ON_ERROR_STOP=1 -q -t < packages/db/tests/constraints.sql

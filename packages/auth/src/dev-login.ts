@@ -33,6 +33,7 @@ export function devLoginPlugin(ownerEmail?: string): BetterAuthPlugin {
         async (ctx) => {
           const host = ctx.headers.get("host");
           const origin = ctx.headers.get("origin");
+          // Recheck the request boundary even after startup gating; remote origins cannot mint a dev session.
           if (
             !host ||
             !isLocalURL("http://" + host) ||
