@@ -9,6 +9,9 @@ import "../settings.css";
 import "../appearance.css";
 import "../overview.css";
 import "../public-page.css";
+import "../public-shell.css";
+import "../legal.css";
+import "../brand.css";
 import SiteFooter from "@/components/site-footer";
 import Providers from "@/components/providers";
 import Pwa from "@/components/pwa";
@@ -20,7 +23,7 @@ export const metadata: Metadata = {
   icons: { icon: "/brand/logo.svg", apple: "/brand/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: "Community Bot", statusBarStyle: "default" },
 };
-export const viewport: Viewport = { themeColor: "#091533", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#0A1633", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({
   children,

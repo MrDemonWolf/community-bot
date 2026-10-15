@@ -14,6 +14,7 @@ Changes are grouped by release. Work under **Unreleased** is on the rewrite bran
 - Personal staff pictures from linked Twitch/Discord accounts or a built-in upload cropper, with compressed storage below 1 MB per person.
 - Mobile bottom navigation, a grouped More menu, shared skeleton loaders, and action spinners.
 - Light, Dark, and System appearance preferences shared by settings, the footer, and the public offline page.
+- Searchable public chat commands, copy feedback, and a manual clipboard fallback.
 - An opt-in public channel page and an installable PWA with a public offline page.
 - Public Privacy Policy and Terms of Service pages, essential-cookie information, and a footer linked to the deployed source commit.
 - Beginner guides for local development and Dokploy, plus Docker/database/browser CI checks.
@@ -26,6 +27,9 @@ Changes are grouped by release. Work under **Unreleased** is on the rewrite bran
 - Replaced the sidebar's selected-item stripe with a neutral background and improved spacing.
 - Grouped personal and workspace settings, with section-aware navigation and clearer profile photo controls.
 - Refined the overview's workspace tools and public channel layout, separating live stream information from bot connection status.
+- Reworked the dashboard into compact connection rows and made the public page a commands-first reference after deeper bot and Mobbin research.
+- Adopted the website's v6 palette and locally served Montserrat, Roboto, and JetBrains Mono fonts across the dashboard and docs.
+- Rebuilt privacy and terms as readable documents with summaries and responsive contents navigation.
 - Documented security, queue, token-refresh, and accessibility invariants in developer comments.
 
 ### Removed

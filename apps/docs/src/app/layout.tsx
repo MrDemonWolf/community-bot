@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./style.css";
+import "@community-bot/ui/brand.css";
+import "./brand.css";
 
 export const metadata: Metadata = {
   title: { default: "Community Bot | Documentation", template: "%s | Community Bot" },

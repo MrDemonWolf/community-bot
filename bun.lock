@@ -36,6 +36,7 @@
       "name": "docs",
       "dependencies": {
         "@community-bot/core": "workspace:*",
+        "@community-bot/ui": "workspace:*",
         "next": "catalog:",
         "react": "catalog:",
         "react-dom": "catalog:",

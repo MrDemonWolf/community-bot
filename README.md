@@ -274,6 +274,8 @@ Dockerfile      # Separate build targets for each service
 
 Licensed under the [MIT License](LICENSE), copyright 2026 MrDemonWolf, Inc.
 
+Bundled Montserrat, Roboto, and JetBrains Mono fonts retain their [SIL Open Font License notices](packages/ui/src/fonts).
+
 ## Contact
 
 - Discord: [Join my server](https://mrdwolf.net/discord)

@@ -2,12 +2,12 @@
 
 import { LoadingState } from "@/components/loading-state";
 
-import { Activity, ArrowUpRight, MessageCircle, Radio, Settings2 } from "lucide-react";
+import { ArrowUpRight, MessageCircle, Radio, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { COMMAND_DEFINITIONS } from "@community-bot/core/commands";
 import { canAccess } from "@community-bot/core/permissions";
-import { PageHeading, Panel, StatusBadge } from "@/components/dashboard-ui";
+import { PageHeading, StatusBadge } from "@/components/dashboard-ui";
 import { trpc, queryClient } from "@/utils/trpc";
 import { navigationFor } from "@/components/navigation";
 
@@ -29,7 +29,6 @@ export default function Dashboard() {
   const setupNeeded = access.owner && !settings.discordConfigured && !(settings.bot.connected && settings.broadcaster.connected);
   const manageCommands = canAccess(access, "features:manage", "twitch") || canAccess(access, "features:manage", "discord");
   const tools = navigationFor(access, settings.publicPageEnabled).filter((item) => ["features", "rewards", "staff"].includes(item.id));
-  const toolDescriptions: Record<string, string> = { features: "Choose what your bots can do.", rewards: "Manage rewards and the redemption queue.", staff: "Manage your community's staff permissions." };
 
   return <>
     <PageHeading title="Overview"
@@ -38,13 +37,10 @@ export default function Dashboard() {
         {hasSettings && <Link className="button" href="/dashboard/settings"><Settings2 size={16} /> Settings</Link>}
         {settings.publicPageEnabled && <Link className="button" href="/channel" target="_blank">Public page <ArrowUpRight size={15} /></Link>}
       </>} />
-    {setupNeeded && <div className="next-step">
-      <Activity size={24} aria-hidden="true" /><div><h3>Connect your services</h3><p>Start with Discord or Twitch.</p></div>
-      <Link href="/setup" className="button primary">Continue setup →</Link>
-    </div>}
     {control.error && <p role="alert" className="notice error">{control.error.message}</p>}
     {control.isSuccess && <p role="status" className="notice">Request saved. The service status below will confirm the change.</p>}
-    <div className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+    <section className="connections" aria-labelledby="connections-title">
+      <header className="connections-heading"><h2 id="connections-title">Connections</h2><p>Live worker status and connection controls.</p></header>
       {(["discord", "twitch"] as const).filter((service) => canAccess(access, "dashboard:view", service)).map((service) => {
         const runtime = settings.runtimes.find((item) => item.service === service);
         const configured = service === "discord" ? settings.discordConfigured : settings.broadcaster.connected && settings.bot.connected;
@@ -54,69 +50,71 @@ export default function Dashboard() {
         const connect = canAccess(access, "bot:connect", service);
         const mute = service === "twitch" && canAccess(access, "bot:mute", "twitch");
         const Icon = service === "discord" ? MessageCircle : Radio;
-        return <Panel className="connection-card" key={service} aria-label={service === "discord" ? "Discord connection" : "Twitch connection"}>
-          <div className="panel-header">
-            <div className="service-name"><span className="service-icon"><Icon size={23} aria-hidden="true" /></span><div>
-              <h2>{service === "discord" ? "Discord" : "Twitch"}</h2>
-              <p>{service === "discord" ? "Server connection" : settings.channelName ? `#${settings.channelName}` : "Channel connection"}</p>
-            </div></div>
-            <StatusBadge good={connected}>{state}</StatusBadge>
+        return <section className="connection-card" key={service} aria-label={service === "discord" ? "Discord connection" : "Twitch connection"}>
+          <div className="connection-summary">
+            <span className="service-icon"><Icon size={20} aria-hidden="true" /></span>
+            <div className="connection-identity">
+              <div className="connection-title"><h3>{service === "discord" ? "Discord" : "Twitch"}</h3><StatusBadge good={connected}>{state}</StatusBadge></div>
+              <p>{runtime?.identity || (configured ? "Waiting for bot identity" : "Not configured")}{service === "twitch" && settings.channelName && <> · #{settings.channelName}</>}</p>
+            </div>
           </div>
-          <p className="service-detail">{!configured
-            ? access.owner ? "Connect this platform in Settings to get started." : "The creator needs to finish connecting this service."
-            : runtime?.stale ? "The service has stopped reporting. Check its deployment logs."
-              : runtime?.detail || "Credentials are ready. Start the service and choose Join."}</p>
-          {service === "twitch" && runtime && !runtime.stale && <StreamDetails metadata={runtime.metadata} />}
+          <div className="connection-body">
+            <p className="service-detail">{!configured
+              ? access.owner ? "Connect your application and accounts to get started." : "The creator needs to finish connecting this service."
+              : runtime?.stale ? "The worker has stopped reporting. Its connection cannot be confirmed."
+                : runtime?.detail || (enabled ? "Connection requested. Waiting for the worker to confirm." : "Credentials are ready. Choose Join to request a connection.")}</p>
+            {configured && <p className="connection-desired">Requested: {enabled ? "connected" : "paused"}{service === "twitch" && settings.twitchMuted ? " · Replies muted" : ""}{service === "discord" && !enabled ? " · Bot stays in your server" : ""}</p>}
+            {service === "twitch" && runtime && !runtime.stale && <StreamDetails metadata={runtime.metadata} />}
+            <p className="connection-freshness">{runtime?.heartbeatAt ? <>Last worker update <time dateTime={runtime.heartbeatAt}>{new Date(runtime.heartbeatAt).toLocaleTimeString()}</time>{runtime.stale ? " · Out of date" : ""}</> : "No worker update received yet"}</p>
+          </div>
           <div className="actions connection-actions">
-            {connect && <>
-              <button className="button primary" disabled={!configured || control.isPending || enabled}
-                onClick={() => control.mutate({ service, action: "join" })}>Join</button>
-              <button className="button" disabled={!enabled || control.isPending}
-                onClick={() => control.mutate({ service, action: "leave" })}>Leave</button>
+            {!configured && access.owner ? <Link className="button primary" href={`/dashboard/settings#${service}-connection`}>Set up {service === "discord" ? "Discord" : "Twitch"}</Link> : <>
+              {connect && <>
+                <button className="button primary" disabled={!configured || control.isPending || enabled}
+                  onClick={() => control.mutate({ service, action: "join" })}>Join</button>
+                <button className="button" disabled={!enabled || control.isPending}
+                  onClick={() => control.mutate({ service, action: "leave" })}>Leave</button>
+              </>}
+              {mute && <button className="button" disabled={!configured || control.isPending}
+                onClick={() => control.mutate({ service, action: settings.twitchMuted ? "unmute" : "mute" })}>
+                {settings.twitchMuted ? "Unmute replies" : "Mute replies"}
+              </button>}
             </>}
-            {mute && <button className="button" disabled={!configured || control.isPending}
-              onClick={() => control.mutate({ service, action: settings.twitchMuted ? "unmute" : "mute" })}>
-              {settings.twitchMuted ? "Unmute replies" : "Mute replies"}
-            </button>}
-            {!configured && access.owner && <Link className="button" href={`/dashboard/settings#${service}-connection`}>Set up {service === "discord" ? "Discord" : "Twitch"}</Link>}
+            {!connect && !mute && <span className="subtle">View only</span>}
           </div>
-          {!connect && !mute && <p className="subtle">Your role has view-only access to this connection.</p>}
-          <div className="rule" />
-          <p className="subtle mb-0">{runtime?.identity || "No identity reported"}{runtime?.heartbeatAt && <> · Updated {new Date(runtime.heartbeatAt).toLocaleTimeString()}</>}</p>
-        </Panel>;
+        </section>;
       })}
-    </div>
-    <div className={tools.length ? "overview-secondary" : undefined}>
-    <Panel aria-labelledby="commands-title">
-      <div className="panel-header"><div><h2 id="commands-title">Useful commands</h2>
-        <p>{hasTwitch && `Twitch uses ${settings.commandPrefix}. `}{hasDiscord && "Discord uses /. "}
-          {manageCommands ? <>Enable uptime commands in <Link href="/dashboard/features">Features</Link>.</> : "Ask a workspace admin to configure commands."}</p>
-      </div></div>
+    </section>
+    {setupNeeded && <aside className="setup-attention" aria-label="Connection setup">
+      <p><strong>New here?</strong> Guided setup walks through your workspace and bot connections.</p>
+      <Link href="/setup" className="button">Continue setup →</Link>
+    </aside>}
+    {tools.length > 0 && <nav className="workspace-tools" aria-label="Workspace tools">
+      {tools.map(({ id, href, label, icon: Icon }) => <Link href={href} key={id} className="workspace-tool"><Icon size={17} aria-hidden="true" /><span>{label}</span><ArrowUpRight size={14} aria-hidden="true" /></Link>)}
+    </nav>}
+    <details className="command-reference">
+      <summary><span>Useful commands</span><span className="subtle">Command reference</span></summary>
+      <div className="command-reference-content">
+      <p>{hasTwitch && `Twitch uses ${settings.commandPrefix}. `}{hasDiscord && "Discord uses /. "}
+        {manageCommands ? <>Enable uptime commands in <Link href="/dashboard/features">Features</Link>.</> : "Ask a workspace admin to configure commands."}</p>
       <table className="command-list"><thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
         <tbody>{COMMAND_DEFINITIONS.map(({ name, description }) => <tr key={name}>
           <td><div className="flex flex-wrap gap-2">{hasTwitch && <code>{settings.commandPrefix}{name}</code>}{hasDiscord && <code>/{name}</code>}</div></td><td>{description}</td>
         </tr>)}</tbody>
       </table>
-    </Panel>
-    {tools.length > 0 && <Panel className="workspace-tools" aria-labelledby="tools-title">
-      <div className="panel-header"><div><h2 id="tools-title">Workspace tools</h2><p>Keep your community running.</p></div></div>
-      <nav aria-label="Workspace tools">{tools.map(({ id, href, label, icon: Icon }) => <Link href={href} key={id} className="workspace-tool">
-        <Icon size={20} aria-hidden="true" /><span><strong>{label}</strong><small>{toolDescriptions[id]}</small></span><ArrowUpRight size={16} aria-hidden="true" />
-      </Link>)}</nav>
-      <p className="subtle">Only tools available to your role appear here.</p>
-    </Panel>}
-    </div>
+      </div>
+    </details>
   </>;
 }
 
 function StreamDetails({ metadata }: { metadata: unknown }) {
   if (!metadata || typeof metadata !== "object") return null;
   const stream = metadata as Record<string, unknown>;
-  if (stream.live !== true && stream.live !== false) return <p className="subtle">Stream information is not available yet.</p>;
-  return <div className="mb-5">
+  if (stream.live !== true && stream.live !== false) return null;
+  return <div className="connection-stream">
     <StatusBadge good={stream.live}>{stream.live ? "Stream is live" : "Stream is offline"}</StatusBadge>
-    {stream.live && <div className="mt-2.5">
-      {typeof stream.title === "string" && <h3>{stream.title}</h3>}
+    {stream.live && <div>
+      {typeof stream.title === "string" && <p className="stream-title">{stream.title}</p>}
       <p className="subtle mb-0">{typeof stream.category === "string" ? stream.category : "No category"}
         {typeof stream.viewers === "number" && Number.isFinite(stream.viewers) ? ` · ${stream.viewers.toLocaleString()} viewers` : ""}</p>
     </div>}

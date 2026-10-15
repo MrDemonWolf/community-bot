@@ -1,6 +1,8 @@
 # Dashboard design notes
 
-Community Bot keeps the official MrDemonWolf wolf asset, navy `#091533`, and this project's cyan `#0FACED`. The dashboard uses light or dark work panels within a navy navigation shell. Forms and responsive grids use the shared Tailwind CSS pipeline; brand and interaction styling stay in the web stylesheets.
+Community Bot follows the current MrDemonWolf website v6 design system: navy `#0A1633`, sky blue `#3AAEE3`, deep blue `#0D4D8C`, Montserrat headings, Roboto body text, and JetBrains Mono technical details. Dark mode uses the website's neutral charcoal surfaces rather than a full navy wash. The official compact wolf asset is unchanged. Forms and responsive grids use the shared Tailwind CSS pipeline.
+
+The source reference is the local `mrdemonwolf/website` repository: `apps/website/src/data/brand.json`, `apps/website/src/styles/global.css`, and the dark theme in `apps/website/src/styles/site.css`, audited October 15, 2026. Original font binaries and their OFL notices were copied unchanged from `scripts/brand-fonts` into `packages/ui/src/fonts`. `packages/ui/src/styles/brand.css` shares those locally served fonts and brand colors between the web app and documentation. No Google Fonts network request is required. The public offline fallback uses system fonts because it intentionally caches only its standalone HTML.
 
 ## References inspected in Mobbin
 
@@ -59,3 +61,11 @@ Appearance defaults to the operating system and follows system changes while Sys
 Settings groups personal Profile picture and Appearance separately from permission-filtered Workspace controls. Its inner navigation follows the visible section. All forms stay mounted while navigating so unsaved inputs survive. Photo choices show the current source and explain unavailable linked accounts; the existing private image storage and compression limits still apply.
 
 The overview keeps connection controls first and pairs its command reference with role-filtered workspace tools, using the same navigation definitions as the shell. The public channel page has its own visitor layout: community identity, a safe Twitch destination when configured, stream information, bot connection status, and enabled commands. Unknown stream information is labelled unavailable rather than offline. It uses only the existing public data projection; personal staff pictures, private settings, and internal tools never appear there.
+
+## Deeper dashboard and bot research
+
+[Dashboard research](research/dashboard-design.md) records seven targeted Mobbin searches and the transfer from Resend, Railway, Plane, and incident.io operational patterns. [Bot competitor research](research/bot-competitors.md) distinguishes real Fossabot, Nightbot, and StreamElements public-page observations from official dashboard documentation and authenticated areas we did not verify anonymously.
+
+The resulting dashboard is an operational list: two compact connection rows, contextual setup/connect controls, observed status separate from the requested state, and a secondary command disclosure. The viewer-facing page leads with a searchable command directory, result counts, Clear search, and copy feedback with a selectable manual fallback. Five built-in commands do not need pagination or empty Default/Custom tabs. Stream and bot status remain secondary and retain their actual unknown/disconnected states.
+
+Privacy and terms use the same public header, a clearly labelled quick summary, seven linked document sections, a desktop contents rail, and a mobile contents disclosure. Full policy text stays visible. The summary does not replace the full document. [Legal review](legal-review.md) records current official readability/transparency guidance, inspected Mobbin references, and deployment facts that still require confirmation.

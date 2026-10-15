@@ -7,6 +7,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@community-bot/ui": "workspace:*",
     "@community-bot/core": "workspace:*",
     "next": "catalog:",
     "react": "catalog:",

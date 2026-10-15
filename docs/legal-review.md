@@ -44,6 +44,23 @@ Reviewed October 15, 2026 using the legal:compliance-check skill. This is a prod
 
 ## Implementation evidence
 
-Reviewed auth/schema, role resolver and protected procedures, identity/OAuth disconnect behavior, personal image schema/serving, reward queue, public-channel projection and offline service worker. Access/refresh-token encryption is configured; personal images are per-session-user, three binary WebP slots of at most 256 KiB each. Image metadata is stripped. General chat is processed without a chat-history table; redemption text is persisted. Session lifetime defaults to seven days; app linking cookies expire after ten minutes. Cookie-notice preference UI is being implemented separately.
+Reviewed auth/schema, role resolver and protected procedures, identity/OAuth disconnect behavior, personal image schema/serving, reward queue, public-channel projection and offline service worker. Access/refresh-token encryption is configured; personal images are per-session-user, three binary WebP slots of at most 256 KiB each. Image metadata is stripped. General chat is processed without a chat-history table; redemption text is persisted. Session lifetime defaults to seven days; app linking cookies expire after ten minutes. The cookie notice records dismissal locally; the color-theme preference is also browser-local. Neither authorizes analytics or advertising.
 
 Contact conventions were read from the local `mrdemonwolf/website` repo; its analytics, reCAPTCHA, sales terms and conflicting location/jurisdiction text were not copied into this service.
+
+## Legal document UX review
+
+The revised pages preserve the full policy and terms and add a clearly subordinate quick-read summary. Desktop contents stay beside a bounded reading column; mobile uses a native contents disclosure with direct section links. The policy itself stays expanded. Updated date, operator identity and contact remain visible, with the same public header used by other public pages. Semantic colors and inherited website fonts support both light and dark themes. No acceptance checkbox or extra consent claim was added.
+
+Primary guidance checked:
+
+- [ICO: drafting privacy information](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/the-right-to-be-informed/how-should-we-draft-our-privacy-information/) supports short, familiar language, descriptive headings and direct access. It explains the Article 12 transparency/readability standards. The ICO marks this guidance as under review following the Data (Use and Access) Act; its presence does not establish that the service satisfies all applicable UK requirements.
+- [ICO: methods and layered notices](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/individual-rights/the-right-to-be-informed/what-methods-can-we-use-to-provide-privacy-information/) supports giving key information first while keeping detailed information accessible, including on small screens.
+- [FTC: consumer privacy guidance](https://www.ftc.gov/business-guidance/privacy-security/consumer-privacy) emphasizes explaining actual data use and honoring privacy promises. This review adds navigation and summaries, not new claims about compliance, deletion deadlines or infrastructure.
+
+Inspected visual references:
+
+- [MasterClass privacy policy](https://mobbin.com/screens/59ce80a7-3445-40cc-a1d5-5f32d8125987): a persistent contents rail, clear policy title/date, and visible request action. Used the navigation hierarchy, not its policy text or request tooling.
+- [Codecademy article layout](https://mobbin.com/screens/41ef4d64-14cc-4361-b939-3b4c7c960153): a restrained reading measure and compact contents. Used as a document-navigation reference, not a legal-policy reference.
+
+Mobbin search also returned employment-contract editors, which were not suitable patterns for public legal pages. No reference images or third-party legal copy were embedded. Launch requirements above, including verification of the contact inbox, remain unresolved by this visual redesign.

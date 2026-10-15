@@ -1,6 +1,7 @@
 @import "@community-bot/ui/globals.css";
+@import "@community-bot/ui/brand.css";
 
-:root { --navy: #091533; --cyan: #0faced; --sidebar-width: 240px; --workspace-gutter: clamp(24px, 3vw, 48px); --workspace-width: 1280px; --font-sans: "Avenir Next", Avenir, "Segoe UI", sans-serif; }
+:root { --navy: var(--brand-navy); --cyan: var(--brand-sky); --sidebar-width: 240px; --workspace-gutter: clamp(24px, 3vw, 48px); --workspace-width: 1280px; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-sans); font-size: 15px; line-height: 1.55; }
 button,input,select,textarea { font: inherit; }
@@ -84,7 +85,7 @@ p { color: var(--muted); }
 .command-list { margin: 0; width: 100%; border-collapse: collapse; font-size: 13px; }
 .command-list th { text-align: left; color: var(--muted); font-size: 12px; font-weight: 600; padding: 0 0 12px; }
 .command-list td { border-top: 1px solid var(--line); padding: 12px 12px 12px 0; }
-code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; background: var(--surface-subtle); padding: 4px 7px; border-radius: 5px; }
+code { font-family: var(--font-mono); font-size: 12px; background: var(--surface-subtle); padding: 4px 7px; border-radius: 5px; }
 .steps { display: flex; gap: 14px; margin: 28px 0; padding: 0; list-style: none; }
 .steps li { flex: 1; color: var(--muted); font-size: 12px; padding-top: 11px; border-top: 3px solid var(--line); }
 .steps li[aria-current="step"] { color: var(--focus); border-color: var(--focus); font-weight: 750; }

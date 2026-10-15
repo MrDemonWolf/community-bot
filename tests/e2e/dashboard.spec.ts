@@ -49,6 +49,43 @@ async function readableText(target: Locator) {
   expect(result.ratio, `Computed text contrast: ${JSON.stringify(result)}`).toBeGreaterThanOrEqual(4.5);
 }
 
+async function brandFonts(page: Page) {
+  const loaded = await page.evaluate(async () => {
+    const families = ["MDW Montserrat", "MDW Roboto", "MDW JetBrains Mono"];
+    await Promise.all(families.map((family) => document.fonts.load(`16px "${family}"`)));
+    await document.fonts.ready;
+    return families.map((family) => ({ family, loaded: [...document.fonts].some((face) => face.family.replaceAll('"', "") === family && face.status === "loaded") }));
+  });
+  expect(loaded.every((face) => face.loaded), JSON.stringify(loaded)).toBeTruthy();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("font-family", /MDW Montserrat/);
+  await expect(page.locator("body")).toHaveCSS("font-family", /MDW Roboto/);
+}
+
+async function legalContents(page: Page, mobile: boolean, privacy: boolean) {
+  const details = page.locator(".legal-mobile-contents");
+  const rail = page.locator(".legal-sidebar");
+  if (mobile) {
+    await expect(rail).toBeHidden();
+    await details.locator("summary").click();
+    await expect(details).toHaveAttribute("open", "");
+  } else {
+    await expect(rail).toBeVisible();
+    await expect(details).toBeHidden();
+  }
+  const contents = (mobile ? details : rail).getByRole("navigation", { name: "On this page", exact: true });
+  await expect(contents.getByRole("link")).toHaveCount(7);
+  const id = privacy ? "choices" : "accounts";
+  await contents.locator(`a[href='#${id}']`).click();
+  await expect(page).toHaveURL(new RegExp(`#${id}$`));
+  const section = page.locator(`.legal-prose section#${id}`);
+  await expect(section.getByRole("heading")).toBeInViewport();
+  await expect(section.locator("p").first()).toBeInViewport();
+  const heading = await section.getByRole("heading").boundingBox();
+  const header = await page.locator(".public-site-header").boundingBox();
+  expect(heading && header && heading.y >= Math.max(0, header.y + header.height) - 1).toBeTruthy();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBeTruthy();
+}
+
 async function blockExternalTraffic(context: BrowserContext) {
   // Intercept network traffic only; pausing local blob decoding races Strict Mode URL cleanup.
   await context.route(/^https?:\/\//, (route) => {
@@ -390,11 +427,21 @@ test("appearance follows the system and remembers explicit themes without runtim
       await expect(html).toHaveAttribute("data-theme", theme);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
       await readableText(page.getByRole("heading", { name: title!, exact: true }));
-      await readableText(page.locator(".panel p").first());
+      await readableText(page.locator(path === "/dashboard" ? ".connection-body .service-detail" : ".panel p").first());
       await readableText(page.locator(".sidebar a[aria-current='page']"));
       if (path === "/dashboard") {
         await readableText(page.locator(".connection-card .status").first());
-        await readableText(page.locator("main .button.primary").first());
+        const action = page.locator(".connection-actions .button").first();
+        await expect(action).toBeEnabled();
+        await readableText(action);
+        const reference = page.locator(".command-reference");
+        await expect(reference).not.toHaveAttribute("open", "");
+        await reference.locator("summary").focus();
+        await reference.locator("summary").press("Enter");
+        await expect(reference.locator("tbody tr")).toHaveCount(5);
+        await brandFonts(page);
+        await expect(reference.locator("code").first()).toHaveCSS("font-family", /MDW JetBrains Mono/);
+        await reference.locator("summary").click();
       }
       if (path === "/dashboard/settings") await readableText(page.getByLabel("Command prefix"));
       await snapshot(page, info, `theme-${theme}-1440-${title!.toLowerCase()}`, false);
@@ -434,6 +481,11 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
     const primary = navigation.getByRole("navigation", { name: "Primary navigation", exact: true });
     const more = primary.getByRole("button", { name: "More", exact: true });
     const dialog = navigation.getByRole("dialog", { name: "More", exact: true });
+    await expect(navigation.locator(".connection-card")).toHaveCount(2);
+    for (const service of ["Discord", "Twitch"]) {
+      await expect(navigation.getByRole("region", { name: `${service} connection`, exact: true }).locator(".connection-summary")).toBeInViewport();
+    }
+    await brandFonts(navigation);
     await expect(primary).toBeVisible();
     await expect(navigation.getByRole("navigation", { name: "Main navigation", exact: true })).toBeHidden();
     await expect(primary.getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
@@ -737,6 +789,50 @@ test("dark page gallery preserves public visibility and previews every dashboard
           await readableText(publicPage.getByRole("heading", { level: 1 }));
           await readableText(publicPage.locator(".panel p").first());
           await readableText(publicPage.locator(".status").first());
+          await brandFonts(publicPage);
+          await expect(publicPage.locator(".command-directory code").first()).toHaveCSS("font-family", /MDW JetBrains Mono/);
+          const search = publicPage.getByRole("searchbox", { name: "Find a command", exact: true });
+          const rows = publicPage.locator(".command-directory tbody tr");
+          await expect(rows).toHaveCount(5);
+          const count = publicPage.locator(".command-directory-count[aria-live='polite']");
+          await expect(count).toHaveText("5 of 5 commands");
+          await search.fill("streamuptime");
+          await expect(rows).toHaveCount(1);
+          await expect(rows.first().locator("code")).toHaveText("!streamuptime");
+          await search.fill("OS-reported");
+          await expect(rows).toHaveCount(1);
+          await expect(rows.first().locator("code")).toHaveText("!serveruptime");
+          await search.fill("no-command-matches-this");
+          await expect(publicPage.getByRole("heading", { name: "No matching commands", exact: true })).toBeVisible();
+          await expect(rows).toHaveCount(0);
+          await expect(count).toHaveText("0 of 5 commands");
+          await publicPage.getByRole("button", { name: "Clear search", exact: true }).click();
+          await expect(search).toHaveValue("");
+          await expect(rows).toHaveCount(5);
+          if (width === 1440) {
+            await publicContext.grantPermissions(["clipboard-read", "clipboard-write"]);
+            await publicPage.getByRole("button", { name: "Copy !uptime", exact: true }).click();
+            await expect(publicPage.getByRole("status").filter({ hasText: "Copied !uptime." })).toBeVisible();
+            expect(await publicPage.evaluate(() => navigator.clipboard.readText())).toBe("!uptime");
+            const originalWriteText = await publicPage.evaluateHandle(() => navigator.clipboard.writeText);
+            try {
+              await publicPage.evaluate(() => { navigator.clipboard.writeText = async () => { throw new DOMException("Clipboard permission denied", "NotAllowedError"); }; });
+              await publicPage.getByRole("button", { name: "Copy !uptime", exact: true }).click();
+              await expect(publicPage.getByRole("alert")).toHaveText("Automatic copying is unavailable. Select the command below and copy it.");
+              const fallback = publicPage.getByRole("textbox", { name: "Command to copy", exact: true });
+              await expect(fallback).toHaveValue("!uptime");
+              await expect(fallback).toHaveAttribute("readonly", "");
+              await expect(fallback).toBeFocused();
+              expect(await fallback.evaluate((input: HTMLInputElement) => ({ start: input.selectionStart, end: input.selectionEnd }))).toEqual({ start: 0, end: "!uptime".length });
+              await snapshot(publicPage, info, "gallery-dark-desktop-command-copy-fallback", false);
+            } finally {
+              await publicPage.evaluate((writeText) => { navigator.clipboard.writeText = writeText; }, originalWriteText);
+              await originalWriteText.dispose();
+            }
+            await publicPage.getByRole("button", { name: "Copy !uptime", exact: true }).click();
+            await expect(publicPage.getByRole("alert")).toHaveCount(0);
+            await expect(publicPage.getByRole("status").filter({ hasText: "Copied !uptime." })).toBeVisible();
+          }
           const publicSections = publicPage.getByRole("navigation", { name: "Community page sections", exact: true });
           const commands = publicSections.getByRole("link", { name: "Commands", exact: true });
           await expect(commands).toHaveAttribute("href", "#commands");
@@ -745,6 +841,12 @@ test("dark page gallery preserves public visibility and previews every dashboard
           await expect(publicPage).toHaveURL(/\/channel#commands$/);
           await expect(publicPage.getByRole("heading", { name: "Chat commands", exact: true })).toBeInViewport();
           await publicPage.evaluate(() => window.scrollTo(0, 0));
+        }
+        if (path === "/privacy" || path === "/terms") {
+          await legalContents(publicPage, width === 390, path === "/privacy");
+          await snapshot(publicPage, info, `${prefix}-${slug}-anchor`, false);
+          await publicPage.evaluate(() => window.scrollTo(0, 0));
+          if (width === 390) await snapshot(publicPage, info, `${prefix}-${slug}-contents-open`, false);
         }
         await snapshot(publicPage, info, `${prefix}-${slug}-viewport`, false);
         if (path !== "/offline.html") await snapshot(publicPage, info, `${prefix}-${slug}`);

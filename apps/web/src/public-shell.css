@@ -1,0 +1,8 @@
+.public-site-header { max-width: 1200px; margin-inline: auto; padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid var(--line); }
+.public-site-brand { color: var(--ink); font-family: var(--font-display); font-size: 18px; letter-spacing: -.4px; }
+.public-site-brand small { color: var(--muted); font-family: var(--font-sans); font-size: 11px; font-weight: 400; letter-spacing: 0; margin-top: 3px; text-transform: none; }
+.public-site-header nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.public-site-header nav > a { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 12px; border-radius: 8px; color: var(--muted); font-size: 13px; text-decoration: none; }
+.public-site-header nav > a:hover,.public-site-header nav > a[aria-current="page"] { color: var(--ink); background: var(--surface-subtle); }
+.public-site-header nav > .button { color: var(--ink); margin-left: 8px; }
+@media(max-width:600px) { .public-site-header { padding: 20px; align-items: flex-start; flex-wrap: wrap; gap: 16px; } .public-site-header nav { width: 100%; } .public-site-header nav > .button { margin-left: auto; } }

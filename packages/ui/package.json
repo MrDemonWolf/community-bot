@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./globals.css": "./src/styles/globals.css"
+    "./globals.css": "./src/styles/globals.css",
+    "./brand.css": "./src/styles/brand.css"
   },
   "devDependencies": {
     "tailwindcss": "catalog:"

@@ -1,0 +1,15 @@
+/* Official website brand kit: original font files and their OFL notices are kept together. */
+@font-face { font-family: "MDW Roboto"; src: url("../fonts/roboto.ttf") format("truetype"); font-style: normal; font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "MDW Montserrat"; src: url("../fonts/montserrat.ttf") format("truetype"); font-style: normal; font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "MDW JetBrains Mono"; src: url("../fonts/jetbrains-mono.ttf") format("truetype"); font-style: normal; font-weight: 100 800; font-display: swap; }
+:root {
+  --font-sans: "MDW Roboto", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "MDW Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "MDW JetBrains Mono", ui-monospace, monospace;
+  --brand-navy: #0a1633;
+  --brand-navy-soft: #0d2a56;
+  --brand-blue: #0d4d8c;
+  --brand-sky: #3aaee3;
+  --brand-frost: #90ddfc;
+  --brand-ice: #eff7ff;
+}
