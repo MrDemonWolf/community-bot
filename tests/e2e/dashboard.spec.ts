@@ -97,9 +97,9 @@ test("creator completes setup, saves private configuration and controls features
   await expect(page.getByRole("heading", { name: /The right tools/ })).toBeVisible();
   await page.getByLabel("Where the role comes from").selectOption("twitch");
   await page.getByLabel("Existing role", { exact: true }).selectOption("vip");
-  await expect(page.getByLabel("WolfAide role")).toHaveValue("vip");
+  await expect(page.getByLabel("Dashboard role")).toHaveValue("vip");
   await page.getByLabel("Existing role", { exact: true }).selectOption("subscriber");
-  await expect(page.getByLabel("WolfAide role")).toHaveValue("subscriber");
+  await expect(page.getByLabel("Dashboard role")).toHaveValue("subscriber");
   await page.getByRole("button", { name: "Add Twitch starter mappings" }).click();
   await expect(page.getByText("Twitch starter mappings saved.", { exact: false })).toBeVisible();
   expect(await page.getByRole("button", { name: "Remove mapping" }).count()).toBe(4);
@@ -165,7 +165,7 @@ test("production PWA installs offline shell while private API stays network-only
   const manifestResponse = await request.get(production + "/manifest.webmanifest");
   expect(manifestResponse.ok()).toBeTruthy();
   const manifest = await manifestResponse.json();
-  expect(manifest).toMatchObject({ name: "WolfAide", display: "standalone", start_url: "/dashboard" });
+  expect(manifest).toMatchObject({ name: "Community Bot", display: "standalone", start_url: "/dashboard" });
   expect(manifest.icons).toHaveLength(2);
   for (const icon of manifest.icons) {
     const response = await request.get(production + icon.src);

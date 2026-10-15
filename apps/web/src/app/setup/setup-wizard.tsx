@@ -35,7 +35,7 @@ export default function SetupWizard() {
       <Link href="/dashboard" className="brand setup-brand">
         <img src="/brand/logo.svg" alt="" width="42" height="42" />
         <span>
-          WolfAide<small>YOUR COMMUNITY, CONNECTED</small>
+          Community Bot<small>YOUR COMMUNITY, CONNECTED</small>
         </span>
       </Link>
       <main className="setup-wrap">

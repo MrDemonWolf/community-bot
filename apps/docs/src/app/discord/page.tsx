@@ -13,7 +13,7 @@ export default function Discord() {
       <li>In the Discord app, turn on <strong>User Settings → Advanced → Developer Mode</strong>. Right-click your community server and choose <strong>Copy Server ID</strong>.</li>
     </ol>
     <p className="result"><strong>Ready when:</strong> you have the application ID, server ID, and token. Keep the token private.</p>
-    <h2>2. Save them in WolfAide</h2>
+    <h2>2. Save them in Community Bot</h2>
     <ol><li>Open Guided setup → Discord, or the dashboard's Discord application section.</li><li>Paste the three values into their labeled fields. Paste only the token, without a <code>Bot </code> prefix.</li><li>Choose <strong>Save Discord credentials</strong> and wait for the saved message.</li><li>If the bot is not installed in your server yet, choose <strong>Invite to server</strong> and select your server. Administrator permission is unnecessary.</li></ol>
     <p className="result"><strong>Ready when:</strong> credentials are saved and the bot appears in the correct server. It may still appear offline until you join.</p>
     <h2>3. Choose its presence</h2>
@@ -21,7 +21,7 @@ export default function Discord() {
     <p>Activities support Playing, Listening, Watching, Competing, Custom status, and Streaming. Leave the activity text empty to clear it. Invisible intentionally makes a connected bot appear offline in Discord.</p>
     <h2>4. Connect and check</h2>
     <ol><li>Open the dashboard and choose <strong>Join</strong> on Discord.</li><li>Wait for a fresh connected heartbeat.</li><li>Look at the bot in your server and check its chosen status and activity.</li></ol>
-    <p className="result"><strong>Done when:</strong> WolfAide reports connected and Discord shows the presence you selected. Presence changes can take a few seconds.</p>
+    <p className="result"><strong>Done when:</strong> Community Bot reports connected and Discord shows the presence you selected. Presence changes can take a few seconds.</p>
     <div className="callout"><p><strong>Keep the default access.</strong> The worker uses only the nonprivileged Guilds intent. Its own status does not need privileged Presence, Server Members, or Message Content access. This simple bot does not need higher limits or extra privileged-intent approval.</p></div>
     <h2>Pause without removing it</h2>
     <p><strong>Leave</strong> disconnects the worker. It does not kick the bot out of the server or erase credentials. Choose Join to reconnect. Run only one worker per bot token.</p>
@@ -32,7 +32,7 @@ export default function Discord() {
       <tr><td>Connected, but appears offline</td><td>Check whether your selected status is Invisible.</td></tr>
       <tr><td>No recent heartbeat</td><td>Start the Discord worker or check its deployment logs before changing credentials.</td></tr>
     </tbody></table>
-    <details><summary>Reference: Discord limits</summary><p>The worker coalesces updates to stay below five presence updates per 20 seconds. Discord's ordinary Gateway event limit is 120 events per minute. Session-start allowances come from the current Gateway response; WolfAide does not increase your bot's approved limits. Application verification and privileged-intent approval are separate.</p></details>
+    <details><summary>Reference: Discord limits</summary><p>The worker coalesces updates to stay below five presence updates per 20 seconds. Discord's ordinary Gateway event limit is 120 events per minute. Session-start allowances come from the current Gateway response; Community Bot does not increase your bot's approved limits. Application verification and privileged-intent approval are separate.</p></details>
     <p className="sources">Official references: <a href="https://docs.discord.com/developers/events/gateway">Discord Gateway</a> · <a href="https://docs.discord.com/developers/events/gateway-events#update-presence">Presence</a> · <a href="https://support-dev.discord.com/hc/en-us/articles/40281523410967-Changes-to-Privileged-Intent-Access-for-Discord-Apps">Privileged intents</a></p>
   </>;
 }

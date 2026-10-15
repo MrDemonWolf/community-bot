@@ -3,7 +3,7 @@ import Link from "next/link";
 import "./style.css";
 
 export const metadata: Metadata = {
-  title: { default: "WolfAide | Documentation", template: "%s | WolfAide" },
+  title: { default: "Community Bot | Documentation", template: "%s | Community Bot" },
   description:
     "A simple Discord and Twitch bot for one creator. Setup, connections, and deployment.",
 };
@@ -26,7 +26,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               height="42"
             />
             <span>
-              WolfAide <small>FIELD GUIDE</small>
+              Community Bot <small>FIELD GUIDE</small>
             </span>
           </Link>
           <a href="https://github.com/mrdemonwolf/community-bot">
@@ -67,7 +67,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <main id="content">{children}</main>
         </div>
         <footer>
-          WolfAide by <a href="https://www.mrdemonwolf.com">MrDemonWolf</a>
+          Community Bot by <a href="https://www.mrdemonwolf.com">MrDemonWolf</a>
           <span>Open documentation. Keep credentials private.</span>
         </footer>
       </body>

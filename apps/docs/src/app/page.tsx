@@ -5,6 +5,7 @@ export default function Start() {
     <p className="eyebrow">START HERE · NO PLATFORM ACCOUNTS NEEDED YET</p>
     <h1>Your bot.<br />One step at a time.</h1>
     <p className="lead">Get the dashboard open first. Then connect Discord or Twitch. You can leave the other service for another day.</p>
+    <p>The project is <strong>Community Bot</strong>, in the <code>community-bot</code> repository. WolfAide refers to the connected bot accounts, not the project name. Use your own account names when setting it up.</p>
     <h2>1. Pick where to run it</h2>
     <div className="cards">
       <Link className="card" href="/local/"><span className="eyebrow">START WITH THIS</span><strong>On your Mac →</strong><p>Try the dashboard and develop locally. Google login can wait. Uses Bun and a local PostgreSQL database.</p></Link>

@@ -15,7 +15,7 @@ export default async function ChannelPage() {
       <div className="brand">
         <img src="/brand/logo.svg" alt="" width="42" height="42" />
         <span>
-          WolfAide<small>COMMUNITY COMPANION</small>
+          Community Bot<small>COMMUNITY COMPANION</small>
         </span>
       </div>
       <header className="public-hero">
@@ -86,7 +86,7 @@ export default async function ChannelPage() {
         </table>
       </section>
       <p className="subtle" style={{ marginTop: 22 }}>
-        Powered by WolfAide · Built for community.
+        Powered by Community Bot · Built for community.
       </p>
     </main>
   );

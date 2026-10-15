@@ -115,7 +115,7 @@ export function DiscordSettings({ settings }: { settings: Settings }) {
       }}
     >
       <p className="subtle">
-        Use your existing verified application. WolfAide uses the standard
+        Use your existing verified application. Community Bot uses the standard
         server connection intent; presence and member intents are unnecessary.
       </p>
       <div className="grid grid-cols-1 gap-[18px] md:grid-cols-2">
@@ -381,7 +381,7 @@ export function TwitchSettings({ settings }: { settings: Settings }) {
                 ? `Connected as ${settings[role].login}`
                 : role === "bot"
                   ? "Use your bot's Twitch account on the consent screen."
-                  : "The channel WolfAide will join."}
+                  : "The channel your bot account will join."}
             </p>
             <div className="actions">
               {settings.twitchAppConfigured ? (

@@ -55,7 +55,7 @@ export default function Login({
         <div className="brand">
           <img src="/brand/logo.svg" alt="" width="46" height="46" />
           <span>
-            WolfAide<small>BY MRDEMONWOLF</small>
+            Community Bot<small>BY MRDEMONWOLF</small>
           </span>
         </div>
         <div>

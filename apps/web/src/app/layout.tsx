@@ -5,10 +5,10 @@ import Providers from "@/components/providers";
 import Pwa from "@/components/pwa";
 
 export const metadata: Metadata = {
-  title: { default: "WolfAide", template: "%s · WolfAide" },
+  title: { default: "Community Bot", template: "%s · Community Bot" },
   description: "One creator. Discord and Twitch, connected.",
   icons: { icon: "/brand/logo.svg", apple: "/brand/apple-touch-icon.png" },
-  appleWebApp: { capable: true, title: "WolfAide", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Community Bot", statusBarStyle: "default" },
 };
 export const viewport: Viewport = { themeColor: "#091533", width: "device-width", initialScale: 1 };
 

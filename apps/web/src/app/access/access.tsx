@@ -20,7 +20,7 @@ export default function Access({ userName }: { userName: string }) {
   const staff = access && canAccess(access, "dashboard:view");
   const linkedAccount = access && (access.identities.twitch.linked || access.identities.discord.linked);
   return <main className="public-page">
-    <div className="page-heading"><Link className="brand" href="/access"><img src="/brand/logo.svg" alt="" width="42" height="42" /><span>WolfAide<small>COMMUNITY ACCESS</small></span></Link><button className="button" onClick={async () => { await authClient.signOut(); window.location.assign("/login"); }}>Sign out</button></div>
+    <div className="page-heading"><Link className="brand" href="/access"><img src="/brand/logo.svg" alt="" width="42" height="42" /><span>Community Bot<small>COMMUNITY ACCESS</small></span></Link><button className="button" onClick={async () => { await authClient.signOut(); window.location.assign("/login"); }}>Sign out</button></div>
     <span className="eyebrow">YOUR ACCOUNTS, YOUR ACCESS</span><h1>Welcome, {userName.split(" ")[0]}.</h1><p className="lead">Connect the accounts you use in this community. Your roles unlock the matching tools automatically.</p>
     {linked && <p role="status" className="notice success">Your {linked} account is linked. Role checks may take up to a minute to refresh.</p>}
     {query.isPending && <p role="status">Checking your access…</p>}

@@ -28,7 +28,7 @@ export default function AppShell({
         <Link href="/dashboard" className="brand">
           <img src="/brand/logo.svg" alt="" width="42" height="42" />
           <span>
-            WolfAide<small>YOUR COMMUNITY, CONNECTED</small>
+            Community Bot<small>YOUR COMMUNITY, CONNECTED</small>
           </span>
         </Link>
         <div className="workspace-label">{access.owner ? "CREATOR WORKSPACE" : "STAFF WORKSPACE"}</div>

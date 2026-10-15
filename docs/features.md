@@ -1,6 +1,6 @@
 # Shared features
 
-WolfAide runs one creator workspace. Features are built-in TypeScript modules shipped with the application. It does not download or execute uploaded plugins.
+Community Bot runs one creator workspace. Features are built-in TypeScript modules shipped with the application. It does not download or execute uploaded plugins.
 
 ## Where code belongs
 

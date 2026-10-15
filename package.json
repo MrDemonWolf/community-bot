@@ -1,5 +1,9 @@
 {
   "name": "community-bot",
+  "description": "A single-creator Discord and Twitch bot with a Next.js dashboard, Channel Points, and platform-scoped staff roles.",
+  "license": "MIT",
+  "author": "MrDemonWolf, Inc.",
+  "repository": { "type": "git", "url": "git+https://github.com/MrDemonWolf/community-bot.git" },
   "private": true,
   "workspaces": {
     "packages": [
