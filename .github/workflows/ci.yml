@@ -28,4 +28,12 @@ jobs:
         run: bun run check-types
 
       - name: Build
+        # Non-secret build fixtures. Keep runtime validation enabled; no live
+        # database or production credentials are required to compile the app.
+        env:
+          DATABASE_URL: postgresql://ci:ci@127.0.0.1:5432/community_bot_build
+          BETTER_AUTH_SECRET: ci-build-only-placeholder-0000000000000000
+          BETTER_AUTH_URL: http://127.0.0.1:3001
+          CORS_ORIGIN: http://127.0.0.1:3001
+          APP_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
         run: bun run build

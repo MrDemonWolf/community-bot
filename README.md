@@ -14,6 +14,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **Authentication** - Better-Auth
 - **PWA** - Progressive Web App support
 - **Turborepo** - Optimized monorepo build system
+- **Discord Gateway service** - Standalone WolfAide connection and readiness checks; see [runtime setup](docs/discord-runtime.md).
 
 ## Getting Started
 
@@ -75,7 +76,9 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 ```
 community-bot/
 ├── apps/
-│   └── web/         # Fullstack application (Next.js)
+│   ├── web/         # Fullstack application (Next.js)
+│   ├── twitch/      # Twitch chat worker
+│   └── discord/     # Standalone Discord Gateway and health endpoints
 ├── packages/
 │   ├── ui/          # Shared shadcn/ui components and styles
 │   ├── api/         # API layer / business logic
@@ -85,9 +88,10 @@ community-bot/
 
 ## Available Scripts
 
-- `bun run dev`: Start all applications in development mode
+- `bun run dev`: Start the web/Twitch applications in development mode; Discord is opt-in
 - `bun run build`: Build all applications
 - `bun run dev:web`: Start only the web application
+- `bun run dev:discord`: Start the Discord service with its explicitly configured application token and guild
 - `bun run check-types`: Check TypeScript types across all apps
 - `bun run db:push`: Push schema changes to database
 - `bun run db:generate`: Generate database client/types

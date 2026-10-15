@@ -468,8 +468,10 @@ function AddonsStep({
   invalidate: () => void;
 }) {
   const [discordToken, setDiscordToken] = useState("");
+  const [discordTokenChanged, setDiscordTokenChanged] = useState(false);
   const [discordGuildId, setDiscordGuildId] = useState(data.discordGuildId ?? "");
   const [geminiKey, setGeminiKey] = useState("");
+  const [geminiKeyChanged, setGeminiKeyChanged] = useState(false);
   const save = useMutation(
     trpc.settings.updateOptional.mutationOptions({
       onSuccess: () => {
@@ -489,18 +491,18 @@ function AddonsStep({
       </p>
 
       <div className="mt-6 grid gap-3">
-        <Addon name="Discord" color="var(--hb-discord)" badge={data.discordConfigured ? "Connected" : "Optional"} desc="Bridge go-live pings, roles, and relays.">
+        <Addon name="Discord" color="var(--hb-discord)" badge={data.discordConfigured ? "Configured" : "Optional"} desc="Store an optional dashboard credential. The standalone Discord service is configured separately; a saved token does not prove it is online.">
           <Field label="Bot token">
-            <input className={inputCls} type="password" value={discordToken} onChange={(e) => setDiscordToken(e.target.value)} placeholder={data.discordConfigured ? "•••••• (saved)" : ""} />
+            <input className={inputCls} type="password" value={discordToken} onChange={(e) => { setDiscordTokenChanged(true); setDiscordToken(e.target.value); }} placeholder={data.discordConfigured ? "•••••• (saved)" : ""} />
           </Field>
           <Field label="Guild ID">
             <input className={inputCls} value={discordGuildId} onChange={(e) => setDiscordGuildId(e.target.value)} />
           </Field>
         </Addon>
 
-        <Addon name="Gemini AI" color="#9168ff" badge={data.geminiConfigured ? "Connected" : "Optional"} desc="AI shoutouts, moderation, and personas.">
+        <Addon name="Gemini AI" color="#9168ff" badge={data.geminiConfigured ? "Configured" : "Optional"} desc="AI shoutouts, moderation, and personas.">
           <Field label="API key">
-            <input className={inputCls} type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder={data.geminiConfigured ? "•••••• (saved)" : ""} />
+            <input className={inputCls} type="password" value={geminiKey} onChange={(e) => { setGeminiKeyChanged(true); setGeminiKey(e.target.value); }} placeholder={data.geminiConfigured ? "•••••• (saved)" : ""} />
           </Field>
         </Addon>
 
@@ -518,7 +520,13 @@ function AddonsStep({
         }
         nextLabel={save.isPending ? "Saving…" : "Save & continue"}
         nextDisabled={save.isPending}
-        onNext={() => save.mutate({ discordToken, discordGuildId, geminiKey })}
+        onNext={() =>
+          save.mutate({
+            discordToken: discordTokenChanged ? discordToken : undefined,
+            discordGuildId,
+            geminiKey: geminiKeyChanged ? geminiKey : undefined,
+          })
+        }
       />
     </GlassCard>
   );
