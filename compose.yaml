@@ -52,6 +52,8 @@ services:
     build:
       context: .
       target: web
+      args:
+        SOURCE_COMMIT: ${SOURCE_COMMIT:-}
     expose: ["3001"]
 
   discord:

@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "../index.css";
 import "../mobile.css";
 import "../profile.css";
+import "../cookie.css";
+import "../footer.css";
+import SiteFooter from "@/components/site-footer";
 import Providers from "@/components/providers";
 import Pwa from "@/components/pwa";
 
@@ -21,6 +24,7 @@ export default function RootLayout({
       <body>
         <Pwa />
         <Providers>{children}</Providers>
+        <SiteFooter />
       </body>
     </html>
   );

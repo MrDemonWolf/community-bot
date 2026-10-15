@@ -34,16 +34,42 @@ test.beforeEach(async ({ context }) => {
   });
 });
 
-test("anonymous pages and production login stay protected", async ({ page, request }) => {
+test("anonymous pages and production login stay protected", async ({ page, request }, info) => {
   expect((await request.get("/api/trpc/settings.get")).status()).toBe(401);
   expect((await request.get("/channel")).status()).toBe(404);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("button", { name: "Continue with Google" })).toBeDisabled();
+  const footer = page.getByRole("contentinfo");
+  await expect(footer.getByText("Community Bot by MrDemonWolf, Inc.", { exact: true })).toBeVisible();
+  const revision = process.env.E2E_EXPECTED_REVISION;
+  expect(revision).toMatch(/^[0-9a-f]{40}$/);
+  await expect(footer.getByRole("link", { name: /^Build [0-9a-f]{7}$/ })).toHaveAttribute("href", `https://github.com/MrDemonWolf/community-bot/commit/${revision}`);
+  const notice = page.getByRole("region", { name: "Cookies and browser storage", exact: true });
+  await expect(notice).toBeVisible();
+  await notice.getByRole("button", { name: "Got it", exact: true }).click();
+  await expect(notice).toHaveCount(0);
+  await page.reload();
+  const cookieInformation = footer.getByRole("button", { name: "Cookie information", exact: true });
+  await expect(cookieInformation).toBeEnabled();
+  await expect(cookieInformation).toHaveAttribute("aria-expanded", "false");
+  await expect(notice).toHaveCount(0);
+  await cookieInformation.click();
+  await expect(notice).toBeVisible();
+  await notice.getByRole("button", { name: "Got it", exact: true }).click();
+  await footer.getByRole("link", { name: "Privacy Policy", exact: true }).click();
+  await expect(page).toHaveURL(/\/privacy$/);
+  await expect(page.getByRole("heading", { name: "Privacy Policy", exact: true })).toBeVisible();
+  await footer.getByRole("link", { name: "Terms of Service", exact: true }).click();
+  await expect(page).toHaveURL(/\/terms$/);
+  await expect(page.getByRole("heading", { name: "Terms of Service", exact: true })).toBeVisible();
+  await expect(footer.getByRole("link", { name: "Changelog", exact: true })).toHaveAttribute("href", `https://github.com/MrDemonWolf/community-bot/blob/${revision}/CHANGELOG.md`);
+  await snapshot(page, info, "public-terms-and-footer");
   const production = process.env.E2E_PRODUCTION_URL ?? "http://localhost:3006";
   expect((await request.post(production + "/api/auth/dev-login", { headers: { Origin: production }, data: {} })).status()).toBe(404);
   const html = await (await request.get(production + "/login")).text();
   expect(html).not.toContain("Enter development workspace");
+  expect(html).toContain(`https://github.com/MrDemonWolf/community-bot/commit/${revision}`);
 });
 
 test("creator completes setup, saves private configuration and controls features", async ({ page, context, request }, info) => {
@@ -62,8 +88,9 @@ test("creator completes setup, saves private configuration and controls features
   await page.getByLabel("Bot display name").fill("WolfAide E2E");
   await page.getByLabel("Command prefix").fill("bad x");
   await page.getByRole("button", { name: "Save preferences" }).click();
-  await expect(page.getByRole("alert")).toContainText("Use 1–5 characters with no spaces.");
-  await expect(page.getByRole("alert")).not.toContainText("invalid_format");
+  const preferenceError = page.locator("form").filter({ has: page.getByLabel("Command prefix") }).getByRole("alert");
+  await expect(preferenceError).toContainText("Use 1–5 characters with no spaces.");
+  await expect(preferenceError).not.toContainText("invalid_format");
   await page.getByLabel("Command prefix").fill("!");
   await page.getByLabel("Public channel description").fill("A disposable community fixture.");
   await page.getByRole("button", { name: "Save preferences" }).click();
@@ -74,7 +101,7 @@ test("creator completes setup, saves private configuration and controls features
   await page.getByLabel("Server ID").fill("127607669103001600");
   await page.getByLabel("Bot token").fill("e2e-disposable-token-never-used-for-login");
   await page.getByRole("button", { name: "Save Discord credentials" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.locator("form").filter({ has: page.getByRole("button", { name: "Save Discord credentials" }) }).getByRole("alert")).toBeVisible();
   await page.getByRole("button", { name: "Next: Twitch" }).click();
   const secret = "e2e-disposable-twitch-client-secret";
   await page.getByLabel("Twitch client ID", { exact: true }).fill("e2etestclient1234567890");
@@ -163,7 +190,7 @@ test("creator completes setup, saves private configuration and controls features
   await snapshot(page, info, "desktop-settings");
   const picture = page.locator("#profile-picture");
   await expect(picture.getByRole("heading", { name: "Your profile picture", exact: true })).toBeVisible();
-  const upload = picture.getByLabel("Upload a picture", { exact: true });
+  const upload = picture.getByLabel(/^Upload a picture/);
   await upload.setInputFiles({ name: "unsafe.svg", mimeType: "image/svg+xml", buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>') });
   await expect(picture.getByRole("alert")).toContainText("Choose a PNG, JPEG, or WebP");
   await upload.setInputFiles({ name: "broken.png", mimeType: "image/png", buffer: Buffer.from("not an image") });
@@ -222,7 +249,7 @@ test("creator completes setup, saves private configuration and controls features
 test("mobile setup, feature, access and reward pages remain usable", async ({ page, context }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
-  const paths = ["/dashboard", "/setup", "/dashboard/features", "/access", "/dashboard/access", "/dashboard/rewards", "/dashboard/settings"];
+  const paths = ["/dashboard", "/setup", "/dashboard/features", "/access", "/dashboard/access", "/dashboard/rewards", "/dashboard/settings", "/privacy", "/terms"];
   // Compile the fixed routes before opening their browser pages. Otherwise a
   // newly compiled dev route can HMR-reload the page we are navigating away from.
   for (const path of paths) expect((await context.request.get(path)).ok()).toBeTruthy();
@@ -304,7 +331,7 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
       expect(smallPrimaryTargets, `${path} primary touch targets must reach 44px`).toEqual([]);
       await snapshot(screen, info, `mobile-${width}-${path.replaceAll("/", "-")}`);
       if (path === "/dashboard/settings" && width === 390) {
-        await screen.getByLabel("Upload a picture", { exact: true }).setInputFiles({ name: "mobile-community.png", mimeType: "image/png", buffer: await pictureFixture(screen) });
+        await screen.getByLabel(/^Upload a picture/).setInputFiles({ name: "mobile-community.png", mimeType: "image/png", buffer: await pictureFixture(screen) });
         const crop = screen.getByRole("dialog", { name: "Crop profile picture", exact: true });
         await expect(crop.getByRole("button", { name: "Save picture", exact: true })).toBeEnabled();
         expect(await screen.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
@@ -335,6 +362,17 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
             const bar = await tabs.boundingBox();
             return Boolean(control && bar && control.y >= 0 && control.y + control.height <= bar.y + 1);
           }, { message: `${path} last control must clear the bottom navigation` }).toBeTruthy();
+        }
+        if (path === "/dashboard/settings" && width === 390) {
+          const footer = screen.getByRole("contentinfo");
+          for (const control of [footer.getByRole("link", { name: "Terms of Service", exact: true }), footer.getByRole("button", { name: "Cookie information", exact: true })]) {
+            await control.evaluate((element) => element.scrollIntoView({ block: "center" }));
+            await expect.poll(async () => {
+              const box = await control.boundingBox(), bar = await tabs.boundingBox();
+              return Boolean(box && bar && box.y >= 0 && box.y + box.height <= bar.y + 1);
+            }, { message: "Mobile footer controls must clear the fixed tabs" }).toBeTruthy();
+          }
+          await snapshot(screen, info, "mobile-footer", false);
         }
       }
       } finally {

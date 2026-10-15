@@ -1,4 +1,13 @@
 .git
+# Only revision metadata enters builds; repository config, credentials, and history remain excluded.
+!.git/
+.git/*
+!.git/HEAD
+!.git/packed-refs
+!.git/refs/
+.git/refs/*
+!.git/refs/heads/
+!.git/refs/heads/**
 **/node_modules
 **/.next
 **/dist

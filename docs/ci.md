@@ -23,11 +23,13 @@ The commands below explicitly select that profile. With Docker Desktop or anothe
 Run the commands in order and stop if any build or check fails.
 
 ```sh
+export E2E_EXPECTED_REVISION="$(git rev-parse HEAD)"
 for service in migrate web production-web discord twitch e2e; do
   docker --context colima-community-bot-test compose --parallel 1 --env-file .env.local-test -p community-bot-e2e -f compose.yaml -f compose.e2e.yaml build "$service" || break
 done
 docker --context colima-community-bot-test compose --env-file .env.local-test -p community-bot-e2e -f compose.yaml -f compose.e2e.yaml up -d --wait --wait-timeout 300 web production-web
 docker --context colima-community-bot-test compose --env-file .env.local-test -p community-bot-e2e -f compose.yaml -f compose.e2e.yaml run --rm --no-deps -e ACCESS_TEST=true -e NODE_ENV=development migrate bun tests/access.integration.ts
+docker --context colima-community-bot-test compose --env-file .env.local-test -p community-bot-e2e -f compose.yaml -f compose.e2e.yaml run --rm --no-deps -e PROFILE_TEST=true -e NODE_ENV=development migrate bun tests/profile.integration.ts
 docker --context colima-community-bot-test compose --env-file .env.local-test -p community-bot-e2e -f compose.yaml -f compose.e2e.yaml run --rm --no-deps -e REWARDS_TEST=true -e NODE_ENV=development migrate bun tests/rewards.integration.ts
 docker --context colima-community-bot-test compose --env-file .env.local-test -p community-bot-e2e -f compose.yaml -f compose.e2e.yaml up -d --wait --wait-timeout 180 discord twitch
 docker --context colima-community-bot-test compose --env-file .env.local-test -p community-bot-e2e -f compose.yaml -f compose.e2e.yaml run --rm --no-deps e2e

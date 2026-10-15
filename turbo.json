@@ -12,7 +12,8 @@
     "DEV_LOGIN",
     "NODE_ENV",
     "PORT",
-    "TWITCH_PORT"
+    "TWITCH_PORT",
+    "SOURCE_COMMIT"
   ],
   "tasks": {
     "build": {
@@ -22,7 +23,8 @@
         "DATABASE_URL",
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
-        "APP_ENCRYPTION_KEY"
+        "APP_ENCRYPTION_KEY",
+        "SOURCE_COMMIT"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]

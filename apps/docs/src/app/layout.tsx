@@ -67,7 +67,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <main id="content">{children}</main>
         </div>
         <footer>
-          Community Bot by <a href="https://www.mrdemonwolf.com">MrDemonWolf</a>
+          Community Bot by <a href="https://www.mrdemonwolf.com">MrDemonWolf, Inc.</a>
           <span>Open documentation. Keep credentials private.</span>
         </footer>
       </body>

@@ -32,7 +32,7 @@
     "dev": "bun --env-file=.env run turbo dev",
     "build": "NODE_ENV=production turbo build",
     "check-types": "turbo check-types",
-    "test": "bun test apps/discord/src apps/twitch/src packages/core/src packages/auth/src packages/api/src packages/db/src tests/oauth-state.test.ts tests/navigation.test.ts tests/crop-geometry.test.ts",
+    "test": "bun test apps/discord/src apps/twitch/src packages/core/src packages/auth/src packages/api/src packages/db/src tests/oauth-state.test.ts tests/navigation.test.ts tests/crop-geometry.test.ts tests/build-revision.test.ts",
     "dev:docs": "bun run --cwd apps/docs dev",
     "dev:web": "bun --env-file=.env run turbo -F web dev",
     "dev:twitch": "bun --env-file=.env run turbo -F twitch dev",

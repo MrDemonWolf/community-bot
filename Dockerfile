@@ -31,6 +31,8 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 
 FROM web-source AS dev-web
+ARG SOURCE_COMMIT
+ENV SOURCE_COMMIT=$SOURCE_COMMIT
 COPY --from=manifests /usr/local/bin/bun /usr/local/bin/bun
 ENV NODE_ENV=development
 EXPOSE 3001
@@ -38,6 +40,8 @@ WORKDIR /app/apps/web
 CMD ["node", "node_modules/next/dist/bin/next", "dev", "--webpack", "--hostname", "0.0.0.0", "--port", "3001"]
 
 FROM web-source AS web-build
+ARG SOURCE_COMMIT
+ENV SOURCE_COMMIT=$SOURCE_COMMIT
 WORKDIR /app/apps/web
 # Build fixtures are public placeholders, never deployment credentials.
 RUN DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build \
