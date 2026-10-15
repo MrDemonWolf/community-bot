@@ -25,7 +25,8 @@ export default function ImageCropper({ file, pending, error, onCancel, onSave }:
       } else setImage(picture);
     };
     picture.onerror = () => { if (active) setLoadError("This image could not be opened. Choose a PNG, JPEG, or WebP file."); };
-    picture.src = url;
+    // Strict Mode replays effects before this microtask; do not start decoding an already released URL.
+    queueMicrotask(() => { if (active) picture.src = url; });
     return () => {
       active = false;
       picture.onload = null;
