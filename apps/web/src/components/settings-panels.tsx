@@ -171,8 +171,8 @@ export function DiscordSettings({ settings }: { settings: Settings }) {
         </label>
         <label className="field full">
           Discord application client secret
-          <input type="password" name="clientSecret" autoComplete="new-password" placeholder={settings.discordOAuthConfigured ? "Saved securely · leave blank to keep" : "Optional · needed for personal Discord account linking"} />
-          <small>From Developer Portal → OAuth2. Register your dashboard origin plus /api/identity/callback/discord as a redirect URL.</small>
+          <input type="password" name="clientSecret" aria-label="Discord application client secret" aria-describedby="discord-secret-help" autoComplete="new-password" placeholder={settings.discordOAuthConfigured ? "Saved securely · leave blank to keep" : "Optional · needed for personal Discord account linking"} />
+          <small id="discord-secret-help">From Developer Portal → OAuth2. Register your dashboard origin plus /api/identity/callback/discord as a redirect URL.</small>
         </label>
         <label className="field full">Personal Discord account callback URL<input readOnly value={`${origin}/api/identity/callback/discord`} onFocus={(event) => event.target.select()} /><small>Select and copy this exact URL into your application's OAuth2 redirect URLs.</small></label>
       </div>
@@ -356,6 +356,8 @@ export function TwitchSettings({ settings }: { settings: Settings }) {
             <input
               type="password"
               name="clientSecret"
+              aria-label="Twitch client secret"
+              aria-describedby="twitch-secret-help"
               autoComplete="new-password"
               placeholder={
                 settings.twitchAppConfigured
@@ -364,7 +366,7 @@ export function TwitchSettings({ settings }: { settings: Settings }) {
               }
               required={!settings.twitchAppConfigured}
             />
-            <small>Cleared on submit. Re-enter the secret if saving fails.</small>
+            <small id="twitch-secret-help">Cleared on submit. Re-enter the secret if saving fails.</small>
           </label>
         </div>
         <Feedback error={error} success={message} />

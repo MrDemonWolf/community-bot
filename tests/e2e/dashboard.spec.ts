@@ -394,6 +394,7 @@ test("creator completes setup, saves private configuration and controls features
         expect(sidebar.x).toBeGreaterThanOrEqual(0);
         expect(sidebar.y + sidebar.height).toBeLessThanOrEqual(901);
         await expect(desktopNav.getByRole("link", { name: "Overview", exact: true })).toBeInViewport();
+        await expect(page.locator(".sidebar-bottom").getByRole("button", { name: "Sign out", exact: true })).toBeInViewport();
       });
     }
   }
