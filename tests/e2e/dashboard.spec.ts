@@ -252,6 +252,47 @@ test("creator completes setup, saves private configuration and controls features
   await expect(desktopNav.getByRole("link", { name: "Public channel", exact: true })).toHaveCount(0);
   expect((await context.request.get("/channel")).status()).toBe(404);
   expect((await request.get(imageUrl!)).status()).toBe(404);
+  for (const width of [1024, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const [path, title] of [["/dashboard", "Overview"], ["/dashboard/features", "Features"], ["/dashboard/settings", "Settings"]]) {
+      await test.step(`${title} desktop layout at ${width}px`, async () => {
+        await page.goto(path!);
+        const heading = page.getByRole("heading", { name: title!, exact: true });
+        await expect(heading).toBeVisible();
+        await expect(page.locator(".loading-state")).toHaveCount(0);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${title} overflows at ${width}px`).toBeTruthy();
+        await expect.poll(async () => {
+          const headingBox = await heading.boundingBox();
+          const footerEdge = await page.locator(".site-footer .footer-content").evaluate((element) => element.getBoundingClientRect().left + parseFloat(getComputedStyle(element).paddingLeft));
+          return headingBox ? Math.abs(headingBox.x - footerEdge) : 1000;
+        }, { message: "Workspace and footer content must share their left edge" }).toBeLessThanOrEqual(2);
+        if (width === 1920) {
+          const workspace = (await page.locator("main.workspace").boundingBox())!, frame = (await page.locator(".workspace-frame").boundingBox())!;
+          expect(workspace.width, "Wide workspace stays bounded").toBeLessThan(frame.width);
+          expect(Math.abs(workspace.x + workspace.width / 2 - (frame.x + frame.width / 2)), "Wide workspace is centered beside the sidebar").toBeLessThanOrEqual(2);
+        }
+        if (path === "/dashboard/features") {
+          const cards = page.locator(".feature-grid > section");
+          await expect(cards.nth(1)).toBeVisible();
+          const first = (await cards.nth(0).boundingBox())!, second = (await cards.nth(1).boundingBox())!;
+          if (width >= 1200) expect(Math.abs(first.y - second.y)).toBeLessThanOrEqual(2);
+          else expect(Math.abs(first.x - second.x)).toBeLessThanOrEqual(2);
+        }
+        if (path === "/dashboard/settings") {
+          const rail = (await page.locator(".settings-sections").boundingBox())!, panels = (await page.locator(".settings-panels").boundingBox())!;
+          if (width >= 1200) expect(rail.x + rail.width).toBeLessThan(panels.x);
+          else expect(rail.y + rail.height).toBeLessThanOrEqual(panels.y + 1);
+        }
+        if (width === 1440 || path === "/dashboard") await snapshot(page, info, `desktop-${width}-${title!.toLowerCase()}-viewport`, false);
+        await page.getByRole("contentinfo").getByRole("button", { name: "Cookie information", exact: true }).evaluate((element) => element.scrollIntoView({ block: "center" }));
+        const sidebar = (await page.locator(".sidebar").boundingBox())!;
+        expect(Math.abs(sidebar.y), "Sidebar stays at the viewport top while footer is visible").toBeLessThanOrEqual(1);
+        expect(sidebar.x).toBeGreaterThanOrEqual(0);
+        expect(sidebar.y + sidebar.height).toBeLessThanOrEqual(901);
+        await expect(desktopNav.getByRole("link", { name: "Overview", exact: true })).toBeInViewport();
+      });
+    }
+  }
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -338,6 +379,19 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
         return bounds.width < 44 || bounds.height < 44;
       }).map((element) => element.textContent?.trim()));
       expect(smallPrimaryTargets, `${path} primary touch targets must reach 44px`).toEqual([]);
+      if (path === "/dashboard/features") {
+        const cards = screen.locator(".feature-grid > section");
+        await expect(cards.nth(1)).toBeVisible();
+        const first = (await cards.nth(0).boundingBox())!, second = (await cards.nth(1).boundingBox())!;
+        expect(Math.abs(first.x - second.x), "Mobile features use one column").toBeLessThanOrEqual(2);
+        expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
+      }
+      if (path === "/dashboard/settings") {
+        const rail = screen.locator(".settings-sections");
+        expect(await rail.evaluate((element) => getComputedStyle(element).flexWrap)).toBe("wrap");
+        const railBox = (await rail.boundingBox())!, panels = (await screen.locator(".settings-panels").boundingBox())!;
+        expect(railBox.y + railBox.height).toBeLessThanOrEqual(panels.y + 1);
+      }
       await snapshot(screen, info, `mobile-${width}-${path.replaceAll("/", "-")}`);
       if (path === "/dashboard/settings" && width === 390) {
         await screen.getByLabel(/^Upload a picture/).setInputFiles({ name: "mobile-community.png", mimeType: "image/png", buffer: await pictureFixture(screen) });

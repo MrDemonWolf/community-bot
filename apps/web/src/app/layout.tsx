@@ -4,6 +4,7 @@ import "../mobile.css";
 import "../profile.css";
 import "../cookie.css";
 import "../footer.css";
+import "../settings.css";
 import SiteFooter from "@/components/site-footer";
 import Providers from "@/components/providers";
 import Pwa from "@/components/pwa";

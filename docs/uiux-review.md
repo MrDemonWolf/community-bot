@@ -1,5 +1,15 @@
 # UI/UX Review: Community Bot dashboard
 
+## Desktop follow-up — October 15, 2026
+
+Input: the actual Overview, Features, and Settings screenshots from [run 38777931690](https://github.com/MrDemonWolf/community-bot/actions/runs/38777931690), plus the desktop layout source at `02d9ce0`.
+
+Reviewer judgment: three cosmetic (severity 1) layout issues motivated this pass. Feature cards used the full content width in a single column; Settings had a long horizontal section menu above a full-width stack; and the footer used a fixed 240px offset while the narrower desktop sidebar used 210px, producing a 30px mismatch at that breakpoint. These are layout refinements, not claims that the previous flows were blocked.
+
+The follow-up bounds and centers wide-screen content, shares desktop shell/footer dimensions, keeps the desktop sidebar available while scrolling to the footer, aligns connection-card actions, uses two feature columns from 1200px, and gives Settings a compact sticky section rail. Mobile keeps stacked cards and wrapped section links. Browser assertions cover 1024px, 1440px, and 1920px desktop widths and the existing phone widths; screenshots and current pass/fail status are attached to the PR's latest CI run.
+
+The original review below remains a historical baseline, with its original evidence and verification limits.
+
 **Reviewed:** 2026-10-15 · **Input:** commit `4088b2f`, GitHub CI screenshots, browser traces, and source · **Method:** NN/g heuristic evaluation + guideline review
 
 ## Executive summary

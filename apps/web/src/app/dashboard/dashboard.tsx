@@ -51,7 +51,7 @@ export default function Dashboard() {
         const connect = canAccess(access, "bot:connect", service);
         const mute = service === "twitch" && canAccess(access, "bot:mute", "twitch");
         const Icon = service === "discord" ? MessageCircle : Radio;
-        return <Panel key={service} aria-label={service === "discord" ? "Discord connection" : "Twitch connection"}>
+        return <Panel className="connection-card" key={service} aria-label={service === "discord" ? "Discord connection" : "Twitch connection"}>
           <div className="panel-header">
             <div className="service-name"><span className="service-icon"><Icon size={23} aria-hidden="true" /></span><div>
               <h2>{service === "discord" ? "Discord" : "Twitch"}</h2>
@@ -64,7 +64,7 @@ export default function Dashboard() {
             : runtime?.stale ? "The service has stopped reporting. Check its deployment logs."
               : runtime?.detail || "Credentials are ready. Start the service and choose Join."}</p>
           {service === "twitch" && runtime && !runtime.stale && <StreamDetails metadata={runtime.metadata} />}
-          <div className="actions">
+          <div className="actions connection-actions">
             {connect && <>
               <button className="button primary" disabled={!configured || control.isPending || enabled}
                 onClick={() => control.mutate({ service, action: "join" })}>Join</button>

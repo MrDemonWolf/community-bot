@@ -13,15 +13,15 @@ export default function Features() {
   const query = useQuery(trpc.features.list.queryOptions());
   const update = useMutation(trpc.features.update.mutationOptions({ onSuccess: async () => { await queryClient.invalidateQueries(); } }));
   return <>
-    <PageHeading eyebrow="YOUR TOOLKIT" title="Choose your features."
+    <PageHeading title="Features"
       description="Keep the tools your community uses. You can change these whenever you need."
     />
     {(query.isPending || access.isPending) && !query.error && !access.error && <LoadingState label="Loading features…" />}
     {(query.error || access.error || update.error) && <p className="notice error" role="alert">{query.error?.message || access.error?.message || update.error?.message}</p>}
     {update.isSuccess && <p className="notice success" role="status">Feature preference saved. The running services will apply it shortly.</p>}
-    <div className="grid gap-5">{query.data?.map((feature) => {
+    <div className="feature-grid">{query.data?.map((feature) => {
       const allowed = access.data && canAccess(access.data, feature.capability, feature.platform);
-      return <Panel key={`${feature.id}:${feature.platform}`} aria-label={`${feature.platform} ${feature.name}`}>
+      return <Panel className="feature-card" key={`${feature.id}:${feature.platform}`} aria-label={`${feature.platform} ${feature.name}`}>
         <div className="panel-header">
           <div><span className="eyebrow">{feature.platform}</span><h2>{feature.name}</h2><p>{feature.description}</p></div>
           <StatusBadge good={feature.enabled}>{feature.enabled ? "Enabled" : "Disabled"}</StatusBadge>

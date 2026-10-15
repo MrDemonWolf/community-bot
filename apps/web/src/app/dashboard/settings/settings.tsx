@@ -20,16 +20,17 @@ export default function Settings() {
   const access = accessQuery.data;
   const presence = canAccess(access, "presence:manage", "discord");
   return <>
-    <PageHeading eyebrow="WORKSPACE SETTINGS" title="Make it yours."
+    <PageHeading title="Settings"
       description={access.owner ? "Manage your profile, community preferences, and connections." : "Manage your profile and the settings available to your role."}
     />
-    <nav aria-label="Settings sections" className="actions mb-6">
+    <div className="settings-layout">
+    <nav aria-label="Settings sections" className="settings-sections actions mb-6">
       <a className="button" href="#profile-picture">Profile picture</a>
       {access.owner && <a className="button" href="#preferences">Preferences</a>}
       {presence && <a className="button" href="#discord-presence">Discord presence</a>}
       {access.owner && <><a className="button" href="#discord-connection">Discord connection</a><a className="button" href="#twitch-connection">Twitch connection</a></>}
     </nav>
-    <div className="grid gap-5">
+    <div className="settings-panels">
       <ProfilePictureSettings />
       {access.owner && <Panel id="preferences" aria-labelledby="preferences-title" className="scroll-mt-24">
         <div className="panel-header"><div><h2 id="preferences-title">Community preferences</h2><p>Your bot name, command prefix, and public page.</p></div></div>
@@ -51,6 +52,7 @@ export default function Settings() {
           <TwitchSettings settings={settings} />
         </Panel>
       </>}
+    </div>
     </div>
   </>;
 }
