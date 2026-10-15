@@ -22,6 +22,8 @@ Keep the setup small and your community connected.
   credentials, and an optional public channel page.
 - **Mobile PWA:** Install the dashboard on your home screen. Private pages
   and API responses stay online-only.
+- **Staff profiles:** Choose your linked Twitch or Discord picture, or upload
+  and crop a personal picture. Compressed images stay below 1 MB per person.
 - **Guided setup:** Start with one connection and add the other later.
 
 ## Getting Started

@@ -93,6 +93,8 @@ jobs:
           docker compose exec -T postgres psql -U community_bot -d community_bot -v ON_ERROR_STOP=1 -q -t < packages/db/tests/features.sql
       - name: Permission isolation and identity nonce integration
         run: docker compose run --rm --no-deps -e ACCESS_TEST=true -e NODE_ENV=development migrate bun tests/access.integration.ts
+      - name: Personal profile image validation and isolation integration
+        run: docker compose run --rm --no-deps -e PROFILE_TEST=true -e NODE_ENV=development migrate bun tests/profile.integration.ts
       - name: Redemption queue and concurrent action integration
         run: docker compose run --rm --no-deps -e REWARDS_TEST=true -e NODE_ENV=development migrate bun tests/e2e/rewards.integration.ts
       - name: Mocked Channel Points authorization and manual action integration

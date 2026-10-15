@@ -16,8 +16,9 @@ code { overflow-wrap: anywhere; }
   .button { white-space: normal; text-align: center; max-width: 100%; }
   .field input,.field select,.field textarea { font-size: 16px; }
   .form-footer .button { width: 100%; }
-  .next-step { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: start; gap: 10px; padding: 16px; }
+  .next-step { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: start; gap: 12px; padding: 16px; }
   .next-step > svg { width: 24px; height: 24px; }
+  .next-step > div:only-child { grid-column: 1 / -1; }
   .next-step h3 { font-size: 15px; line-height: 1.35; margin-bottom: 4px; }
   .next-step p { line-height: 1.45; }
   .next-step .button { grid-column: 2; justify-self: start; margin-left: 0; width: auto; }

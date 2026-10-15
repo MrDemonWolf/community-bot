@@ -9,6 +9,6 @@ export default async function SettingsPage() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user.emailVerified) redirect("/login");
   const access = await resolveAccess(session.user);
-  if (!access.owner && !canAccess(access, "presence:manage", "discord")) redirect("/dashboard");
+  if (!canAccess(access, "dashboard:view")) redirect("/access");
   return <Settings />;
 }

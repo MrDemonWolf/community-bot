@@ -1,28 +1,28 @@
 import { z } from "zod";
 
 export const coreInput = z.object({
-  botName: z.string().trim().min(1).max(40),
-  commandPrefix: z.string().min(1).max(5).regex(/^\S+$/),
+  botName: z.string().trim().min(1, "Enter a display name.").max(40, "Use 40 characters or fewer."),
+  commandPrefix: z.string().min(1, "Enter a prefix, such as !.").max(5, "Use 1–5 characters with no spaces.").regex(/^\S+$/, "Use 1–5 characters with no spaces."),
   publicPageEnabled: z.boolean(),
-  publicDescription: z.string().trim().max(280),
+  publicDescription: z.string().trim().max(280, "Use 280 characters or fewer."),
 });
 export const twitchInput = z.object({
   clientId: z
     .string()
     .trim()
-    .regex(/^[a-zA-Z0-9]{10,100}$/),
-  clientSecret: z.string().trim().min(10).max(200).optional(),
+    .regex(/^[a-zA-Z0-9]{10,100}$/, "Copy the 10–100 letter and number client ID from your Twitch developer application."),
+  clientSecret: z.string().trim().min(10, "Paste the complete client secret from your Twitch developer application.").max(200, "Use a client secret of 200 characters or fewer.").optional(),
 });
 export const discordInput = z.object({
-  applicationId: z.string().regex(/^\d{17,20}$/),
-  guildId: z.string().regex(/^\d{17,20}$/),
+  applicationId: z.string().regex(/^\d{17,20}$/, "Enter the 17–20 digit application ID from the Discord developer portal."),
+  guildId: z.string().regex(/^\d{17,20}$/, "Enter a 17–20 digit server ID. Enable Discord Developer Mode to copy it."),
   token: z
     .string()
     .trim()
-    .min(30)
-    .max(200)
-    .regex(/^\S+$/)
-    .refine((s) => !s.startsWith("Bot "), "Paste the raw bot token")
+    .min(30, "Paste the complete raw bot token from the Discord developer portal.")
+    .max(200, "Paste only the raw bot token, without the Bot prefix.")
+    .refine((s) => !s.startsWith("Bot "), "Paste only the raw bot token, without the Bot prefix.")
+    .regex(/^\S+$/, "Paste only the raw bot token, with no spaces or Bot prefix.")
     .optional(),
 });
 export const presenceInput = z

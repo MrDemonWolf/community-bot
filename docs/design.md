@@ -13,8 +13,12 @@ Community Bot keeps the official MrDemonWolf wolf asset, navy `#091533`, and thi
 | [Linktree More menu](https://mobbin.com/screens/eb247c38-04dc-4b14-81ef-a6c6f3efeabf) | Secondary tools and account destinations grouped into short navigation rows. |
 | [MacroFactor More menu](https://mobbin.com/screens/3aedad23-65c2-4409-840b-406e1940c22a) | Small groups of related settings instead of a wall of unrelated controls. |
 | [Chatbase integrations](https://mobbin.com/screens/9d24c903-7050-4e16-b34e-71da42107d2c) | Consistent integration cards with an icon, short purpose, connection state, and nearby action. |
+| [OpenAI Platform service health](https://mobbin.com/screens/d605f83d-3869-4ecc-8874-b913e09e2930) | A quiet selected navigation row and restrained operational page hierarchy. |
+| [Customer.io workspace performance](https://mobbin.com/screens/b9743841-5a29-4454-bc39-133d7b0d7d9c) | Consistent service rows, status labels, and spacing that groups related information. |
 
 These references informed hierarchy and flow. Community Bot retains its own branding and uses less density for a single creator.
+
+The refinement uses a neutral filled navigation selection without a colored edge, a factual Overview heading, and a consistent 8px spacing scale. The stripe removal follows the creator's explicit visual preference; it is not presented as an accessibility rule. The evidence-backed review and limits are recorded in [the UI/UX review](uiux-review.md).
 
 ## Access and action hierarchy
 
@@ -26,6 +30,7 @@ These references informed hierarchy and flow. Community Bot retains its own bran
 - Feature cards reuse the shared feature manifest and have independent platform switches.
 - Reward setup separates creator authorization, admin configuration, and moderator queue actions.
 - Saved settings never imply a completed provider action. Fresh heartbeats and provider-confirmed state supply that evidence.
+- Personal pictures are separate from the application's official logo. Each owner, admin, or moderator chooses initials, a linked-account snapshot, or a cropped upload. Image access is private to that person's session, including when the public channel is enabled. The shared cropper and More menu reuse the same modal, focus management, and scroll locking.
 
 ## Phone behavior
 

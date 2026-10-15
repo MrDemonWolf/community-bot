@@ -1,5 +1,7 @@
 "use client";
 
+import { InlineSpinner, LoadingState } from "@/components/loading-state";
+
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { canAccess } from "@community-bot/core/permissions";
 import Link from "next/link";
@@ -14,7 +16,7 @@ export default function Features() {
     <PageHeading eyebrow="YOUR TOOLKIT" title="Choose your features."
       description="Keep the tools your community uses. You can change these whenever you need."
     />
-    {(query.isPending || access.isPending) && <p role="status">Loading features…</p>}
+    {(query.isPending || access.isPending) && !query.error && !access.error && <LoadingState label="Loading features…" />}
     {(query.error || access.error || update.error) && <p className="notice error" role="alert">{query.error?.message || access.error?.message || update.error?.message}</p>}
     {update.isSuccess && <p className="notice success" role="status">Feature preference saved. The running services will apply it shortly.</p>}
     <div className="grid gap-5">{query.data?.map((feature) => {
@@ -27,7 +29,7 @@ export default function Features() {
         <div className="actions">
           <button className={feature.enabled ? "button" : "button primary"} disabled={!allowed || update.isPending}
             onClick={() => update.mutate({ featureId: feature.id, platform: feature.platform, enabled: !feature.enabled, config: feature.config })}>
-            {feature.enabled ? "Disable feature" : "Enable feature"}
+            {update.isPending && update.variables?.featureId === feature.id && update.variables.platform === feature.platform && <InlineSpinner />}{feature.enabled ? "Disable feature" : "Enable feature"}
           </button>
           {feature.id === "presence" && allowed && <Link className="button" href="/dashboard/settings#discord-presence">Edit Discord presence</Link>}
           {feature.id === "channel-points" && access.data && canAccess(access.data, "redemptions:view", "twitch") && <Link className="button" href="/dashboard/rewards">Manage channel points</Link>}

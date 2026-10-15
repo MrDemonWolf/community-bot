@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingState } from "@/components/loading-state";
+
 import { Activity, ArrowUpRight, MessageCircle, Radio, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -8,14 +10,14 @@ import { canAccess } from "@community-bot/core/permissions";
 import { PageHeading, Panel, StatusBadge } from "@/components/dashboard-ui";
 import { trpc, queryClient } from "@/utils/trpc";
 
-export default function Dashboard({ userName }: { userName: string }) {
+export default function Dashboard() {
   const accessQuery = useQuery(trpc.access.me.queryOptions());
   const query = useQuery(trpc.settings.get.queryOptions(undefined, { refetchInterval: 5000 }));
   const control = useMutation(trpc.settings.control.mutationOptions({
     onSuccess: async () => { await queryClient.invalidateQueries(); },
   }));
   const settings = query.data;
-  if (query.isPending || accessQuery.isPending) return <p role="status">Loading your workspace…</p>;
+  if ((query.isPending || accessQuery.isPending) && !query.error && !accessQuery.error) return <LoadingState label="Loading your workspace…" />;
   if (query.error || !settings || accessQuery.error || !accessQuery.data) return <p className="notice error" role="alert">
     Your workspace could not be loaded. <button className="button" onClick={() => { void query.refetch(); void accessQuery.refetch(); }}>Try again</button>
   </p>;
@@ -27,19 +29,19 @@ export default function Dashboard({ userName }: { userName: string }) {
   const manageCommands = canAccess(access, "features:manage", "twitch") || canAccess(access, "features:manage", "discord");
 
   return <>
-    <PageHeading eyebrow="YOUR COMMUNITY" title={`Hey, ${userName.split(" ")[0]}.`}
-      description="Connection status refreshes every five seconds."
+    <PageHeading title="Overview"
+      description="Discord and Twitch connection status."
       actions={<>
         {hasSettings && <Link className="button" href="/dashboard/settings"><Settings2 size={16} /> Settings</Link>}
         {settings.publicPageEnabled && <Link className="button" href="/channel" target="_blank">Public page <ArrowUpRight size={15} /></Link>}
       </>} />
     {setupNeeded && <div className="next-step">
-      <Activity size={25} aria-hidden="true" /><div><h3>Finish connecting your services</h3><p>Connect Discord and your Twitch accounts at your own pace.</p></div>
+      <Activity size={24} aria-hidden="true" /><div><h3>Connect your services</h3><p>Start with Discord or Twitch.</p></div>
       <Link href="/setup" className="button primary">Continue setup →</Link>
     </div>}
     {control.error && <p role="alert" className="notice error">{control.error.message}</p>}
     {control.isSuccess && <p role="status" className="notice">Request saved. The service status below will confirm the change.</p>}
-    <div className="mb-6 grid grid-cols-1 gap-5 xl:grid-cols-2">
+    <div className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
       {(["discord", "twitch"] as const).filter((service) => canAccess(access, "dashboard:view", service)).map((service) => {
         const runtime = settings.runtimes.find((item) => item.service === service);
         const configured = service === "discord" ? settings.discordConfigured : settings.broadcaster.connected && settings.bot.connected;
@@ -53,7 +55,7 @@ export default function Dashboard({ userName }: { userName: string }) {
           <div className="panel-header">
             <div className="service-name"><span className="service-icon"><Icon size={23} aria-hidden="true" /></span><div>
               <h2>{service === "discord" ? "Discord" : "Twitch"}</h2>
-              <p>{service === "discord" ? "Your server companion" : settings.channelName ? `#${settings.channelName}` : "Your stream companion"}</p>
+              <p>{service === "discord" ? "Server connection" : settings.channelName ? `#${settings.channelName}` : "Channel connection"}</p>
             </div></div>
             <StatusBadge good={connected}>{state}</StatusBadge>
           </div>

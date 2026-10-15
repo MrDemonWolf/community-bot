@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "../index.css";
 import "../mobile.css";
+import "../profile.css";
 import Providers from "@/components/providers";
 import Pwa from "@/components/pwa";
 

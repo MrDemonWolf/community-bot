@@ -8,13 +8,23 @@ async function login(page: Page) {
   await button.click();
   expect((await response).ok()).toBeTruthy();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: /^Hey,/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
 }
 
 async function snapshot(page: Page, info: TestInfo, name: string, fullPage = true) {
   const path = info.outputPath(`${name}.png`);
   await page.screenshot({ path, fullPage });
   await info.attach(name, { path, contentType: "image/png" });
+}
+
+async function pictureFixture(page: Page) {
+  return Buffer.from(await page.evaluate(() => {
+    const canvas = document.createElement("canvas"); canvas.width = 400; canvas.height = 200;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#091533"; ctx.fillRect(0, 0, 200, 200);
+    ctx.fillStyle = "#0faced"; ctx.fillRect(200, 0, 200, 200);
+    return canvas.toDataURL("image/png").split(",")[1]!;
+  }), "base64");
 }
 
 test.beforeEach(async ({ context }) => {
@@ -36,7 +46,7 @@ test("anonymous pages and production login stay protected", async ({ page, reque
   expect(html).not.toContain("Enter development workspace");
 });
 
-test("creator completes setup, saves private configuration and controls features", async ({ page, context }, info) => {
+test("creator completes setup, saves private configuration and controls features", async ({ page, context, request }, info) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   page.on("console", (message) => {
@@ -52,7 +62,8 @@ test("creator completes setup, saves private configuration and controls features
   await page.getByLabel("Bot display name").fill("WolfAide E2E");
   await page.getByLabel("Command prefix").fill("bad x");
   await page.getByRole("button", { name: "Save preferences" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText("Use 1–5 characters with no spaces.");
+  await expect(page.getByRole("alert")).not.toContainText("invalid_format");
   await page.getByLabel("Command prefix").fill("!");
   await page.getByLabel("Public channel description").fill("A disposable community fixture.");
   await page.getByRole("button", { name: "Save preferences" }).click();
@@ -83,9 +94,24 @@ test("creator completes setup, saves private configuration and controls features
   expect(new URL(redirect.headers().location!).hostname).toBe("id.twitch.tv");
   await page.getByRole("button", { name: "Open my dashboard" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByRole("heading", { name: /^Hey,/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
   await snapshot(page, info, "creator-dashboard");
-  await desktopNav.getByRole("link", { name: "Features", exact: true }).click();
+  let releaseFeatures!: () => void;
+  const featuresGate = new Promise<void>((resolve) => { releaseFeatures = resolve; });
+  const featuresRequest = /\/api\/trpc\/[^?]*features\.list/;
+  await page.route(featuresRequest, async (route) => { await featuresGate; await route.continue(); });
+  try {
+    await desktopNav.getByRole("link", { name: "Features", exact: true }).click();
+    const loading = page.getByRole("status").filter({ hasText: "Loading features…" });
+    await expect(loading).toBeVisible();
+    await expect(loading).toHaveAttribute("aria-live", "polite");
+    await expect(loading.locator(".loading-preview")).toHaveAttribute("aria-hidden", "true");
+    await expect(loading.locator(".loading-preview")).toHaveAttribute("aria-busy", "true");
+    await snapshot(page, info, "features-loading-skeleton");
+  } finally {
+    releaseFeatures();
+    await page.unroute(featuresRequest);
+  }
   const presence = page.locator("section").filter({ has: page.getByRole("heading", { name: "Discord presence", exact: true }) });
   await expect(presence.getByRole("link", { name: "Edit Discord presence" })).toHaveAttribute("href", "/dashboard/settings#discord-presence");
   await presence.getByRole("button", { name: "Disable feature" }).click();
@@ -135,20 +161,61 @@ test("creator completes setup, saves private configuration and controls features
   await expect(page.getByRole("heading", { name: "Community preferences", exact: true })).toBeVisible();
   await expect(page.getByLabel("Twitch client secret", { exact: true })).toHaveValue("");
   await snapshot(page, info, "desktop-settings");
+  const picture = page.locator("#profile-picture");
+  await expect(picture.getByRole("heading", { name: "Your profile picture", exact: true })).toBeVisible();
+  const upload = picture.getByLabel("Upload a picture", { exact: true });
+  await upload.setInputFiles({ name: "unsafe.svg", mimeType: "image/svg+xml", buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>') });
+  await expect(picture.getByRole("alert")).toContainText("Choose a PNG, JPEG, or WebP");
+  await upload.setInputFiles({ name: "broken.png", mimeType: "image/png", buffer: Buffer.from("not an image") });
+  const crop = page.getByRole("dialog", { name: "Crop profile picture", exact: true });
+  await expect(crop.getByRole("alert")).toContainText("could not be opened");
+  await expect(crop.getByRole("button", { name: "Save picture", exact: true })).toBeDisabled();
+  await crop.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(crop).toHaveCount(0);
+  await upload.setInputFiles({ name: "community.png", mimeType: "image/png", buffer: await pictureFixture(page) });
+  await expect(crop.getByRole("button", { name: "Save picture", exact: true })).toBeEnabled();
+  const preview = crop.getByRole("img", { name: "Profile crop preview", exact: true });
+  const initialCrop = await preview.evaluate((node) => (node as HTMLCanvasElement).toDataURL());
+  await preview.focus();
+  await preview.press("ArrowRight");
+  await expect.poll(() => preview.evaluate((node) => (node as HTMLCanvasElement).toDataURL())).not.toBe(initialCrop);
+  await crop.getByLabel("Zoom", { exact: true }).focus();
+  await crop.getByLabel("Zoom", { exact: true }).press("ArrowRight");
+  await snapshot(page, info, "profile-picture-crop", false);
+  await crop.getByRole("button", { name: "Save picture", exact: true }).click();
+  await expect(crop).toHaveCount(0);
+  await expect(picture.getByRole("status")).toHaveText("Profile picture saved.");
+  await expect(picture.getByRole("button", { name: "Use saved upload", exact: true })).toHaveAttribute("aria-pressed", "true");
+  const imageUrl = await picture.getByAltText("Your profile picture", { exact: true }).getAttribute("src");
+  expect(imageUrl).toContain("/api/profile-picture");
+  const privateImage = await context.request.get(imageUrl!);
+  expect(privateImage.status()).toBe(200);
+  expect(privateImage.headers()["content-type"]).toBe("image/webp");
+  expect(privateImage.headers()["cache-control"]).toContain("no-store");
+  expect((await request.get(imageUrl!)).status()).toBe(404);
+  await picture.getByRole("button", { name: "Use initials", exact: true }).click();
+  await expect(picture.getByRole("button", { name: "Use initials", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(picture.getByAltText("Your profile picture", { exact: true })).toHaveCount(0);
+  await picture.getByRole("button", { name: "Use saved upload", exact: true }).click();
+  await expect(picture.getByRole("button", { name: "Use saved upload", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(picture.getByAltText("Your profile picture", { exact: true })).toHaveAttribute("src", imageUrl!);
   await page.getByLabel("Enable my public channel page").check();
   await page.getByRole("button", { name: "Save preferences" }).click();
-  await expect(page.getByRole("status")).toContainText("preferences are up to date");
+  await expect(page.locator("#preferences").getByRole("status")).toContainText("preferences are up to date");
   await expect(desktopNav.getByRole("link", { name: "Public channel", exact: true })).toBeVisible();
   const publicPage = await context.request.get("/channel");
   expect(publicPage.status()).toBe(200);
   const publicHTML = await publicPage.text();
   expect(publicHTML).toContain("WolfAide E2E");
   expect(publicHTML).not.toContain(secret);
+  expect(publicHTML).not.toContain("/api/profile-picture");
+  expect((await request.get(imageUrl!)).status()).toBe(404);
   await page.getByLabel("Enable my public channel page").uncheck();
   await page.getByRole("button", { name: "Save preferences" }).click();
-  await expect(page.getByRole("status")).toContainText("preferences are up to date");
+  await expect(page.locator("#preferences").getByRole("status")).toContainText("preferences are up to date");
   await expect(desktopNav.getByRole("link", { name: "Public channel", exact: true })).toHaveCount(0);
   expect((await context.request.get("/channel")).status()).toBe(404);
+  expect((await request.get(imageUrl!)).status()).toBe(404);
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -236,6 +303,19 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
       }).map((element) => element.textContent?.trim()));
       expect(smallPrimaryTargets, `${path} primary touch targets must reach 44px`).toEqual([]);
       await snapshot(screen, info, `mobile-${width}-${path.replaceAll("/", "-")}`);
+      if (path === "/dashboard/settings" && width === 390) {
+        await screen.getByLabel("Upload a picture", { exact: true }).setInputFiles({ name: "mobile-community.png", mimeType: "image/png", buffer: await pictureFixture(screen) });
+        const crop = screen.getByRole("dialog", { name: "Crop profile picture", exact: true });
+        await expect(crop.getByRole("button", { name: "Save picture", exact: true })).toBeEnabled();
+        expect(await screen.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+        await snapshot(screen, info, "mobile-profile-picture-crop", false);
+        const reset = crop.getByRole("button", { name: "Reset crop", exact: true });
+        if (info.project.name === "mobile-webkit") await reset.tap(); else await reset.click();
+        const cancel = crop.getByRole("button", { name: "Cancel", exact: true });
+        if (info.project.name === "mobile-webkit") await cancel.tap(); else await cancel.click();
+        await expect(crop).toHaveCount(0);
+        await expect.poll(() => screen.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
+      }
       if (path === "/dashboard" || path === "/dashboard/features") {
         await snapshot(screen, info, `mobile-${width}-${path.replaceAll("/", "-")}-viewport`, false);
       }

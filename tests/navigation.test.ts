@@ -23,10 +23,11 @@ describe("platform-scoped dashboard navigation", () => {
     expect(links).toContain("/dashboard/settings");
     for (const route of ["/dashboard/rewards", "/dashboard/access", "/setup"]) expect(links).not.toContain(route);
   });
-  test("a Twitch moderator gets the queue without feature or settings administration", () => {
+  test("a Twitch moderator gets the queue and personal settings without administration", () => {
     const links = destinations({ owner: false, grants: [{ platform: "twitch", role: "moderator", source: "test" }] });
     expect(links).toContain("/dashboard/rewards");
-    for (const route of ["/dashboard/features", "/dashboard/settings", "/dashboard/access", "/setup"]) expect(links).not.toContain(route);
+    expect(links).toContain("/dashboard/settings");
+    for (const route of ["/dashboard/features", "/dashboard/access", "/setup"]) expect(links).not.toContain(route);
   });
   test("an unmapped member can reach personal access but no privileged destination", () => {
     const links = destinations({ owner: false, grants: [] });

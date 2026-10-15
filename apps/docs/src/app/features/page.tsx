@@ -35,6 +35,11 @@ export default function Features() {
     <h2>6. Keep the queue moving</h2>
     <p>Moderators with Twitch access can open the redemption queue and choose <strong>Mark fulfilled</strong> or <strong>Cancel &amp; refund</strong>. Review the viewer's message and action state first.</p>
     <p>Leaving or muting chat pauses automated chat replies. Reward events can still be collected. Failed or uncertain sends stay for manual review and are not retried automatically, preventing duplicate messages.</p>
+    <h2>Choose your profile picture</h2>
+    <p>The owner, admins, and moderators can open Settings → Profile picture. On a phone, Settings is under More. Each person manages their own picture.</p>
+    <ol><li>Use your initials, copy the picture from your linked personal Twitch or Discord account, or upload a PNG, JPEG, or WebP file under 10 MB. Link personal accounts under My accounts first.</li><li>For an upload, drag the image to reposition it and adjust Zoom. You can also focus the preview and use arrow keys. Reset crop starts again.</li><li>Choose Save picture. Your saved picture appears in your account controls and the More menu.</li></ol>
+    <p>The browser resizes the crop before upload. The server validates it and compresses it to a small WebP image. Each of the three saved sources is capped at 256 KB, keeping total image storage below 1 MB per person. Database backups include these pictures.</p>
+    <p>Switching sources keeps your saved upload. Provider pictures are snapshots: select the provider again to refresh its picture. This does not change your picture on Twitch or Discord. Personal pictures stay private, including when the community's public page is enabled.</p>
     <h2>Install the dashboard on your phone</h2>
     <p>Open your production dashboard over HTTPS and sign in. Installation adds a convenient home-screen app; it does not move the bot onto your phone.</p>
     <ol><li><strong>iPhone or iPad:</strong> open the dashboard in Safari, choose Share, then Add to Home Screen.</li><li><strong>Android:</strong> open it in Chrome and use the browser menu's Install app or Add to Home screen action when available.</li><li><strong>Desktop Chrome:</strong> use the install icon in the address bar when available, then confirm installation.</li></ol>

@@ -1,15 +1,18 @@
 "use client";
 
+import { LoadingState } from "@/components/loading-state";
+
 import { useQuery } from "@tanstack/react-query";
 import { canAccess } from "@community-bot/core/permissions";
 import { CoreSettings, DiscordPresence, DiscordSettings, TwitchSettings } from "@/components/settings-panels";
 import { PageHeading, Panel, StatusBadge } from "@/components/dashboard-ui";
 import { trpc } from "@/utils/trpc";
+import ProfilePictureSettings from "@/components/profile-picture-settings";
 
 export default function Settings() {
   const accessQuery = useQuery(trpc.access.me.queryOptions());
   const query = useQuery(trpc.settings.get.queryOptions());
-  if (query.isPending || accessQuery.isPending) return <p role="status">Loading settings…</p>;
+  if ((query.isPending || accessQuery.isPending) && !query.error && !accessQuery.error) return <LoadingState label="Loading settings…" kind="form" />;
   if (query.error || accessQuery.error || !query.data || !accessQuery.data) return <p className="notice error" role="alert">
     Settings could not be loaded. <button className="button" onClick={() => { void query.refetch(); void accessQuery.refetch(); }}>Try again</button>
   </p>;
@@ -18,14 +21,16 @@ export default function Settings() {
   const presence = canAccess(access, "presence:manage", "discord");
   return <>
     <PageHeading eyebrow="WORKSPACE SETTINGS" title="Make it yours."
-      description={access.owner ? "Manage your community preferences and platform connections." : "Manage the Discord presence available to your role."}
+      description={access.owner ? "Manage your profile, community preferences, and connections." : "Manage your profile and the settings available to your role."}
     />
     <nav aria-label="Settings sections" className="actions mb-6">
+      <a className="button" href="#profile-picture">Profile picture</a>
       {access.owner && <a className="button" href="#preferences">Preferences</a>}
       {presence && <a className="button" href="#discord-presence">Discord presence</a>}
       {access.owner && <><a className="button" href="#discord-connection">Discord connection</a><a className="button" href="#twitch-connection">Twitch connection</a></>}
     </nav>
     <div className="grid gap-5">
+      <ProfilePictureSettings />
       {access.owner && <Panel id="preferences" aria-labelledby="preferences-title" className="scroll-mt-24">
         <div className="panel-header"><div><h2 id="preferences-title">Community preferences</h2><p>Your bot name, command prefix, and public page.</p></div></div>
         <CoreSettings settings={settings} />

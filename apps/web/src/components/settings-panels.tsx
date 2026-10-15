@@ -1,5 +1,7 @@
 "use client";
 
+import { InlineSpinner } from "@/components/loading-state";
+
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@community-bot/api/routers/index";
 import { useMutation } from "@tanstack/react-query";
@@ -79,7 +81,7 @@ export function CoreSettings({ settings }: { settings: Settings }) {
       <Feedback error={save.error?.message} success={message} />
       <div className="form-footer">
         <button className="button primary" disabled={save.isPending}>
-          {save.isPending ? "Saving…" : "Save preferences"}
+          {save.isPending && <InlineSpinner />}{save.isPending ? "Saving…" : "Save preferences"}
         </button>
         <span className="subtle">
           Public pages show commands and connection status only.
@@ -171,7 +173,7 @@ export function DiscordSettings({ settings }: { settings: Settings }) {
       <Feedback error={save.error?.message} success={message} />
       <div className="form-footer">
         <button className="button primary" disabled={save.isPending}>
-          {save.isPending ? "Saving…" : "Save Discord credentials"}
+          {save.isPending && <InlineSpinner />}{save.isPending ? "Saving…" : "Save Discord credentials"}
         </button>
         <a
           href="https://discord.com/developers/applications"
@@ -280,7 +282,7 @@ export function DiscordPresence({ settings }: { settings: Settings }) {
       <Feedback error={save.error?.message} success={message} />
       <div className="form-footer">
         <button className="button primary" disabled={save.isPending}>
-          {save.isPending ? "Saving…" : "Save Discord presence"}
+          {save.isPending && <InlineSpinner />}{save.isPending ? "Saving…" : "Save Discord presence"}
         </button>
       </div>
     </form>
@@ -356,7 +358,7 @@ export function TwitchSettings({ settings }: { settings: Settings }) {
         <Feedback error={save.error?.message} success={message} />
         <div className="form-footer">
           <button className="button primary" disabled={save.isPending}>
-            {save.isPending ? "Saving…" : "Save Twitch application"}
+            {save.isPending && <InlineSpinner />}{save.isPending ? "Saving…" : "Save Twitch application"}
           </button>
           <a
             href="https://dev.twitch.tv/console/apps"

@@ -4,8 +4,13 @@ import type { Context } from "./context";
 import { isOwner } from "@community-bot/auth";
 import { canAccess } from "@community-bot/core/permissions";
 import { resolveAccess } from "./access";
+import { formatInputError } from "./input-errors";
 
-export const t = initTRPC.context<Context>().create();
+export const t = initTRPC.context<Context>().create({
+  errorFormatter({ shape, error }) {
+    return formatInputError(shape, error.cause);
+  },
+});
 
 export const router = t.router;
 
