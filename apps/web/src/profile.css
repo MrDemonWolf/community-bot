@@ -7,7 +7,7 @@
 .profile-upload input { padding: 8px; }
 .profile-upload input::file-selector-button { min-height: 36px; border: 0; border-radius: 4px; background: #edf2f7; color: var(--ink); padding: 6px 12px; margin-right: 12px; cursor: pointer; }
 .profile-picture-row + .actions [aria-pressed="true"] { background: #edf2f7; border-color: #9aa9ba; }
-.crop-dialog { border: 1px solid var(--line); border-radius: 16px; padding: 0; width: min(480px,calc(100% - 32px)); max-height: calc(100svh - 32px); color: var(--ink); background: white; }
+.crop-dialog { position: fixed; inset: 0; margin: auto; border: 1px solid var(--line); border-radius: 16px; padding: 0; width: min(480px,calc(100% - 32px)); max-height: calc(100svh - 32px); color: var(--ink); background: white; }
 .crop-dialog::backdrop { background: #09153380; }
 .crop-content { padding: 24px; overflow-y: auto; max-height: calc(100svh - 32px); overscroll-behavior: contain; }
 .crop-content header p { font-size: 14px; margin-bottom: 20px; }

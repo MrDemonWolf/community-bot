@@ -30,7 +30,9 @@ async function pictureFixture(page: Page) {
 test.beforeEach(async ({ context }) => {
   await context.route("**/*", (route) => {
     const url = new URL(route.request().url());
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.abort();
+    // WebKit routes local object URLs too; permit only blobs created by this app.
+    const localBlob = url.protocol === "blob:" && url.origin === new URL(process.env.E2E_BASE_URL ?? "http://localhost:3001").origin;
+    return ["localhost", "127.0.0.1"].includes(url.hostname) || localBlob ? route.continue() : route.abort();
   });
 });
 
@@ -126,7 +128,12 @@ test("creator completes setup, saves private configuration and controls features
   let releaseFeatures!: () => void;
   const featuresGate = new Promise<void>((resolve) => { releaseFeatures = resolve; });
   const featuresRequest = /\/api\/trpc\/[^?]*features\.list/;
-  await page.route(featuresRequest, async (route) => { await featuresGate; await route.continue(); });
+  const featuresHandlers: Promise<void>[] = [];
+  await page.route(featuresRequest, (route) => {
+    const handled = (async () => { await featuresGate; await route.continue(); })();
+    featuresHandlers.push(handled);
+    return handled;
+  });
   try {
     await desktopNav.getByRole("link", { name: "Features", exact: true }).click();
     const loading = page.getByRole("status").filter({ hasText: "Loading features…" });
@@ -137,7 +144,9 @@ test("creator completes setup, saves private configuration and controls features
     await snapshot(page, info, "features-loading-skeleton");
   } finally {
     releaseFeatures();
-    await page.unroute(featuresRequest);
+    // Finish actual continuations before changing interception; keep errors visible.
+    await Promise.all(featuresHandlers);
+    await page.unrouteAll({ behavior: "wait" });
   }
   const presence = page.locator("section").filter({ has: page.getByRole("heading", { name: "Discord presence", exact: true }) });
   await expect(presence.getByRole("link", { name: "Edit Discord presence" })).toHaveAttribute("href", "/dashboard/settings#discord-presence");
@@ -335,6 +344,11 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
         const crop = screen.getByRole("dialog", { name: "Crop profile picture", exact: true });
         await expect(crop.getByRole("button", { name: "Save picture", exact: true })).toBeEnabled();
         expect(await screen.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+        await expect.poll(async () => {
+          const box = await crop.boundingBox(), viewport = screen.viewportSize();
+          return Boolean(box && viewport && box.x >= 15 && box.y >= 15
+            && box.x + box.width <= viewport.width - 15 && box.y + box.height <= viewport.height - 15);
+        }, { message: "Crop dialog must retain a 16px viewport gutter on every side" }).toBeTruthy();
         await snapshot(screen, info, "mobile-profile-picture-crop", false);
         const reset = crop.getByRole("button", { name: "Reset crop", exact: true });
         if (info.project.name === "mobile-webkit") await reset.tap(); else await reset.click();
