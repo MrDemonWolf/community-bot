@@ -37,7 +37,8 @@ export default function Settings() {
       </select>
     </label>
     <div className="settings-panels">
-      <div className="settings-panel" data-settings-panel="profile-picture" hidden={activeSection !== "profile-picture"}><ProfilePictureSettings /></div>
+      {/* Unmount the photo editor when leaving so its modal releases focus and scroll locks. */}
+      <div className="settings-panel" data-settings-panel="profile-picture" hidden={activeSection !== "profile-picture"}>{activeSection === "profile-picture" && <ProfilePictureSettings />}</div>
       <div className="settings-panel" data-settings-panel="appearance" hidden={activeSection !== "appearance"}><AppearanceSettings /></div>
       {access.owner && <div className="settings-panel" data-settings-panel="preferences" hidden={activeSection !== "preferences"}><Panel id="preferences" aria-labelledby="preferences-title" className="scroll-mt-24">
         <div className="panel-header"><div><h2 id="preferences-title">Community preferences</h2><p>Your bot name, command prefix, and public page.</p></div></div>

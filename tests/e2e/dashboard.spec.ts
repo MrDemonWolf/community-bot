@@ -487,7 +487,14 @@ test("appearance follows the system and remembers explicit themes without runtim
       await expect(crop.getByRole("button", { name: "Save picture", exact: true })).toBeEnabled();
       await readableText(crop.getByRole("button", { name: "Save picture", exact: true }));
       await snapshot(page, info, "gallery-dark-desktop-crop", false);
-      await crop.getByRole("button", { name: "Cancel", exact: true }).click();
+      await page.goBack();
+      await expect(page).toHaveURL(/#preferences$/);
+      await expect(page.locator("#preferences")).toBeVisible();
+      await expect(crop).toHaveCount(0);
+      await expect.poll(() => page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
+      await expect.poll(() => page.evaluate(() => document.documentElement.style.overflow)).not.toBe("hidden");
+      await selectSettings(page, "profile-picture", "Profile picture");
+      await expect(crop).toHaveCount(0);
     }
   }
   await page.emulateMedia({ colorScheme: "dark" });
