@@ -14,7 +14,7 @@ h2 { font-size: 21px; line-height: 1.3; letter-spacing: -.5px; font-weight: 700;
 h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
 p { color: var(--muted); }
 .app-shell { display: flex; min-height: 100svh; }
-.sidebar { width: 246px; flex-shrink: 0; background: var(--navy); color: #f3f7ff; padding: 32px 22px 20px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100svh; }
+.sidebar { width: 246px; flex-shrink: 0; background: var(--navy); color: #f3f7ff; padding: 32px 22px 20px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100svh; overflow-y: auto; }
 .brand { display: flex; gap: 11px; align-items: center; text-decoration: none; font-weight: 750; font-size: 24px; letter-spacing: -.7px; }
 .brand img { object-fit: contain; }
 .brand small { display: block; font-size: 8px; letter-spacing: 1px; margin-top: 2px; color: #a9b9d4; }

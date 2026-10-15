@@ -31,6 +31,8 @@ Start real workers only after mocked provider fixtures finish and restore disabl
 
 Every browser journey records video. Successful desktop, Channel Points, and mobile views attach screenshots for visual review; failures also retain screenshots and traces in `test-results/`. The HTML report is in `playwright-report/`. CI uploads these for seven days. Fixtures use disposable secrets only.
 
+After browser checks, CI switches only the disposable workers to their development target and tests Compose Watch. A temporary shared-source comment must synchronize into both containers and restart both healthy workers. The script restores the source, stops its watcher, and verifies that neither web container was recreated or restarted. CI also uploads the static documentation export as a seven-day `docs-preview` artifact.
+
 After collecting results, remove only the disposable project and its database:
 
 ```sh

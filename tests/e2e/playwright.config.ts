@@ -9,7 +9,7 @@ export default defineConfig({
   timeout: 600_000,
   expect: { timeout: 30_000 },
   outputDir: "../../test-results",
-  reporter: [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
+  reporter: [["list"], ["html", { outputFolder: "../../playwright-report", open: "never" }]],
   projects: [
     { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile-webkit", grep: /mobile setup/, use: { ...devices["iPhone 13"] } },

@@ -24,7 +24,7 @@ openssl rand -base64 32`}</CodeBlock>
     <h2>4. Set up Google owner login</h2>
     <ol><li>Create or select a Google OAuth project and web application client in Google Cloud Console.</li><li>Configure the consent screen. If the app is in testing, add your owner Google account as a test user.</li><li>Add this exact authorized redirect URI, replacing the hostname:</li></ol>
     <CodeBlock>{`https://YOUR-DASHBOARD/api/auth/callback/google`}</CodeBlock>
-    <p>Save the client ID and client secret. Set <code>OWNER_EMAIL</code> to the verified Google email you will sign in with. Other accounts cannot manage this deployment.</p>
+    <p>Save the client ID and client secret. Set <code>OWNER_EMAIL</code> to the verified Google email you will sign in with. Other accounts receive dashboard permissions only through the platform role mappings you configure.</p>
     <h2>5. Fill Dokploy's private environment editor</h2>
     <p>Replace every uppercase placeholder below. Do not put these values in Git or Docker build arguments.</p>
     <CodeBlock>{`POSTGRES_PASSWORD=YOUR_FIRST_HEX_VALUE

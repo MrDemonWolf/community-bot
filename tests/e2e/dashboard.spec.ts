@@ -10,10 +10,15 @@ async function login(page: Page) {
 }
 
 async function snapshot(page: Page, info: TestInfo, name: string) {
-  await info.attach(name, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+  const path = info.outputPath(`${name}.png`);
+  await page.screenshot({ path, fullPage: true });
+  await info.attach(name, { path, contentType: "image/png" });
 }
 
 test.beforeEach(async ({ page }) => {
+  // These journeys use a fixed source snapshot. Dev-server route compilation
+  // must not trigger a competing HMR navigation, particularly in WebKit.
+  await page.routeWebSocket("**/_next/webpack-hmr*", (socket) => socket.close());
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
     return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.abort();
@@ -83,11 +88,18 @@ test("creator completes setup, saves private configuration and controls features
   await expect(presence.getByRole("button", { name: "Enable feature" })).toBeVisible();
   await presence.getByRole("button", { name: "Enable feature" }).click();
   await expect(presence.getByRole("button", { name: "Disable feature" })).toBeVisible();
+  await snapshot(page, info, "desktop-features");
   let mutationAttempts = 0;
   page.on("request", (request) => { if (request.url().includes("features.update") && request.method() === "POST") mutationAttempts++; });
   await context.setOffline(true);
   await presence.getByRole("button", { name: "Disable feature" }).click();
-  await expect(page.getByRole("alert")).toContainText(/fetch|network/i);
+  await expect(page.getByRole("alert").filter({ hasText: /fetch|network/i })).toBeVisible();
+  const offlineBanner = page.getByRole("status").filter({ hasText: "You’re offline." });
+  await expect(offlineBanner).toBeVisible();
+  const bannerBox = await offlineBanner.boundingBox();
+  const brandBox = await page.locator(".sidebar .brand").boundingBox();
+  expect(bannerBox && brandBox && bannerBox.y + bannerBox.height <= brandBox.y).toBeTruthy();
+  await snapshot(page, info, "offline-feature-control");
   const reconnectReadback = page.waitForResponse((response) => response.url().includes("features.list") && response.request().method() === "GET");
   await context.setOffline(false);
   await reconnectReadback;
