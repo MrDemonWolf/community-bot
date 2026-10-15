@@ -111,9 +111,9 @@ test("creator completes setup, saves private configuration and controls features
   await desktopNav.getByRole("link", { name: "Staff access", exact: true }).click();
   await expect(page.getByRole("heading", { name: /The right tools/ })).toBeVisible();
   await page.getByLabel("Where the role comes from").selectOption("twitch");
-  await page.getByLabel("Existing role", { exact: true }).selectOption("vip");
+  await page.getByRole("combobox", { name: /^Existing role/ }).selectOption("vip");
   await expect(page.getByLabel("Dashboard role")).toHaveValue("vip");
-  await page.getByLabel("Existing role", { exact: true }).selectOption("subscriber");
+  await page.getByRole("combobox", { name: /^Existing role/ }).selectOption("subscriber");
   await expect(page.getByLabel("Dashboard role")).toHaveValue("subscriber");
   await page.getByRole("button", { name: "Add Twitch starter mappings" }).click();
   await expect(page.getByText("Twitch starter mappings saved.", { exact: false })).toBeVisible();

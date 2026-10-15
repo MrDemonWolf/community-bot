@@ -19,6 +19,7 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "on",
+    actionTimeout: 30_000,
     navigationTimeout: 60_000,
   },
 });
