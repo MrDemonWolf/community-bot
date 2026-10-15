@@ -16,7 +16,7 @@ p { color: var(--muted); }
 .app-shell { display: flex; min-height: 100svh; }
 /* Shared shell dimensions keep content and footer aligned, including the narrower desktop rail. */
 .workspace-frame { flex: 1; min-width: 0; margin-left: var(--sidebar-width); }
-.sidebar { width: var(--sidebar-width); flex-shrink: 0; background: var(--navy); color: #f3f7ff; padding: 24px 16px; display: flex; flex-direction: column; position: fixed; inset: 0 auto 0 0; z-index: 20; height: 100svh; overflow-y: auto; }
+.sidebar { width: var(--sidebar-width); flex-shrink: 0; background: var(--navy); color: #f3f7ff; padding: 24px 16px; display: flex; flex-direction: column; position: fixed; inset: var(--offline-banner-height,0px) auto 0 0; z-index: 20; height: calc(100svh - var(--offline-banner-height,0px)); overflow-y: auto; }
 .brand { display: flex; gap: 11px; align-items: center; text-decoration: none; font-weight: 750; font-size: 24px; letter-spacing: -.7px; }
 .brand img { object-fit: contain; }
 .brand small { display: block; font-size: 8px; letter-spacing: 1px; margin-top: 2px; color: #a9b9d4; }
@@ -106,7 +106,8 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; back
 .public-hero { background: var(--navy); border-radius: 15px; color: white; padding: 40px; margin: 32px 0 22px; }
 .public-hero p { color: #b7c5de; }
 .skip-link { position: absolute; left: 15px; top: -100px; padding: 12px; background: white; color: var(--navy); z-index: 60; }
-.skip-link:focus { top: 15px; }
+.skip-link:focus { top: calc(15px + var(--offline-banner-height,0px)); }
+.offline-banner { position: sticky; top: 0; z-index: 70; }
 .loading-state { margin-bottom: 24px; }
 .loading-label { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 16px; }
 .inline-spinner { display: inline-block; flex-shrink: 0; }
@@ -174,7 +175,7 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; back
   .app-shell { display: block; }
   .workspace-frame { margin-left: 0; }
   .app-shell > .sidebar { display: none; }
-  .mobile-topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(10px + env(safe-area-inset-top,0px)) 20px 10px; border-bottom: 1px solid var(--line); background: #f4f6faf5; backdrop-filter: blur(12px); }
+  .mobile-topbar { position: sticky; top: var(--offline-banner-height,0px); z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(10px + env(safe-area-inset-top,0px)) 20px 10px; border-bottom: 1px solid var(--line); background: #f4f6faf5; backdrop-filter: blur(12px); }
   .mobile-topbar .shell-brand { font-size: 17px; gap: 9px; }
   .mobile-topbar .shell-brand small { color: var(--muted); font-size: 10px; font-weight: 500; letter-spacing: .2px; margin-top: 2px; }
   .workspace { padding: 24px 20px calc(104px + env(safe-area-inset-bottom,0px)); }

@@ -166,9 +166,20 @@ test("creator completes setup, saves private configuration and controls features
   const brandBox = await page.locator(".sidebar .brand").boundingBox();
   expect(bannerBox && brandBox && bannerBox.y + bannerBox.height <= brandBox.y).toBeTruthy();
   await snapshot(page, info, "offline-feature-control");
+  const desktopViewport = page.viewportSize()!;
+  await page.setViewportSize({ width: 360, height: 844 });
+  await expect.poll(async () => {
+    const wrapped = await offlineBanner.boundingBox(), header = await page.locator(".mobile-topbar").boundingBox();
+    return Boolean(wrapped && header && wrapped.height > bannerBox!.height && header.y >= wrapped.y + wrapped.height - 1);
+  }, { message: "Wrapped offline notice must reserve space above mobile navigation" }).toBeTruthy();
+  await snapshot(page, info, "offline-wrapped-mobile", false);
+  await page.setViewportSize(desktopViewport);
   const reconnectReadback = page.waitForResponse((response) => response.url().includes("features.list") && response.request().method() === "GET", { timeout: 30_000 });
   await context.setOffline(false);
   await reconnectReadback;
+  await expect(offlineBanner).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue("--offline-banner-height"))).toBe("");
+  await expect.poll(async () => (await page.locator(".sidebar").boundingBox())?.y).toBe(0);
   await expect(presence.getByRole("button", { name: "Disable feature" })).toBeVisible();
   expect(mutationAttempts).toBe(1);
   await desktopNav.getByRole("link", { name: "Staff access", exact: true }).click();
