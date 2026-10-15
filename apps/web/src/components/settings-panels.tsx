@@ -4,6 +4,7 @@ import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "@community-bot/api/routers/index";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { trpc, queryClient } from "@/utils/trpc";
 
 export type Settings = inferRouterOutputs<AppRouter>["settings"]["get"];
@@ -12,12 +13,14 @@ type PresenceInput =
 const text = (form: FormData, key: string) => String(form.get(key) ?? "");
 
 export function CoreSettings({ settings }: { settings: Settings }) {
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const save = useMutation(
     trpc.settings.updateCore.mutationOptions({
       onSuccess: async () => {
         setMessage("Saved. Your preferences are up to date.");
         await queryClient.invalidateQueries();
+        router.refresh();
       },
     }),
   );

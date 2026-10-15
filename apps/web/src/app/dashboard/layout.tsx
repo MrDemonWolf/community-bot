@@ -17,7 +17,7 @@ export default async function DashboardLayout({
   if (!canAccess(access, "dashboard:view")) redirect("/access");
   const settings = await getSettings();
   return (
-    <AppShell userName={session.user.name} botName={settings.botName} access={access}>
+    <AppShell userName={session.user.name} botName={settings.botName} access={access} publicPageEnabled={settings.publicPageEnabled}>
       {children}
     </AppShell>
   );

@@ -41,6 +41,8 @@ Every browser journey records video. Successful desktop, Channel Points, and mob
 
 After browser checks, CI switches only the disposable workers to their development target and tests Compose Watch. A temporary shared-source comment must synchronize into both containers and restart both healthy workers. The script restores the source, stops its watcher, and verifies that neither web container was recreated or restarted. CI also uploads the static documentation export as a seven-day `docs-preview` artifact.
 
+The Docker job installs Compose `v5.6.0` with Docker's official setup action so development `initial_sync` rules use a supported schema, rather than depending on the runner's preinstalled plugin.
+
 After collecting results, remove only the disposable project and its database:
 
 ```sh

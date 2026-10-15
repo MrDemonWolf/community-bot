@@ -2,11 +2,17 @@ import { describe, expect, test } from "bun:test";
 import type { Subject } from "../packages/core/src/permissions";
 import { navigationFor } from "../apps/web/src/components/navigation";
 
-function destinations(subject: Subject) {
-  return navigationFor(subject).map((item) => item.href);
+function destinations(subject: Subject, publicPageEnabled = false) {
+  return navigationFor(subject, publicPageEnabled).map((item) => item.href);
 }
 
 describe("platform-scoped dashboard navigation", () => {
+  test("public channel navigation follows the creator's visibility preference for every role", () => {
+    for (const subject of [{ owner: true, grants: [] }, { owner: false, grants: [{ platform: "twitch", role: "moderator", source: "test" }] }] satisfies Subject[]) {
+      expect(destinations(subject, false)).not.toContain("/channel");
+      expect(destinations(subject, true)).toContain("/channel");
+    }
+  });
   test("the creator can reach management, both platforms, and personal accounts", () => {
     const links = destinations({ owner: true, grants: [] });
     for (const route of ["/dashboard", "/dashboard/features", "/dashboard/rewards", "/dashboard/settings", "/setup", "/dashboard/access", "/access"]) expect(links).toContain(route);

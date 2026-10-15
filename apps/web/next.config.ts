@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: resolve(import.meta.dirname, "../.."),
   typedRoutes: true,
   reactCompiler: true,
+  devIndicators: false,
   async headers() {
     return [{ source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }, { key: "Service-Worker-Allowed", value: "/" }] }];
   },

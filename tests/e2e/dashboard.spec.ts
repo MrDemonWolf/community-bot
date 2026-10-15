@@ -46,6 +46,7 @@ test("creator completes setup, saves private configuration and controls features
   const desktopNav = page.getByRole("navigation", { name: "Main navigation", exact: true });
   await expect(page.getByLabel("Bot display name")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Save Discord credentials" })).toHaveCount(0);
+  await expect(desktopNav.getByRole("link", { name: "Public channel", exact: true })).toHaveCount(0);
   await desktopNav.getByRole("link", { name: "Guided setup" }).click();
   await expect(page.getByRole("heading", { name: "One step at a time." })).toBeVisible();
   await page.getByLabel("Bot display name").fill("WolfAide E2E");
@@ -137,6 +138,7 @@ test("creator completes setup, saves private configuration and controls features
   await page.getByLabel("Enable my public channel page").check();
   await page.getByRole("button", { name: "Save preferences" }).click();
   await expect(page.getByRole("status")).toContainText("preferences are up to date");
+  await expect(desktopNav.getByRole("link", { name: "Public channel", exact: true })).toBeVisible();
   const publicPage = await context.request.get("/channel");
   expect(publicPage.status()).toBe(200);
   const publicHTML = await publicPage.text();
@@ -145,6 +147,7 @@ test("creator completes setup, saves private configuration and controls features
   await page.getByLabel("Enable my public channel page").uncheck();
   await page.getByRole("button", { name: "Save preferences" }).click();
   await expect(page.getByRole("status")).toContainText("preferences are up to date");
+  await expect(desktopNav.getByRole("link", { name: "Public channel", exact: true })).toHaveCount(0);
   expect((await context.request.get("/channel")).status()).toBe(404);
   expect(runtimeErrors).toEqual([]);
 });
@@ -177,6 +180,9 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
     expect(await navigation.evaluate(() => [document.body.style.overflow, document.documentElement.style.overflow])).toEqual(["hidden", "hidden"]);
     await navigation.keyboard.press("Shift+Tab");
     expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBeTruthy();
+    await expect(dialog.getByRole("button", { name: "Sign out", exact: true })).toBeFocused();
+    await navigation.keyboard.press("Tab");
+    await expect(dialog.getByRole("button", { name: "Close menu" })).toBeFocused();
     await navigation.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(more).toBeFocused();

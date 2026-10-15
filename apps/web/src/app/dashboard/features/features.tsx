@@ -13,7 +13,7 @@ export default function Features() {
   return <>
     <PageHeading eyebrow="YOUR TOOLKIT" title="Choose your features."
       description="Keep the tools your community uses. You can change these whenever you need."
-      actions={<Link className="button" href="/dashboard">Back to overview</Link>} />
+    />
     {(query.isPending || access.isPending) && <p role="status">Loading features…</p>}
     {(query.error || access.error || update.error) && <p className="notice error" role="alert">{query.error?.message || access.error?.message || update.error?.message}</p>}
     {update.isSuccess && <p className="notice success" role="status">Feature preference saved. The running services will apply it shortly.</p>}

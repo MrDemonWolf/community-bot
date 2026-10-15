@@ -96,7 +96,7 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; back
 .skip-link { position: absolute; left: 15px; top: -100px; padding: 12px; background: white; color: var(--navy); z-index: 10; }
 .skip-link:focus { top: 15px; }
 @media(max-width: 1000px) { .sidebar { width: 210px; padding: 28px 15px; } .service-grid { grid-template-columns: 1fr; } .page-heading { flex-wrap: wrap; } }
-@media(max-width: 700px) { .brand { font-size: 21px; } .panel { padding: 21px; } .form-grid { grid-template-columns: 1fr; } .next-step { flex-wrap: wrap; padding: 20px; } .next-step .button { margin-left: 0; } .login-page { display: block; } .login-story { min-height: 320px; gap: 40px; padding: 30px; } .login-story h1 { font-size: 43px; margin-top: 35px; } .login-story > .subtle { display: none; } .login-content { padding: 40px 24px; } .public-hero { padding: 28px; } }
+@media(max-width: 700px) { .brand { font-size: 21px; } .panel { padding: 21px; } .form-grid { grid-template-columns: 1fr; } .login-page { display: block; } .login-story { min-height: 320px; gap: 40px; padding: 30px; } .login-story h1 { font-size: 43px; margin-top: 35px; } .login-story > .subtle { display: none; } .login-content { padding: 40px 24px; } .public-hero { padding: 28px; } }
 @media(prefers-reduced-motion: no-preference) { .workspace,.login-card,.setup-wrap { animation: arrive .3s ease both; } @keyframes arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } } }
 
 .grant-list { list-style: none; padding: 0; display: grid; gap: 10px; margin: 20px 0; }

@@ -4,15 +4,16 @@ import { LogOut, Menu, MoreHorizontal, X } from "lucide-react";
 import type { Subject } from "@community-bot/core/permissions";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { authClient } from "@/lib/auth-client";
 import { navigationFor, type NavigationItem } from "./navigation";
 
-export default function AppShell({ children, userName, botName, access }: {
+export default function AppShell({ children, userName, botName, access, publicPageEnabled }: {
   children: React.ReactNode;
   userName: string;
   botName: string;
   access: Subject;
+  publicPageEnabled: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function AppShell({ children, userName, botName, access }: {
   const [moreOpen, setMoreOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState("");
-  const navigation = navigationFor(access);
+  const navigation = navigationFor(access, publicPageEnabled);
   const primary = navigation.filter((item) => item.section === "primary");
   const secondaryActive = navigation.some((item) => item.section !== "primary" && item.href === pathname);
 
@@ -58,6 +59,22 @@ export default function AppShell({ children, userName, botName, access }: {
     finally { setSigningOut(false); }
   }
 
+  function keepFocusInMenu(event: KeyboardEvent<HTMLDialogElement>) {
+    if (event.key !== "Tab") return;
+    const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("a[href], button:not(:disabled)"))
+      .filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (!first || !last) return;
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   return <div className="app-shell">
     <a href="#main" className="skip-link">Skip to content</a>
     <aside className="sidebar">
@@ -80,7 +97,7 @@ export default function AppShell({ children, userName, botName, access }: {
       {primary.map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} mobile />)}
       <button type="button" aria-haspopup="dialog" aria-controls="community-menu" aria-expanded={moreOpen} data-active={secondaryActive || moreOpen || undefined} disabled={!ready} onClick={() => setMoreOpen(true)}><MoreHorizontal size={23} /><span>More</span></button>
     </nav>
-    <dialog ref={dialog} id="community-menu" className="more-dialog" aria-labelledby="more-title" onCancel={() => setMoreOpen(false)} onClose={() => setMoreOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setMoreOpen(false); }}>
+    <dialog ref={dialog} id="community-menu" className="more-dialog" aria-labelledby="more-title" onKeyDown={keepFocusInMenu} onCancel={() => setMoreOpen(false)} onClose={() => setMoreOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setMoreOpen(false); }}>
       <div className="more-sheet"><div className="sheet-handle" aria-hidden="true" /><div className="more-heading"><div><span className="eyebrow">YOUR WORKSPACE</span><h2 id="more-title">More</h2></div><button type="button" autoFocus className="shell-icon-button" aria-label="Close menu" onClick={() => setMoreOpen(false)}><X size={23} /></button></div>
         <div className="more-profile"><span className="avatar">{userName.slice(0, 1).toUpperCase()}</span><div><strong>{userName}</strong><span>{access.owner ? "Creator" : "Staff"} · {botName}</span></div></div>
         <nav aria-label="More navigation">{(["tools", "account"] as const).map((section) => {

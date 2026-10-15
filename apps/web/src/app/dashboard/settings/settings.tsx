@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { canAccess } from "@community-bot/core/permissions";
-import Link from "next/link";
 import { CoreSettings, DiscordPresence, DiscordSettings, TwitchSettings } from "@/components/settings-panels";
 import { PageHeading, Panel, StatusBadge } from "@/components/dashboard-ui";
 import { trpc } from "@/utils/trpc";
@@ -20,7 +19,7 @@ export default function Settings() {
   return <>
     <PageHeading eyebrow="WORKSPACE SETTINGS" title="Make it yours."
       description={access.owner ? "Manage your community preferences and platform connections." : "Manage the Discord presence available to your role."}
-      actions={<Link className="button" href="/dashboard">Back to overview</Link>} />
+    />
     <nav aria-label="Settings sections" className="actions mb-6">
       {access.owner && <a className="button" href="#preferences">Preferences</a>}
       {presence && <a className="button" href="#discord-presence">Discord presence</a>}
