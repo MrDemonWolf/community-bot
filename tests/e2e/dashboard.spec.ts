@@ -293,6 +293,19 @@ test("creator completes setup, saves private configuration and controls features
           const rail = (await page.locator(".settings-sections").boundingBox())!, panels = (await page.locator(".settings-panels").boundingBox())!;
           if (width >= 1200) expect(rail.x + rail.width).toBeLessThan(panels.x);
           else expect(rail.y + rail.height).toBeLessThanOrEqual(panels.y + 1);
+          if (width === 1440) {
+            await context.setOffline(true);
+            await expect(offlineBanner).toBeVisible();
+            await page.locator("#preferences").evaluate((element) => element.scrollIntoView({ block: "start" }));
+            await expect.poll(async () => {
+              const notice = await offlineBanner.boundingBox(), stickyRail = await page.locator(".settings-sections").boundingBox();
+              return Boolean(notice && stickyRail && stickyRail.y >= notice.y + notice.height + 23);
+            }, { message: "Sticky Settings navigation must clear the live offline notice" }).toBeTruthy();
+            await context.setOffline(false);
+            await expect(offlineBanner).toHaveCount(0);
+            await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue("--offline-banner-height"))).toBe("");
+            await page.evaluate(() => window.scrollTo(0, 0));
+          }
         }
         if (width === 1440 || path === "/dashboard") await snapshot(page, info, `desktop-${width}-${title!.toLowerCase()}-viewport`, false);
         await page.getByRole("contentinfo").getByRole("button", { name: "Cookie information", exact: true }).evaluate((element) => element.scrollIntoView({ block: "center" }));
