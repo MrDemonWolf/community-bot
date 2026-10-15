@@ -13,6 +13,7 @@ Changes are grouped by release. Work under **Unreleased** is on the rewrite bran
 - Shared feature, command, and permission definitions across the dashboard and workers.
 - Personal staff pictures from linked Twitch/Discord accounts or a built-in upload cropper, with compressed storage below 1 MB per person.
 - Mobile bottom navigation, a grouped More menu, shared skeleton loaders, and action spinners.
+- Light, Dark, and System appearance preferences shared by settings, the footer, and the public offline page.
 - An opt-in public channel page and an installable PWA with a public offline page.
 - Public Privacy Policy and Terms of Service pages, essential-cookie information, and a footer linked to the deployed source commit.
 - Beginner guides for local development and Dokploy, plus Docker/database/browser CI checks.
@@ -23,6 +24,7 @@ Changes are grouped by release. Work under **Unreleased** is on the rewrite bran
 - Kept **community-bot** as the project name. WolfAide identifies connected bot accounts.
 - Moved platform configuration into the dashboard and split Discord and Twitch into separate processes.
 - Replaced the sidebar's selected-item stripe with a neutral background and improved spacing.
+- Grouped personal and workspace settings, with section-aware navigation and clearer profile photo controls.
 - Documented security, queue, token-refresh, and accessibility invariants in developer comments.
 
 ### Removed

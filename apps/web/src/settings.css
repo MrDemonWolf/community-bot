@@ -1,8 +1,14 @@
 .settings-panels { display: grid; gap: 20px; min-width: 0; }
+.settings-sections { display: grid; gap: 16px; margin-bottom: 24px; min-width: 0; }
+.settings-section-group h2 { margin: 0 0 8px; font-size: 12px; line-height: 1.4; letter-spacing: 0; font-weight: 600; color: var(--muted); }
+.settings-section-group > div { display: flex; flex-wrap: wrap; gap: 4px; }
+.settings-sections a { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 12px; border-radius: 8px; text-decoration: none; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.settings-sections a:hover { background: var(--surface-subtle); color: var(--ink); }
+.settings-sections a[aria-current="location"] { background: var(--surface-subtle); color: var(--ink); font-weight: 650; }
+.settings-sections a:focus-visible { outline-color: var(--focus); }
 @media (min-width: 1200px) {
-  .settings-layout { display: grid; grid-template-columns: 152px minmax(0, 1fr); align-items: start; gap: 24px; }
-  .settings-sections { position: sticky; top: calc(24px + var(--offline-banner-height,0px)); display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 0; }
-  .settings-sections .button { justify-content: flex-start; min-height: 44px; padding: 10px 12px; border-color: transparent; background: transparent; font-weight: 500; text-align: left; white-space: normal; }
-  .settings-sections .button:hover { background: #e9edf3; }
+  .settings-layout { display: grid; grid-template-columns: 160px minmax(0, 1fr); align-items: start; gap: 24px; }
+  .settings-sections { position: sticky; top: calc(24px + var(--offline-banner-height,0px)); gap: 24px; margin-bottom: 0; }
+  .settings-section-group > div { display: grid; gap: 4px; }
   .settings-panels { gap: 24px; max-width: 960px; }
 }

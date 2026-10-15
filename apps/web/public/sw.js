@@ -1,4 +1,4 @@
-const CACHE = "community-bot-offline-v1";
+const CACHE = "community-bot-offline-v2";
 const OFFLINE = "/offline.html";
 // Cache only this public fallback; a previous user's dashboard must never survive in an offline cache.
 self.addEventListener("install", (event) => {

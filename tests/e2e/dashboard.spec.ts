@@ -27,6 +27,28 @@ async function pictureFixture(page: Page) {
   }), "base64");
 }
 
+async function readableText(target: Locator) {
+  const result = await target.evaluate((element) => {
+    const rgba = (value: string) => {
+      if (!value.startsWith("rgb")) throw new Error(`Expected a computed RGB color, received ${value}`);
+      const values = value.match(/[\d.]+/g)!.map(Number);
+      return [values[0]!, values[1]!, values[2]!, values[3] ?? 1];
+    };
+    let background = [0, 0, 0, 0];
+    for (let node: Element | null = element; node && background[3]! < 1; node = node.parentElement) {
+      const layer = rgba(getComputedStyle(node).backgroundColor), alpha = background[3]! + layer[3]! * (1 - background[3]!);
+      if (alpha) background = [0, 1, 2].map((index) => (background[index]! * background[3]! + layer[index]! * layer[3]! * (1 - background[3]!)) / alpha).concat(alpha);
+    }
+    if (background[3]! < 1) throw new Error("No opaque ancestor background found for contrast measurement");
+    const color = rgba(getComputedStyle(element).color);
+    const foreground = [0, 1, 2].map((index) => color[index]! * color[3]! + background[index]! * (1 - color[3]!));
+    const luminance = (rgb: number[]) => rgb.slice(0, 3).map((value) => { const c = value / 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index]!, 0);
+    const a = luminance(foreground), b = luminance(background);
+    return { foreground, background, ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) };
+  });
+  expect(result.ratio, `Computed text contrast: ${JSON.stringify(result)}`).toBeGreaterThanOrEqual(4.5);
+}
+
 test.beforeEach(async ({ context }) => {
   await context.route("**/*", (route) => {
     const url = new URL(route.request().url());
@@ -320,6 +342,78 @@ test("creator completes setup, saves private configuration and controls features
   expect(runtimeErrors).toEqual([]);
 });
 
+test("appearance follows the system and remembers explicit themes without runtime errors", async ({ page }, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await login(page);
+  const html = page.locator("html"), quickTheme = page.getByRole("combobox", { name: /^Color theme/ });
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(quickTheme).toHaveValue("system");
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await page.goto("/dashboard/settings#appearance");
+  const appearance = page.locator("#appearance");
+  await expect(appearance.getByRole("heading", { name: "Appearance", exact: true })).toBeVisible();
+  const sectionNav = page.getByRole("navigation", { name: "Settings sections", exact: true });
+  const nameInput = page.getByLabel("Bot display name"), originalName = await nameInput.inputValue();
+  await nameInput.fill("Unsaved theme navigation check");
+  await sectionNav.getByRole("link", { name: "Appearance", exact: true }).click();
+  await expect(sectionNav.getByRole("link", { name: "Appearance", exact: true })).toHaveAttribute("aria-current", "location");
+  await expect(nameInput).toHaveValue("Unsaved theme navigation check");
+  await sectionNav.getByRole("link", { name: "Preferences", exact: true }).click();
+  await expect(sectionNav.getByRole("link", { name: "Preferences", exact: true })).toHaveAttribute("aria-current", "location");
+  await nameInput.fill(originalName);
+  await sectionNav.getByRole("link", { name: "Appearance", exact: true }).click();
+  await appearance.getByRole("radio", { name: "Dark", exact: true }).check();
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await page.reload();
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(appearance.getByRole("radio", { name: "Dark", exact: true })).toBeChecked();
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await appearance.getByRole("radio", { name: "System", exact: true }).check();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  for (const theme of ["dark", "light"]) {
+    await quickTheme.selectOption(theme);
+    await expect(html).toHaveAttribute("data-theme", theme);
+    for (const [path, title] of [["/dashboard", "Overview"], ["/dashboard/features", "Features"], ["/dashboard/settings", "Settings"]]) {
+      await page.goto(path!);
+      await expect(page.getByRole("heading", { name: title!, exact: true })).toBeVisible();
+      await expect(page.locator(".loading-state")).toHaveCount(0);
+      await expect(html).toHaveAttribute("data-theme", theme);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+      await readableText(page.getByRole("heading", { name: title!, exact: true }));
+      await readableText(page.locator(".panel p").first());
+      await readableText(page.locator(".sidebar a[aria-current='page']"));
+      if (path === "/dashboard") {
+        await readableText(page.locator(".connection-card .status").first());
+        await readableText(page.locator("main .button.primary").first());
+      }
+      if (path === "/dashboard/settings") await readableText(page.getByLabel("Command prefix"));
+      await snapshot(page, info, `theme-${theme}-1440-${title!.toLowerCase()}`, false);
+    }
+    if (theme === "dark") {
+      await page.getByLabel(/^Upload a picture/).setInputFiles({ name: "theme-profile.png", mimeType: "image/png", buffer: await pictureFixture(page) });
+      const crop = page.getByRole("dialog", { name: "Crop profile picture", exact: true });
+      await expect(crop.getByRole("button", { name: "Save picture", exact: true })).toBeEnabled();
+      await readableText(crop.getByRole("button", { name: "Save picture", exact: true }));
+      await snapshot(page, info, "theme-dark-desktop-crop", false);
+      await crop.getByRole("button", { name: "Cancel", exact: true }).click();
+    }
+  }
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await page.reload();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  expect(errors).toEqual([]);
+});
+
 test("mobile setup, feature, access and reward pages remain usable", async ({ page, context }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
@@ -329,6 +423,9 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
   for (const path of paths) expect((await context.request.get(path)).ok()).toBeTruthy();
   await page.close();
   const navigation = await context.newPage();
+  const themeErrors: string[] = [];
+  navigation.on("pageerror", (error) => themeErrors.push(error.message));
+  navigation.on("console", (message) => { if (message.type() === "error") themeErrors.push(message.text()); });
   const activate = (locator: Locator) => info.project.name === "mobile-webkit" ? locator.tap() : locator.click();
   try {
     await navigation.setViewportSize({ width: 390, height: 844 });
@@ -381,6 +478,41 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
     await expect(navigation.getByRole("heading", { name: "Your community roles" })).toBeVisible();
     await expect(navigation.getByText("Creator · Full access to this workspace.", { exact: true })).toBeVisible();
     await expect(navigation.getByRole("link", { name: "Link Twitch", exact: true })).toBeVisible();
+    const mobileTheme = navigation.getByRole("combobox", { name: /^Color theme/ });
+    await navigation.emulateMedia({ colorScheme: "dark" });
+    await expect(navigation.locator("html")).toHaveAttribute("data-theme", "dark");
+    await navigation.emulateMedia({ colorScheme: "light" });
+    await expect(navigation.locator("html")).toHaveAttribute("data-theme", "light");
+    await mobileTheme.selectOption("dark");
+    for (const [path, title] of [["/dashboard", "Overview"], ["/dashboard/features", "Features"], ["/dashboard/settings", "Settings"]]) {
+      await navigation.goto(path!);
+      await expect(navigation.getByRole("heading", { name: title!, exact: true })).toBeVisible();
+      await expect(navigation.locator(".loading-state")).toHaveCount(0);
+      await expect(navigation.locator("html")).toHaveAttribute("data-theme", "dark");
+      expect(await navigation.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+      await readableText(navigation.getByRole("heading", { name: title!, exact: true }));
+      await readableText(navigation.locator(".mobile-tabs [aria-current='page'], .mobile-tabs [data-active]").first());
+      await snapshot(navigation, info, `theme-dark-390-${title!.toLowerCase()}`, false);
+    }
+    await navigation.getByLabel(/^Upload a picture/).setInputFiles({ name: "dark-mobile-profile.png", mimeType: "image/png", buffer: await pictureFixture(navigation) });
+    const darkCrop = navigation.getByRole("dialog", { name: "Crop profile picture", exact: true });
+    await expect(darkCrop.getByRole("button", { name: "Save picture", exact: true })).toBeEnabled();
+    await readableText(darkCrop.getByRole("button", { name: "Save picture", exact: true }));
+    await snapshot(navigation, info, "theme-dark-mobile-crop", false);
+    await activate(darkCrop.getByRole("button", { name: "Cancel", exact: true }));
+    await activate(more);
+    await expect(dialog).toBeVisible();
+    await readableText(dialog.getByRole("link", { name: "Settings", exact: true }));
+    await snapshot(navigation, info, "theme-dark-mobile-more", false);
+    await activate(dialog.getByRole("button", { name: "Close menu", exact: true }));
+    await mobileTheme.evaluate((element) => element.scrollIntoView({ block: "center" }));
+    await snapshot(navigation, info, "theme-dark-mobile-footer", false);
+    await mobileTheme.selectOption("light");
+    await navigation.emulateMedia({ colorScheme: "dark" });
+    await expect(navigation.locator("html")).toHaveAttribute("data-theme", "light");
+    await navigation.reload();
+    await expect(navigation.locator("html")).toHaveAttribute("data-theme", "light");
+    expect(themeErrors).toEqual([]);
   } finally {
     await navigation.close();
   }
@@ -412,7 +544,8 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
       }
       if (path === "/dashboard/settings") {
         const rail = screen.locator(".settings-sections");
-        expect(await rail.evaluate((element) => getComputedStyle(element).flexWrap)).toBe("wrap");
+        const groups = rail.locator(".settings-section-group > div");
+        expect(await groups.evaluateAll((elements) => elements.every((element) => getComputedStyle(element).flexWrap === "wrap"))).toBeTruthy();
         const railBox = (await rail.boundingBox())!, panels = (await screen.locator(".settings-panels").boundingBox())!;
         expect(railBox.y + railBox.height).toBeLessThanOrEqual(panels.y + 1);
       }

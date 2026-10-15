@@ -1,6 +1,6 @@
 # Dashboard design notes
 
-Community Bot keeps the official MrDemonWolf wolf asset, navy `#091533`, and this project's cyan `#0FACED`. The dashboard uses light work panels within a navy navigation shell. Forms and responsive grids use the shared Tailwind CSS pipeline; brand and interaction styling stay in the web stylesheets.
+Community Bot keeps the official MrDemonWolf wolf asset, navy `#091533`, and this project's cyan `#0FACED`. The dashboard uses light or dark work panels within a navy navigation shell. Forms and responsive grids use the shared Tailwind CSS pipeline; brand and interaction styling stay in the web stylesheets.
 
 ## References inspected in Mobbin
 
@@ -15,6 +15,9 @@ Community Bot keeps the official MrDemonWolf wolf asset, navy `#091533`, and thi
 | [Chatbase integrations](https://mobbin.com/screens/9d24c903-7050-4e16-b34e-71da42107d2c) | Consistent integration cards with an icon, short purpose, connection state, and nearby action. |
 | [OpenAI Platform service health](https://mobbin.com/screens/d605f83d-3869-4ecc-8874-b913e09e2930) | A quiet selected navigation row and restrained operational page hierarchy. |
 | [Customer.io workspace performance](https://mobbin.com/screens/b9743841-5a29-4454-bc39-133d7b0d7d9c) | Consistent service rows, status labels, and spacing that groups related information. |
+| [Plain account settings](https://mobbin.com/screens/72c9cfb4-253a-4499-87ec-8919a2755818) | Quiet secondary navigation grouped into personal account and workspace settings. |
+| [Cofounder profile settings](https://mobbin.com/screens/ad24c6d9-5547-4c1c-b54f-05134df03c39) | Compact photo controls, clear source selection, and a nearby change-photo action. |
+| [Featurebase appearance settings](https://mobbin.com/screens/49cb38ad-0981-4532-9b34-da53ece31d16) | Explicit Light, Dark, and System choices with restrained dark surfaces. |
 
 These references informed hierarchy and flow. Community Bot retains its own branding and uses less density for a single creator.
 
@@ -45,3 +48,9 @@ Browser journeys at 360px and 390px should verify no document overflow, bottom-t
 ## First setup
 
 The creator sees three short steps: workspace, Discord, Twitch. Both connections are optional. Each form has an explicit save state. Staff members instead link an identity, see their role-check status, then open the dashboard only when their mapped permissions allow it.
+
+## Appearance and personal settings
+
+Appearance defaults to the operating system and follows system changes while System is selected. Light and Dark override that preference in this browser. The shared footer provides the same choice outside the dashboard. A pre-paint theme script and native CSS color scheme keep controls and initial rendering consistent; the public offline page reads the same preference without caching private pages.
+
+Settings groups personal Profile picture and Appearance separately from permission-filtered Workspace controls. Its inner navigation follows the visible section. All forms stay mounted while navigating so unsaved inputs survive. Photo choices show the current source and explain unavailable linked accounts; the existing private image storage and compression limits still apply.

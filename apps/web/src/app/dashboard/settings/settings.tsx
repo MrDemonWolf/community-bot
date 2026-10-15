@@ -8,10 +8,23 @@ import { CoreSettings, DiscordPresence, DiscordSettings, TwitchSettings } from "
 import { PageHeading, Panel, StatusBadge } from "@/components/dashboard-ui";
 import { trpc } from "@/utils/trpc";
 import ProfilePictureSettings from "@/components/profile-picture-settings";
+import AppearanceSettings from "@/components/appearance-settings";
+import { useEffect, useState } from "react";
 
 export default function Settings() {
   const accessQuery = useQuery(trpc.access.me.queryOptions());
   const query = useQuery(trpc.settings.get.queryOptions());
+  const sections = [
+    { id: "profile-picture", label: "Profile picture", group: "Account" },
+    { id: "appearance", label: "Appearance", group: "Account" },
+    ...(accessQuery.data?.owner ? [{ id: "preferences", label: "Preferences", group: "Workspace" }] : []),
+    ...(accessQuery.data && canAccess(accessQuery.data, "presence:manage", "discord") ? [{ id: "discord-presence", label: "Discord presence", group: "Workspace" }] : []),
+    ...(accessQuery.data?.owner ? [
+      { id: "discord-connection", label: "Discord connection", group: "Workspace" },
+      { id: "twitch-connection", label: "Twitch connection", group: "Workspace" },
+    ] : []),
+  ];
+  const activeSection = useActiveSection(sections.map((section) => section.id).join("|"), Boolean(query.data && accessQuery.data));
   if ((query.isPending || accessQuery.isPending) && !query.error && !accessQuery.error) return <LoadingState label="Loading settings…" kind="form" />;
   if (query.error || accessQuery.error || !query.data || !accessQuery.data) return <p className="notice error" role="alert">
     Settings could not be loaded. <button className="button" onClick={() => { void query.refetch(); void accessQuery.refetch(); }}>Try again</button>
@@ -24,14 +37,18 @@ export default function Settings() {
       description={access.owner ? "Manage your profile, community preferences, and connections." : "Manage your profile and the settings available to your role."}
     />
     <div className="settings-layout">
-    <nav aria-label="Settings sections" className="settings-sections actions mb-6">
-      <a className="button" href="#profile-picture">Profile picture</a>
-      {access.owner && <a className="button" href="#preferences">Preferences</a>}
-      {presence && <a className="button" href="#discord-presence">Discord presence</a>}
-      {access.owner && <><a className="button" href="#discord-connection">Discord connection</a><a className="button" href="#twitch-connection">Twitch connection</a></>}
+    <nav aria-label="Settings sections" className="settings-sections">
+      {["Account", "Workspace"].map((group) => {
+        const items = sections.filter((section) => section.group === group);
+        return items.length ? <div className="settings-section-group" key={group}>
+          <h2>{group}</h2><div>{items.map((section) => <a key={section.id} href={`#${section.id}`}
+            aria-current={activeSection === section.id ? "location" : undefined}>{section.label}</a>)}</div>
+        </div> : null;
+      })}
     </nav>
     <div className="settings-panels">
       <ProfilePictureSettings />
+      <AppearanceSettings />
       {access.owner && <Panel id="preferences" aria-labelledby="preferences-title" className="scroll-mt-24">
         <div className="panel-header"><div><h2 id="preferences-title">Community preferences</h2><p>Your bot name, command prefix, and public page.</p></div></div>
         <CoreSettings settings={settings} />
@@ -55,4 +72,38 @@ export default function Settings() {
     </div>
     </div>
   </>;
+}
+
+function useActiveSection(sectionKey: string, ready: boolean) {
+  const [active, setActive] = useState("");
+  useEffect(() => {
+    if (!ready) return;
+    const ids = sectionKey.split("|");
+    let frame = 0;
+    function update() {
+      frame = 0;
+      const threshold = Math.max(120, window.innerHeight * 0.2);
+      let current = ids[0] ?? "";
+      for (const id of ids) {
+        const section = document.getElementById(id);
+        if (section && section.getBoundingClientRect().top <= threshold) current = id;
+      }
+      setActive(current);
+    }
+    const schedule = () => { if (!frame) frame = window.requestAnimationFrame(update); };
+    // These anchors mount after query data arrives; restore incoming deep links without replacing any form.
+    const linked = window.location.hash.slice(1);
+    if (ids.includes(linked)) document.getElementById(linked)?.scrollIntoView({ block: "start" });
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    window.addEventListener("hashchange", schedule);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("hashchange", schedule);
+    };
+  }, [sectionKey, ready]);
+  return active;
 }

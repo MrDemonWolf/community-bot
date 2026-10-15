@@ -1,2 +1,36 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#091533"><title>Reconnect · Community Bot</title><style>body{margin:0;min-height:100svh;display:grid;place-items:center;background:#091533;color:#fff;font:18px/1.6 system-ui}main{max-width:32rem;padding:32px}a{display:inline-block;padding:12px 22px;border-radius:12px;background:#0faced;color:#091533;font-weight:700;text-decoration:none}p{color:#c5d2e5}</style></head><body><main><h1>You’re offline.</h1><p>Reconnect to see live bot status and use the dashboard. Your bots keep running on their server.</p><a href="/dashboard">Try again</a></main></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#091533">
+  <title>Reconnect · Community Bot</title>
+  <script>
+    // This public fallback shares only the local appearance preference, never private app data.
+    (() => {
+      const key = "community-bot:theme";
+      const system = matchMedia("(prefers-color-scheme: dark)");
+      const apply = () => {
+        let choice = "system";
+        try { choice = localStorage.getItem(key) || "system"; } catch {}
+        const theme = choice === "dark" || choice !== "light" && system.matches ? "dark" : "light";
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      };
+      apply();
+      system.addEventListener("change", apply);
+      addEventListener("storage", (event) => { if (event.key === key || event.key === null) apply(); });
+    })();
+  </script>
+  <style>
+    :root{--background:#f4f6fa;--ink:#15213c;--muted:#5c687b;--action:#0d668a;--on-action:#fff;color-scheme:light}
+    [data-theme=dark]{--background:#091533;--ink:#f3f7ff;--muted:#b5c4dc;--action:#0faced;--on-action:#091533;color-scheme:dark}
+    @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--background:#091533;--ink:#f3f7ff;--muted:#b5c4dc;--action:#0faced;--on-action:#091533;color-scheme:dark}}
+    body{margin:0;min-height:100svh;display:grid;place-items:center;background:var(--background);color:var(--ink);font:18px/1.6 system-ui}
+    main{max-width:32rem;padding:32px}p{color:var(--muted)}
+    a{display:inline-block;padding:12px 22px;border-radius:12px;background:var(--action);color:var(--on-action);font-weight:700;text-decoration:none}
+    a:focus-visible{outline:3px solid var(--action);outline-offset:5px}
+  </style>
+</head>
+<body><main><h1>You’re offline.</h1><p>Reconnect to see live bot status and use the dashboard. Bot services run separately on their server.</p><a href="/dashboard">Try again</a></main></body>
+</html>

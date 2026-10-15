@@ -32,7 +32,7 @@ export default function CookieNotice() {
     </button>
     {open && <section id={`${titleId}-notice`} className="cookie-notice" aria-labelledby={titleId}>
       <div><h2 id={titleId}>Cookies and browser storage</h2>
-        <p>Essential cookies keep you signed in and protect account connections. Browser storage remembers this notice. We do not use analytics or advertising cookies.</p>
+        <p>Essential cookies keep you signed in and protect account connections. Browser storage remembers this notice and your color theme. We do not use analytics or advertising cookies.</p>
         <a href="/privacy">Read the privacy information</a>
       </div>
       <button type="button" className="button primary" onClick={dismiss}>Got it</button>
