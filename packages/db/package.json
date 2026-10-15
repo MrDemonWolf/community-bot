@@ -16,6 +16,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@community-bot/core": "workspace:*",
     "@community-bot/env": "workspace:*",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",

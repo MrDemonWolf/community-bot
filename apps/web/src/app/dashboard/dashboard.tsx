@@ -1,108 +1,307 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
 
-import { trpc } from "@/utils/trpc";
-
-function StatusDot({ ok }: { ok: boolean }) {
-  return (
-    <span
-      className="h-2 w-2 rounded-full"
-      style={{ background: ok ? "#2dd4a7" : "var(--hb-subtle)" }}
-    />
-  );
-}
-
-function Card({
-  title,
-  children,
-  className,
-}: {
-  title: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <section
-      className={`rounded-2xl border border-[var(--hb-border)] bg-[var(--hb-surface)]/70 p-5 backdrop-blur-xl ${className ?? ""}`}
-    >
-      <h2 className="mb-3 text-sm font-semibold text-[var(--hb-fg)]">{title}</h2>
-      {children}
-    </section>
-  );
-}
+import {
+  Activity,
+  ArrowUpRight,
+  Check,
+  MessageCircle,
+  Radio,
+} from "lucide-react";
+import Link from "next/link";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  CoreSettings,
+  DiscordPresence,
+  DiscordSettings,
+  TwitchSettings,
+} from "@/components/settings-panels";
+import { trpc, queryClient } from "@/utils/trpc";
+import { canAccess } from "@community-bot/core/permissions";
 
 export default function Dashboard({ userName }: { userName: string }) {
-  const { data } = useQuery(trpc.settings.get.queryOptions());
-
-  const botOnline = Boolean(data?.bot.connected && data?.broadcaster.connected);
-
+  const accessQuery = useQuery(trpc.access.me.queryOptions());
+  const query = useQuery(
+    trpc.settings.get.queryOptions(undefined, { refetchInterval: 5000 }),
+  );
+  const control = useMutation(
+    trpc.settings.control.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries();
+      },
+    }),
+  );
+  const settings = query.data;
+  if (query.isPending || accessQuery.isPending) return <p role="status">Loading your workspace…</p>;
+  if (query.error || !settings || accessQuery.error || !accessQuery.data)
+    return (
+      <div className="notice error" role="alert">
+        We couldn't load your settings.{" "}
+        <button className="button" onClick={() => query.refetch()}>
+          Try again
+        </button>
+      </div>
+    );
+  const access = accessQuery.data;
   return (
     <>
-      {/* topbar */}
-      <header className="flex items-center justify-between border-b border-[var(--hb-border)] px-6 py-4">
-        <h1 className="text-lg font-bold tracking-tight">Dashboard</h1>
-        <span className="flex items-center gap-2 rounded-full border border-[var(--hb-border)] bg-[var(--hb-surface)]/60 px-3 py-1.5 text-xs text-[var(--hb-muted)]">
-          <StatusDot ok={botOnline} />
-          Bot {botOnline ? "online" : "offline"}
-        </span>
-      </header>
-
-      <main className="mx-auto w-full max-w-5xl px-6 py-8">
-        <h2 className="text-2xl font-bold tracking-tight text-white">
-          Welcome back, {userName} 🐺
-        </h2>
-        <p className="mt-1 text-sm text-[var(--hb-muted)]">
-          {data?.channelName ? `Managing #${data.channelName}` : "Finish setup to get started"} ·
-          prefix <span className="text-[var(--hb-fg)]">{data?.commandPrefix ?? "!"}</span>
-        </p>
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <Card title="Connections">
-            <ul className="grid gap-2.5 text-sm">
-              <li className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-[var(--hb-muted)]">
-                  <StatusDot ok={Boolean(data?.broadcaster.connected)} />
-                  Broadcaster
-                </span>
-                <span className="text-[var(--hb-fg)]">
-                  {data?.broadcaster.login ?? "Not connected"}
-                </span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-[var(--hb-muted)]">
-                  <StatusDot ok={Boolean(data?.bot.connected)} />
-                  Bot
-                </span>
-                <span className="text-[var(--hb-fg)]">{data?.bot.login ?? "Not connected"}</span>
-              </li>
-            </ul>
-          </Card>
-
-          <Card title="At a glance">
-            <div className="grid grid-cols-2 gap-4">
-              <Stat label="Commands" value="0" hint="add in M1.1" />
-              <Stat label="Timers" value="0" hint="add in M1.6" />
-              <Stat label="Timezone" value={data?.timezone ?? "UTC"} />
-              <Stat label="Prefix" value={data?.commandPrefix ?? "!"} />
-            </div>
-          </Card>
+      <header className="page-heading">
+        <div>
+          <span className="eyebrow">YOUR COMMUNITY AT A GLANCE</span>
+          <h1>Hey, {userName.split(" ")[0]}.</h1>
+          <p>Two connections. One place to keep things running.</p>
         </div>
-
-        <p className="mt-6 text-sm text-[var(--hb-subtle)]">
-          Commands and timers land here next. The chat worker is already listening — try{" "}
-          <code className="text-[var(--hb-muted)]">{data?.commandPrefix ?? "!"}ping</code> in chat.
+        {settings.publicPageEnabled && (
+          <Link className="button" href="/channel" target="_blank">
+            View public page <ArrowUpRight size={15} />
+          </Link>
+        )}
+      </header>
+      {access.owner && !settings.discordConfigured && !settings.bot.connected ? (
+        <div className="next-step">
+          <Activity size={27} />
+          <div>
+            <h3>Your next step: connect a service</h3>
+            <p>
+              Start with Discord or Twitch. You can add the other whenever
+              you're ready.
+            </p>
+          </div>
+          <Link href="/setup" className="button primary">
+            Continue setup →
+          </Link>
+        </div>
+      ) : (
+        <div className="next-step">
+          <Check size={24} />
+          <div>
+            <h3>Your workspace, your pace.</h3>
+            <p>
+              Connection status comes from each running service and refreshes
+              every five seconds.
+            </p>
+          </div>
+          {access.owner && <Link href="/setup" className="button">
+            Review setup
+          </Link>}
+        </div>
+      )}
+      {control.error && (
+        <p role="alert" className="notice error">
+          {control.error.message}
         </p>
-      </main>
+      )}
+      {control.isSuccess && (
+        <p role="status" className="notice">
+          Request saved. Wait for the service status below to confirm the
+          change.
+        </p>
+      )}
+      <div className="mb-[26px] grid grid-cols-1 gap-5 xl:grid-cols-2">
+        {(["discord", "twitch"] as const).filter((service) => canAccess(access, "dashboard:view", service)).map((service) => {
+          const runtime = settings.runtimes.find(
+            (item) => item.service === service,
+          );
+          const configured =
+            service === "discord"
+              ? settings.discordConfigured
+              : settings.broadcaster.connected && settings.bot.connected;
+          const enabled =
+            service === "discord"
+              ? settings.discordEnabled
+              : settings.twitchEnabled;
+          const state = runtime
+            ? runtime.stale
+              ? "No recent heartbeat"
+              : runtime.state
+            : "Waiting for service";
+          const connected =
+            !runtime?.stale &&
+            (runtime?.state === "connected" || runtime?.state === "muted");
+          const Icon = service === "discord" ? MessageCircle : Radio;
+          return (
+            <section
+              className="panel"
+              key={service}
+              aria-label={
+                service === "discord"
+                  ? "Discord connection"
+                  : "Twitch connection"
+              }
+            >
+              <div className="panel-header">
+                <div className="service-name">
+                  <span className="service-icon">
+                    <Icon size={23} />
+                  </span>
+                  <div>
+                    <h2>{service === "discord" ? "Discord" : "Twitch"}</h2>
+                    <p>
+                      {service === "discord"
+                        ? "Your server companion"
+                        : settings.channelName
+                          ? `#${settings.channelName}`
+                          : "Your stream companion"}
+                    </p>
+                  </div>
+                </div>
+                <span className={`status ${connected ? "good" : ""}`}>
+                  {state}
+                </span>
+              </div>
+              <p className="service-detail">
+                {!configured
+                  ? access.owner ? "Finish connecting this service in the settings below." : "The creator needs to finish connecting this service."
+                  : runtime?.stale
+                    ? "The service has stopped reporting. Check its deployment logs."
+                    : runtime?.detail ||
+                      "Credentials are ready. Start the service and choose Join."}
+              </p>
+              {service === "twitch" && runtime && !runtime.stale && (
+                <StreamDetails metadata={runtime.metadata} />
+              )}
+              <div className="actions">
+                <button
+                  className="button primary"
+                  disabled={!canAccess(access, "bot:connect", service) || !configured || control.isPending || enabled}
+                  onClick={() => control.mutate({ service, action: "join" })}
+                >
+                  Join
+                </button>
+                <button
+                  className="button"
+                  disabled={!canAccess(access, "bot:connect", service) || !enabled || control.isPending}
+                  onClick={() => control.mutate({ service, action: "leave" })}
+                >
+                  Leave
+                </button>
+                {service === "twitch" && (
+                  <button
+                    className="button"
+                    disabled={!canAccess(access, "bot:mute", "twitch") || !configured || control.isPending}
+                    onClick={() =>
+                      control.mutate({
+                        service,
+                        action: settings.twitchMuted ? "unmute" : "mute",
+                      })
+                    }
+                  >
+                    {settings.twitchMuted ? "Unmute replies" : "Mute replies"}
+                  </button>
+                )}
+              </div>
+              <div className="rule" />
+              <span className="subtle">
+                {runtime?.identity || "No identity reported"} ·{" "}
+                {runtime?.heartbeatAt
+                  ? `Last heartbeat ${new Date(runtime.heartbeatAt).toLocaleTimeString()}`
+                  : "No heartbeat yet"}
+              </span>
+            </section>
+          );
+        })}
+      </div>
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <h2>A few useful commands</h2>
+            <p>
+              Available in Twitch chat when the bot is connected and unmuted.
+            </p>
+          </div>
+        </div>
+        <table className="command-list">
+          <thead>
+            <tr>
+              <th scope="col">Command</th>
+              <th scope="col">What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <code>{settings.commandPrefix}uptime</code>
+              </td>
+              <td>How long the Twitch bot process has been running.</td>
+            </tr>
+            <tr>
+              <td>
+                <code>{settings.commandPrefix}botuptime</code>
+              </td>
+              <td>How long the Twitch bot process has been running.</td>
+            </tr>
+            <tr>
+              <td>
+                <code>{settings.commandPrefix}serveruptime</code>
+              </td>
+              <td>
+                OS-reported host uptime; containers may share their host's
+                clock.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <code>{settings.commandPrefix}streamuptime</code>
+              </td>
+              <td>How long the current stream has been live.</td>
+            </tr>
+            <tr>
+              <td>
+                <code>{settings.commandPrefix}commands</code>
+              </td>
+              <td>Show the available commands.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      {access.owner && <><h2 className="section-title">Make it yours</h2>
+      <section className="panel">
+        <CoreSettings settings={settings} />
+      </section></>}
+      {canAccess(access, "presence:manage", "discord") && <><h2 className="section-title">Discord presence</h2>
+      <section className="panel">
+        <p className="subtle">
+          Choose what people see beside your bot. No privileged intents
+          required.
+        </p>
+        <DiscordPresence settings={settings} />
+      </section></>}
+      {access.owner && <><h2 className="section-title">Connections</h2>
+      <section className="panel">
+        <h2>Discord application</h2>
+        <DiscordSettings settings={settings} />
+      </section>
+      <section className="panel" style={{ marginTop: 20 }}>
+        <h2>Twitch application & accounts</h2>
+        <TwitchSettings settings={settings} />
+      </section></>}
     </>
   );
 }
 
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function StreamDetails({ metadata }: { metadata: unknown }) {
+  if (!metadata || typeof metadata !== "object") return null;
+  const stream = metadata as Record<string, unknown>;
+  if (stream.live !== true && stream.live !== false)
+    return <p className="subtle">Stream information is not available yet.</p>;
   return (
-    <div>
-      <div className="text-[11px] uppercase tracking-wide text-[var(--hb-subtle)]">{label}</div>
-      <div className="mt-0.5 truncate text-lg font-semibold text-[var(--hb-fg)]">{value}</div>
-      {hint && <div className="text-[11px] text-[var(--hb-subtle)]">{hint}</div>}
+    <div style={{ marginBottom: 20 }}>
+      <span className={`status ${stream.live ? "good" : ""}`}>
+        {stream.live ? "Stream is live" : "Stream is offline"}
+      </span>
+      {stream.live && (
+        <div style={{ marginTop: 10 }}>
+          {typeof stream.title === "string" && <h3>{stream.title}</h3>}
+          <p className="subtle" style={{ marginBottom: 0 }}>
+            {typeof stream.category === "string"
+              ? stream.category
+              : "No category"}
+            {typeof stream.viewers === "number" &&
+            Number.isFinite(stream.viewers)
+              ? ` · ${stream.viewers.toLocaleString()} viewers`
+              : ""}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

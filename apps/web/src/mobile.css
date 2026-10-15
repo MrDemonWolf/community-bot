@@ -1,0 +1,32 @@
+/* Comfortable touch targets and bounded forms keep the same workspace usable on phones. */
+.button { min-height: 44px; }
+.sidebar nav a { min-height: 44px; }
+.account button { min-height: 44px; min-width: 44px; display: grid; place-items: center; }
+.field, .field input, .field select, .field textarea { min-width: 0; }
+.field input, .field select { min-height: 44px; }
+fieldset.field { margin: 0; padding: 0; }
+.checkbox { min-height: 44px; cursor: pointer; }
+.checkbox input { flex-shrink: 0; }
+.panel, .panel-header > div, .service-name > div, .next-step > div, .grant-list li > div { min-width: 0; }
+h1,h2,h3,p,.grant-list strong { overflow-wrap: anywhere; }
+code { overflow-wrap: anywhere; }
+@media(max-width:700px) {
+  .sidebar nav { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px 8px; }
+  .sidebar nav a { padding: 10px; }
+  .sidebar nav a svg { flex-shrink: 0; }
+  .brand { min-width: 0; }
+  .account > span:not(.avatar) { min-width: 0; overflow-wrap: anywhere; }
+  .page-heading { gap: 16px; }
+  .page-heading > div { min-width: 0; width: 100%; }
+  .panel { padding: 20px; }
+  .button { white-space: normal; text-align: center; max-width: 100%; }
+  .field input,.field select,.field textarea { font-size: 16px; }
+  .form-footer .button { width: 100%; }
+  .next-step .button { width: 100%; }
+  .next-step > svg { flex-shrink: 0; }
+  .command-list { table-layout: fixed; }
+  .command-list th:first-child,.command-list td:first-child { width: 43%; }
+  .command-list td { overflow-wrap: anywhere; }
+  .grant-list li > .button { align-self: flex-start; }
+  .setup-links .button { min-width: 105px; }
+}

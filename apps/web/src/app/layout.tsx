@@ -1,40 +1,24 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
-
+import type { Metadata, Viewport } from "next";
 import "../index.css";
+import "../mobile.css";
 import Providers from "@/components/providers";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// HowlBot brand font (onboarding wizard). Applied via var(--font-inter).
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
+import Pwa from "@/components/pwa";
 
 export const metadata: Metadata = {
-  title: "community-bot",
-  description: "community-bot",
+  title: { default: "WolfAide", template: "%s · WolfAide" },
+  description: "One creator. Discord and Twitch, connected.",
+  icons: { icon: "/brand/logo.svg", apple: "/brand/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "WolfAide", statusBarStyle: "default" },
 };
+export const viewport: Viewport = { themeColor: "#091533", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased`}
-      >
+    <html lang="en">
+      <body>
+        <Pwa />
         <Providers>{children}</Providers>
       </body>
     </html>

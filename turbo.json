@@ -1,14 +1,27 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "APP_ENCRYPTION_KEY",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "OWNER_EMAIL",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "DEV_LOGIN",
+    "NODE_ENV",
+    "PORT",
+    "TWITCH_PORT"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "env": [
+        "NODE_ENV",
         "DATABASE_URL",
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
-        "CORS_ORIGIN",
         "APP_ENCRYPTION_KEY"
       ],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],

@@ -1,0 +1,55 @@
+name: Deploy to Dokploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: Queue a production Dokploy deployment of the current main commit
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' && inputs.confirm_deploy
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Require passing CI for this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          passed=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --commit "$GITHUB_SHA" --status success --json conclusion --jq 'length')
+          test "$passed" -gt 0 || { echo 'Run and pass CI for this main commit before deploying.'; exit 1; }
+          latest=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')
+          test "$latest" = "$GITHUB_SHA" || { echo 'Main advanced. Dispatch a new deployment after its CI passes.'; exit 1; }
+      - name: Queue the configured Compose deployment
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.parse, urllib.request
+          values = {key: os.environ.get(key, '') for key in ('DOKPLOY_URL', 'DOKPLOY_API_KEY', 'DOKPLOY_COMPOSE_ID')}
+          if not all(values.values()):
+              raise SystemExit('Configure the three Dokploy environment secrets before deploying.')
+          origin = values['DOKPLOY_URL'].rstrip('/')
+          if urllib.parse.urlparse(origin).scheme != 'https':
+              raise SystemExit('DOKPLOY_URL must use HTTPS.')
+          request = urllib.request.Request(origin + '/api/compose.deploy', method='POST',
+              data=json.dumps({'composeId': values['DOKPLOY_COMPOSE_ID'], 'title': 'GitHub Actions ' + os.environ['GITHUB_SHA'][:12]}).encode(),
+              headers={'Content-Type': 'application/json', 'x-api-key': values['DOKPLOY_API_KEY']})
+          with urllib.request.urlopen(request, timeout=30) as response:
+              if response.status != 200:
+                  raise SystemExit('Dokploy did not accept the deployment request.')
+          print('Deployment queued. Verify its result and runtime health in Dokploy.')
+          PY

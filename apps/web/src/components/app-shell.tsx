@@ -1,121 +1,89 @@
 "use client";
-import type { Route } from "next";
+
+import { ArrowUpRight, Gift, LayoutDashboard, LogOut, Puzzle, Settings2, Shield, UserRound } from "lucide-react";
+import { canAccess, type Subject } from "@community-bot/core/permissions";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-
 import { authClient } from "@/lib/auth-client";
-
-type NavItem = { label: string; href?: Route; soon?: boolean };
-
-const NAV: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Commands", soon: true },
-  { label: "Timers", soon: true },
-  { label: "Settings", href: "/setup" },
-];
-
-function cx(...c: (string | false | undefined)[]) {
-  return c.filter(Boolean).join(" ");
-}
 
 export default function AppShell({
   children,
   userName,
   botName,
+  access,
 }: {
   children: React.ReactNode;
   userName: string;
   botName: string;
+  access: Subject;
 }) {
   const pathname = usePathname();
   const router = useRouter();
-
   return (
-    <div className="flex min-h-svh bg-[var(--hb-bg)] text-[var(--hb-fg)] [font-family:var(--font-inter)]">
-      {/* sidebar */}
-      <aside className="flex w-60 flex-none flex-col border-r border-[var(--hb-border)] bg-[var(--hb-sidebar)]/60">
-        <div className="flex items-center gap-2.5 px-5 py-4">
-          <div
-            className="grid h-8 w-8 place-items-center rounded-[28%] text-sm font-bold text-[var(--hb-accent-fg)]"
-            style={{ background: "var(--hb-accent)" }}
+    <div className="app-shell">
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
+      <aside className="sidebar">
+        <Link href="/dashboard" className="brand">
+          <img src="/brand/logo.svg" alt="" width="42" height="42" />
+          <span>
+            WolfAide<small>YOUR COMMUNITY, CONNECTED</small>
+          </span>
+        </Link>
+        <div className="workspace-label">{access.owner ? "CREATOR WORKSPACE" : "STAFF WORKSPACE"}</div>
+        <nav aria-label="Main navigation">
+          <Link
+            href="/dashboard"
+            aria-current={pathname === "/dashboard" ? "page" : undefined}
           >
-            {(botName || "H")[0].toUpperCase()}
-          </div>
-          <span className="text-sm font-bold tracking-tight">{botName}</span>
-        </div>
-
-        <nav className="flex-1 px-3 py-2">
-          <div className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--hb-subtle)]">
-            Manage
-          </div>
-          <ul className="grid gap-0.5">
-            {NAV.map((item) => {
-              const active = item.href && pathname === item.href;
-              const inner = (
-                <>
-                  <span>{item.label}</span>
-                  {item.soon && (
-                    <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-medium uppercase text-[var(--hb-subtle)]">
-                      Soon
-                    </span>
-                  )}
-                </>
-              );
-              const base =
-                "flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors";
-              if (item.soon) {
-                return (
-                  <li key={item.label}>
-                    <span className={cx(base, "cursor-not-allowed text-[var(--hb-subtle)]")}>
-                      {inner}
-                    </span>
-                  </li>
-                );
-              }
-              return (
-                <li key={item.label}>
-                  <Link
-                    href={item.href!}
-                    className={cx(
-                      base,
-                      "outline-none focus-visible:ring-2 focus-visible:ring-[var(--hb-accent)]/60",
-                      active
-                        ? "bg-[var(--hb-accent-soft)] text-[var(--hb-accent)]"
-                        : "text-[var(--hb-muted)] hover:bg-white/5 hover:text-[var(--hb-fg)]",
-                    )}
-                  >
-                    {inner}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+            <LayoutDashboard size={19} />
+            Overview
+          </Link>
+          {access.owner && <Link
+            href="/setup"
+            aria-current={pathname === "/setup" ? "page" : undefined}
+          >
+            <Settings2 size={19} />
+            Guided setup
+          </Link>}
+          {(canAccess(access, "features:manage", "twitch") || canAccess(access, "features:manage", "discord")) && <Link href="/dashboard/features" aria-current={pathname === "/dashboard/features" ? "page" : undefined}><Puzzle size={19} />Features</Link>}
+          {canAccess(access, "redemptions:view", "twitch") && <Link href="/dashboard/rewards" aria-current={pathname === "/dashboard/rewards" ? "page" : undefined}><Gift size={19} />Channel points</Link>}
+          {access.owner && <Link href="/dashboard/access" aria-current={pathname === "/dashboard/access" ? "page" : undefined}><Shield size={19} />Staff access</Link>}
+          <Link href="/access"><UserRound size={19} />My accounts</Link>
+          <Link href="/channel" target="_blank">
+            <ArrowUpRight size={19} />
+            Public channel
+          </Link>
         </nav>
-
-        <div className="border-t border-[var(--hb-border)] p-3">
-          <div className="flex items-center gap-2.5 px-2 py-1.5">
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-[var(--hb-twitch)]/20 text-xs font-bold uppercase text-[var(--hb-twitch)]">
-              {(userName || "?")[0]}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-semibold">{userName}</div>
-              <div className="text-[11px] text-[var(--hb-subtle)]">Broadcaster</div>
-            </div>
+        <div className="sidebar-bottom">
+          <p className="sidebar-note">
+            One creator.
+            <br />A little less to manage.
+          </p>
+          <div className="account">
+            <span className="avatar">{userName.slice(0, 1).toUpperCase()}</span>
+            <span>
+              {userName}
+              <small>{botName}</small>
+            </span>
+            <button
+              title="Sign out"
+              aria-label="Sign out"
+              onClick={async () => {
+                await authClient.signOut();
+                router.push("/login");
+                router.refresh();
+              }}
+            >
+              <LogOut size={18} />
+            </button>
           </div>
-          <button
-            onClick={async () => {
-              await authClient.signOut();
-              router.push("/login");
-            }}
-            className="mt-1 w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-[var(--hb-muted)] outline-none transition-colors hover:bg-white/5 hover:text-[var(--hb-fg)] focus-visible:ring-2 focus-visible:ring-[var(--hb-accent)]/60"
-          >
-            Sign out
-          </button>
         </div>
       </aside>
-
-      {/* main */}
-      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+      <main id="main" className="workspace">
+        {children}
+      </main>
     </div>
   );
 }

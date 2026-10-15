@@ -1,0 +1,11 @@
+{
+  "name": "@community-bot/twitch",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@community-bot/db": "workspace:*",
+    "@twurple/auth": "8.2.0",
+    "@twurple/api": "8.2.0"
+  },
+  "devDependencies": { "@community-bot/config": "workspace:*", "typescript": "catalog:" }
+}

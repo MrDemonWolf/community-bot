@@ -1,0 +1,78 @@
+services:
+  postgres:
+    ports: ["127.0.0.1:5435:5432"]
+
+  web:
+    build:
+      target: dev-web
+    ports: ["127.0.0.1:3001:3001"]
+    environment:
+      NODE_ENV: development
+      DEV_LOGIN: "true"
+      BETTER_AUTH_URL: http://localhost:3001
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/public:/app/apps/web/public
+      - ./packages/api/src:/app/packages/api/src
+      - ./packages/auth/src:/app/packages/auth/src
+      - ./packages/db/src:/app/packages/db/src
+      - ./packages/env/src:/app/packages/env/src
+      - ./packages/ui/src:/app/packages/ui/src
+      - ./packages/core/src:/app/packages/core/src
+      - ./packages/twitch/src:/app/packages/twitch/src
+
+  discord:
+    build:
+      target: dependencies
+    command: ["bun", "apps/discord/src/index.ts"]
+    environment:
+      NODE_ENV: development
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./apps/discord/src
+          target: /app/apps/discord/src
+          initial_sync: true
+        - action: sync+restart
+          path: ./packages/core/src
+          target: /app/packages/core/src
+          initial_sync: true
+        - action: sync+restart
+          path: ./packages/db/src
+          target: /app/packages/db/src
+          initial_sync: true
+        - action: sync+restart
+          path: ./packages/env/src
+          target: /app/packages/env/src
+          initial_sync: true
+
+  twitch:
+    build:
+      target: dependencies
+    command: ["bun", "apps/twitch/src/index.ts"]
+    environment:
+      NODE_ENV: development
+      PORT: "3003"
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./apps/twitch/src
+          target: /app/apps/twitch/src
+          initial_sync: true
+        - action: sync+restart
+          path: ./packages/core/src
+          target: /app/packages/core/src
+          initial_sync: true
+        - action: sync+restart
+          path: ./packages/twitch/src
+          target: /app/packages/twitch/src
+          initial_sync: true
+        - action: sync+restart
+          path: ./packages/db/src
+          target: /app/packages/db/src
+          initial_sync: true
+        - action: sync+restart
+          path: ./packages/env/src
+          target: /app/packages/env/src
+          initial_sync: true

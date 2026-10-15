@@ -1,0 +1,1319 @@
+{
+  "id": "cec1dfc8-b534-4e6b-8647-8f4e18362eeb",
+  "prevId": "79f65336-5bca-4eca-a8f6-ccc46558ef6b",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.account": {
+      "name": "account",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_token": {
+          "name": "id_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_token_expires_at": {
+          "name": "access_token_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token_expires_at": {
+          "name": "refresh_token_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "account_userId_idx": {
+          "name": "account_userId_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "account_provider_account_unique": {
+          "name": "account_provider_account_unique",
+          "columns": [
+            {
+              "expression": "provider_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "account_user_id_user_id_fk": {
+          "name": "account_user_id_user_id_fk",
+          "tableFrom": "account",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.session": {
+      "name": "session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "session_userId_idx": {
+          "name": "session_userId_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "session_expires_at_idx": {
+          "name": "session_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "session_user_id_user_id_fk": {
+          "name": "session_user_id_user_id_fk",
+          "tableFrom": "session",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "session_token_unique": {
+          "name": "session_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user": {
+      "name": "user",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "user_email_case_insensitive_unique": {
+          "name": "user_email_case_insensitive_unique",
+          "columns": [
+            {
+              "expression": "lower(\"email\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_email_unique": {
+          "name": "user_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.verification": {
+      "name": "verification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "verification_identifier_idx": {
+          "name": "verification_identifier_idx",
+          "columns": [
+            {
+              "expression": "identifier",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "verification_expires_at_idx": {
+          "name": "verification_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.feature_config": {
+      "name": "feature_config",
+      "schema": "",
+      "columns": {
+        "feature_id": {
+          "name": "feature_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "config": {
+          "name": "config",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "feature_config_id": {
+          "name": "feature_config_id",
+          "value": "\"feature_config\".\"feature_id\" ~ '^[a-z][a-z0-9_.-]{0,79}$'"
+        },
+        "feature_config_object": {
+          "name": "feature_config_object",
+          "value": "jsonb_typeof(\"feature_config\".\"config\") = 'object'"
+        },
+        "feature_config_version": {
+          "name": "feature_config_version",
+          "value": "\"feature_config\".\"version\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.permission_mapping": {
+      "name": "permission_mapping",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_role_id": {
+          "name": "source_role_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scopes": {
+          "name": "scopes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "permission_mapping_source_role_unique": {
+          "name": "permission_mapping_source_role_unique",
+          "columns": [
+            {
+              "expression": "provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "source_role_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "permission_mapping_provider": {
+          "name": "permission_mapping_provider",
+          "value": "\"permission_mapping\".\"provider\" IN ('twitch', 'discord')"
+        },
+        "permission_mapping_source": {
+          "name": "permission_mapping_source",
+          "value": "char_length(\"permission_mapping\".\"source_role_id\") BETWEEN 1 AND 100"
+        },
+        "permission_mapping_role": {
+          "name": "permission_mapping_role",
+          "value": "\"permission_mapping\".\"role\" IN ('admin', 'lead_moderator', 'moderator', 'vip', 'subscriber')"
+        },
+        "permission_mapping_scopes": {
+          "name": "permission_mapping_scopes",
+          "value": "jsonb_typeof(\"permission_mapping\".\"scopes\") = 'array' AND \"permission_mapping\".\"scopes\" <@ '[\"twitch\", \"discord\"]'::jsonb"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.platform_identity": {
+      "name": "platform_identity",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_user_id": {
+          "name": "provider_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "login": {
+          "name": "login",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_enc": {
+          "name": "token_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "roles": {
+          "name": "roles",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "verified_at": {
+          "name": "verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "platform_identity_provider_user_unique": {
+          "name": "platform_identity_provider_user_unique",
+          "columns": [
+            {
+              "expression": "provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "provider_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "platform_identity_user_provider_unique": {
+          "name": "platform_identity_user_provider_unique",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "platform_identity_user_id_user_id_fk": {
+          "name": "platform_identity_user_id_user_id_fk",
+          "tableFrom": "platform_identity",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "platform_identity_provider": {
+          "name": "platform_identity_provider",
+          "value": "\"platform_identity\".\"provider\" IN ('twitch', 'discord')"
+        },
+        "platform_identity_native_id": {
+          "name": "platform_identity_native_id",
+          "value": "\"platform_identity\".\"provider_user_id\" ~ '^[0-9]{1,20}$'"
+        },
+        "platform_identity_login": {
+          "name": "platform_identity_login",
+          "value": "char_length(\"platform_identity\".\"login\") BETWEEN 1 AND 100"
+        },
+        "platform_identity_token": {
+          "name": "platform_identity_token",
+          "value": "char_length(\"platform_identity\".\"token_enc\") BETWEEN 1 AND 65536"
+        },
+        "platform_identity_roles": {
+          "name": "platform_identity_roles",
+          "value": "jsonb_typeof(\"platform_identity\".\"roles\") = 'array' AND NOT jsonb_path_exists(\"platform_identity\".\"roles\", '$[*] ? (@.type() != \"string\")')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.redemption": {
+      "name": "redemption",
+      "schema": "",
+      "columns": {
+        "redemption_id": {
+          "name": "redemption_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "reward_id": {
+          "name": "reward_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "broadcaster_id": {
+          "name": "broadcaster_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "login": {
+          "name": "login",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "input": {
+          "name": "input",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "handled_at": {
+          "name": "handled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action_state": {
+          "name": "action_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        }
+      },
+      "indexes": {
+        "redemption_status_received_idx": {
+          "name": "redemption_status_received_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "received_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "redemption_id": {
+          "name": "redemption_id",
+          "value": "char_length(\"redemption\".\"redemption_id\") BETWEEN 1 AND 100 AND char_length(\"redemption\".\"reward_id\") BETWEEN 1 AND 100"
+        },
+        "redemption_users": {
+          "name": "redemption_users",
+          "value": "\"redemption\".\"broadcaster_id\" ~ '^[0-9]{1,20}$' AND \"redemption\".\"user_id\" ~ '^[0-9]{1,20}$'"
+        },
+        "redemption_login": {
+          "name": "redemption_login",
+          "value": "char_length(\"redemption\".\"login\") BETWEEN 1 AND 100"
+        },
+        "redemption_input": {
+          "name": "redemption_input",
+          "value": "char_length(\"redemption\".\"input\") <= 10000"
+        },
+        "redemption_status": {
+          "name": "redemption_status",
+          "value": "\"redemption\".\"status\" IN ('pending', 'fulfilled', 'canceled')"
+        },
+        "redemption_action_state": {
+          "name": "redemption_action_state",
+          "value": "\"redemption\".\"action_state\" IN ('pending', 'processing', 'sent', 'failed')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reward_config": {
+      "name": "reward_config",
+      "schema": "",
+      "columns": {
+        "reward_id": {
+          "name": "reward_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cost": {
+          "name": "cost",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prompt": {
+          "name": "prompt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "chat_response": {
+          "name": "chat_response",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "auto_fulfill": {
+          "name": "auto_fulfill",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_managed": {
+          "name": "is_managed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "reward_config_id": {
+          "name": "reward_config_id",
+          "value": "char_length(\"reward_config\".\"reward_id\") BETWEEN 1 AND 100"
+        },
+        "reward_config_title": {
+          "name": "reward_config_title",
+          "value": "char_length(btrim(\"reward_config\".\"title\")) BETWEEN 1 AND 45 AND char_length(\"reward_config\".\"title\") <= 45"
+        },
+        "reward_config_cost": {
+          "name": "reward_config_cost",
+          "value": "\"reward_config\".\"cost\" >= 1"
+        },
+        "reward_config_prompt": {
+          "name": "reward_config_prompt",
+          "value": "char_length(\"reward_config\".\"prompt\") <= 200"
+        },
+        "reward_config_response": {
+          "name": "reward_config_response",
+          "value": "\"reward_config\".\"chat_response\" IS NULL OR char_length(\"reward_config\".\"chat_response\") <= 500"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.runtime": {
+      "name": "runtime",
+      "schema": "",
+      "columns": {
+        "service": {
+          "name": "service",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "detail": {
+          "name": "detail",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "identity": {
+          "name": "identity",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "heartbeat_at": {
+          "name": "heartbeat_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "runtime_service": {
+          "name": "runtime_service",
+          "value": "\"runtime\".\"service\" IN ('discord', 'twitch')"
+        },
+        "runtime_state": {
+          "name": "runtime_state",
+          "value": "\"runtime\".\"state\" IN ('starting', 'needs_setup', 'disconnected', 'connecting', 'reconnecting', 'connected', 'guild_unavailable', 'error', 'stopping', 'stopped', 'waiting', 'muted')"
+        },
+        "runtime_metadata_object": {
+          "name": "runtime_metadata_object",
+          "value": "jsonb_typeof(\"runtime\".\"metadata\") = 'object'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.settings": {
+      "name": "settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "'singleton'"
+        },
+        "setup_complete": {
+          "name": "setup_complete",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "bot_name": {
+          "name": "bot_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'WolfAide'"
+        },
+        "command_prefix": {
+          "name": "command_prefix",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'!'"
+        },
+        "channel_name": {
+          "name": "channel_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "public_page_enabled": {
+          "name": "public_page_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "public_description": {
+          "name": "public_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'A little help for the community.'"
+        },
+        "twitch_client_id": {
+          "name": "twitch_client_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "twitch_client_secret_enc": {
+          "name": "twitch_client_secret_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "broadcaster_user_id": {
+          "name": "broadcaster_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "broadcaster_login": {
+          "name": "broadcaster_login",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "broadcaster_token_enc": {
+          "name": "broadcaster_token_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bot_user_id": {
+          "name": "bot_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bot_login": {
+          "name": "bot_login",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bot_token_enc": {
+          "name": "bot_token_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "twitch_enabled": {
+          "name": "twitch_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "twitch_muted": {
+          "name": "twitch_muted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "permission_sync_twitch": {
+          "name": "permission_sync_twitch",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "permission_sync_discord": {
+          "name": "permission_sync_discord",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "channel_points_enabled": {
+          "name": "channel_points_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "twitch_lead_moderator_ids": {
+          "name": "twitch_lead_moderator_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "discord_token_enc": {
+          "name": "discord_token_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "discord_client_secret_enc": {
+          "name": "discord_client_secret_enc",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "discord_application_id": {
+          "name": "discord_application_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "discord_guild_id": {
+          "name": "discord_guild_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "discord_enabled": {
+          "name": "discord_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "discord_status": {
+          "name": "discord_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'online'"
+        },
+        "discord_activity_type": {
+          "name": "discord_activity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'watching'"
+        },
+        "discord_activity_text": {
+          "name": "discord_activity_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'the community'"
+        },
+        "discord_activity_url": {
+          "name": "discord_activity_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "settings_singleton": {
+          "name": "settings_singleton",
+          "value": "\"settings\".\"id\" = 'singleton'"
+        },
+        "settings_twitch_lead_moderator_ids": {
+          "name": "settings_twitch_lead_moderator_ids",
+          "value": "jsonb_typeof(\"settings\".\"twitch_lead_moderator_ids\") = 'array' AND NOT jsonb_path_exists(\"settings\".\"twitch_lead_moderator_ids\", '$[*] ? (@.type() != \"string\" || !(@ like_regex \"^[0-9]{1,20}$\"))')"
+        },
+        "settings_bot_name": {
+          "name": "settings_bot_name",
+          "value": "char_length(btrim(\"settings\".\"bot_name\")) BETWEEN 1 AND 40"
+        },
+        "settings_command_prefix": {
+          "name": "settings_command_prefix",
+          "value": "char_length(\"settings\".\"command_prefix\") BETWEEN 1 AND 5 AND \"settings\".\"command_prefix\" !~ '[[:space:]]'"
+        },
+        "settings_public_description": {
+          "name": "settings_public_description",
+          "value": "char_length(\"settings\".\"public_description\") <= 280"
+        },
+        "settings_discord_status": {
+          "name": "settings_discord_status",
+          "value": "\"settings\".\"discord_status\" IN ('online', 'idle', 'dnd', 'invisible')"
+        },
+        "settings_discord_activity_type": {
+          "name": "settings_discord_activity_type",
+          "value": "\"settings\".\"discord_activity_type\" IN ('playing', 'listening', 'watching', 'competing', 'custom', 'streaming')"
+        },
+        "settings_discord_activity_text": {
+          "name": "settings_discord_activity_text",
+          "value": "char_length(\"settings\".\"discord_activity_text\") <= 128"
+        },
+        "settings_discord_activity_url": {
+          "name": "settings_discord_activity_url",
+          "value": "\"settings\".\"discord_activity_url\" IS NULL OR char_length(\"settings\".\"discord_activity_url\") <= 500"
+        },
+        "settings_discord_application_id": {
+          "name": "settings_discord_application_id",
+          "value": "\"settings\".\"discord_application_id\" IS NULL OR \"settings\".\"discord_application_id\" ~ '^[0-9]{17,20}$'"
+        },
+        "settings_discord_guild_id": {
+          "name": "settings_discord_guild_id",
+          "value": "\"settings\".\"discord_guild_id\" IS NULL OR \"settings\".\"discord_guild_id\" ~ '^[0-9]{17,20}$'"
+        },
+        "settings_twitch_client_id": {
+          "name": "settings_twitch_client_id",
+          "value": "\"settings\".\"twitch_client_id\" IS NULL OR \"settings\".\"twitch_client_id\" ~ '^[a-zA-Z0-9]{10,100}$'"
+        },
+        "settings_broadcaster_identity": {
+          "name": "settings_broadcaster_identity",
+          "value": "num_nonnulls(\"settings\".\"broadcaster_user_id\", \"settings\".\"broadcaster_login\", \"settings\".\"broadcaster_token_enc\") IN (0, 3)"
+        },
+        "settings_bot_identity": {
+          "name": "settings_bot_identity",
+          "value": "num_nonnulls(\"settings\".\"bot_user_id\", \"settings\".\"bot_login\", \"settings\".\"bot_token_enc\") IN (0, 3)"
+        },
+        "settings_discord_enabled_credentials": {
+          "name": "settings_discord_enabled_credentials",
+          "value": "NOT \"settings\".\"discord_enabled\" OR num_nonnulls(\"settings\".\"discord_token_enc\", \"settings\".\"discord_application_id\", \"settings\".\"discord_guild_id\") = 3"
+        },
+        "settings_twitch_enabled_credentials": {
+          "name": "settings_twitch_enabled_credentials",
+          "value": "NOT \"settings\".\"twitch_enabled\" OR num_nonnulls(\"settings\".\"twitch_client_id\", \"settings\".\"twitch_client_secret_enc\", \"settings\".\"broadcaster_token_enc\", \"settings\".\"bot_token_enc\") = 4"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

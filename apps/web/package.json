@@ -3,17 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3001",
+    "dev": "next dev --hostname 127.0.0.1 --port 3001",
     "build": "next build",
-    "start": "next start"
+    "start": "next start --port 3001",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@community-bot/core": "workspace:*",
     "@community-bot/api": "workspace:*",
     "@community-bot/auth": "workspace:*",
     "@community-bot/db": "workspace:*",
     "@community-bot/env": "workspace:*",
     "@community-bot/ui": "workspace:*",
-    "@tanstack/react-form": "^1.28.0",
     "@tanstack/react-query": "^5.90.12",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
@@ -23,7 +24,6 @@
     "dotenv": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
-    "next-themes": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "sonner": "catalog:",
@@ -32,7 +32,6 @@
   "devDependencies": {
     "@community-bot/config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.18",
-    "@tanstack/react-query-devtools": "^5.91.1",
     "@types/node": "^20",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

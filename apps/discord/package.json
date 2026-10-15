@@ -6,10 +6,14 @@
   "scripts": {
     "build": "tsdown",
     "check-types": "tsc -b",
-    "dev": "bun run --hot src/index.ts",
+    "test": "bun test",
+    "dev": "bun run --watch src/index.ts",
     "start": "bun run dist/index.mjs"
   },
   "dependencies": {
+    "@community-bot/twitch": "workspace:*",
+    "@community-bot/core": "workspace:*",
+    "@community-bot/db": "workspace:*",
     "discord.js": "14.27.0"
   },
   "devDependencies": {

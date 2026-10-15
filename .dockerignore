@@ -1,0 +1,14 @@
+.git
+**/node_modules
+**/.next
+**/dist
+**/out
+**/.turbo
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!.env.example
+**/*.log
+**/test-results
+**/playwright-report
+.DS_Store

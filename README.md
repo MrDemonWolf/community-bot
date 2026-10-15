@@ -1,100 +1,264 @@
-# community-bot
+# WolfAide
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Self, TRPC, and more.
+A small bot for one creator, with a calm dashboard for Discord and Twitch.
+Built on Better-T-Stack: Next.js, TypeScript, tRPC, Better Auth, Drizzle,
+PostgreSQL, Bun, and Turborepo.
 
-## Features
+Discord and Twitch run as separate workers. Configure credentials, Discord
+presence, Twitch accounts, and join/leave/mute controls through the dashboard.
+An optional public channel page shows commands and connection status.
+Saved credentials are encrypted and never returned to the UI.
 
-- **TypeScript** - For type safety and improved developer experience
-- **Next.js** - Full-stack React framework
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **tRPC** - End-to-end type-safe APIs
-- **Drizzle** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
-- **Authentication** - Better-Auth
-- **PWA** - Progressive Web App support
-- **Turborepo** - Optimized monorepo build system
-- **Discord Gateway service** - Standalone WolfAide connection and readiness checks; see [runtime setup](docs/discord-runtime.md).
+The mobile dashboard is installable as a PWA. Private pages and API responses
+stay online-only; an offline page explains how to reconnect. Twitch Channel
+Points support managed rewards, chat responses, and a fulfill/refund queue.
+Staff access comes from creator-configured Twitch and Discord role mappings,
+with separate platform permissions. VIP and subscriber perks grant no admin access.
 
-## Getting Started
+## Start here
 
-First, install the dependencies:
+**Get the dashboard open first. Connect one service afterward.**
 
-```bash
-bun install
+| Your goal | Start here |
+| --- | --- |
+| Try it or develop on your Mac | Local setup below; detailed [local guide](apps/docs/src/app/local/page.tsx) |
+| Keep the bot online on Dokploy | [Dokploy guide](apps/docs/src/app/dokploy/page.tsx) |
+| Connect an existing Discord bot | [Discord guide](apps/docs/src/app/discord/page.tsx) |
+| Connect creator and Twitch bot accounts | [Twitch guide](apps/docs/src/app/twitch/page.tsx) |
+| Configure staff, features, rewards, or phone installation | [Feature guide](apps/docs/src/app/features/page.tsx) |
+| Run browser checks or configure delivery | [CI/CD guide](docs/ci.md) |
+
+The guides include numbered steps, copy buttons, expected results, and short
+troubleshooting tables.
+
+**First checkout only:** clone the repository and enter its folder. Skip this
+if you already cloned it; open a terminal in that existing repository instead.
+
+```sh
+git clone https://github.com/MrDemonWolf/community-bot.git
+cd community-bot
 ```
 
-## Database Setup
+View the documentation website locally from the repository root:
 
-This project uses PostgreSQL with Drizzle ORM.
-
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/web/.env` file with your PostgreSQL connection details.
-
-3. Apply the schema to your database:
-
-```bash
-bun run db:push
+```sh
+bun install --frozen-lockfile
+bun run dev:docs
 ```
 
-Then, run the development server:
+Open [localhost:3004](http://localhost:3004). Docs need no database or secrets.
 
-```bash
-bun run dev
+## Local setup
+
+### 1. Prepare private settings
+
+You need Bun 1.4.3 and a current Docker Compose with Watch support. For a fresh Colima session on macOS,
+start it with mount events enabled, or open Docker Desktop instead.
+Run these commands from the repository root. Copy the example only
+when you do not already have a `.env`.
+
+```sh
+colima start --mount-inotify
+cp .env.example .env
+openssl rand -hex 32
+openssl rand -hex 32
+openssl rand -base64 32
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the fullstack application.
+Edit the untracked `.env`:
 
-## UI Customization
+- First hex result → `POSTGRES_PASSWORD` and the password inside `DATABASE_URL`.
+- Second hex result → `BETTER_AUTH_SECRET`.
+- Base64 result → `APP_ENCRYPTION_KEY`.
+- Set `OWNER_EMAIL` to your email.
+- Keep `BETTER_AUTH_URL=http://localhost:3001` and `NODE_ENV=development`.
+- Set `DEV_LOGIN=true`. Google credentials can remain empty.
 
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
+The native database URL is
+`postgresql://community_bot:YOUR_PASSWORD@localhost:5435/community_bot`.
+Use the same generated hex password in both database settings.
 
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
+**Ready when:** all three secrets are filled in. Keep `.env` out of Git.
 
-### Add more shared components
+### 2. Run everything in Docker
 
-Run this from the project root to add more primitives to the shared UI package:
-
-```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml up --build -d
+docker compose -f compose.yaml -f compose.dev.yaml logs --tail=50 web discord twitch
 ```
 
-Import shared components like this:
+Keep worker reload running in a second terminal at the repository root:
 
-```tsx
-import { Button } from "@community-bot/ui/components/button";
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml watch --no-up discord twitch
 ```
 
-### Add app-specific blocks
+Leave that terminal open while editing. Compose runs the file watcher on your
+Mac, synchronizes worker source changes, and restarts the affected worker.
+Stopping this watcher does not stop the running containers.
 
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
+Open [localhost:3001](http://localhost:3001) and choose **Enter development
+workspace**. The first build can take several minutes. The stack creates its
+database tables before starting the apps.
 
-## Project Structure
+Web source stays bind-mounted and Webpack polls for changes. Worker source uses
+Compose Watch instead of guest filesystem events, so it does not depend on
+Colima forwarding inotify notifications. Rebuild after dependency or configuration
+changes. If Compose rejects the watch configuration, update Docker Compose.
 
+**Ready when:** the login page opens and development login reaches setup.
+
+### Alternative: run apps natively
+
+Never run a native worker alongside its Docker counterpart. When switching
+from the full Docker path, press Control-C in the Watch terminal first, then
+stop the app containers:
+
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml stop web discord twitch
 ```
-community-bot/
-├── apps/
-│   ├── web/         # Fullstack application (Next.js)
-│   ├── twitch/      # Twitch chat worker
-│   └── discord/     # Standalone Discord Gateway and health endpoints
-├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
+
+Choose this instead of running the web and bot containers. Start just
+PostgreSQL and the migration job:
+
+```sh
+bun install --frozen-lockfile
+docker compose -f compose.yaml -f compose.dev.yaml up --build -d postgres migrate
 ```
 
-## Available Scripts
+Then run one command per terminal tab:
 
-- `bun run dev`: Start the web/Twitch applications in development mode; Discord is opt-in
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:discord`: Start the Discord service with its explicitly configured application token and guild
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:push`: Push schema changes to database
-- `bun run db:generate`: Generate database client/types
-- `bun run db:migrate`: Run database migrations
-- `bun run db:studio`: Open database studio UI
-- `cd apps/web && bun run generate-pwa-assets`: Generate PWA assets
+```sh
+bun run dev:web
+```
+
+```sh
+bun run dev:discord
+```
+
+```sh
+bun run dev:twitch
+```
+
+These scripts load the root `.env`. If you already have a reachable empty
+PostgreSQL database, supply its `DATABASE_URL` and run `bun run db:migrate`
+instead of starting PostgreSQL through Compose.
+
+### Check source reload
+
+Edit a visible label in `apps/web/src/app/login/login.tsx`, save it, then refresh
+the login page. **Ready when:** the changed label appears.
+
+For a Docker worker edit, save a source file and check the Watch terminal reports
+a sync and restart, then confirm a fresh heartbeat on the dashboard.
+
+If an edit does not reload, restart the affected app. For native development,
+press Control-C in its terminal and rerun its `bun run dev:web`,
+`bun run dev:discord`, or `bun run dev:twitch` command. For Docker workers, first
+confirm the Watch terminal is still running and has synchronized the changed
+file. For Docker web, restart only web if needed:
+
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml restart web
+```
+
+Restarting alone cannot copy unsynchronized worker source. Without Watch,
+rebuild the affected worker with `docker compose -f compose.yaml -f compose.dev.yaml up --build -d discord`
+(use `twitch` for that worker). Colima mount forwarding is experimental and can
+miss file removals; Webpack polling and Compose Watch avoid relying on it.
+See the official [Compose Watch guide](https://docs.docker.com/compose/how-tos/file-watch/),
+[Colima mount-inotify setting](https://colima.run/docs/configuration/#mount-inotify)
+and [Lima mount-event limits](https://lima-vm.io/docs/config/mount/#mount-inotify).
+
+### 3. Connect one service
+
+1. Give the workspace a name. Choose whether to enable the public command page.
+2. Follow Discord **or** Twitch setup. The other service can stay paused.
+3. Save the credentials and choose **Join** on the dashboard.
+4. Wait for a fresh **connected** heartbeat.
+5. Check Discord presence, or send `!uptime` in Twitch chat.
+
+Saved credentials are configuration. A fresh worker heartbeat confirms a real
+connection. Discord Leave disconnects without removing the bot from the server.
+Twitch Mute keeps listening and suppresses replies.
+
+To stop Docker safely while preserving the database, press Control-C in the
+Watch terminal first, then run:
+
+```sh
+docker compose -f compose.yaml -f compose.dev.yaml down
+```
+
+Do not add `-v` unless you intend to delete the database.
+
+## Dokploy setup
+
+Use the numbered [Dokploy guide](apps/docs/src/app/dokploy/page.tsx).
+The production stack uses only `compose.yaml`, with separate PostgreSQL,
+migration, web, Discord, and Twitch services. Only web gets a public HTTPS
+domain on port 3001. Run one replica per worker.
+
+Production requires Google OAuth credentials and a verified `OWNER_EMAIL`.
+Development login is disabled in production.
+
+- Google redirect: `https://YOUR-DASHBOARD/api/auth/callback/google`
+- Twitch redirect: `https://YOUR-DASHBOARD/api/twitch/callback`
+
+The documentation workflow is prepared for GitHub Pages. Select GitHub Actions
+as the Pages source before publishing. Repository configuration does not prove
+a live deployment.
+
+## Commands
+
+| Command | Result |
+| --- | --- |
+| `!uptime`, `!botuptime` | Twitch worker process uptime |
+| `!serveruptime` | OS-reported host uptime; containers may report their host |
+| `!streamuptime` | Current live stream duration, or offline |
+| `!commands` | Available commands |
+
+The dashboard controls the prefix. Replies have a channel-wide cooldown.
+Joining through EventSub does not promise viewer-list presence or a bot badge.
+
+## Project layout
+
+```text
+apps/web       Private dashboard, onboarding, public /channel page
+apps/discord   Discord Gateway connection and presence worker
+apps/twitch    Twitch EventSub and Helix worker
+apps/docs      Public static documentation website
+packages/api   Validated tRPC procedures with platform capability checks
+packages/auth  Google sessions and guarded local login
+packages/core  Shared feature catalog, commands, permissions, and validators
+packages/twitch Shared server-side creator authorization
+packages/db    Schema, migrations, encrypted credentials, runtime heartbeats
+packages/ui    Shared Tailwind styles
+```
+
+## Development checks
+
+```sh
+bun run check-types
+bun run test
+bun run build
+```
+
+CI also runs fresh PostgreSQL migrations, constraint and permission checks,
+redemption concurrency tests, and real Chromium journeys inside Docker.
+See [the test commands and manual Dokploy deployment workflow](docs/ci.md).
+Live Google/Twitch/Discord authorization still requires your own credentials.
+
+## Backups and existing deployments
+
+Start this rewrite with an empty PostgreSQL database. Its initial migration
+does not upgrade the former Supabase schema. Preserve the old database and plan
+a migration separately.
+
+Back up the database and preserve its `APP_ENCRYPTION_KEY` separately in a
+password manager. A lost or replaced key makes stored credentials
+unrecoverable. Keep the database volume during updates.
+
+Platform references: [Discord Gateway](https://docs.discord.com/developers/events/gateway),
+[Twitch chat](https://dev.twitch.tv/docs/chat/),
+[Twurple](https://twurple.js.org/),
+[Dokploy Compose domains](https://docs.dokploy.com/docs/core/docker-compose/domains).
