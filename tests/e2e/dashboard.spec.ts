@@ -168,6 +168,7 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
     await expect(primary).toBeVisible();
     await expect(navigation.getByRole("navigation", { name: "Main navigation", exact: true })).toBeHidden();
     await expect(primary.getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(more).toBeEnabled();
     await more.focus();
     await more.press("Enter");
     await expect(dialog).toBeVisible();
