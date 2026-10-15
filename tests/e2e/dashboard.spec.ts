@@ -518,7 +518,7 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
     for (const [step, heading] of [["workspace", "A home for your community"], ["discord", "Bring your Discord bot"], ["twitch", "Meet your Twitch accounts"]]) {
       await expect(navigation.getByRole("heading", { name: heading!, exact: true })).toBeVisible();
       await snapshot(navigation, info, `gallery-dark-mobile-setup-${step}`);
-      if (step !== "twitch") await navigation.getByRole("button", { name: step === "workspace" ? "Next: Discord" : "Next: Twitch", exact: true }).click();
+      if (step !== "twitch") await navigation.getByRole("button", { name: step === "workspace" ? "Next: Discord →" : "Next: Twitch →", exact: true }).click();
     }
     await mobileTheme.selectOption("light");
     await navigation.emulateMedia({ colorScheme: "dark" });
@@ -718,7 +718,7 @@ test("dark page gallery preserves public visibility and previews every dashboard
     for (const [step, heading] of [["workspace", "A home for your community"], ["discord", "Bring your Discord bot"], ["twitch", "Meet your Twitch accounts"]]) {
       await expect(page.getByRole("heading", { name: heading!, exact: true })).toBeVisible();
       await snapshot(page, info, `gallery-dark-desktop-setup-${step}`);
-      if (step !== "twitch") await page.getByRole("button", { name: step === "workspace" ? "Next: Discord" : "Next: Twitch", exact: true }).click();
+      if (step !== "twitch") await page.getByRole("button", { name: step === "workspace" ? "Next: Discord →" : "Next: Twitch →", exact: true }).click();
     }
     await updateVisibility(true);
     for (const width of [1440, 390]) {
