@@ -7,7 +7,7 @@ import type { AppRouter } from "@community-bot/api/routers/index";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { trpc, queryClient } from "@/utils/trpc";
+import { trpc, trpcClient, queryClient } from "@/utils/trpc";
 
 export type Settings = inferRouterOutputs<AppRouter>["settings"]["get"];
 type PresenceInput =
@@ -93,30 +93,36 @@ export function CoreSettings({ settings }: { settings: Settings }) {
 
 export function DiscordSettings({ settings }: { settings: Settings }) {
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [origin, setOrigin] = useState("");
   useEffect(() => { setOrigin(window.location.origin); }, []);
-  const save = useMutation(
-    trpc.settings.configureDiscord.mutationOptions({
-      onSuccess: async () => {
-        setMessage(
-          "Discord credentials saved. Use Join to connect the service.",
-        );
-        await queryClient.invalidateQueries();
-      },
-    }),
-  );
   return (
     <form
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
+        if (isSaving) return;
         setMessage("");
+        setError("");
         const form = new FormData(event.currentTarget);
-        save.mutate({
+        const input = {
           applicationId: text(form, "applicationId"),
           guildId: text(form, "guildId"),
           ...(text(form, "token") ? { token: text(form, "token") } : {}),
           ...(text(form, "clientSecret") ? { clientSecret: text(form, "clientSecret") } : {}),
-        });
+        };
+        // Credential writes bypass mutation caching; clear DOM secrets once the request payload is captured.
+        event.currentTarget.querySelectorAll<HTMLInputElement>('input[type="password"]').forEach((field) => { field.value = ""; });
+        setIsSaving(true);
+        try {
+          await trpcClient.settings.configureDiscord.mutate(input);
+          setMessage("Discord credentials saved. Use Join to connect the service.");
+          await queryClient.invalidateQueries();
+        } catch (error) {
+          setError(error instanceof Error ? error.message : "Could not save Discord credentials. Please try again.");
+        } finally {
+          setIsSaving(false);
+        }
       }}
     >
       <p className="subtle">
@@ -160,7 +166,7 @@ export function DiscordSettings({ settings }: { settings: Settings }) {
           />
           <small>
             Encrypted before storage. Saved tokens are never sent back to this
-            page.
+            page. Fields clear on submit; re-enter secrets if saving fails.
           </small>
         </label>
         <label className="field full">
@@ -170,10 +176,10 @@ export function DiscordSettings({ settings }: { settings: Settings }) {
         </label>
         <label className="field full">Personal Discord account callback URL<input readOnly value={`${origin}/api/identity/callback/discord`} onFocus={(event) => event.target.select()} /><small>Select and copy this exact URL into your application's OAuth2 redirect URLs.</small></label>
       </div>
-      <Feedback error={save.error?.message} success={message} />
+      <Feedback error={error} success={message} />
       <div className="form-footer">
-        <button className="button primary" disabled={save.isPending}>
-          {save.isPending && <InlineSpinner />}{save.isPending ? "Saving…" : "Save Discord credentials"}
+        <button className="button primary" disabled={isSaving}>
+          {isSaving && <InlineSpinner />}{isSaving ? "Saving…" : "Save Discord credentials"}
         </button>
         <a
           href="https://discord.com/developers/applications"
@@ -291,20 +297,12 @@ export function DiscordPresence({ settings }: { settings: Settings }) {
 
 export function TwitchSettings({ settings }: { settings: Settings }) {
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [origin, setOrigin] = useState("");
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
-  const save = useMutation(
-    trpc.settings.configureTwitch.mutationOptions({
-      onSuccess: async () => {
-        setMessage(
-          "Twitch application saved. Connect the creator and bot accounts below.",
-        );
-        await queryClient.invalidateQueries();
-      },
-    }),
-  );
   const disconnect = useMutation(
     trpc.settings.disconnectTwitch.mutationOptions({
       onSuccess: async () => {
@@ -319,16 +317,29 @@ export function TwitchSettings({ settings }: { settings: Settings }) {
         account first, then the account that sends chat messages.
       </p>
       <form
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
+          if (isSaving) return;
           setMessage("");
+          setError("");
           const form = new FormData(event.currentTarget);
-          save.mutate({
+          const input = {
             clientId: text(form, "clientId"),
             ...(text(form, "clientSecret")
               ? { clientSecret: text(form, "clientSecret") }
               : {}),
-          });
+          };
+          event.currentTarget.querySelectorAll<HTMLInputElement>('input[type="password"]').forEach((field) => { field.value = ""; });
+          setIsSaving(true);
+          try {
+            await trpcClient.settings.configureTwitch.mutate(input);
+            setMessage("Twitch application saved. Connect the creator and bot accounts below.");
+            await queryClient.invalidateQueries();
+          } catch (error) {
+            setError(error instanceof Error ? error.message : "Could not save Twitch credentials. Please try again.");
+          } finally {
+            setIsSaving(false);
+          }
         }}
       >
         <div className="grid grid-cols-1 gap-[18px] md:grid-cols-2">
@@ -353,12 +364,13 @@ export function TwitchSettings({ settings }: { settings: Settings }) {
               }
               required={!settings.twitchAppConfigured}
             />
+            <small>Cleared on submit. Re-enter the secret if saving fails.</small>
           </label>
         </div>
-        <Feedback error={save.error?.message} success={message} />
+        <Feedback error={error} success={message} />
         <div className="form-footer">
-          <button className="button primary" disabled={save.isPending}>
-            {save.isPending && <InlineSpinner />}{save.isPending ? "Saving…" : "Save Twitch application"}
+          <button className="button primary" disabled={isSaving}>
+            {isSaving && <InlineSpinner />}{isSaving ? "Saving…" : "Save Twitch application"}
           </button>
           <a
             href="https://dev.twitch.tv/console/apps"

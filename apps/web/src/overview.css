@@ -10,11 +10,12 @@
 .connection-identity { min-width: 0; }
 .connection-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .connection-title h3 { margin: 0; font-size: 16px; }
+.connection-title .status { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .connection-identity p { margin: 5px 0 0; font-size: 12px; overflow-wrap: anywhere; }
 .connection-body { min-width: 0; }
 .connection-body .service-detail { margin: 0; font-size: 13px; }
-.connection-desired { margin: 6px 0 0; font-size: 12px; }
-.connection-freshness { margin: 8px 0 0; font-size: 12px; }
+.connection-desired { margin: 6px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.connection-freshness { margin: 8px 0 0; font-size: 12px; overflow-wrap: anywhere; }
 .connections .connection-actions { grid-column: 2; margin: 0; padding: 0; align-self: center; gap: 8px; }
 .connection-actions .button { min-height: 44px; }
 .connection-stream { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; margin-top: 8px; }

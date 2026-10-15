@@ -61,6 +61,17 @@ async function brandFonts(page: Page) {
   await expect(page.locator("body")).toHaveCSS("font-family", /MDW Roboto/);
 }
 
+async function selectSettings(page: Page, id: string, label: string) {
+  const mobile = page.getByRole("combobox", { name: "Settings section", exact: true });
+  if (await mobile.isVisible()) await mobile.selectOption(id);
+  else await page.locator(".sidebar").getByRole("navigation", { name: "Settings sections", exact: true }).getByRole("link", { name: label, exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`#${id}$`));
+  await expect(page.locator(`#${id}`)).toBeVisible();
+  const visiblePanels = page.locator("[data-settings-panel]:visible");
+  await expect(visiblePanels).toHaveCount(1);
+  await expect(visiblePanels).toHaveAttribute("data-settings-panel", id);
+}
+
 async function legalContents(page: Page, mobile: boolean, privacy: boolean) {
   const details = page.locator(".legal-mobile-contents");
   const rail = page.locator(".legal-sidebar");
@@ -162,8 +173,13 @@ test("creator completes setup, saves private configuration and controls features
   await page.getByLabel("Application ID", { exact: true }).fill("invalid");
   await page.getByLabel("Server ID").fill("127607669103001600");
   await page.getByLabel("Bot token").fill("e2e-disposable-token-never-used-for-login");
+  await page.getByLabel("Discord application client secret", { exact: true }).fill("e2e-disposable-discord-secret");
   await page.getByRole("button", { name: "Save Discord credentials" }).click();
   await expect(page.locator("form").filter({ has: page.getByRole("button", { name: "Save Discord credentials" }) }).getByRole("alert")).toBeVisible();
+  // Failed submissions must not leave credentials in the mounted setup form.
+  await expect(page.getByLabel("Bot token")).toHaveValue("");
+  await expect(page.getByLabel("Discord application client secret", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("Application ID", { exact: true })).toHaveValue("invalid");
   await page.getByRole("button", { name: "Next: Twitch" }).click();
   const secret = "e2e-disposable-twitch-client-secret";
   await page.getByLabel("Twitch client ID", { exact: true }).fill("e2etestclient1234567890");
@@ -174,6 +190,8 @@ test("creator completes setup, saves private configuration and controls features
   expect(savedResponse.ok()).toBeTruthy();
   expect(await savedResponse.text()).not.toContain(secret);
   await expect(page.getByText("Twitch application saved.", { exact: false })).toBeVisible();
+  await expect(page.getByLabel("Twitch client secret", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("Twitch client ID", { exact: true })).toHaveValue("e2etestclient1234567890");
   const settings = await context.request.get("/api/trpc/settings.get");
   const settingsBody = await settings.text();
   expect(settingsBody).not.toContain(secret);
@@ -265,8 +283,10 @@ test("creator completes setup, saves private configuration and controls features
   await expect(page.getByText("Authorized & eligible", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Disable reward connection" }).click();
   await desktopNav.getByRole("link", { name: "Settings", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Community preferences", exact: true })).toBeVisible();
+  await expect(page.locator("#profile-picture")).toBeVisible();
+  await selectSettings(page, "twitch-connection", "Twitch connection");
   await expect(page.getByLabel("Twitch client secret", { exact: true })).toHaveValue("");
+  await selectSettings(page, "profile-picture", "Profile picture");
   await snapshot(page, info, "desktop-settings");
   const picture = page.locator("#profile-picture");
   await expect(picture.getByRole("heading", { name: "Your profile picture", exact: true })).toBeVisible();
@@ -306,6 +326,7 @@ test("creator completes setup, saves private configuration and controls features
   await picture.getByRole("button", { name: "Use saved upload", exact: true }).click();
   await expect(picture.getByRole("button", { name: "Use saved upload", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(picture.getByAltText("Your profile picture", { exact: true })).toHaveAttribute("src", imageUrl!);
+  await selectSettings(page, "preferences", "Preferences");
   await page.getByLabel("Enable my public channel page").check();
   await page.getByRole("button", { name: "Save preferences" }).click();
   await expect(page.locator("#preferences").getByRole("status")).toContainText("preferences are up to date");
@@ -350,22 +371,21 @@ test("creator completes setup, saves private configuration and controls features
           else expect(Math.abs(first.x - second.x)).toBeLessThanOrEqual(2);
         }
         if (path === "/dashboard/settings") {
-          const rail = (await page.locator(".settings-sections").boundingBox())!, panels = (await page.locator(".settings-panels").boundingBox())!;
-          if (width >= 1200) expect(rail.x + rail.width).toBeLessThan(panels.x);
-          else expect(rail.y + rail.height).toBeLessThanOrEqual(panels.y + 1);
+          await expect(page.locator(".sidebar").getByRole("navigation", { name: "Settings sections", exact: true })).toBeVisible();
+          await expect(page.locator("main.workspace").getByRole("navigation", { name: "Settings sections", exact: true })).toHaveCount(0);
+          await selectSettings(page, "preferences", "Preferences");
           if (width === 1440) {
             await context.setOffline(true);
             await expect(offlineBanner).toBeVisible();
-            await page.locator("#preferences").evaluate((element) => element.scrollIntoView({ block: "start" }));
             await expect.poll(async () => {
-              const notice = await offlineBanner.boundingBox(), stickyRail = await page.locator(".settings-sections").boundingBox();
-              return Boolean(notice && stickyRail && stickyRail.y >= notice.y + notice.height + 23);
-            }, { message: "Sticky Settings navigation must clear the live offline notice" }).toBeTruthy();
+              const notice = await offlineBanner.boundingBox(), sidebar = await page.locator(".sidebar").boundingBox();
+              return Boolean(notice && sidebar && sidebar.y >= notice.y + notice.height - 1);
+            }, { message: "The main Settings sidebar must clear the offline notice" }).toBeTruthy();
             await context.setOffline(false);
             await expect(offlineBanner).toHaveCount(0);
             await expect.poll(() => page.evaluate(() => document.documentElement.style.getPropertyValue("--offline-banner-height"))).toBe("");
-            await page.evaluate(() => window.scrollTo(0, 0));
           }
+          await selectSettings(page, "profile-picture", "Profile picture");
         }
         if (width === 1440 || path === "/dashboard") await snapshot(page, info, `desktop-${width}-${title!.toLowerCase()}-viewport`, false);
         await page.getByRole("contentinfo").getByRole("button", { name: "Cookie information", exact: true }).evaluate((element) => element.scrollIntoView({ block: "center" }));
@@ -395,16 +415,26 @@ test("appearance follows the system and remembers explicit themes without runtim
   await page.goto("/dashboard/settings#appearance");
   const appearance = page.locator("#appearance");
   await expect(appearance.getByRole("heading", { name: "Appearance", exact: true })).toBeVisible();
-  const sectionNav = page.getByRole("navigation", { name: "Settings sections", exact: true });
+  const sectionNav = page.locator(".sidebar").getByRole("navigation", { name: "Settings sections", exact: true });
+  await selectSettings(page, "preferences", "Preferences");
   const nameInput = page.getByLabel("Bot display name"), originalName = await nameInput.inputValue();
   await nameInput.fill("Unsaved theme navigation check");
-  await sectionNav.getByRole("link", { name: "Appearance", exact: true }).click();
+  await selectSettings(page, "appearance", "Appearance");
   await expect(sectionNav.getByRole("link", { name: "Appearance", exact: true })).toHaveAttribute("aria-current", "location");
+  await expect(nameInput).toBeHidden();
+  await page.goBack();
+  await expect(page).toHaveURL(/#preferences$/);
+  await expect(nameInput).toBeVisible();
   await expect(nameInput).toHaveValue("Unsaved theme navigation check");
-  await sectionNav.getByRole("link", { name: "Preferences", exact: true }).click();
-  await expect(sectionNav.getByRole("link", { name: "Preferences", exact: true })).toHaveAttribute("aria-current", "location");
+  await page.goForward();
+  await expect(page).toHaveURL(/#appearance$/);
+  await expect(appearance).toBeVisible();
+  await selectSettings(page, "preferences", "Preferences");
   await nameInput.fill(originalName);
-  await sectionNav.getByRole("link", { name: "Appearance", exact: true }).click();
+  await page.evaluate(() => { window.location.hash = "not-a-settings-section"; });
+  await expect(page.locator("#profile-picture")).toBeVisible();
+  await expect(page.locator("#preferences")).toBeHidden();
+  await selectSettings(page, "appearance", "Appearance");
   await appearance.getByRole("radio", { name: "Dark", exact: true }).check();
   await expect(html).toHaveAttribute("data-theme", "dark");
   await page.reload();
@@ -443,7 +473,11 @@ test("appearance follows the system and remembers explicit themes without runtim
         await expect(reference.locator("code").first()).toHaveCSS("font-family", /MDW JetBrains Mono/);
         await reference.locator("summary").click();
       }
-      if (path === "/dashboard/settings") await readableText(page.getByLabel("Command prefix"));
+      if (path === "/dashboard/settings") {
+        await selectSettings(page, "preferences", "Preferences");
+        await readableText(page.getByLabel("Command prefix"));
+        await selectSettings(page, "profile-picture", "Profile picture");
+      }
       await snapshot(page, info, `theme-${theme}-1440-${title!.toLowerCase()}`, false);
     }
     if (theme === "dark") {
@@ -548,11 +582,12 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
       await snapshot(navigation, info, `theme-dark-390-${title!.toLowerCase()}`, false);
       await snapshot(navigation, info, `gallery-dark-mobile-${title!.toLowerCase()}`, true);
     }
-    const darkSections = navigation.getByRole("navigation", { name: "Settings sections", exact: true });
+    await expect(navigation.getByRole("combobox", { name: "Settings section", exact: true })).toBeVisible();
     for (const [label, slug] of [["Appearance", "appearance"], ["Preferences", "preferences"], ["Discord presence", "discord-presence"], ["Discord connection", "discord-connection"], ["Twitch connection", "twitch-connection"]]) {
-      await darkSections.getByRole("link", { name: label!, exact: true }).click();
+      await selectSettings(navigation, slug!, label!);
       await snapshot(navigation, info, `gallery-dark-mobile-settings-${slug}`, false);
     }
+    await selectSettings(navigation, "profile-picture", "Profile picture");
     await navigation.getByLabel(/^Upload a picture/).setInputFiles({ name: "dark-mobile-profile.png", mimeType: "image/png", buffer: await pictureFixture(navigation) });
     const darkCrop = navigation.getByRole("dialog", { name: "Crop profile picture", exact: true });
     await expect(darkCrop.getByRole("button", { name: "Save picture", exact: true })).toBeEnabled();
@@ -608,11 +643,10 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
         expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
       }
       if (path === "/dashboard/settings") {
-        const rail = screen.locator(".settings-sections");
-        const groups = rail.locator(".settings-section-group > div");
-        expect(await groups.evaluateAll((elements) => elements.every((element) => getComputedStyle(element).flexWrap === "wrap"))).toBeTruthy();
-        const railBox = (await rail.boundingBox())!, panels = (await screen.locator(".settings-panels").boundingBox())!;
-        expect(railBox.y + railBox.height).toBeLessThanOrEqual(panels.y + 1);
+        await expect(screen.getByRole("combobox", { name: "Settings section", exact: true })).toBeVisible();
+        await expect(screen.locator("main.workspace").getByRole("navigation", { name: "Settings sections", exact: true })).toHaveCount(0);
+        await selectSettings(screen, "appearance", "Appearance");
+        await selectSettings(screen, "profile-picture", "Profile picture");
       }
       await snapshot(screen, info, `mobile-${width}-${path.replaceAll("/", "-")}`);
       if (path === "/dashboard/settings" && width === 390) {
@@ -760,9 +794,8 @@ test("dark page gallery preserves public visibility and previews every dashboard
     }
     await page.goto("/dashboard/settings");
     await expect(page.locator(".loading-state")).toHaveCount(0);
-    const sections = page.getByRole("navigation", { name: "Settings sections", exact: true });
     for (const [label, slug] of [["Profile picture", "profile"], ["Appearance", "appearance"], ["Preferences", "preferences"], ["Discord presence", "discord-presence"], ["Discord connection", "discord-connection"], ["Twitch connection", "twitch-connection"]]) {
-      await sections.getByRole("link", { name: label!, exact: true }).click();
+      await selectSettings(page, slug === "profile" ? "profile-picture" : slug!, label!);
       await snapshot(page, info, `gallery-dark-desktop-settings-${slug}`, false);
     }
     await snapshot(page, info, "gallery-dark-desktop-settings-all");
@@ -784,6 +817,13 @@ test("dark page gallery preserves public visibility and previews every dashboard
         expect(await publicPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
         if (path === "/channel") {
           expect(await response!.text()).not.toContain("/api/profile-picture");
+          const cover = (await publicPage.locator(".channel-cover").boundingBox())!;
+          const icon = publicPage.locator(".channel-icon img");
+          await expect(icon).toHaveAttribute("src", "/brand/logo.svg");
+          await expect.poll(() => icon.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBeTruthy();
+          const iconBox = (await publicPage.locator(".channel-icon").boundingBox())!;
+          expect(iconBox.y).toBeLessThan(cover.y + cover.height);
+          expect(iconBox.y + iconBox.height).toBeGreaterThan(cover.y + cover.height);
           await expect(publicPage.getByRole("heading", { name: "Bot status", exact: true })).toBeVisible();
           await expect(publicPage.getByRole("heading", { name: "Chat commands", exact: true })).toBeVisible();
           await readableText(publicPage.getByRole("heading", { level: 1 }));

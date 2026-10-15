@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { Subject } from "../packages/core/src/permissions";
-import { navigationFor } from "../apps/web/src/components/navigation";
+import { navigationFor, settingsSectionsFor } from "../apps/web/src/components/navigation";
 
 function destinations(subject: Subject, publicPageEnabled = false) {
   return navigationFor(subject, publicPageEnabled).map((item) => item.href);
@@ -33,5 +33,26 @@ describe("platform-scoped dashboard navigation", () => {
     const links = destinations({ owner: false, grants: [] });
     expect(links).toContain("/access");
     expect(links.some((route) => route.startsWith("/dashboard") || route === "/setup")).toBe(false);
+  });
+});
+
+describe("settings section permissions", () => {
+  test("the creator can reach every personal and workspace section", () => {
+    expect(settingsSectionsFor({ owner: true, grants: [] }).map((section) => section.id)).toEqual([
+      "profile-picture", "appearance", "preferences", "discord-presence", "discord-connection", "twitch-connection",
+    ]);
+  });
+  test("Discord admins have personal settings and presence without credentials", () => {
+    expect(settingsSectionsFor({ owner: false, grants: [{ platform: "discord", role: "admin", source: "test" }] }).map((section) => section.id)).toEqual([
+      "profile-picture", "appearance", "discord-presence",
+    ]);
+  });
+  test("Twitch moderators have only personal settings", () => {
+    expect(settingsSectionsFor({ owner: false, grants: [{ platform: "twitch", role: "moderator", source: "test" }] }).map((section) => section.id)).toEqual([
+      "profile-picture", "appearance",
+    ]);
+  });
+  test("unmapped accounts have no dashboard settings destination", () => {
+    expect(settingsSectionsFor({ owner: false, grants: [] })).toEqual([]);
   });
 });

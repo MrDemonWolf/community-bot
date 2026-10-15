@@ -12,6 +12,20 @@ export interface NavigationItem {
   external?: boolean;
 }
 
+export function settingsSectionsFor(access: Subject) {
+  if (!canAccess(access, "dashboard:view")) return [];
+  return [
+    { id: "profile-picture", label: "Profile picture", group: "Account" },
+    { id: "appearance", label: "Appearance", group: "Account" },
+    ...(access.owner ? [{ id: "preferences", label: "Preferences", group: "Workspace" }] : []),
+    ...(canAccess(access, "presence:manage", "discord") ? [{ id: "discord-presence", label: "Discord presence", group: "Workspace" }] : []),
+    ...(access.owner ? [
+      { id: "discord-connection", label: "Discord connection", group: "Workspace" },
+      { id: "twitch-connection", label: "Twitch connection", group: "Workspace" },
+    ] : []),
+  ];
+}
+
 export function navigationFor(access: Subject, publicPageEnabled: boolean): NavigationItem[] {
   const items: NavigationItem[] = [];
   if (canAccess(access, "dashboard:view")) items.push({ id: "home", href: "/dashboard", label: "Overview", mobileLabel: "Home", icon: LayoutDashboard, section: "primary" });

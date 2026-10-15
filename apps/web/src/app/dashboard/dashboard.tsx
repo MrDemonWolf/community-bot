@@ -40,15 +40,16 @@ export default function Dashboard() {
     {control.error && <p role="alert" className="notice error">{control.error.message}</p>}
     {control.isSuccess && <p role="status" className="notice">Request saved. The service status below will confirm the change.</p>}
     <section className="connections" aria-labelledby="connections-title">
-      <header className="connections-heading"><h2 id="connections-title">Connections</h2><p>Live worker status and connection controls.</p></header>
+      <header className="connections-heading"><h2 id="connections-title">Connections</h2><p>Bot status refreshes every 5 seconds.</p></header>
       {(["discord", "twitch"] as const).filter((service) => canAccess(access, "dashboard:view", service)).map((service) => {
         const runtime = settings.runtimes.find((item) => item.service === service);
         const configured = service === "discord" ? settings.discordConfigured : settings.broadcaster.connected && settings.bot.connected;
         const enabled = service === "discord" ? settings.discordEnabled : settings.twitchEnabled;
-        const state = runtime ? runtime.stale ? "No recent update" : runtime.state.replaceAll("_", " ") : "Waiting for service";
+        const state = runtime ? runtime.stale ? "No recent update" : runtime.state.replaceAll("_", " ").replace(/^./, (character) => character.toUpperCase()) : "Waiting for bot";
         const connected = !runtime?.stale && (runtime?.state === "connected" || runtime?.state === "muted");
         const connect = canAccess(access, "bot:connect", service);
         const mute = service === "twitch" && canAccess(access, "bot:mute", "twitch");
+        const setupHint = service === "discord" ? "Add your Discord application to connect this bot." : "Connect your creator and bot accounts to enable Twitch chat.";
         const Icon = service === "discord" ? MessageCircle : Radio;
         return <section className="connection-card" key={service} aria-label={service === "discord" ? "Discord connection" : "Twitch connection"}>
           <div className="connection-summary">
@@ -60,12 +61,12 @@ export default function Dashboard() {
           </div>
           <div className="connection-body">
             <p className="service-detail">{!configured
-              ? access.owner ? "Connect your application and accounts to get started." : "The creator needs to finish connecting this service."
-              : runtime?.stale ? "The worker has stopped reporting. Its connection cannot be confirmed."
-                : runtime?.detail || (enabled ? "Connection requested. Waiting for the worker to confirm." : "Credentials are ready. Choose Join to request a connection.")}</p>
+              ? access.owner ? setupHint : "The creator needs to finish connecting this service."
+              : runtime?.stale ? "This bot hasn't sent a recent update. Its connection cannot be confirmed."
+                : runtime?.detail || (enabled ? "Connection requested. Waiting for the bot to confirm." : "Credentials are ready. Choose Join to request a connection.")}</p>
             {configured && <p className="connection-desired">Requested: {enabled ? "connected" : "paused"}{service === "twitch" && settings.twitchMuted ? " · Replies muted" : ""}{service === "discord" && !enabled ? " · Bot stays in your server" : ""}</p>}
             {service === "twitch" && runtime && !runtime.stale && <StreamDetails metadata={runtime.metadata} />}
-            <p className="connection-freshness">{runtime?.heartbeatAt ? <>Last worker update <time dateTime={runtime.heartbeatAt}>{new Date(runtime.heartbeatAt).toLocaleTimeString()}</time>{runtime.stale ? " · Out of date" : ""}</> : "No worker update received yet"}</p>
+            <p className="connection-freshness">{runtime?.heartbeatAt ? <>Last update <time dateTime={runtime.heartbeatAt}>{new Date(runtime.heartbeatAt).toLocaleTimeString()}</time>{runtime.stale ? " · Out of date" : ""}</> : "No bot update received yet"}</p>
           </div>
           <div className="actions connection-actions">
             {!configured && access.owner ? <Link className="button primary" href={`/dashboard/settings#${service}-connection`}>Set up {service === "discord" ? "Discord" : "Twitch"}</Link> : <>

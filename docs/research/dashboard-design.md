@@ -1,6 +1,6 @@
 # Community Bot: operations dashboard research
 
-Research date: October 15, 2026. Scope: information architecture, operational states, integration controls, and visual hierarchy. This is a research recommendation, not an implemented redesign.
+Research date: October 15, 2026. Scope: information architecture, operational states, integration controls, and visual hierarchy. The original recommendation and a follow-up refinement are recorded below; browser artifacts provide implementation evidence.
 
 ## Direction
 
@@ -63,4 +63,14 @@ Seven deep searches covered Sentry operations, integrations, incident handling, 
 - Preserve clear keyboard focus, 44px primary touch controls, explicit labels, truthful unknown states, and existing offline/private-data boundaries.
 - Validate actual connected, paused, unconfigured, authorization-needed, and stale-worker states; the current screenshot fixtures mainly show disconnected states.
 
-Implementation should start after the research directions are combined and the website token audit is complete. These screenshots establish existing behavior and reference patterns, not proof that the proposed redesign works.
+## Follow-up: keep the dashboard simple
+
+The current `c2f1b84` desktop and mobile captures already use the compact connection layout above. A focused Mobbin follow-up inspected these returned screens:
+
+- [Customer.io connection detail](https://mobbin.com/screens/e95bd92b-7d41-4dff-aa5d-3eef55514906): separate identity, connection state, and last activity.
+- [7shifts connection row](https://mobbin.com/screens/5077ad65-81ee-4008-bd6e-05a862db6641): compact spacing and a quiet status/action row.
+- [Calendly connection settings](https://mobbin.com/screens/25f3f8e9-bd9d-4ebb-9be6-7d6f5a045eb3): plain connected labels with the relevant action nearby.
+
+The resulting small refinement uses everyday bot/update wording, platform-specific setup guidance, sentence-case statuses, and safer wrapping for long status text. Keep the current website palette, fonts, navigation, and two-service layout. More charts, cards, and navigation would add scanning work without useful data.
+
+The creator then supplied Fossabot, Nightbot, and StreamElements screenshots. The direct preference is one quiet sidebar with grouped destinations and a focused content area. Settings therefore uses nested links in the existing application sidebar and one visible section; phones use a labelled picker. The public-page reference adds a wide channel banner and overlapping channel icon. Keep those channel assets separate from private staff profile pictures.

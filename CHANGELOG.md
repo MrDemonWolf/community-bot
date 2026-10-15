@@ -21,6 +21,10 @@ Changes are grouped by release. Work under **Unreleased** is on the rewrite bran
 
 ### Changed
 
+- Clear submitted credential fields and keep secret writes out of the browser mutation cache; saved credentials remain write-only in the dashboard.
+- Simplified bot status labels and platform setup guidance after a focused Mobbin review.
+- Moved Settings sections into the main sidebar, with one selected panel and a compact mobile section picker.
+- Added a responsive public channel cover and overlapping official brand icon.
 - Rebuilt on Better-T-Stack with Bun, Next.js, tRPC, Better Auth, Drizzle, and PostgreSQL.
 - Kept **community-bot** as the project name. WolfAide identifies connected bot accounts.
 - Moved platform configuration into the dashboard and split Discord and Twitch into separate processes.

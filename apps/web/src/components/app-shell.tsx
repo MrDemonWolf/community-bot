@@ -4,9 +4,9 @@ import { LogOut, Menu, MoreHorizontal, X } from "lucide-react";
 import type { Subject } from "@community-bot/core/permissions";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { authClient } from "@/lib/auth-client";
-import { navigationFor, type NavigationItem } from "./navigation";
+import { navigationFor, settingsSectionsFor, type NavigationItem } from "./navigation";
 import { Modal } from "./modal";
 import { UserAvatar } from "./user-avatar";
 
@@ -23,13 +23,24 @@ export default function AppShell({ children, userName, botName, access, publicPa
   const [moreOpen, setMoreOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState("");
+  const [settingsHash, setSettingsHash] = useState("");
   const navigation = navigationFor(access, publicPageEnabled);
   const primary = navigation.filter((item) => item.section === "primary");
   const secondaryActive = navigation.some((item) => item.section !== "primary" && item.href === pathname);
+  const onSettings = pathname === "/dashboard/settings";
+  const settingsSections = settingsSectionsFor(access);
+  const selectedSetting = settingsSections.find((section) => section.id === settingsHash)?.id ?? settingsSections[0]?.id;
 
   // Server-rendered menu triggers stay disabled until their dialog handlers are hydrated.
   useEffect(() => { setReady(true); }, []);
   useEffect(() => { setMoreOpen(false); }, [pathname]);
+  useEffect(() => {
+    const update = () => setSettingsHash(window.location.hash.slice(1));
+    update();
+    window.addEventListener("hashchange", update);
+    window.addEventListener("popstate", update);
+    return () => { window.removeEventListener("hashchange", update); window.removeEventListener("popstate", update); };
+  }, [pathname]);
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 701px)");
     const closeOnDesktop = () => { if (desktop.matches) setMoreOpen(false); };
@@ -47,6 +58,14 @@ export default function AppShell({ children, userName, botName, access, publicPa
     finally { setSigningOut(false); }
   }
 
+  function navigate(item: NavigationItem, event: MouseEvent<HTMLAnchorElement>) {
+    if (item.id === "settings" && onSettings && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+      event.preventDefault();
+      window.location.hash = "profile-picture";
+    }
+    setMoreOpen(false);
+  }
+
   return <div className="app-shell">
     <a href="#main" className="skip-link">Skip to content</a>
     <aside className="sidebar">
@@ -55,7 +74,12 @@ export default function AppShell({ children, userName, botName, access, publicPa
       <nav aria-label="Main navigation">
         {primary.map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} />)}
         {navigation.some((item) => item.section === "tools") && <span className="nav-group-label">Manage</span>}
-        {navigation.filter((item) => item.section === "tools").map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} />)}
+        {navigation.filter((item) => item.section === "tools").map((item) => <div key={item.id}>
+          <NavigationLink item={item} active={pathname === item.href} onNavigate={(event) => navigate(item, event)} />
+          {item.id === "settings" && onSettings && <nav className="settings-submenu" aria-label="Settings sections">
+            {settingsSections.map((section) => <a key={section.id} href={"#" + section.id} aria-current={selectedSetting === section.id ? "location" : undefined}>{section.label}</a>)}
+          </nav>}
+        </div>)}
         <span className="nav-group-label">Community</span>
         {navigation.filter((item) => item.section === "account").map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} />)}
       </nav>
@@ -74,7 +98,7 @@ export default function AppShell({ children, userName, botName, access, publicPa
         <div className="more-profile"><UserAvatar userName={userName} size={40} /><div><strong>{userName}</strong><span>{access.owner ? "Creator" : "Staff"} · {botName}</span></div></div>
         <nav aria-label="More navigation">{(["tools", "account"] as const).map((section) => {
           const items = navigation.filter((item) => item.section === section);
-          return items.length ? <section className="more-group" key={section}><h3>{section === "tools" ? "Tools" : "Account & community"}</h3><div>{items.map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} onNavigate={() => setMoreOpen(false)} />)}</div></section> : null;
+          return items.length ? <section className="more-group" key={section}><h3>{section === "tools" ? "Tools" : "Account & community"}</h3><div>{items.map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} onNavigate={(event) => navigate(item, event)} />)}</div></section> : null;
         })}</nav>
         {error && <p role="alert" className="notice error">{error}</p>}<button type="button" className="button more-signout" disabled={signingOut} onClick={signOut}><LogOut size={18} />{signingOut ? "Signing out…" : "Sign out"}</button>
       </div>
@@ -82,7 +106,7 @@ export default function AppShell({ children, userName, botName, access, publicPa
   </div>;
 }
 
-function NavigationLink({ item, active, mobile, onNavigate }: { item: NavigationItem; active: boolean; mobile?: boolean; onNavigate?: () => void }) {
+function NavigationLink({ item, active, mobile, onNavigate }: { item: NavigationItem; active: boolean; mobile?: boolean; onNavigate?: (event: MouseEvent<HTMLAnchorElement>) => void }) {
   const Icon = item.icon;
   return <Link href={item.href} aria-current={active ? "page" : undefined} target={item.external ? "_blank" : undefined} rel={item.external ? "noreferrer" : undefined} onClick={onNavigate}><Icon size={mobile ? 23 : 19} aria-hidden="true" /><span>{mobile ? item.mobileLabel ?? item.label : item.label}</span>{item.external && <span className="nav-external" aria-hidden="true">↗</span>}</Link>;
 }

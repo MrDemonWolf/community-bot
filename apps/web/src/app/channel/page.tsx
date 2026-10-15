@@ -19,13 +19,23 @@ export default async function ChannelPage() {
   return <>
     <PublicHeader active="channel" />
     <main className="channel-page">
-      <header className="channel-header"><div>
-        <h1>{channel.channelName ? "#" + channel.channelName : channel.botName}</h1>
-        <p>Commands and community information.</p>
-      </div>{twitchURL && <a className="button primary" href={twitchURL} target="_blank" rel="noreferrer">
-        {channel.twitch.live === true ? "Watch on Twitch" : "Open Twitch channel"}<ArrowUpRight size={17} aria-hidden="true" />
-      </a>}</header>
-      <nav className="channel-navigation" aria-label="Community page sections"><a href="#commands">Commands</a><a href="#status">Bot status</a></nav>
+      <header className="channel-profile">
+        <div className="channel-cover" aria-hidden="true" />
+        <div className="channel-header">
+          <div className="channel-identity">
+            <div className="channel-icon"><img src="/brand/logo.svg" width="112" height="112" alt="" /></div>
+            <div className="channel-identity-copy">
+              <p className="channel-eyebrow">Community</p>
+              <h1>{channel.channelName ? "#" + channel.channelName : channel.botName}</h1>
+              <p>Commands and community information.</p>
+            </div>
+          </div>
+          {twitchURL && <a className="button primary" href={twitchURL} target="_blank" rel="noreferrer">
+            {channel.twitch.live === true ? "Watch on Twitch" : "Open Twitch channel"}<ArrowUpRight size={17} aria-hidden="true" />
+          </a>}
+        </div>
+        <nav className="channel-navigation" aria-label="Community page sections"><a className="channel-navigation-current" href="#commands">Commands</a><a href="#status">Bot status</a></nav>
+      </header>
       <div className="channel-layout">
         <CommandDirectory commands={channel.commands} botName={channel.botName} />
         <aside className="channel-about" aria-label="Community information">
