@@ -818,7 +818,7 @@ test("dark page gallery preserves public visibility and previews every dashboard
             try {
               await publicPage.evaluate(() => { navigator.clipboard.writeText = async () => { throw new DOMException("Clipboard permission denied", "NotAllowedError"); }; });
               await publicPage.getByRole("button", { name: "Copy !uptime", exact: true }).click();
-              await expect(publicPage.getByRole("alert")).toHaveText("Automatic copying is unavailable. Select the command below and copy it.");
+              await expect(publicPage.locator(".command-directory").getByRole("alert")).toHaveText("Automatic copying is unavailable. Select the command below and copy it.");
               const fallback = publicPage.getByRole("textbox", { name: "Command to copy", exact: true });
               await expect(fallback).toHaveValue("!uptime");
               await expect(fallback).toHaveAttribute("readonly", "");
@@ -830,7 +830,7 @@ test("dark page gallery preserves public visibility and previews every dashboard
               await originalWriteText.dispose();
             }
             await publicPage.getByRole("button", { name: "Copy !uptime", exact: true }).click();
-            await expect(publicPage.getByRole("alert")).toHaveCount(0);
+            await expect(publicPage.locator(".command-directory").getByRole("alert")).toHaveCount(0);
             await expect(publicPage.getByRole("status").filter({ hasText: "Copied !uptime." })).toBeVisible();
           }
           const publicSections = publicPage.getByRole("navigation", { name: "Community page sections", exact: true });
