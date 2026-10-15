@@ -26,11 +26,12 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "turbo dev --filter='!discord'",
     "build": "turbo build",
     "check-types": "turbo check-types",
     "dev:web": "turbo -F web dev",
     "dev:twitch": "turbo -F twitch dev",
+    "dev:discord": "bun run --cwd apps/discord dev",
     "db:push": "turbo -F @community-bot/db db:push",
     "db:studio": "turbo -F @community-bot/db db:studio",
     "db:generate": "turbo -F @community-bot/db db:generate",
