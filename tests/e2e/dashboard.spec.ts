@@ -50,11 +50,10 @@ async function readableText(target: Locator) {
 }
 
 test.beforeEach(async ({ context }) => {
-  await context.route("**/*", (route) => {
+  // Intercept network traffic only; pausing local blob decoding races Strict Mode URL cleanup.
+  await context.route(/^https?:\/\//, (route) => {
     const url = new URL(route.request().url());
-    // WebKit routes local object URLs too; permit only blobs created by this app.
-    const localBlob = url.protocol === "blob:" && url.origin === new URL(process.env.E2E_BASE_URL ?? "http://localhost:3001").origin;
-    return ["localhost", "127.0.0.1"].includes(url.hostname) || localBlob ? route.continue() : route.abort();
+    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.abort();
   });
 });
 
