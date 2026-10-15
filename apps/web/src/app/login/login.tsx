@@ -2,7 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
 export default function Login({
@@ -13,8 +13,10 @@ export default function Login({
   googleConfigured: boolean;
 }) {
   const router = useRouter();
+  const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => setReady(true), []);
   async function signIn(local: boolean) {
     setError("");
     setBusy(true);
@@ -88,7 +90,7 @@ export default function Login({
           )}
           <button
             className="button primary"
-            disabled={busy || !googleConfigured}
+            disabled={!ready || busy || !googleConfigured}
             onClick={() => signIn(false)}
           >
             Continue with Google <ArrowRight size={17} />
@@ -105,7 +107,7 @@ export default function Login({
               <p className="subtle">LOCAL DEVELOPMENT</p>
               <button
                 className="button"
-                disabled={busy}
+                disabled={!ready || busy}
                 onClick={() => signIn(true)}
               >
                 {busy ? "Signing in…" : "Enter development workspace"}

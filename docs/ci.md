@@ -12,6 +12,14 @@ Playwright is pinned to `1.64.1`, matching `mcr.microsoft.com/playwright:v1.64.1
 
 Use a dedicated Compose project and disposable credentials. The following environment file is untracked; provide the bootstrap values from `.env.example` without any real integration credentials. A fresh volume is required for the initial anonymous/public-page assertions.
 
+On macOS, optionally create the isolated Colima profile first:
+
+```sh
+colima start --profile community-bot-test --cpu 2 --memory 3 --mount-inotify --activate=false
+```
+
+The commands below explicitly select that profile. With Docker Desktop or another Docker engine, replace `--context colima-community-bot-test` with your engine's context. Creating the profile does not switch your default Docker context.
+
 Run the commands in order and stop if any build or check fails.
 
 ```sh

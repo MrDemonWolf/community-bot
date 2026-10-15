@@ -4,7 +4,11 @@ test.describe.configure({ mode: "serial" });
 
 async function login(page: Page) {
   await page.goto("/login");
-  await page.getByRole("button", { name: "Enter development workspace" }).click();
+  const button = page.getByRole("button", { name: "Enter development workspace" });
+  await expect(button).toBeEnabled();
+  const response = page.waitForResponse((value) => value.url().includes("/api/auth/dev-login") && value.request().method() === "POST", { timeout: 30_000 });
+  await button.click();
+  expect((await response).ok()).toBeTruthy();
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole("heading", { name: /^Hey,/ })).toBeVisible();
 }
@@ -15,11 +19,8 @@ async function snapshot(page: Page, info: TestInfo, name: string) {
   await info.attach(name, { path, contentType: "image/png" });
 }
 
-test.beforeEach(async ({ page }) => {
-  // These journeys use a fixed source snapshot. Dev-server route compilation
-  // must not trigger a competing HMR navigation, particularly in WebKit.
-  await page.routeWebSocket("**/_next/webpack-hmr*", (socket) => socket.close());
-  await page.route("**/*", (route) => {
+test.beforeEach(async ({ context }) => {
+  await context.route("**/*", (route) => {
     const url = new URL(route.request().url());
     return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.abort();
   });
@@ -143,31 +144,41 @@ test("creator completes setup, saves private configuration and controls features
   expect(runtimeErrors).toEqual([]);
 });
 
-test("mobile setup, feature, access and reward pages remain usable", async ({ page }, info) => {
+test("mobile setup, feature, access and reward pages remain usable", async ({ page, context }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
   await page.getByRole("link", { name: "My accounts", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Your community roles" })).toBeVisible();
   await expect(page.getByText("Creator · Full access to this workspace.", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Link Twitch", exact: true })).toBeVisible();
+  const paths = ["/setup", "/dashboard/features", "/access", "/dashboard/access", "/dashboard/rewards"];
+  // Compile the fixed routes before opening their browser pages. Otherwise a
+  // newly compiled dev route can HMR-reload the page we are navigating away from.
+  for (const path of paths) expect((await context.request.get(path)).ok()).toBeTruthy();
+  await page.close();
   for (const width of [390, 360]) {
-    await page.setViewportSize({ width, height: 844 });
-    for (const path of ["/setup", "/dashboard/features", "/access", "/dashboard/access", "/dashboard/rewards"]) {
-      await page.goto(path);
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      await expect(page.getByText(/Loading (features|staff access|channel points|your settings)/)).toHaveCount(0);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${path} overflows at ${width}px`).toBeTruthy();
-      const smallTargets = await page.locator("button:visible, a.button:visible").evaluateAll((elements) => elements.filter((element) => {
+    for (const path of paths) {
+      const screen = await context.newPage();
+      try {
+      await screen.setViewportSize({ width, height: 844 });
+      await screen.goto(path);
+      await expect(screen.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(screen.getByText(/Loading (features|staff access|channel points|your settings)|Checking your access/)).toHaveCount(0);
+      expect(await screen.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${path} overflows at ${width}px`).toBeTruthy();
+      const smallTargets = await screen.locator("button:visible, a.button:visible").evaluateAll((elements) => elements.filter((element) => {
         const bounds = element.getBoundingClientRect();
         return bounds.width < 24 || bounds.height < 24;
       }).map((element) => element.textContent?.trim()));
       expect(smallTargets, `${path} has touch targets below 24px`).toEqual([]);
-      const smallPrimaryTargets = await page.locator(".button.primary:visible, [role=tab]:visible").evaluateAll((elements) => elements.filter((element) => {
+      const smallPrimaryTargets = await screen.locator(".button.primary:visible, [role=tab]:visible").evaluateAll((elements) => elements.filter((element) => {
         const bounds = element.getBoundingClientRect();
         return bounds.width < 44 || bounds.height < 44;
       }).map((element) => element.textContent?.trim()));
       expect(smallPrimaryTargets, `${path} primary touch targets must reach 44px`).toEqual([]);
-      await snapshot(page, info, `mobile-${width}-${path.replaceAll("/", "-")}`);
+      await snapshot(screen, info, `mobile-${width}-${path.replaceAll("/", "-")}`);
+      } finally {
+        await screen.close();
+      }
     }
   }
 });
