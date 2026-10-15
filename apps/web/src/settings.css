@@ -1,0 +1,11 @@
+.settings-panels { min-width: 0; max-width: 960px; }
+.settings-panel { min-width: 0; }
+/* Inactive forms stay mounted to preserve drafts, but must not expose controls or affect layout. */
+.settings-panel[hidden] { display: none; }
+.settings-picker { display: none; }
+.sidebar nav.settings-submenu { gap: 4px; margin: 4px 0 8px 24px; }
+.sidebar nav.settings-submenu a { min-height: 44px; padding: 8px 12px; font-size: 13px; font-weight: 450; }
+.sidebar nav.settings-submenu a[aria-current="location"] { color: var(--ink); background: var(--surface-subtle); font-weight: 600; }
+@media (max-width: 700px) {
+  .settings-picker { display: grid; max-width: 400px; margin-bottom: 20px; }
+}

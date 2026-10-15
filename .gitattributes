@@ -1,0 +1,3 @@
+# Preserve the official website artwork byte for byte.
+apps/web/public/brand/logo.svg -whitespace
+apps/docs/public/brand/logo.svg -whitespace

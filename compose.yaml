@@ -1,0 +1,74 @@
+x-bot-environment: &bot-environment
+  DATABASE_URL: postgresql://community_bot:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/community_bot
+  APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?Set APP_ENCRYPTION_KEY}
+  NODE_ENV: production
+
+x-app-environment: &app-environment
+  <<: *bot-environment
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
+  BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set BETTER_AUTH_URL}
+  OWNER_EMAIL: ${OWNER_EMAIL:?Set OWNER_EMAIL}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  DEV_LOGIN: "false"
+  NODE_ENV: production
+
+x-app: &app
+  restart: unless-stopped
+  environment: *app-environment
+  stop_grace_period: 15s
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: community_bot
+      POSTGRES_DB: community_bot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U community_bot -d community_bot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    build:
+      context: .
+      target: migrate
+    restart: "no"
+    environment: *app-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    <<: *app
+    build:
+      context: .
+      target: web
+      args:
+        SOURCE_COMMIT: ${SOURCE_COMMIT:-}
+    expose: ["3001"]
+
+  discord:
+    <<: *app
+    environment: *bot-environment
+    build:
+      context: .
+      target: discord
+
+  twitch:
+    <<: *app
+    environment: *bot-environment
+    build:
+      context: .
+      target: twitch
+
+volumes:
+  postgres_data:

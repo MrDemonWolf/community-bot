@@ -1,121 +1,112 @@
 "use client";
-import type { Route } from "next";
+
+import { LogOut, Menu, MoreHorizontal, X } from "lucide-react";
+import type { Subject } from "@community-bot/core/permissions";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-
+import { useEffect, useState, type MouseEvent } from "react";
 import { authClient } from "@/lib/auth-client";
+import { navigationFor, settingsSectionsFor, type NavigationItem } from "./navigation";
+import { Modal } from "./modal";
+import { UserAvatar } from "./user-avatar";
 
-type NavItem = { label: string; href?: Route; soon?: boolean };
-
-const NAV: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Commands", soon: true },
-  { label: "Timers", soon: true },
-  { label: "Settings", href: "/setup" },
-];
-
-function cx(...c: (string | false | undefined)[]) {
-  return c.filter(Boolean).join(" ");
-}
-
-export default function AppShell({
-  children,
-  userName,
-  botName,
-}: {
+export default function AppShell({ children, userName, botName, access, publicPageEnabled }: {
   children: React.ReactNode;
   userName: string;
   botName: string;
+  access: Subject;
+  publicPageEnabled: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [ready, setReady] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [error, setError] = useState("");
+  const [settingsHash, setSettingsHash] = useState("");
+  const navigation = navigationFor(access, publicPageEnabled);
+  const primary = navigation.filter((item) => item.section === "primary");
+  const secondaryActive = navigation.some((item) => item.section !== "primary" && item.href === pathname);
+  const onSettings = pathname === "/dashboard/settings";
+  const settingsSections = settingsSectionsFor(access);
+  const selectedSetting = settingsSections.find((section) => section.id === settingsHash)?.id ?? settingsSections[0]?.id;
 
-  return (
-    <div className="flex min-h-svh bg-[var(--hb-bg)] text-[var(--hb-fg)] [font-family:var(--font-inter)]">
-      {/* sidebar */}
-      <aside className="flex w-60 flex-none flex-col border-r border-[var(--hb-border)] bg-[var(--hb-sidebar)]/60">
-        <div className="flex items-center gap-2.5 px-5 py-4">
-          <div
-            className="grid h-8 w-8 place-items-center rounded-[28%] text-sm font-bold text-[var(--hb-accent-fg)]"
-            style={{ background: "var(--hb-accent)" }}
-          >
-            {(botName || "H")[0].toUpperCase()}
-          </div>
-          <span className="text-sm font-bold tracking-tight">{botName}</span>
-        </div>
+  // Server-rendered menu triggers stay disabled until their dialog handlers are hydrated.
+  useEffect(() => { setReady(true); }, []);
+  useEffect(() => { setMoreOpen(false); }, [pathname]);
+  useEffect(() => {
+    const update = () => setSettingsHash(window.location.hash.slice(1));
+    update();
+    window.addEventListener("hashchange", update);
+    window.addEventListener("popstate", update);
+    return () => { window.removeEventListener("hashchange", update); window.removeEventListener("popstate", update); };
+  }, [pathname]);
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 701px)");
+    const closeOnDesktop = () => { if (desktop.matches) setMoreOpen(false); };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
 
-        <nav className="flex-1 px-3 py-2">
-          <div className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--hb-subtle)]">
-            Manage
-          </div>
-          <ul className="grid gap-0.5">
-            {NAV.map((item) => {
-              const active = item.href && pathname === item.href;
-              const inner = (
-                <>
-                  <span>{item.label}</span>
-                  {item.soon && (
-                    <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-medium uppercase text-[var(--hb-subtle)]">
-                      Soon
-                    </span>
-                  )}
-                </>
-              );
-              const base =
-                "flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors";
-              if (item.soon) {
-                return (
-                  <li key={item.label}>
-                    <span className={cx(base, "cursor-not-allowed text-[var(--hb-subtle)]")}>
-                      {inner}
-                    </span>
-                  </li>
-                );
-              }
-              return (
-                <li key={item.label}>
-                  <Link
-                    href={item.href!}
-                    className={cx(
-                      base,
-                      "outline-none focus-visible:ring-2 focus-visible:ring-[var(--hb-accent)]/60",
-                      active
-                        ? "bg-[var(--hb-accent-soft)] text-[var(--hb-accent)]"
-                        : "text-[var(--hb-muted)] hover:bg-white/5 hover:text-[var(--hb-fg)]",
-                    )}
-                  >
-                    {inner}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+  async function signOut() {
+    setSigningOut(true); setError("");
+    try {
+      const result = await authClient.signOut();
+      if (result.error) throw new Error(result.error.message || "Sign out failed. Please try again.");
+      setMoreOpen(false); router.push("/login"); router.refresh();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Sign out failed. Please try again."); }
+    finally { setSigningOut(false); }
+  }
 
-        <div className="border-t border-[var(--hb-border)] p-3">
-          <div className="flex items-center gap-2.5 px-2 py-1.5">
-            <div className="grid h-8 w-8 place-items-center rounded-full bg-[var(--hb-twitch)]/20 text-xs font-bold uppercase text-[var(--hb-twitch)]">
-              {(userName || "?")[0]}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-semibold">{userName}</div>
-              <div className="text-[11px] text-[var(--hb-subtle)]">Broadcaster</div>
-            </div>
-          </div>
-          <button
-            onClick={async () => {
-              await authClient.signOut();
-              router.push("/login");
-            }}
-            className="mt-1 w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-[var(--hb-muted)] outline-none transition-colors hover:bg-white/5 hover:text-[var(--hb-fg)] focus-visible:ring-2 focus-visible:ring-[var(--hb-accent)]/60"
-          >
-            Sign out
-          </button>
-        </div>
-      </aside>
+  function navigate(item: NavigationItem, event: MouseEvent<HTMLAnchorElement>) {
+    if (item.id === "settings" && onSettings && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+      event.preventDefault();
+      window.location.hash = "profile-picture";
+    }
+    setMoreOpen(false);
+  }
 
-      {/* main */}
-      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+  return <div className="app-shell">
+    <a href="#main" className="skip-link">Skip to content</a>
+    <aside className="sidebar">
+      <Link href="/dashboard" className="brand shell-brand"><img src="/brand/logo.svg" alt="" width="38" height="38" /><span>Community Bot</span></Link>
+      <div className="workspace-label">{access.owner ? "Creator workspace" : "Staff workspace"}</div>
+      <nav aria-label="Main navigation">
+        {primary.map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} />)}
+        {navigation.some((item) => item.section === "tools") && <span className="nav-group-label">Manage</span>}
+        {navigation.filter((item) => item.section === "tools").map((item) => <div key={item.id}>
+          <NavigationLink item={item} active={pathname === item.href} onNavigate={(event) => navigate(item, event)} />
+          {item.id === "settings" && onSettings && <nav className="settings-submenu" aria-label="Settings sections">
+            {settingsSections.map((section) => <a key={section.id} href={"#" + section.id} aria-current={selectedSetting === section.id ? "location" : undefined}>{section.label}</a>)}
+          </nav>}
+        </div>)}
+        <span className="nav-group-label">Community</span>
+        {navigation.filter((item) => item.section === "account").map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} />)}
+      </nav>
+      <div className="sidebar-bottom"><div className="account"><UserAvatar userName={userName} /><span>{userName}<small>{botName}</small></span><button type="button" title="Sign out" aria-label="Sign out" disabled={signingOut} onClick={signOut}><LogOut size={19} /></button></div>{error && <p className="shell-error" role="alert">{error}</p>}</div>
+    </aside>
+    <div className="workspace-frame">
+      <header className="mobile-topbar"><Link href="/dashboard" className="brand shell-brand"><img src="/brand/logo.svg" alt="" width="33" height="33" /><span>Community Bot<small>{botName}</small></span></Link><button type="button" className="shell-icon-button" aria-label="Open menu" aria-haspopup="dialog" aria-controls="more-title-dialog" aria-expanded={moreOpen} disabled={!ready} onClick={() => setMoreOpen(true)}><Menu size={23} /></button></header>
+      <main id="main" className="workspace">{children}</main>
     </div>
-  );
+    <nav className="mobile-tabs" aria-label="Primary navigation">
+      {primary.map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} mobile />)}
+      <button type="button" aria-haspopup="dialog" aria-controls="more-title-dialog" aria-expanded={moreOpen} data-active={secondaryActive || moreOpen || undefined} disabled={!ready} onClick={() => setMoreOpen(true)}><MoreHorizontal size={23} /><span>More</span></button>
+    </nav>
+    <Modal open={moreOpen} onClose={() => setMoreOpen(false)} labelledBy="more-title" className="more-dialog">
+      <div className="more-sheet"><div className="sheet-handle" aria-hidden="true" /><div className="more-heading"><h2 id="more-title">More</h2><button type="button" autoFocus className="shell-icon-button" aria-label="Close menu" onClick={() => setMoreOpen(false)}><X size={23} /></button></div>
+        <div className="more-profile"><UserAvatar userName={userName} size={40} /><div><strong>{userName}</strong><span>{access.owner ? "Creator" : "Staff"} · {botName}</span></div></div>
+        <nav aria-label="More navigation">{(["tools", "account"] as const).map((section) => {
+          const items = navigation.filter((item) => item.section === section);
+          return items.length ? <section className="more-group" key={section}><h3>{section === "tools" ? "Tools" : "Account & community"}</h3><div>{items.map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} onNavigate={(event) => navigate(item, event)} />)}</div></section> : null;
+        })}</nav>
+        {error && <p role="alert" className="notice error">{error}</p>}<button type="button" className="button more-signout" disabled={signingOut} onClick={signOut}><LogOut size={18} />{signingOut ? "Signing out…" : "Sign out"}</button>
+      </div>
+    </Modal>
+  </div>;
+}
+
+function NavigationLink({ item, active, mobile, onNavigate }: { item: NavigationItem; active: boolean; mobile?: boolean; onNavigate?: (event: MouseEvent<HTMLAnchorElement>) => void }) {
+  const Icon = item.icon;
+  return <Link href={item.href} aria-current={active ? "page" : undefined} target={item.external ? "_blank" : undefined} rel={item.external ? "noreferrer" : undefined} onClick={onNavigate}><Icon size={mobile ? 23 : 19} aria-hidden="true" /><span>{mobile ? item.mobileLabel ?? item.label : item.label}</span>{item.external && <span className="nav-external" aria-hidden="true">↗</span>}</Link>;
 }

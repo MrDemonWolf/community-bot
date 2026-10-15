@@ -1,0 +1,5 @@
+:root { --bg: #151719; --panel: #22262a; --line: #343a40; --text: #f4f5f6; --muted: #9aa2aa; --accent: var(--brand-sky); }
+body { font-family: var(--font-sans); }
+h1,h2,h3,.brand { font-family: var(--font-display); font-weight: 500; }
+code,pre { font-family: var(--font-mono); }
+a { color: var(--brand-frost); }

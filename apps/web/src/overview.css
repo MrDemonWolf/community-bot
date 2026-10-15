@@ -1,0 +1,52 @@
+/* Overview is an operations surface: state and its action stay in the same row. */
+.connections { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+.connections-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.connections-heading h2 { margin: 0; font-size: 16px; }
+.connections-heading p { margin: 0; font-size: 12px; }
+.connections .connection-card { display: grid; grid-template-columns: minmax(180px,.8fr) minmax(200px,1fr); gap: 12px 24px; padding: 20px; }
+.connection-card + .connection-card { border-top: 1px solid var(--line); }
+.connection-summary { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.connection-summary .service-icon { flex-shrink: 0; width: 38px; height: 38px; border-radius: 8px; }
+.connection-identity { min-width: 0; }
+.connection-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.connection-title h3 { margin: 0; font-size: 16px; }
+.connection-title .status { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.connection-identity p { margin: 5px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.connection-body { min-width: 0; }
+.connection-body .service-detail { margin: 0; font-size: 13px; }
+.connection-desired { margin: 6px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.connection-freshness { margin: 8px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.connections .connection-actions { grid-column: 2; margin: 0; padding: 0; align-self: center; gap: 8px; }
+.connection-actions .button { min-height: 44px; }
+.connection-stream { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; margin-top: 8px; }
+.connection-stream .stream-title { margin: 0; color: var(--ink); font-size: 13px; }
+.setup-attention { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 16px 0 0; padding: 12px 0; }
+.setup-attention p { margin: 0; font-size: 13px; }
+.setup-attention strong { color: var(--ink); }
+.setup-attention .button { flex-shrink: 0; min-height: 44px; }
+.workspace-tools { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-block: 20px; }
+.workspace-tool { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ink); font-size: 13px; text-decoration: none; }
+.workspace-tool > svg { color: var(--muted); flex-shrink: 0; }
+.workspace-tool:hover span { text-decoration: underline; text-underline-offset: 4px; }
+.command-reference { margin-top: 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.command-reference summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; min-height: 60px; padding-block: 12px; cursor: pointer; font-weight: 500; }
+.command-reference summary::before { content: "+"; width: 16px; text-align: center; font-size: 18px; }
+.command-reference[open] summary::before { content: "−"; }
+.command-reference summary .subtle { margin-left: auto; font-weight: 400; }
+.command-reference-content { padding: 0 0 20px; }
+.command-reference-content > p { font-size: 13px; }
+.command-reference .command-list td { vertical-align: top; }
+@media(min-width:1440px) {
+  .connections .connection-card { grid-template-columns: minmax(210px,.8fr) minmax(240px,1fr) auto; align-items: start; }
+  .connections .connection-actions { grid-column: 3; justify-content: flex-end; max-width: 280px; }
+}
+@media(max-width:767px) {
+  .connections-heading { padding: 14px 16px; }
+  .connections-heading p { display: none; }
+  .connections .connection-card { grid-template-columns: minmax(0,1fr); gap: 10px; padding: 16px; }
+  .connections .connection-actions { grid-column: 1; }
+  .connection-freshness { margin-top: 5px; }
+  .setup-attention { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .workspace-tools { gap: 4px 20px; margin-block: 16px; }
+  .command-reference summary .subtle { display: none; }
+}

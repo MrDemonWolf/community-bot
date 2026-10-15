@@ -1,43 +1,72 @@
-import { createDb } from "@community-bot/db";
+import { db } from "@community-bot/db";
 import * as schema from "@community-bot/db/schema/auth";
 import { env } from "@community-bot/env/server";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { devLoginEnabled, devLoginPlugin } from "./dev-login";
 
-export function createAuth() {
-  const db = createDb();
+const localDev = devLoginEnabled(
+  env.NODE_ENV,
+  env.DEV_LOGIN,
+  env.BETTER_AUTH_URL,
+);
+if (!env.BETTER_AUTH_URL || !env.BETTER_AUTH_SECRET)
+  throw new Error("Web requires BETTER_AUTH_URL and BETTER_AUTH_SECRET");
+if (env.NODE_ENV === "production" && !env.OWNER_EMAIL)
+  throw new Error("Web requires OWNER_EMAIL in production");
 
-  return betterAuth({
-    database: drizzleAdapter(db, {
-      provider: "pg",
+export function isOwner(user: { email: string; emailVerified: boolean }) {
+  return (
+    user.emailVerified &&
+    user.email.toLowerCase() ===
+      (env.OWNER_EMAIL?.toLowerCase() ?? (localDev ? "dev@localhost" : ""))
+  );
+}
 
-      schema: schema,
-    }),
-    trustedOrigins: [env.CORS_ORIGIN],
-    emailAndPassword: {
-      enabled: true,
-    },
-    databaseHooks: {
-      user: {
-        create: {
-          // Single-tenant: only the first account (the owner) may sign up.
-          // ponytail: closes open signup until Twitch broadcaster-login replaces it.
-          before: async (user) => {
-            const existing = await db.$count(schema.user);
-            if (existing > 0) {
-              throw new APIError("FORBIDDEN", { message: "Sign-ups are closed." });
-            }
-            return { data: user };
+export const auth = betterAuth({
+  database: drizzleAdapter(db, { provider: "pg", schema }),
+  trustedOrigins: [env.BETTER_AUTH_URL],
+  secret: env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL,
+  account: { encryptOAuthTokens: true },
+  socialProviders:
+    env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
           },
+        }
+      : {},
+  databaseHooks: {
+    // A verified session permits linking personal accounts; protected procedures separately require staff access.
+    user: {
+      create: {
+        before: async (user) => {
+          if (!user.emailVerified)
+            throw new APIError("FORBIDDEN", {
+              message: "Use a verified Google account to continue.",
+            });
+          return { data: user };
         },
       },
     },
-    secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.BETTER_AUTH_URL,
-    plugins: [nextCookies()],
-  });
-}
-
-export const auth = createAuth();
+    session: {
+      create: {
+        before: async (session, ctx) => {
+          const user = await ctx?.context.internalAdapter.findUserById(
+            session.userId,
+          );
+          if (!user?.emailVerified) throw new APIError("FORBIDDEN");
+          return { data: session };
+        },
+      },
+    },
+  },
+  plugins: [
+    ...(localDev ? [devLoginPlugin(env.OWNER_EMAIL)] : []),
+    nextCookies(),
+  ],
+});

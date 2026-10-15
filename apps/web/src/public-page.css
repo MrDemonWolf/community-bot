@@ -1,0 +1,81 @@
+.channel-page { width: 100%; max-width: 1280px; margin: 0 auto; padding: 32px 32px 56px; }
+.channel-profile { margin-bottom: 32px; }
+.channel-cover { height: clamp(128px, 16vw, 200px); border-radius: 16px; background: var(--brand-navy); border: 1px solid var(--line); }
+.channel-header { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; padding: 0 24px 24px; }
+.channel-identity { display: flex; align-items: flex-start; gap: 24px; min-width: 0; }
+.channel-icon { flex-shrink: 0; display: grid; place-items: center; width: 136px; height: 136px; margin-top: -44px; padding: 8px; border: 5px solid var(--paper); border-radius: 24px; background: var(--surface); }
+.channel-icon img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.channel-identity-copy { min-width: 0; padding-top: 20px; }
+.channel-header h1 { font-size: clamp(28px, 4vw, 36px); line-height: 1.2; letter-spacing: -.8px; margin: 0 0 8px; overflow-wrap: anywhere; }
+.channel-header p { margin: 0; font-size: 14px; }
+.channel-header .channel-eyebrow { margin-bottom: 8px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.channel-header > .button { flex-shrink: 0; }
+.channel-navigation { display: flex; gap: 24px; padding: 0 24px; border-bottom: 1px solid var(--line); }
+.channel-navigation a { display: inline-flex; align-items: center; min-height: 44px; color: var(--muted); font-size: 14px; text-decoration: none; }
+.channel-navigation .channel-navigation-current { color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px var(--brand-sky); }
+.channel-navigation a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 5px; }
+.channel-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; gap: 24px; }
+.channel-about { display: grid; gap: 16px; min-width: 0; }
+.channel-about .panel { padding: 20px; }
+.channel-about h2 { margin-bottom: 12px; font-size: 16px; letter-spacing: -.2px; }
+.channel-about p { margin: 0 0 12px; font-size: 13px; }
+.channel-about p:last-child { margin-bottom: 0; }
+.channel-aside-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.channel-aside-heading h2 { margin: 0; }
+.channel-stream-details h3 { font-size: 14px; line-height: 1.5; margin-bottom: 8px; }
+.channel-bot-status { margin: 0; }
+.channel-bot-status > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; }
+.channel-bot-status > div + div { border-top: 1px solid var(--line); }
+.channel-bot-status dt { font-size: 13px; }
+.channel-bot-status dd { margin: 0; }
+.channel-page #commands,.channel-page #status { scroll-margin-top: 24px; }
+.command-directory { min-width: 0; }
+.command-directory-heading { margin-bottom: 24px; }
+.command-directory-heading h2 { margin-bottom: 8px; }
+.command-directory-heading p { margin: 0; font-size: 13px; }
+.command-directory-tools { display: flex; align-items: flex-end; gap: 12px; }
+.command-directory-search { flex: 1; min-width: 0; }
+.command-directory-search label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+.command-directory-search > div { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 1px solid var(--input-border); border-radius: 8px; background: var(--surface); }
+.command-directory-search svg { flex-shrink: 0; color: var(--muted); }
+.command-directory-search input { width: 100%; min-width: 0; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: var(--ink); font-size: 14px; }
+.command-directory-search > div:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.command-directory-search input:focus-visible { outline: none; }
+.command-directory-count { margin: 16px 0; font-size: 12px; }
+.command-directory-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.command-directory-table th { padding: 0 12px 12px 0; text-align: left; color: var(--muted); font-size: 12px; font-weight: 600; }
+.command-directory-table td { border-top: 1px solid var(--line); padding: 12px 12px 12px 0; vertical-align: middle; }
+.command-directory-table td:first-child { width: 25%; }
+.command-directory-table th:last-child,.command-directory-table td:last-child { width: 44px; padding-right: 0; }
+.command-directory-table code { white-space: nowrap; }
+.command-copy { display: grid; place-items: center; width: 44px; height: 44px; padding: 8px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); }
+.command-copy:hover { color: var(--ink); background: var(--surface-subtle); }
+.command-directory-empty { padding: 24px 0 8px; }
+.command-directory-empty h3 { font-size: 15px; }
+.command-directory-empty p { margin-bottom: 0; font-size: 14px; }
+.command-directory-feedback { margin: 16px 0 0; color: var(--positive-ink); font-size: 13px; }
+.command-directory-fallback { display: grid; gap: 12px; margin-top: 20px; padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-subtle); }
+.command-directory-fallback p { margin: 0; font-size: 13px; }
+.command-directory-fallback .button { justify-self: start; }
+@media (max-width: 1000px) {
+  .channel-layout { grid-template-columns: 1fr; }
+  .channel-about { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .channel-page { padding: 24px 20px 40px; }
+  .channel-profile { margin-bottom: 24px; }
+  .channel-cover { height: 120px; border-radius: 12px; }
+  .channel-header { align-items: flex-start; flex-direction: column; gap: 20px; padding: 0 16px 20px; }
+  .channel-identity { align-items: flex-start; flex-direction: column; gap: 16px; width: 100%; }
+  .channel-icon { width: 104px; height: 104px; margin-top: -36px; border-radius: 20px; }
+  .channel-identity-copy { padding-top: 0; }
+  .channel-navigation { padding: 0 16px; }
+  .channel-layout { gap: 20px; }
+  .channel-about { grid-template-columns: 1fr; }
+  .command-directory-tools { align-items: stretch; flex-direction: column; gap: 8px; }
+  .command-directory-tools > .button { align-self: flex-start; }
+  .command-directory-search input { font-size: 16px; }
+  .command-directory-table td:first-child { width: auto; }
+  .command-directory-table td,.command-directory-table th { padding-right: 8px; }
+  .command-directory-table code { font-size: 11px; padding: 4px; }
+}

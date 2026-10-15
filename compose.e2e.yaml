@@ -1,0 +1,63 @@
+# Disposable CI stack; use a separate Compose project and remove its volume afterward.
+services:
+  web:
+    build:
+      target: dev-web
+    environment:
+      NODE_ENV: development
+      DEV_LOGIN: "true"
+      BETTER_AUTH_URL: http://localhost:3001
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3001/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 15s
+      start_period: 90s
+      retries: 30
+
+  production-web:
+    network_mode: service:web
+    build:
+      context: .
+      target: web
+    environment:
+      DATABASE_URL: postgresql://community_bot:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/community_bot
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?Set APP_ENCRYPTION_KEY}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: http://localhost:3006
+      PORT: "3006"
+      OWNER_EMAIL: ${OWNER_EMAIL:?Set OWNER_EMAIL}
+      NODE_ENV: production
+      # Deliberately true: production must still refuse local development login.
+      DEV_LOGIN: "true"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:3006/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 15s
+      retries: 30
+
+  e2e:
+    build:
+      context: .
+      target: e2e
+    # Real local dev login requires a loopback origin. Share the web namespace,
+    # keeping the same browser URL and cookie behavior as local development.
+    network_mode: service:web
+    init: true
+    shm_size: 1gb
+    environment:
+      E2E_BASE_URL: http://localhost:3001
+      E2E_PRODUCTION_URL: http://localhost:3006
+      E2E_EXPECTED_REVISION: ${E2E_EXPECTED_REVISION:?Set the checked-out commit SHA}
+    depends_on:
+      web:
+        condition: service_healthy
+      production-web:
+        condition: service_healthy
+    volumes:
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report

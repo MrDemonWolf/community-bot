@@ -1,21 +1,16 @@
 "use client";
 
-import { Toaster } from "@community-bot/ui/components/sonner";
+import { Toaster } from "sonner";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
 import { queryClient } from "@/utils/trpc";
-
-import { ThemeProvider } from "./theme-provider";
+import { useTheme } from "next-themes";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
+  const { resolvedTheme } = useTheme();
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <QueryClientProvider client={queryClient}>
-        {children}
-        <ReactQueryDevtools />
-      </QueryClientProvider>
-      <Toaster richColors />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <Toaster theme={resolvedTheme === "dark" ? "dark" : "light"} richColors position="bottom-right" />
+    </QueryClientProvider>
   );
 }

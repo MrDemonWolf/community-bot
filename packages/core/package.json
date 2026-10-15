@@ -1,0 +1,7 @@
+{
+  "name": "@community-bot/core",
+  "type": "module",
+  "exports": { "./*": "./src/*.ts" },
+  "dependencies": { "zod": "catalog:" },
+  "devDependencies": { "@community-bot/config": "workspace:*", "typescript": "catalog:" }
+}

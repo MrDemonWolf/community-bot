@@ -11,6 +11,9 @@
   },
   "scripts": {},
   "dependencies": {
+    "sharp": "0.34.5",
+    "@community-bot/twitch": "workspace:*",
+    "@community-bot/core": "workspace:*",
     "@community-bot/auth": "workspace:*",
     "@community-bot/db": "workspace:*",
     "@community-bot/env": "workspace:*",
