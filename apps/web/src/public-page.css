@@ -1,0 +1,37 @@
+.channel-page { width: 100%; max-width: 1100px; margin: 0 auto; padding: 24px 32px 56px; }
+.channel-topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+.channel-topbar .brand { gap: 10px; font-size: 17px; color: var(--ink); letter-spacing: -.3px; }
+.channel-topbar nav { display: flex; gap: 8px; }
+.channel-topbar nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 12px; border-radius: 8px; color: var(--muted); font-size: 13px; text-decoration: none; }
+.channel-topbar nav a:hover { background: var(--surface-subtle); color: var(--ink); }
+.channel-header { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding: 40px 0 32px; }
+.channel-header > div { min-width: 0; }
+.channel-header h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.2; letter-spacing: -1px; margin: 0 0 12px; overflow-wrap: anywhere; }
+.channel-context { font-size: 13px; margin-bottom: 8px; }
+.channel-description { max-width: 640px; margin: 0; line-height: 1.6; }
+.channel-header > .button { flex-shrink: 0; }
+.channel-stream { margin-bottom: 32px; }
+.channel-stream .panel-header { margin-bottom: 16px; }
+.channel-stream-details p { margin: 8px 0 0; }
+.channel-stream-note { margin: 0; font-size: 14px; }
+.channel-section { margin-top: 32px; scroll-margin-top: 24px; }
+.channel-section-heading { margin-bottom: 20px; }
+.channel-section-heading h2 { margin-bottom: 8px; }
+.channel-section-heading p { margin: 0; font-size: 14px; }
+.channel-connections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.channel-connection { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.channel-connection h3 { margin-bottom: 4px; }
+.channel-connection p { margin: 0; font-size: 13px; }
+.channel-empty { display: flex; align-items: center; gap: 12px; padding: 24px 0 8px; color: var(--muted); }
+.channel-empty p { margin: 0; font-size: 14px; }
+@media (max-width: 700px) {
+  .channel-page { padding: 20px 20px 40px; }
+  .channel-topbar { gap: 8px; padding-bottom: 16px; }
+  .channel-topbar nav { gap: 0; margin-left: -12px; }
+  .channel-header { align-items: flex-start; flex-direction: column; gap: 20px; padding: 28px 0 24px; }
+  .channel-description { font-size: 14px; }
+  .channel-connections { grid-template-columns: 1fr; gap: 16px; }
+  .channel-section { margin-top: 24px; }
+  .channel-stream { margin-bottom: 24px; }
+  .channel-page .command-list th:first-child,.channel-page .command-list td:first-child { width: 43%; }
+}

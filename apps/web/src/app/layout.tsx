@@ -7,6 +7,8 @@ import "../cookie.css";
 import "../footer.css";
 import "../settings.css";
 import "../appearance.css";
+import "../overview.css";
+import "../public-page.css";
 import SiteFooter from "@/components/site-footer";
 import Providers from "@/components/providers";
 import Pwa from "@/components/pwa";

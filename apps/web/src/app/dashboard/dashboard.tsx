@@ -9,6 +9,7 @@ import { COMMAND_DEFINITIONS } from "@community-bot/core/commands";
 import { canAccess } from "@community-bot/core/permissions";
 import { PageHeading, Panel, StatusBadge } from "@/components/dashboard-ui";
 import { trpc, queryClient } from "@/utils/trpc";
+import { navigationFor } from "@/components/navigation";
 
 export default function Dashboard() {
   const accessQuery = useQuery(trpc.access.me.queryOptions());
@@ -27,10 +28,12 @@ export default function Dashboard() {
   const hasSettings = access.owner || canAccess(access, "presence:manage", "discord");
   const setupNeeded = access.owner && !settings.discordConfigured && !(settings.bot.connected && settings.broadcaster.connected);
   const manageCommands = canAccess(access, "features:manage", "twitch") || canAccess(access, "features:manage", "discord");
+  const tools = navigationFor(access, settings.publicPageEnabled).filter((item) => ["features", "rewards", "staff"].includes(item.id));
+  const toolDescriptions: Record<string, string> = { features: "Choose what your bots can do.", rewards: "Manage rewards and the redemption queue.", staff: "Manage your community's staff permissions." };
 
   return <>
     <PageHeading title="Overview"
-      description="Discord and Twitch connection status."
+      description={`${settings.botName}'s connections and community tools.`}
       actions={<>
         {hasSettings && <Link className="button" href="/dashboard/settings"><Settings2 size={16} /> Settings</Link>}
         {settings.publicPageEnabled && <Link className="button" href="/channel" target="_blank">Public page <ArrowUpRight size={15} /></Link>}
@@ -83,6 +86,7 @@ export default function Dashboard() {
         </Panel>;
       })}
     </div>
+    <div className={tools.length ? "overview-secondary" : undefined}>
     <Panel aria-labelledby="commands-title">
       <div className="panel-header"><div><h2 id="commands-title">Useful commands</h2>
         <p>{hasTwitch && `Twitch uses ${settings.commandPrefix}. `}{hasDiscord && "Discord uses /. "}
@@ -94,6 +98,14 @@ export default function Dashboard() {
         </tr>)}</tbody>
       </table>
     </Panel>
+    {tools.length > 0 && <Panel className="workspace-tools" aria-labelledby="tools-title">
+      <div className="panel-header"><div><h2 id="tools-title">Workspace tools</h2><p>Keep your community running.</p></div></div>
+      <nav aria-label="Workspace tools">{tools.map(({ id, href, label, icon: Icon }) => <Link href={href} key={id} className="workspace-tool">
+        <Icon size={20} aria-hidden="true" /><span><strong>{label}</strong><small>{toolDescriptions[id]}</small></span><ArrowUpRight size={16} aria-hidden="true" />
+      </Link>)}</nav>
+      <p className="subtle">Only tools available to your role appear here.</p>
+    </Panel>}
+    </div>
   </>;
 }
 

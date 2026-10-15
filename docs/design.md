@@ -18,6 +18,9 @@ Community Bot keeps the official MrDemonWolf wolf asset, navy `#091533`, and thi
 | [Plain account settings](https://mobbin.com/screens/72c9cfb4-253a-4499-87ec-8919a2755818) | Quiet secondary navigation grouped into personal account and workspace settings. |
 | [Cofounder profile settings](https://mobbin.com/screens/ad24c6d9-5547-4c1c-b54f-05134df03c39) | Compact photo controls, clear source selection, and a nearby change-photo action. |
 | [Featurebase appearance settings](https://mobbin.com/screens/49cb38ad-0981-4532-9b34-da53ece31d16) | Explicit Light, Dark, and System choices with restrained dark surfaces. |
+| [Substack creator home](https://mobbin.com/screens/f719cb92-6fd5-4df6-8fa0-c70e0c7582d8) | Keep setup guidance above everyday operational tools. |
+| [Buffer channel workspace](https://mobbin.com/screens/79315ae7-1468-487a-ac2f-6691b937f3d2) | Group channel status and workspace destinations into distinct, scannable areas. |
+| [Patreon creator page](https://mobbin.com/screens/e993f9c3-d2f7-426c-a5e9-8a472aa87edf) | Lead a public community page with creator identity and a clear destination. |
 
 These references informed hierarchy and flow. Community Bot retains its own branding and uses less density for a single creator.
 
@@ -54,3 +57,5 @@ The creator sees three short steps: workspace, Discord, Twitch. Both connections
 Appearance defaults to the operating system and follows system changes while System is selected. Light and Dark override that preference in this browser. The shared footer provides the same choice outside the dashboard. A pre-paint theme script and native CSS color scheme keep controls and initial rendering consistent; the public offline page reads the same preference without caching private pages.
 
 Settings groups personal Profile picture and Appearance separately from permission-filtered Workspace controls. Its inner navigation follows the visible section. All forms stay mounted while navigating so unsaved inputs survive. Photo choices show the current source and explain unavailable linked accounts; the existing private image storage and compression limits still apply.
+
+The overview keeps connection controls first and pairs its command reference with role-filtered workspace tools, using the same navigation definitions as the shell. The public channel page has its own visitor layout: community identity, a safe Twitch destination when configured, stream information, bot connection status, and enabled commands. Unknown stream information is labelled unavailable rather than offline. It uses only the existing public data projection; personal staff pictures, private settings, and internal tools never appear there.

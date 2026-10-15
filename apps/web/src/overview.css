@@ -1,0 +1,13 @@
+.overview-secondary { display: grid; gap: 24px; align-items: start; }
+.overview-secondary > * { min-width: 0; }
+.workspace-tools nav { display: grid; }
+.workspace-tool { display: flex; align-items: center; gap: 12px; min-height: 76px; padding: 16px 0; color: var(--ink); text-decoration: none; }
+.workspace-tool + .workspace-tool { border-top: 1px solid var(--line); }
+.workspace-tool > svg { color: var(--muted); flex-shrink: 0; }
+.workspace-tool > svg:last-child { margin-left: auto; }
+.workspace-tool span { min-width: 0; }
+.workspace-tool strong { display: block; font-size: 13px; }
+.workspace-tool small { display: block; color: var(--muted); font-size: 12px; line-height: 1.5; margin-top: 4px; }
+.workspace-tool:hover strong { text-decoration: underline; text-underline-offset: 4px; }
+.workspace-tools > p:last-child { margin: 16px 0 0; }
+@media(min-width:1200px) { .overview-secondary { grid-template-columns: minmax(0,1fr) minmax(240px,.55fr); } }

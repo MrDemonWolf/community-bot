@@ -25,6 +25,7 @@ Changes are grouped by release. Work under **Unreleased** is on the rewrite bran
 - Moved platform configuration into the dashboard and split Discord and Twitch into separate processes.
 - Replaced the sidebar's selected-item stripe with a neutral background and improved spacing.
 - Grouped personal and workspace settings, with section-aware navigation and clearer profile photo controls.
+- Refined the overview's workspace tools and public channel layout, separating live stream information from bot connection status.
 - Documented security, queue, token-refresh, and accessibility invariants in developer comments.
 
 ### Removed

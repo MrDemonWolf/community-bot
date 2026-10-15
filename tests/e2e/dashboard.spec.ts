@@ -1,4 +1,4 @@
-import { test, expect, type Locator, type Page, type TestInfo } from "@playwright/test";
+import { test, expect, type BrowserContext, type Locator, type Page, type TestInfo } from "@playwright/test";
 
 async function login(page: Page) {
   await page.goto("/login");
@@ -49,13 +49,15 @@ async function readableText(target: Locator) {
   expect(result.ratio, `Computed text contrast: ${JSON.stringify(result)}`).toBeGreaterThanOrEqual(4.5);
 }
 
-test.beforeEach(async ({ context }) => {
+async function blockExternalTraffic(context: BrowserContext) {
   // Intercept network traffic only; pausing local blob decoding races Strict Mode URL cleanup.
   await context.route(/^https?:\/\//, (route) => {
     const url = new URL(route.request().url());
     return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.abort();
   });
-});
+}
+
+test.beforeEach(async ({ context }) => { await blockExternalTraffic(context); });
 
 test("anonymous pages and production login stay protected", async ({ page, request }, info) => {
   expect((await request.get("/api/trpc/settings.get")).status()).toBe(401);
@@ -402,7 +404,7 @@ test("appearance follows the system and remembers explicit themes without runtim
       const crop = page.getByRole("dialog", { name: "Crop profile picture", exact: true });
       await expect(crop.getByRole("button", { name: "Save picture", exact: true })).toBeEnabled();
       await readableText(crop.getByRole("button", { name: "Save picture", exact: true }));
-      await snapshot(page, info, "theme-dark-desktop-crop", false);
+      await snapshot(page, info, "gallery-dark-desktop-crop", false);
       await crop.getByRole("button", { name: "Cancel", exact: true }).click();
     }
   }
@@ -483,29 +485,41 @@ test("mobile setup, feature, access and reward pages remain usable", async ({ pa
     await navigation.emulateMedia({ colorScheme: "light" });
     await expect(navigation.locator("html")).toHaveAttribute("data-theme", "light");
     await mobileTheme.selectOption("dark");
-    for (const [path, title] of [["/dashboard", "Overview"], ["/dashboard/features", "Features"], ["/dashboard/settings", "Settings"]]) {
+    for (const [path, title] of [["/dashboard", "Overview"], ["/dashboard/features", "Features"], ["/dashboard/rewards", "Rewards"], ["/dashboard/access", "Staff-access"], ["/access", "My-accounts"], ["/dashboard/settings", "Settings"]]) {
       await navigation.goto(path!);
-      await expect(navigation.getByRole("heading", { name: title!, exact: true })).toBeVisible();
+      await expect(navigation.getByRole("heading", { level: 1 })).toBeVisible();
       await expect(navigation.locator(".loading-state")).toHaveCount(0);
       await expect(navigation.locator("html")).toHaveAttribute("data-theme", "dark");
       expect(await navigation.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
-      await readableText(navigation.getByRole("heading", { name: title!, exact: true }));
-      await readableText(navigation.locator(".mobile-tabs [aria-current='page'], .mobile-tabs [data-active]").first());
+      await readableText(navigation.getByRole("heading", { level: 1 }));
+      if (path!.startsWith("/dashboard")) await readableText(navigation.locator(".mobile-tabs [aria-current='page'], .mobile-tabs [data-active]").first());
       await snapshot(navigation, info, `theme-dark-390-${title!.toLowerCase()}`, false);
+      await snapshot(navigation, info, `gallery-dark-mobile-${title!.toLowerCase()}`, true);
+    }
+    const darkSections = navigation.getByRole("navigation", { name: "Settings sections", exact: true });
+    for (const [label, slug] of [["Appearance", "appearance"], ["Preferences", "preferences"], ["Discord presence", "discord-presence"], ["Discord connection", "discord-connection"], ["Twitch connection", "twitch-connection"]]) {
+      await darkSections.getByRole("link", { name: label!, exact: true }).click();
+      await snapshot(navigation, info, `gallery-dark-mobile-settings-${slug}`, false);
     }
     await navigation.getByLabel(/^Upload a picture/).setInputFiles({ name: "dark-mobile-profile.png", mimeType: "image/png", buffer: await pictureFixture(navigation) });
     const darkCrop = navigation.getByRole("dialog", { name: "Crop profile picture", exact: true });
     await expect(darkCrop.getByRole("button", { name: "Save picture", exact: true })).toBeEnabled();
     await readableText(darkCrop.getByRole("button", { name: "Save picture", exact: true }));
-    await snapshot(navigation, info, "theme-dark-mobile-crop", false);
+    await snapshot(navigation, info, "gallery-dark-mobile-crop", false);
     await activate(darkCrop.getByRole("button", { name: "Cancel", exact: true }));
     await activate(more);
     await expect(dialog).toBeVisible();
     await readableText(dialog.getByRole("link", { name: "Settings", exact: true }));
-    await snapshot(navigation, info, "theme-dark-mobile-more", false);
+    await snapshot(navigation, info, "gallery-dark-mobile-more", false);
     await activate(dialog.getByRole("button", { name: "Close menu", exact: true }));
     await mobileTheme.evaluate((element) => element.scrollIntoView({ block: "center" }));
-    await snapshot(navigation, info, "theme-dark-mobile-footer", false);
+    await snapshot(navigation, info, "gallery-dark-mobile-footer", false);
+    await navigation.goto("/setup");
+    for (const [step, heading] of [["workspace", "A home for your community"], ["discord", "Bring your Discord bot"], ["twitch", "Meet your Twitch accounts"]]) {
+      await expect(navigation.getByRole("heading", { name: heading!, exact: true })).toBeVisible();
+      await snapshot(navigation, info, `gallery-dark-mobile-setup-${step}`);
+      if (step !== "twitch") await navigation.getByRole("button", { name: step === "workspace" ? "Next: Discord" : "Next: Twitch", exact: true }).click();
+    }
     await mobileTheme.selectOption("light");
     await navigation.emulateMedia({ colorScheme: "dark" });
     await expect(navigation.locator("html")).toHaveAttribute("data-theme", "light");
@@ -651,5 +665,101 @@ test("production PWA installs offline shell while private API stays network-only
     await snapshot(page, info, "production-offline-shell");
   } finally {
     await context.setOffline(false);
+  }
+});
+
+test("dark page gallery preserves public visibility and previews every dashboard destination", async ({ page, context, browser }, info) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await login(page);
+  await page.getByRole("combobox", { name: /^Color theme/ }).selectOption("dark");
+  const settingsResponse = await context.request.get("/api/trpc/settings.get");
+  expect(settingsResponse.ok()).toBeTruthy();
+  const original = (await settingsResponse.json()).result.data as { botName: string; commandPrefix: string; publicDescription: string; publicPageEnabled: boolean };
+  expect(typeof original.botName).toBe("string");
+  const updateVisibility = async (enabled: boolean) => {
+    const response = await context.request.post("/api/trpc/settings.updateCore", {
+      headers: { Origin: process.env.E2E_BASE_URL ?? "http://localhost:3001" },
+      data: { botName: original.botName, commandPrefix: original.commandPrefix, publicDescription: original.publicDescription, publicPageEnabled: enabled },
+    });
+    expect(response.ok()).toBeTruthy();
+  };
+  const publicContext = await browser.newContext({ baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3001", colorScheme: "dark" });
+  await blockExternalTraffic(publicContext);
+  await publicContext.addInitScript(() => localStorage.setItem("community-bot:theme", "dark"));
+  const publicPage = await publicContext.newPage();
+  publicPage.on("pageerror", (error) => errors.push(error.message));
+  publicPage.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  try {
+    for (const [path, slug] of [["/dashboard", "overview"], ["/dashboard/features", "features"], ["/dashboard/rewards", "rewards"], ["/dashboard/access", "staff-access"], ["/access", "my-accounts"]]) {
+      await page.goto(path!);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.locator(".loading-state")).toHaveCount(0);
+      await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+      if (path === "/dashboard") {
+        const tools = page.getByRole("navigation", { name: "Workspace tools", exact: true });
+        for (const href of ["/dashboard/features", "/dashboard/rewards", "/dashboard/access"]) await expect(tools.locator(`a[href='${href}']`)).toHaveCount(1);
+      }
+      await snapshot(page, info, `gallery-dark-desktop-${slug}-viewport`, false);
+      await snapshot(page, info, `gallery-dark-desktop-${slug}`);
+    }
+    await page.goto("/dashboard/settings");
+    await expect(page.locator(".loading-state")).toHaveCount(0);
+    const sections = page.getByRole("navigation", { name: "Settings sections", exact: true });
+    for (const [label, slug] of [["Profile picture", "profile"], ["Appearance", "appearance"], ["Preferences", "preferences"], ["Discord presence", "discord-presence"], ["Discord connection", "discord-connection"], ["Twitch connection", "twitch-connection"]]) {
+      await sections.getByRole("link", { name: label!, exact: true }).click();
+      await snapshot(page, info, `gallery-dark-desktop-settings-${slug}`, false);
+    }
+    await snapshot(page, info, "gallery-dark-desktop-settings-all");
+    await page.goto("/setup");
+    for (const [step, heading] of [["workspace", "A home for your community"], ["discord", "Bring your Discord bot"], ["twitch", "Meet your Twitch accounts"]]) {
+      await expect(page.getByRole("heading", { name: heading!, exact: true })).toBeVisible();
+      await snapshot(page, info, `gallery-dark-desktop-setup-${step}`);
+      if (step !== "twitch") await page.getByRole("button", { name: step === "workspace" ? "Next: Discord" : "Next: Twitch", exact: true }).click();
+    }
+    await updateVisibility(true);
+    for (const width of [1440, 390]) {
+      await publicPage.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+      const prefix = width === 390 ? "gallery-dark-mobile" : "gallery-dark-desktop";
+      for (const [path, slug] of [["/login", "login"], ["/privacy", "privacy"], ["/terms", "terms"], ["/channel", "public-channel"], ["/offline.html", "offline"]]) {
+        const response = await publicPage.goto(path!);
+        expect(response?.status()).toBe(200);
+        await expect(publicPage.getByRole("heading", { level: 1 })).toBeVisible();
+        await expect(publicPage.locator("html")).toHaveAttribute("data-theme", "dark");
+        expect(await publicPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBeTruthy();
+        if (path === "/channel") {
+          expect(await response!.text()).not.toContain("/api/profile-picture");
+          await expect(publicPage.getByRole("heading", { name: "Bot status", exact: true })).toBeVisible();
+          await expect(publicPage.getByRole("heading", { name: "Chat commands", exact: true })).toBeVisible();
+          await readableText(publicPage.getByRole("heading", { level: 1 }));
+          await readableText(publicPage.locator(".panel p").first());
+          await readableText(publicPage.locator(".status").first());
+          const publicSections = publicPage.getByRole("navigation", { name: "Community page sections", exact: true });
+          const commands = publicSections.getByRole("link", { name: "Commands", exact: true });
+          await expect(commands).toHaveAttribute("href", "#commands");
+          await commands.focus();
+          await commands.press("Enter");
+          await expect(publicPage).toHaveURL(/\/channel#commands$/);
+          await expect(publicPage.getByRole("heading", { name: "Chat commands", exact: true })).toBeInViewport();
+          await publicPage.evaluate(() => window.scrollTo(0, 0));
+        }
+        await snapshot(publicPage, info, `${prefix}-${slug}-viewport`, false);
+        if (path !== "/offline.html") await snapshot(publicPage, info, `${prefix}-${slug}`);
+        if (path === "/login") {
+          const cookie = publicPage.getByRole("region", { name: "Cookies and browser storage", exact: true });
+          await cookie.scrollIntoViewIfNeeded();
+          await snapshot(publicPage, info, `${prefix}-cookies`, false);
+        }
+      }
+    }
+    expect(errors).toEqual([]);
+  } finally {
+    try {
+      await updateVisibility(original.publicPageEnabled);
+      expect((await publicContext.request.get("/channel")).status()).toBe(original.publicPageEnabled ? 200 : 404);
+    } finally { await publicContext.close(); }
   }
 });
