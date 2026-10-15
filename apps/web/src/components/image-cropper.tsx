@@ -26,7 +26,14 @@ export default function ImageCropper({ file, pending, error, onCancel, onSave }:
     };
     picture.onerror = () => { if (active) setLoadError("This image could not be opened. Choose a PNG, JPEG, or WebP file."); };
     picture.src = url;
-    return () => { active = false; picture.onload = null; picture.onerror = null; URL.revokeObjectURL(url); };
+    return () => {
+      active = false;
+      picture.onload = null;
+      picture.onerror = null;
+      // Cancel a pending decode before revoking its source, including React Strict Mode's setup/cleanup replay.
+      picture.removeAttribute("src");
+      URL.revokeObjectURL(url);
+    };
   }, [file]);
   useEffect(() => {
     const context = canvas.current?.getContext("2d");
