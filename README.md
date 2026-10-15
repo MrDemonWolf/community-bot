@@ -110,6 +110,7 @@ viewer-list presence or a bot badge.
 | Page | Use |
 | --- | --- |
 | `/dashboard` | Check heartbeats and control permitted connections |
+| `/dashboard/settings` | Configure workspace, integrations, and permitted Discord presence |
 | `/setup` | Creator onboarding and platform configuration |
 | `/access` | Link your own accounts, copy account IDs, and view grants |
 | `/dashboard/access` | Creator-only staff mappings and role checks |

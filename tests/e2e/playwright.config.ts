@@ -6,7 +6,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  timeout: 600_000,
+  timeout: 180_000,
   expect: { timeout: 30_000 },
   outputDir: "../../test-results",
   reporter: [["list"], ["html", { outputFolder: "../../playwright-report", open: "never" }]],
@@ -19,6 +19,6 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "on",
-    navigationTimeout: 180_000,
+    navigationTimeout: 60_000,
   },
 });

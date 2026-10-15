@@ -1,17 +1,14 @@
 "use client";
 
-import { ArrowUpRight, Gift, LayoutDashboard, LogOut, Puzzle, Settings2, Shield, UserRound } from "lucide-react";
-import { canAccess, type Subject } from "@community-bot/core/permissions";
+import { LogOut, Menu, MoreHorizontal, X } from "lucide-react";
+import type { Subject } from "@community-bot/core/permissions";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { navigationFor, type NavigationItem } from "./navigation";
 
-export default function AppShell({
-  children,
-  userName,
-  botName,
-  access,
-}: {
+export default function AppShell({ children, userName, botName, access }: {
   children: React.ReactNode;
   userName: string;
   botName: string;
@@ -19,71 +16,84 @@ export default function AppShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  return (
-    <div className="app-shell">
-      <a href="#main" className="skip-link">
-        Skip to content
-      </a>
-      <aside className="sidebar">
-        <Link href="/dashboard" className="brand">
-          <img src="/brand/logo.svg" alt="" width="42" height="42" />
-          <span>
-            Community Bot<small>YOUR COMMUNITY, CONNECTED</small>
-          </span>
-        </Link>
-        <div className="workspace-label">{access.owner ? "CREATOR WORKSPACE" : "STAFF WORKSPACE"}</div>
-        <nav aria-label="Main navigation">
-          <Link
-            href="/dashboard"
-            aria-current={pathname === "/dashboard" ? "page" : undefined}
-          >
-            <LayoutDashboard size={19} />
-            Overview
-          </Link>
-          {access.owner && <Link
-            href="/setup"
-            aria-current={pathname === "/setup" ? "page" : undefined}
-          >
-            <Settings2 size={19} />
-            Guided setup
-          </Link>}
-          {(canAccess(access, "features:manage", "twitch") || canAccess(access, "features:manage", "discord")) && <Link href="/dashboard/features" aria-current={pathname === "/dashboard/features" ? "page" : undefined}><Puzzle size={19} />Features</Link>}
-          {canAccess(access, "redemptions:view", "twitch") && <Link href="/dashboard/rewards" aria-current={pathname === "/dashboard/rewards" ? "page" : undefined}><Gift size={19} />Channel points</Link>}
-          {access.owner && <Link href="/dashboard/access" aria-current={pathname === "/dashboard/access" ? "page" : undefined}><Shield size={19} />Staff access</Link>}
-          <Link href="/access"><UserRound size={19} />My accounts</Link>
-          <Link href="/channel" target="_blank">
-            <ArrowUpRight size={19} />
-            Public channel
-          </Link>
-        </nav>
-        <div className="sidebar-bottom">
-          <p className="sidebar-note">
-            One creator.
-            <br />A little less to manage.
-          </p>
-          <div className="account">
-            <span className="avatar">{userName.slice(0, 1).toUpperCase()}</span>
-            <span>
-              {userName}
-              <small>{botName}</small>
-            </span>
-            <button
-              title="Sign out"
-              aria-label="Sign out"
-              onClick={async () => {
-                await authClient.signOut();
-                router.push("/login");
-                router.refresh();
-              }}
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
-        </div>
-      </aside>
-      <main id="main" className="workspace">
-        {children}
-      </main>
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [ready, setReady] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [error, setError] = useState("");
+  const navigation = navigationFor(access);
+  const primary = navigation.filter((item) => item.section === "primary");
+  const secondaryActive = navigation.some((item) => item.section !== "primary" && item.href === pathname);
+
+  useEffect(() => { setReady(true); }, []);
+  useEffect(() => { setMoreOpen(false); }, [pathname]);
+  useEffect(() => {
+    const sheet = dialog.current;
+    if (!moreOpen || !sheet) return;
+    const previousOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    sheet.showModal();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
+      if (sheet.open) sheet.close();
+    };
+  }, [moreOpen]);
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 701px)");
+    const closeOnDesktop = () => { if (desktop.matches) setMoreOpen(false); };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
+
+  async function signOut() {
+    setSigningOut(true); setError("");
+    try {
+      const result = await authClient.signOut();
+      if (result.error) throw new Error(result.error.message || "Sign out failed. Please try again.");
+      setMoreOpen(false); router.push("/login"); router.refresh();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Sign out failed. Please try again."); }
+    finally { setSigningOut(false); }
+  }
+
+  return <div className="app-shell">
+    <a href="#main" className="skip-link">Skip to content</a>
+    <aside className="sidebar">
+      <Link href="/dashboard" className="brand shell-brand"><img src="/brand/logo.svg" alt="" width="38" height="38" /><span>Community Bot<small>YOUR COMMUNITY, CONNECTED</small></span></Link>
+      <div className="workspace-label">{access.owner ? "CREATOR WORKSPACE" : "STAFF WORKSPACE"}</div>
+      <nav aria-label="Main navigation">
+        {primary.map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} />)}
+        {navigation.some((item) => item.section === "tools") && <span className="nav-group-label">MANAGE</span>}
+        {navigation.filter((item) => item.section === "tools").map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} />)}
+        <span className="nav-group-label">COMMUNITY</span>
+        {navigation.filter((item) => item.section === "account").map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} />)}
+      </nav>
+      <div className="sidebar-bottom"><div className="account"><span className="avatar">{userName.slice(0, 1).toUpperCase()}</span><span>{userName}<small>{botName}</small></span><button type="button" title="Sign out" aria-label="Sign out" disabled={signingOut} onClick={signOut}><LogOut size={19} /></button></div>{error && <p className="shell-error" role="alert">{error}</p>}</div>
+    </aside>
+    <div className="workspace-frame">
+      <header className="mobile-topbar"><Link href="/dashboard" className="brand shell-brand"><img src="/brand/logo.svg" alt="" width="33" height="33" /><span>Community Bot<small>{botName}</small></span></Link><button type="button" className="shell-icon-button" aria-label="Open menu" aria-haspopup="dialog" aria-controls="community-menu" aria-expanded={moreOpen} disabled={!ready} onClick={() => setMoreOpen(true)}><Menu size={23} /></button></header>
+      <main id="main" className="workspace">{children}</main>
     </div>
-  );
+    <nav className="mobile-tabs" aria-label="Primary navigation">
+      {primary.map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} mobile />)}
+      <button type="button" aria-haspopup="dialog" aria-controls="community-menu" aria-expanded={moreOpen} data-active={secondaryActive || moreOpen || undefined} disabled={!ready} onClick={() => setMoreOpen(true)}><MoreHorizontal size={23} /><span>More</span></button>
+    </nav>
+    <dialog ref={dialog} id="community-menu" className="more-dialog" aria-labelledby="more-title" onCancel={() => setMoreOpen(false)} onClose={() => setMoreOpen(false)} onClick={(event) => { if (event.target === event.currentTarget) setMoreOpen(false); }}>
+      <div className="more-sheet"><div className="sheet-handle" aria-hidden="true" /><div className="more-heading"><div><span className="eyebrow">YOUR WORKSPACE</span><h2 id="more-title">More</h2></div><button type="button" autoFocus className="shell-icon-button" aria-label="Close menu" onClick={() => setMoreOpen(false)}><X size={23} /></button></div>
+        <div className="more-profile"><span className="avatar">{userName.slice(0, 1).toUpperCase()}</span><div><strong>{userName}</strong><span>{access.owner ? "Creator" : "Staff"} · {botName}</span></div></div>
+        <nav aria-label="More navigation">{(["tools", "account"] as const).map((section) => {
+          const items = navigation.filter((item) => item.section === section);
+          return items.length ? <section className="more-group" key={section}><h3>{section === "tools" ? "Tools" : "Account & community"}</h3><div>{items.map((item) => <NavigationLink key={item.id} item={item} active={pathname === item.href} onNavigate={() => setMoreOpen(false)} />)}</div></section> : null;
+        })}</nav>
+        {error && <p role="alert" className="notice error">{error}</p>}<button type="button" className="button more-signout" disabled={signingOut} onClick={signOut}><LogOut size={18} />{signingOut ? "Signing out…" : "Sign out"}</button>
+      </div>
+    </dialog>
+  </div>;
+}
+
+function NavigationLink({ item, active, mobile, onNavigate }: { item: NavigationItem; active: boolean; mobile?: boolean; onNavigate?: () => void }) {
+  const Icon = item.icon;
+  return <Link href={item.href} aria-current={active ? "page" : undefined} target={item.external ? "_blank" : undefined} rel={item.external ? "noreferrer" : undefined} onClick={onNavigate}><Icon size={mobile ? 23 : 19} aria-hidden="true" /><span>{mobile ? item.mobileLabel ?? item.label : item.label}</span>{item.external && <span className="nav-external" aria-hidden="true">↗</span>}</Link>;
 }

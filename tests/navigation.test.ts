@@ -1,0 +1,30 @@
+import { describe, expect, test } from "bun:test";
+import type { Subject } from "../packages/core/src/permissions";
+import { navigationFor } from "../apps/web/src/components/navigation";
+
+function destinations(subject: Subject) {
+  return navigationFor(subject).map((item) => item.href);
+}
+
+describe("platform-scoped dashboard navigation", () => {
+  test("the creator can reach management, both platforms, and personal accounts", () => {
+    const links = destinations({ owner: true, grants: [] });
+    for (const route of ["/dashboard", "/dashboard/features", "/dashboard/rewards", "/dashboard/settings", "/setup", "/dashboard/access", "/access"]) expect(links).toContain(route);
+  });
+  test("a Discord admin gets Discord settings without Twitch rewards or creator controls", () => {
+    const links = destinations({ owner: false, grants: [{ platform: "discord", role: "admin", source: "test" }] });
+    expect(links).toContain("/dashboard/features");
+    expect(links).toContain("/dashboard/settings");
+    for (const route of ["/dashboard/rewards", "/dashboard/access", "/setup"]) expect(links).not.toContain(route);
+  });
+  test("a Twitch moderator gets the queue without feature or settings administration", () => {
+    const links = destinations({ owner: false, grants: [{ platform: "twitch", role: "moderator", source: "test" }] });
+    expect(links).toContain("/dashboard/rewards");
+    for (const route of ["/dashboard/features", "/dashboard/settings", "/dashboard/access", "/setup"]) expect(links).not.toContain(route);
+  });
+  test("an unmapped member can reach personal access but no privileged destination", () => {
+    const links = destinations({ owner: false, grants: [] });
+    expect(links).toContain("/access");
+    expect(links.some((route) => route.startsWith("/dashboard") || route === "/setup")).toBe(false);
+  });
+});

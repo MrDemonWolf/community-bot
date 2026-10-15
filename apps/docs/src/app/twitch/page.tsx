@@ -15,7 +15,7 @@ export default function Twitch() {
     <p>Copy the application's <strong>Client ID</strong> and generate or retrieve its <strong>Client Secret</strong>. Keep the secret private.</p>
     <p className="result"><strong>Ready when:</strong> the correct callback URL is registered and you have the two application values.</p>
     <h2>2. Save the application in Community Bot</h2>
-    <ol><li>Open Guided setup → Twitch, or the dashboard's Twitch application section.</li><li>Paste the client ID and client secret.</li><li>Choose <strong>Save Twitch application</strong>.</li></ol>
+    <ol><li>Open Guided setup → Twitch, or Settings → Twitch application &amp; accounts. On a phone, find Settings under More.</li><li>Paste the client ID and client secret.</li><li>Choose <strong>Save Twitch application</strong>.</li></ol>
     <p className="result"><strong>Ready when:</strong> the creator and bot Connect buttons become available.</p>
     <h2>3. Connect the creator</h2>
     <ol><li>Choose <strong>Connect creator</strong>.</li><li>On Twitch's consent screen, select your main streamer account and authorize it.</li><li>Back in Community Bot, confirm the creator username matches your channel.</li></ol>

@@ -14,10 +14,10 @@ export default function Discord() {
     </ol>
     <p className="result"><strong>Ready when:</strong> you have the application ID, server ID, and token. Keep the token private.</p>
     <h2>2. Save them in Community Bot</h2>
-    <ol><li>Open Guided setup → Discord, or the dashboard's Discord application section.</li><li>Paste the three values into their labeled fields. Paste only the token, without a <code>Bot </code> prefix.</li><li>Choose <strong>Save Discord credentials</strong> and wait for the saved message.</li><li>If the bot is not installed in your server yet, choose <strong>Invite to server</strong> and select your server. Administrator permission is unnecessary.</li></ol>
+    <ol><li>Open Guided setup → Discord, or Settings → Discord application. On a phone, find Settings under More.</li><li>Paste the three values into their labeled fields. Paste only the token, without a <code>Bot </code> prefix.</li><li>Choose <strong>Save Discord credentials</strong> and wait for the saved message.</li><li>If the bot is not installed in your server yet, choose <strong>Invite to server</strong> and select your server. Administrator permission is unnecessary.</li></ol>
     <p className="result"><strong>Ready when:</strong> credentials are saved and the bot appears in the correct server. It may still appear offline until you join.</p>
     <h2>3. Choose its presence</h2>
-    <ol><li>Select Online, Idle, Do not disturb, or Invisible.</li><li>Select an activity and enter its text. Streaming also needs an HTTPS Twitch or YouTube URL.</li><li>Choose <strong>Save Discord presence</strong>.</li></ol>
+    <ol><li>Open Settings → Discord presence, then select Online, Idle, Do not disturb, or Invisible.</li><li>Select an activity and enter its text. Streaming also needs an HTTPS Twitch or YouTube URL.</li><li>Choose <strong>Save Discord presence</strong>.</li></ol>
     <p>Activities support Playing, Listening, Watching, Competing, Custom status, and Streaming. Leave the activity text empty to clear it. Invisible intentionally makes a connected bot appear offline in Discord.</p>
     <h2>4. Connect and check</h2>
     <ol><li>Open the dashboard and choose <strong>Join</strong> on Discord.</li><li>Wait for a fresh connected heartbeat.</li><li>Look at the bot in your server and check its chosen status and activity.</li></ol>

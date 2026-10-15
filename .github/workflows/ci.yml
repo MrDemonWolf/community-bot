@@ -31,6 +31,9 @@ jobs:
       - name: Typecheck
         run: bun run check-types
 
+      - name: Browser and worker reload harness types
+        run: bunx tsc --ignoreConfig --noEmit --module ESNext --moduleResolution bundler --target ES2023 --lib ES2023,DOM --skipLibCheck --strict --types node tests/e2e/dashboard.spec.ts tests/e2e/playwright.config.ts tests/e2e/watch.integration.ts
+
       - name: Test
         run: bun run test
 
@@ -93,12 +96,14 @@ jobs:
       - name: Worker reward actions with all provider traffic mocked
         run: docker compose run --rm --no-deps migrate bun tests/e2e/reward-runtime.integration.ts
       - name: Start real paused worker images after disposable provider fixtures are restored
+        id: workers
         run: docker compose up -d --wait --wait-timeout 180 discord twitch
       - name: Browser journeys with real local authentication cookies
         run: docker compose run --rm --no-deps e2e
       - name: Browser fixture secret is encrypted at rest and workers stay paused
         run: docker compose exec -T postgres psql -U community_bot -d community_bot -v ON_ERROR_STOP=1 -q -f - < tests/e2e/encryption.sql
       - name: Worker source synchronization and independent restart
+        if: ${{ !cancelled() && steps.workers.outcome == 'success' }}
         run: bun tests/e2e/watch.integration.ts
       - name: Container logs
         if: failure()
